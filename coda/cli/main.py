@@ -18,11 +18,10 @@ console = Console()
 @click.command()
 @click.option('--provider', '-p', default='oci_genai', help='LLM provider to use (oci_genai, ollama, openai)')
 @click.option('--model', '-m', help='Model to use')
-@click.option('--compartment-id', '-c', help='OCI compartment ID (for oci_genai provider)')
 @click.option('--debug', is_flag=True, help='Enable debug output')
 @click.option('--one-shot', help='Execute a single prompt and exit')
 @click.version_option(version=__version__, prog_name='coda')
-def main(provider: str, model: str, compartment_id: str, debug: bool, one_shot: str):
+def main(provider: str, model: str, debug: bool, one_shot: str):
     """Coda - A multi-provider code assistant"""
     
     welcome_text = Text.from_markup(
@@ -40,8 +39,8 @@ def main(provider: str, model: str, compartment_id: str, debug: bool, one_shot: 
             console.print(f"\n[green]Provider:[/green] {provider}")
             console.print("[yellow]Initializing OCI GenAI...[/yellow]")
             
-            # Initialize provider with optional compartment ID
-            oci_provider = OCIGenAIProvider(compartment_id=compartment_id)
+            # Initialize provider (compartment ID from env var or config)
+            oci_provider = OCIGenAIProvider()
             console.print("[green]✓ Connected to OCI GenAI[/green]")
             
             # List models

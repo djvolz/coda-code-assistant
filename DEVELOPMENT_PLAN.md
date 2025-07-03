@@ -1,4 +1,4 @@
-# Coda Roadmap
+# Coda Development Plan
 
 ## Project Vision
 Build a multi-provider, CLI-focused code assistant that provides a unified interface for AI-powered development across Oracle OCI GenAI, Ollama, and other LiteLLM-supported providers.
@@ -8,21 +8,6 @@ Key directories for OCI GenAI implementation reference:
 - **LangChain OCI Integration**: `/Users/danny/Developer/forks/litellm-oci-using-claude/langchain-community`
 - **OCI Python SDK**: `/Users/danny/Developer/forks/litellm-oci-using-claude/oci-python-sdk`
 - **LiteLLM Fork with OCI**: `/Users/danny/Developer/forks/litellm-oci-using-claude/litellm`
-
-## Bugs & Fixes (Top Priority - Must be addressed before any phase work)
-
-### Active Bugs
-- [ ] Fix CI pipeline
-    ```
-    Run # Get current version
-    Updated version from 2025.7.3.0703
-    {new_version} to 2025.7.3.0751
-    Error: Unable to process file command 'output' successfully.
-    Error: Invalid format '{new_version}'
-    ```
-- [ ] Fix uv sync bug on other machine 
-- [ ] Add python 3.13 support
-- [ ] Remove dedicated flag for compartment-id. Shouldn't have options specific to one provider. Update docs about removal
 
 ## Phase 1: Native OCI GenAI Integration (Current Priority)
 
@@ -94,10 +79,6 @@ Key directories for OCI GenAI implementation reference:
   - [x] Auto-selection for one-shot mode
   - [x] Clear error messages and setup guidance
   - [x] Exit/clear commands in interactive mode
-
-### 1.5 Versioning
-- [x] Version based on date/time
-- [x] Automate CI versioining and release schedule
 
 ## Phase 2: Core Provider Architecture
 
@@ -216,6 +197,7 @@ Key directories for OCI GenAI implementation reference:
 - [ ] Session management UI
 
 ## Phase 8: Other. Too be categorized
+- [ ] Set up github pipeline
 - [ ] Opentelemetry support
     - [ ] Metrics for daily active users and other telemetry
 - [ ] Pyroscope for debugging
@@ -227,6 +209,8 @@ Key directories for OCI GenAI implementation reference:
 - [ ] Wiki update checker
 - [ ] Changelog detecter
 - [ ] Review code helper
+- [ ] Ability to add external projects
+- [ ] Ability to add multiple projects
 
 
 ## Technical Decisions
@@ -248,12 +232,6 @@ Key directories for OCI GenAI implementation reference:
 - TOML configuration files
 - Environment variable overrides
 - Per-project settings
-
-### Versioning & Release Strategy
-- Date-based versioning: `year.month.day.HHMM`
-- Automated releases via conventional commits
-- Continuous delivery on main branch
-- No manual version management required
 
 ## Development Workflow
 
@@ -277,7 +255,7 @@ Key directories for OCI GenAI implementation reference:
 
 ## Milestones
 
-### 2025.7.2 - OCI Foundation ✅ COMPLETED
+### v0.1.0 - OCI Foundation (Week 1-2) ✅ COMPLETED
 - ✅ Native OCI GenAI provider implementation
 - ✅ Basic chat completion support
 - ✅ Streaming responses
@@ -285,38 +263,28 @@ Key directories for OCI GenAI implementation reference:
 - ✅ Dynamic model discovery (30+ models)
 - ✅ Configuration file support
 
-### 2025.7.3 - Versioning & Release Automation ✅ COMPLETED
-- ✅ Date-based versioning (year.month.day.HHMM format)
-- ✅ Automated release workflow with GitHub Actions
-- ✅ Conventional commits support
-- ✅ Automatic changelog generation
-- ✅ Version display in CLI (--version flag and banner)
-- ✅ Release documentation and contributing guidelines
-- ✅ PyPI upload preparation
-- ✅ Git commit message template
-
-### 2025.7.5 - Provider Architecture (Target: July 5)
+### v0.2.0 - Provider Architecture (Week 3-4)
 - Abstract provider interface
 - Provider registry
 - LiteLLM integration
 - Ollama native support
 
-### 2025.7.7 - Enhanced CLI (Target: July 7)
+### v0.3.0 - Enhanced CLI (Week 5-6)
 - Slash commands
 - Developer modes
 - Rich UI features
 
-### 2025.7.10 - Persistence (Target: July 10)
+### v0.4.0 - Persistence (Week 7-8)
 - Session management
 - Context handling
 - Search functionality
 
-### 2025.7.12 - Tools (Target: July 12)
+### v0.5.0 - Tools (Week 9-10)
 - MCP integration
 - Core tool set
 - Custom tools
 
-### 2025.7.15 - Production Ready (Target: July 15)
+### v1.0.0 - Production Ready
 - Full test coverage
 - Documentation
 - Performance optimized
@@ -324,13 +292,13 @@ Key directories for OCI GenAI implementation reference:
 
 ## Next Steps
 
-1. Begin Phase 2: Provider Architecture
-2. Design abstract provider interface
-3. Implement provider registry/factory pattern
-4. Add LiteLLM integration for 100+ providers
-5. Create native Ollama provider
-6. Ensure backward compatibility with OCI provider
-7. Add provider-specific configuration management
+1. Create feature branch for native OCI integration
+2. Study reference implementations in provided directories
+3. Set up OCI SDK dependency
+4. Implement OCIGenAIProvider class
+5. Create basic test script for OCI chat completion
+6. Build streaming support
+7. Add comprehensive error handling
 
 ## Notes
 
