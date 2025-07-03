@@ -157,9 +157,7 @@ jobs:
           dist/*
     
     - name: Upload to PyPI
-      if: |
-        steps.commit_check.outputs.SHOULD_RELEASE == 'true' &&
-        secrets.PYPI_API_TOKEN != ''
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
