@@ -32,6 +32,17 @@ Coda is structured as a modular Python application:
 - **Tools**: MCP tool integration for enhanced capabilities
 - **Config**: Flexible configuration system supporting TOML files and environment variables
 
+## Important: Read the Roadmap
+
+**Before starting any development work, please read the [ROADMAP.md](ROADMAP.md) file.** This document contains:
+- Detailed technical architecture and design decisions
+- Current implementation status for each phase
+- Planned features and their priority
+- Technical requirements and dependencies
+- Integration points and API designs
+
+Understanding the roadmap will help you align your contributions with the project's vision and avoid duplicate work.
+
 ## Quick Start
 
 ```bash
