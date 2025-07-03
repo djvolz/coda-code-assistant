@@ -14,6 +14,8 @@ dependencies = [
     "pydantic>=2.0.0",
     "sqlalchemy>=2.0.0",
     "aiosqlite>=0.19.0",
+    "oci>=2.119.1",
+    "cryptography>=3.4.7",
 ]
 
 [project.scripts]
