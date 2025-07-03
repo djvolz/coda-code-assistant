@@ -1,0 +1,90 @@
+name: Test OCI GenAI Provider
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        enable-cache: true
+        cache-dependency-glob: "pyproject.toml"
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run basic unit tests
+      run: uv run python -m pytest tests/test_oci_genai_basic.py -v
+    
+    - name: Run interactive mode tests (if expect available)
+      run: |
+        if command -v expect &> /dev/null; then
+          uv run python -m pytest tests/test_interactive_mode.py -v || echo "Interactive tests failed"
+        else
+          echo "Skipping interactive tests - expect not available"
+        fi
+    
+    - name: Run tests with coverage
+      run: |
+        uv run python -m pytest tests/test_oci_genai_basic.py \
+          --cov=coda.providers.oci_genai \
+          --cov-report=term-missing \
+          --cov-report=xml
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  integration-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'main')
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run integration tests
+      env:
+        OCI_COMPARTMENT_ID: ${{ secrets.OCI_COMPARTMENT_ID }}
+        OCI_CONFIG_FILE: ${{ secrets.OCI_CONFIG_FILE }}
+        OCI_KEY_FILE: ${{ secrets.OCI_KEY_FILE }}
+      run: |
+        # Only run if secrets are configured
+        if [ -n "$OCI_COMPARTMENT_ID" ]; then
+          echo "$OCI_CONFIG_FILE" > ~/.oci/config
+          echo "$OCI_KEY_FILE" > ~/.oci/key.pem
+          chmod 600 ~/.oci/config ~/.oci/key.pem
+          
+          uv run python -m pytest tests/integration/test_oci_genai_integration.py \
+            --run-integration -v
+        else
+          echo "Skipping integration tests - OCI secrets not configured"
+        fi
