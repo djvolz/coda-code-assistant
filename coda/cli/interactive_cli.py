@@ -5,6 +5,7 @@ from enum import Enum
 from pathlib import Path
 
 from prompt_toolkit import PromptSession
+from prompt_toolkit.filters import Condition
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -38,23 +39,33 @@ class SlashCommandCompleter(Completer):
         self.commands = commands
 
     def get_completions(self, document, complete_event):
-        word = document.get_word_before_cursor()
-
-        if document.text.startswith('/'):
-            # Complete slash commands
+        # Get the current text
+        text = document.text_before_cursor
+        
+        # If we just typed '/', show all commands immediately
+        if text == '/':
             for cmd_name, cmd in self.commands.items():
-                if cmd_name.startswith(word[1:] if word.startswith('/') else word):
+                yield Completion(
+                    cmd_name,
+                    start_position=-1,
+                    display_meta=cmd.help_text
+                )
+        elif text.startswith('/'):
+            # Complete based on what's after the slash
+            word = text[1:]
+            for cmd_name, cmd in self.commands.items():
+                if cmd_name.startswith(word):
                     yield Completion(
-                        f'/{cmd_name}',
-                        start_position=-len(word),
+                        cmd_name,
+                        start_position=-len(text),
                         display_meta=cmd.help_text
                     )
                 # Also complete aliases
                 for alias in cmd.aliases:
-                    if alias.startswith(word[1:] if word.startswith('/') else word):
+                    if alias.startswith(word):
                         yield Completion(
-                            f'/{alias}',
-                            start_position=-len(word),
+                            alias,
+                            start_position=-len(text),
                             display_meta=f'Alias for /{cmd_name}'
                         )
 
@@ -128,6 +139,11 @@ class InteractiveCLI:
         history_dir.mkdir(parents=True, exist_ok=True)
         history_file = history_dir / 'history.txt'
 
+        # Custom filter to show completions immediately after typing '/'
+        @Condition
+        def show_completions():
+            return True  # Always show completions
+            
         self.session = PromptSession(
             history=FileHistory(str(history_file)),
             auto_suggest=AutoSuggestFromHistory(),
@@ -137,7 +153,9 @@ class InteractiveCLI:
             enable_history_search=True,
             vi_mode=False,  # Can be toggled later
             mouse_support=True,
-            complete_while_typing=True,
+            complete_while_typing=show_completions,
+            complete_in_thread=True,  # Better performance
+            complete_style='MULTI_COLUMN',  # Show completions in columns
             wrap_lines=True,
         )
 
