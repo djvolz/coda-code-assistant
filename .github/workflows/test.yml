@@ -29,7 +29,7 @@ jobs:
     
     - name: Run unit tests
       run: |
-        uv run pytest tests/ -v -m "unit or not integration" --cov=coda --cov-report=xml --cov-report=term-missing
+        uv run python -m pytest tests/ -v -m "unit or not integration" --cov=coda --cov-report=xml --cov-report=term-missing
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -64,7 +64,7 @@ jobs:
         RUN_INTEGRATION_TESTS: "true"
       run: |
         if [ -n "$OCI_COMPARTMENT_ID" ]; then
-          uv run pytest tests/ -v -m integration
+          uv run python -m pytest tests/ -v -m integration
         else
           echo "::warning::Integration tests skipped - OCI secrets not configured"
         fi

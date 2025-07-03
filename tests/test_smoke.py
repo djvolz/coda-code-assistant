@@ -9,6 +9,7 @@ import sys
 import pytest
 
 
+@pytest.mark.unit
 class TestSmoke:
     """Basic smoke tests that run in CI/CD."""
     
