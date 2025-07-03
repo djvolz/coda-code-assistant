@@ -1,5 +1,9 @@
 # Coda Development Guide
 
+**Coda** is a multi-provider CLI code assistant providing a unified interface for LLMs (OCI GenAI, OpenAI, Anthropic, Ollama). Built for developers who prefer terminal workflows.
+
+**Core Principles**: Simplicity, Flexibility, Performance, Developer Experience, Extensibility
+
 IMPORTANT: Read [ROADMAP.md](ROADMAP.md) first for architecture and planned features.
 
 ## Quick Commands
@@ -72,6 +76,11 @@ When adding new providers:
 4. User config: `~/.config/coda/config.toml`
 5. Defaults (lowest)
 
+XDG directories:
+- Config: `~/.config/coda/`
+- Sessions: `~/.local/share/coda/sessions/`
+- Cache: `~/.cache/coda/`
+
 ## Commit Guidelines
 
 IMPORTANT: Use conventional commits for automated releases:
@@ -92,6 +101,17 @@ AI Tools: Read, Write, Edit, Bash
 - Implementation details
 - Changes made
 ```
+
+If AI modifies the user prompt, add "(edited by agent)":
+```
+AI Prompt: "implement session management" (edited by agent)
+```
+
+IMPORTANT: Always scrub PII from prompts:
+- Replace actual paths with generic ones (e.g., `/home/user/` not `/home/johndoe/`)
+- Remove API keys, tokens, or secrets
+- Replace specific company/project names if sensitive
+- Remove email addresses, usernames, or other identifying information
 
 ## Pull Request Requirements
 
