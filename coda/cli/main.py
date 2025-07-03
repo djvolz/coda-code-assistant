@@ -73,21 +73,11 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
                     model = chat_models[0].id
                     console.print(f"[green]Auto-selected model:[/green] {model}")
                 else:
-                    # Show available models for interactive mode
-                    console.print("\n[bold]Available models:[/bold]")
-                    for i, m in enumerate(chat_models[:10], 1):  # Show first 10
-                        console.print(f"{i:2d}. {m.id} ({m.provider})")
-
-                    if len(chat_models) > 10:
-                        console.print(f"    ... and {len(chat_models) - 10} more")
-
-                    # Let user choose
-                    choice = Prompt.ask(
-                        "\nSelect model number",
-                        default="1",
-                        choices=[str(i) for i in range(1, min(len(chat_models) + 1, 11))]
-                    )
-                    model = chat_models[int(choice) - 1].id
+                    # Use basic model selector for basic mode
+                    from .model_selector import ModelSelector
+                    
+                    selector = ModelSelector(chat_models, console)
+                    model = selector.select_model_basic()
 
             console.print(f"[green]Model:[/green] {model}")
 
