@@ -230,6 +230,12 @@ Key directories for OCI GenAI implementation reference:
 - Environment variable overrides
 - Per-project settings
 
+### Versioning & Release Strategy
+- Date-based versioning: `year.month.day.HHMM`
+- Automated releases via conventional commits
+- Continuous delivery on main branch
+- No manual version management required
+
 ## Development Workflow
 
 ### Branch Strategy
@@ -252,7 +258,7 @@ Key directories for OCI GenAI implementation reference:
 
 ## Milestones
 
-### v0.1.0 - OCI Foundation (Week 1-2) ✅ COMPLETED
+### 2025.1.2 - OCI Foundation ✅ COMPLETED
 - ✅ Native OCI GenAI provider implementation
 - ✅ Basic chat completion support
 - ✅ Streaming responses
@@ -260,28 +266,38 @@ Key directories for OCI GenAI implementation reference:
 - ✅ Dynamic model discovery (30+ models)
 - ✅ Configuration file support
 
-### v0.2.0 - Provider Architecture (Week 3-4)
+### 2025.1.3 - Versioning & Release Automation ✅ COMPLETED
+- ✅ Date-based versioning (year.month.day.HHMM format)
+- ✅ Automated release workflow with GitHub Actions
+- ✅ Conventional commits support
+- ✅ Automatic changelog generation
+- ✅ Version display in CLI (--version flag and banner)
+- ✅ Release documentation and contributing guidelines
+- ✅ PyPI upload preparation
+- ✅ Git commit message template
+
+### 2025.1.mid - Provider Architecture (Target: Mid January)
 - Abstract provider interface
 - Provider registry
 - LiteLLM integration
 - Ollama native support
 
-### v0.3.0 - Enhanced CLI (Week 5-6)
+### 2025.1.late - Enhanced CLI (Target: Late January)
 - Slash commands
 - Developer modes
 - Rich UI features
 
-### v0.4.0 - Persistence (Week 7-8)
+### 2025.2.early - Persistence (Target: Early February)
 - Session management
 - Context handling
 - Search functionality
 
-### v0.5.0 - Tools (Week 9-10)
+### 2025.2.mid - Tools (Target: Mid February)
 - MCP integration
 - Core tool set
 - Custom tools
 
-### v1.0.0 - Production Ready
+### 2025.3.1 - Production Ready (Target: March 1)
 - Full test coverage
 - Documentation
 - Performance optimized
@@ -289,13 +305,13 @@ Key directories for OCI GenAI implementation reference:
 
 ## Next Steps
 
-1. Create feature branch for native OCI integration
-2. Study reference implementations in provided directories
-3. Set up OCI SDK dependency
-4. Implement OCIGenAIProvider class
-5. Create basic test script for OCI chat completion
-6. Build streaming support
-7. Add comprehensive error handling
+1. Begin Phase 2: Provider Architecture
+2. Design abstract provider interface
+3. Implement provider registry/factory pattern
+4. Add LiteLLM integration for 100+ providers
+5. Create native Ollama provider
+6. Ensure backward compatibility with OCI provider
+7. Add provider-specific configuration management
 
 ## Notes
 
