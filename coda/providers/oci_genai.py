@@ -9,6 +9,7 @@ import asyncio
 
 import oci
 from oci.generative_ai_inference import GenerativeAiInferenceClient
+from oci.generative_ai import GenerativeAiClient
 from oci.generative_ai_inference.models import (
     ChatDetails,
     OnDemandServingMode,
@@ -44,45 +45,11 @@ from coda.providers.base import (
 class OCIGenAIProvider(BaseProvider):
     """Oracle Cloud Infrastructure Generative AI provider using OCI SDK."""
     
-    # Supported models
-    MODELS = {
-        "cohere.command-r-plus-08-2024": Model(
-            id="cohere.command-r-plus-08-2024",
-            name="Cohere Command R Plus (08-2024)",
-            provider="cohere",
-            context_length=128000,
-            max_tokens=4000,
-            supports_streaming=True,
-            supports_functions=True,
-        ),
-        "cohere.command-r-08-2024": Model(
-            id="cohere.command-r-08-2024",
-            name="Cohere Command R (08-2024)",
-            provider="cohere",
-            context_length=128000,
-            max_tokens=4000,
-            supports_streaming=True,
-            supports_functions=True,
-        ),
-        "meta.llama-3.1-70b-instruct": Model(
-            id="meta.llama-3.1-70b-instruct",
-            name="Meta Llama 3.1 70B Instruct",
-            provider="meta",
-            context_length=128000,
-            max_tokens=4000,
-            supports_streaming=True,
-            supports_functions=False,
-        ),
-        "meta.llama-3.1-405b-instruct": Model(
-            id="meta.llama-3.1-405b-instruct",
-            name="Meta Llama 3.1 405B Instruct",
-            provider="meta",
-            context_length=128000,
-            max_tokens=4000,
-            supports_streaming=True,
-            supports_functions=False,
-        ),
-    }
+    # Cache for discovered models
+    _model_cache: Optional[List[Model]] = None
+    _cache_timestamp: Optional[datetime] = None
+    _cache_duration_hours = 24  # Cache models for 24 hours
+    _model_id_map: Dict[str, str] = {}  # Maps friendly names to OCI model IDs
     
     def __init__(
         self,
@@ -117,8 +84,9 @@ class OCIGenAIProvider(BaseProvider):
         # Validate config
         oci.config.validate_config(self.config)
         
-        # Initialize the Generative AI client
-        self.client = GenerativeAiInferenceClient(self.config)
+        # Initialize the Generative AI clients
+        self.inference_client = GenerativeAiInferenceClient(self.config)
+        self.genai_client = GenerativeAiClient(self.config)
     
     def _get_from_coda_config(self) -> Optional[str]:
         """Get compartment ID from Coda config file."""
@@ -142,6 +110,112 @@ class OCIGenAIProvider(BaseProvider):
     def name(self) -> str:
         """Provider name."""
         return "oci_genai"
+    
+    def _is_cache_valid(self) -> bool:
+        """Check if the model cache is still valid."""
+        if not self._cache_timestamp or not self._model_cache:
+            return False
+        
+        age = datetime.now() - self._cache_timestamp
+        return age.total_seconds() < (self._cache_duration_hours * 3600)
+    
+    def _discover_models(self) -> List[Model]:
+        """Discover available models from OCI GenAI service."""
+        try:
+            # List models with chat capability from the service
+            response = self.genai_client.list_models(
+                compartment_id=self.compartment_id,
+                capability=["TEXT_GENERATION", "CHAT"],
+                lifecycle_state="ACTIVE"
+            )
+            
+            discovered_models = []
+            
+            for model_summary in response.data.items:
+                # Skip models that don't have chat capability
+                if not any(cap in ["TEXT_GENERATION", "CHAT"] for cap in getattr(model_summary, 'capabilities', [])):
+                    continue
+                
+                # Get display name and derive a proper model ID
+                display_name = getattr(model_summary, 'display_name', model_summary.id)
+                vendor = getattr(model_summary, 'vendor', 'unknown')
+                
+                # For OCI models, prefer the display name as the model ID if it looks like a proper model name
+                if display_name and "." in display_name and not display_name.startswith("ocid1"):
+                    model_id = display_name
+                    provider = display_name.split(".")[0]
+                else:
+                    # Fall back to using vendor + a simplified name
+                    model_id = f"{vendor}.{display_name}" if display_name else model_summary.id
+                    provider = vendor
+                
+                # Map provider-specific capabilities
+                supports_functions = provider == "cohere"  # Cohere models typically support functions
+                supports_streaming = True  # Most OCI GenAI models support streaming
+                
+                # Create model object
+                model = Model(
+                    id=model_id,
+                    name=display_name,
+                    provider=provider,
+                    context_length=128000,  # Default context length for OCI GenAI models
+                    max_tokens=4000,       # Default max tokens
+                    supports_streaming=supports_streaming,
+                    supports_functions=supports_functions,
+                    metadata={
+                        "vendor": getattr(model_summary, 'vendor', provider),
+                        "version": getattr(model_summary, 'version', None),
+                        "type": getattr(model_summary, 'type', None),
+                        "lifecycle_state": getattr(model_summary, 'lifecycle_state', None),
+                        "capabilities": getattr(model_summary, 'capabilities', []),
+                        "is_long_term_supported": getattr(model_summary, 'is_long_term_supported', None),
+                        "oci_model_id": model_summary.id,  # Store the actual OCI model ID
+                    }
+                )
+                
+                # Store mapping from friendly name to OCI model ID
+                self._model_id_map[model_id] = model_summary.id
+                
+                discovered_models.append(model)
+            
+            return discovered_models
+            
+        except Exception as e:
+            # If discovery fails, fall back to a basic set of known models
+            print(f"Warning: Model discovery failed ({e}), using fallback models")
+            return self._get_fallback_models()
+    
+    def _get_fallback_models(self) -> List[Model]:
+        """Get fallback models if discovery fails."""
+        return [
+            Model(
+                id="cohere.command-r-plus-08-2024",
+                name="Cohere Command R Plus (08-2024)",
+                provider="cohere",
+                context_length=128000,
+                max_tokens=4000,
+                supports_streaming=True,
+                supports_functions=True,
+            ),
+            Model(
+                id="cohere.command-r-08-2024",
+                name="Cohere Command R (08-2024)",
+                provider="cohere",
+                context_length=128000,
+                max_tokens=4000,
+                supports_streaming=True,
+                supports_functions=True,
+            ),
+            Model(
+                id="meta.llama-3.1-70b-instruct",
+                name="Meta Llama 3.1 70B Instruct",
+                provider="meta",
+                context_length=128000,
+                max_tokens=4000,
+                supports_streaming=True,
+                supports_functions=False,
+            ),
+        ]
     
     def _create_chat_request(
         self,
@@ -266,9 +340,10 @@ class OCIGenAIProvider(BaseProvider):
             messages, model, temperature, max_tokens, top_p, stream=False, **kwargs
         )
         
-        # Create serving mode - OCI expects just the model name
+        # Create serving mode - use the actual OCI model ID
+        actual_model_id = self._model_id_map.get(model, model)
         serving_mode = OnDemandServingMode(
-            model_id=model
+            model_id=actual_model_id
         )
         
         # Create chat details
@@ -279,7 +354,7 @@ class OCIGenAIProvider(BaseProvider):
         )
         
         # Make request
-        response = self.client.chat(chat_details)
+        response = self.inference_client.chat(chat_details)
         
         # Extract response based on provider type
         chat_response = response.data.chat_response
@@ -363,9 +438,10 @@ class OCIGenAIProvider(BaseProvider):
             messages, model, temperature, max_tokens, top_p, stream=True, **kwargs
         )
         
-        # Create serving mode - OCI expects just the model name
+        # Create serving mode - use the actual OCI model ID
+        actual_model_id = self._model_id_map.get(model, model)
         serving_mode = OnDemandServingMode(
-            model_id=model
+            model_id=actual_model_id
         )
         
         # Create chat details
@@ -376,7 +452,7 @@ class OCIGenAIProvider(BaseProvider):
         )
         
         # Make streaming request
-        response_stream = self.client.chat(chat_details)
+        response_stream = self.inference_client.chat(chat_details)
         
         # Process events
         for event in response_stream.data.events():
@@ -460,5 +536,22 @@ class OCIGenAIProvider(BaseProvider):
             yield chunk
     
     def list_models(self) -> List[Model]:
-        """List available models."""
-        return list(self.MODELS.values())
+        """List available models from OCI GenAI service."""
+        # Check cache first
+        if self._is_cache_valid():
+            return self._model_cache
+        
+        # Discover models from OCI
+        models = self._discover_models()
+        
+        # Update cache
+        self._model_cache = models
+        self._cache_timestamp = datetime.now()
+        
+        return models
+    
+    def refresh_models(self) -> List[Model]:
+        """Force refresh of the model cache."""
+        self._model_cache = None
+        self._cache_timestamp = None
+        return self.list_models()

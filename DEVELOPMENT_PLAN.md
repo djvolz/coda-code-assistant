@@ -40,9 +40,12 @@ Key directories for OCI GenAI implementation reference:
   - [x] Handle OCI-specific parameters (temperature, max_tokens, etc.)
 
 - [x] **Model Support**
-  - [x] Cohere Command models (command-r-plus, command-r)
-  - [x] Meta Llama models (llama-3.1-70b-instruct, etc.)
-  - [x] Model enumeration/discovery
+  - [x] Cohere Command models (command-r-plus, command-r, command-a-03-2025, etc.)
+  - [x] Meta Llama models (llama-3.1, llama-3.3, llama-4, etc.)
+  - [x] xAI Grok models (grok-3, grok-3-fast, grok-3-mini, etc.)
+  - [x] Dynamic model discovery via OCI GenAI API
+  - [x] Model caching for performance (24-hour cache)
+  - [x] Automatic mapping between friendly names and OCI model IDs
   - [x] Model-specific parameter validation
 
 - [x] **Error Handling**
