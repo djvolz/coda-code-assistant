@@ -41,6 +41,9 @@ package = true
 [tool.hatch.version]
 path = "coda/__version__.py"
 
+[tool.hatch.build.targets.wheel]
+packages = ["coda"]
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
