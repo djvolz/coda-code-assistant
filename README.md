@@ -41,15 +41,17 @@ uv run coda
 ### Basic Usage
 
 ```bash
-# Start interactive chat with default provider (Ollama)
+# Start interactive chat with OCI GenAI (auto-selects model)
 uv run coda
 
-# Use a specific provider
-uv run coda --provider openai --model gpt-4
-uv run coda --provider oci --model cohere.command-r-plus
+# Use a specific model
+uv run coda --model cohere.command-r-plus-08-2024
 
-# One-shot command
-uv run coda --one-shot "explain this regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+# One-shot command (no interaction needed)
+uv run coda --one-shot "What is the capital of France?"
+
+# Enable debug output
+uv run coda --debug
 ```
 
 ### Provider Setup
@@ -145,13 +147,20 @@ coda/
 └── utils/      # Shared utilities
 ```
 
+## 📚 Documentation
+
+- [Roadmap](ROADMAP.md) - Roadmap and technical architecture
+- [OCI GenAI Integration](docs/oci-genai-integration.md) - Deep dive into Oracle Cloud integration
+- [Test Suite Documentation](tests/README.md) - Testing strategy and guidelines
+- [AI Assistant Guidelines](AGENTS.md) - Guidelines for AI-assisted development
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) and check out our [AGENTS.md](AGENTS.md) file for AI-assisted development guidelines.
 
 ## 📝 License
 
-[To be determined]
+MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🙏 Acknowledgments
 

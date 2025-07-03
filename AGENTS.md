@@ -6,13 +6,21 @@ Coda is a multi-provider, CLI-focused code assistant that provides a unified int
 
 ## Key Features
 
-- **Multi-Provider Support**: Seamlessly switch between Ollama (local), OpenAI, OCI GenAI, Anthropic, and other LiteLLM-supported providers
-- **CLI-First Design**: Optimized for terminal workflows with rich formatting and intuitive commands
-- **UI Agnostic**: Core functionality works independently of any specific UI framework
-- **Developer-Focused**: Specialized modes for code generation, debugging, explaining, and reviewing
+### ✅ Implemented
+- **Native OCI GenAI Provider**: Complete integration with Oracle Cloud Infrastructure GenAI service
+- **CLI-First Design**: Rich terminal interface with colorized output and interactive model selection
+- **Provider Architecture**: Unified interface with abstract base class for extensibility
+- **Dynamic Model Discovery**: Automatic model detection with 24-hour caching for performance
+- **Streaming Support**: Real-time response streaming with proper terminal UI
+- **Configuration Management**: Multi-source config (TOML files, environment variables, CLI parameters)
+- **Comprehensive Error Handling**: Clear setup guidance and debugging support
+
+### 🔄 In Development
+- **Multi-Provider Support**: Ollama (local), OpenAI, Anthropic, and other LiteLLM-supported providers
 - **Session Management**: Save, resume, and branch conversations with SQLite-backed persistence
 - **Tool Integration**: Full support for Model Context Protocol (MCP) tools
-- **Extensible**: Plugin architecture for custom providers and tools
+- **Developer-Focused Modes**: Specialized modes for code generation, debugging, explaining, and reviewing
+- **Enhanced CLI**: Slash commands, conversation branching, and advanced input handling
 
 ## Architecture
 
@@ -24,20 +32,50 @@ Coda is structured as a modular Python application:
 - **Tools**: MCP tool integration for enhanced capabilities
 - **Config**: Flexible configuration system supporting TOML files and environment variables
 
+## Important: Read the Roadmap
+
+**Before starting any development work, please read the [ROADMAP.md](ROADMAP.md) file.** This document contains:
+- Detailed technical architecture and design decisions
+- Current implementation status for each phase
+- Planned features and their priority
+- Technical requirements and dependencies
+- Integration points and API designs
+
+Understanding the roadmap will help you align your contributions with the project's vision and avoid duplicate work.
+
 ## Quick Start
 
 ```bash
 # Install with uv
 uv sync
 
-# Run the CLI
+# Run the CLI (interactive mode)
 uv run coda
 
-# With specific provider
-uv run coda --provider openai --model gpt-4
+# One-shot mode
+uv run coda --one-shot "Your prompt here"
+
+# With specific model
+uv run coda --model cohere.command-r-plus
 
 # List available models
 uv run coda --model list
+
+# Debug mode
+uv run coda --debug
+```
+
+### Configuration
+
+First-time setup requires OCI configuration:
+```bash
+# Create config file
+mkdir -p ~/.config/coda
+echo '[oci]' > ~/.config/coda/config.toml
+echo 'compartment_id = "your-compartment-id"' >> ~/.config/coda/config.toml
+
+# Or use environment variable
+export OCI_COMPARTMENT_ID="your-compartment-id"
 ```
 
 ## Development
@@ -45,9 +83,11 @@ uv run coda --model list
 This project uses:
 - **uv**: For dependency management and virtual environments
 - **Python 3.11+**: Modern Python features and type hints
-- **LiteLLM**: Unified LLM provider interface
+- **OCI SDK**: Native Oracle Cloud Infrastructure integration
 - **Rich**: Terminal formatting and UI components
-- **Prompt Toolkit**: Advanced CLI input handling
+- **Click**: CLI framework with decorator-based commands
+- **Pydantic**: Data validation and type safety
+- **httpx**: Async HTTP client for streaming support
 
 ### Preferred Tools
 
@@ -75,12 +115,27 @@ Coda follows the XDG Base Directory specification:
 
 ## Contributing
 
-Coda welcomes contributions! Key areas for improvement:
-- Additional provider integrations
-- Enhanced tool capabilities
-- UI/UX improvements
-- Documentation and examples
-- Performance optimizations
+Coda welcomes contributions! Current development priorities:
+
+### Phase 2: Provider Architecture
+- **LiteLLM Integration**: Add support for OpenAI, Anthropic, and other providers
+- **Provider Management**: Dynamic provider loading and configuration
+- **Model Standardization**: Unified model naming and capability detection
+
+### Phase 3: Session Management
+- **SQLite Backend**: Persistent conversation storage
+- **Session Branching**: Fork conversations at any point
+- **Import/Export**: Share and backup conversation history
+
+### Phase 4: Enhanced CLI
+- **Slash Commands**: `/help`, `/model`, `/session`, `/export`
+- **Developer Modes**: Code generation, debugging, review workflows
+- **Input Enhancements**: Multi-line input, file uploads, syntax highlighting
+
+### Phase 5: Tool Integration
+- **MCP Protocol**: Model Context Protocol tool support
+- **Git Integration**: Repository analysis and commit assistance
+- **Code Tools**: Linting, formatting, testing integration
 
 ### Git Commit Guidelines
 
@@ -88,6 +143,7 @@ When committing code that was generated or modified with AI assistance, please f
 
 1. **Include the user prompt** (scrubbed of PII) in the commit message
 2. **List all AI tools used** during the implementation
+3. **Do not squash commits** - preserve the development history and individual commit messages
 
 Example commit format:
 ```
@@ -114,7 +170,7 @@ AI Prompt: "implement session management that saves conversations" (edited by ag
 
 ## License
 
-[To be determined]
+MIT License - see [LICENSE](LICENSE) file for details
 
 ## Related Projects
 
