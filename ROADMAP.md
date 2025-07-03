@@ -9,6 +9,22 @@ Key directories for OCI GenAI implementation reference:
 - **OCI Python SDK**: `/Users/danny/Developer/forks/litellm-oci-using-claude/oci-python-sdk`
 - **LiteLLM Fork with OCI**: `/Users/danny/Developer/forks/litellm-oci-using-claude/litellm`
 
+## Immediate Priority: Project Branding
+
+### Logo Integration
+- [x] Extract logo assets from `/tmp/logo.html` 
+- [x] Create `assets/logos/` directory structure
+- [x] Generate logo files in multiple formats:
+  - [x] SVG (scalable, main format)
+  - [x] PNG (64x64, 128x128, 256x256, 512x512, 1024x1024)
+  - [x] ICO (favicon)
+- [x] Integrate logos into:
+  - [x] README.md header
+  - [ ] Documentation (when created)
+  - [ ] Future web UI
+  - [ ] GitHub social preview
+- [x] Add logo usage guidelines to documentation
+
 ## Bugs & Fixes (Top Priority - Must be addressed before any phase work)
 
 ### Active Bugs
