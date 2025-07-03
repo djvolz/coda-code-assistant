@@ -1,4 +1,4 @@
-.PHONY: help test test-unit test-integration test-all test-cov test-fast lint format clean install-dev pre-commit
+.PHONY: help test test-unit test-integration test-all test-cov test-fast lint format clean install-dev pre-commit version
 
 # Default target
 help:
@@ -15,6 +15,7 @@ help:
 	@echo "make clean         - Clean generated files"
 	@echo "make install-dev   - Install development dependencies"
 	@echo "make pre-commit    - Run checks before committing"
+	@echo "make version       - Update version to current timestamp"
 
 # Run unit tests only (default for CI)
 test:
@@ -75,3 +76,7 @@ install-dev:
 # Run quick checks before commit
 pre-commit: format lint test-fast
 	@echo "Pre-commit checks passed ✓"
+
+# Update version to current timestamp
+version:
+	uv run python scripts/update_version.py

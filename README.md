@@ -158,6 +158,21 @@ coda/
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) and check out our [AGENTS.md](AGENTS.md) file for AI-assisted development guidelines.
 
+### Commit Convention
+We use [Conventional Commits](https://www.conventionalcommits.org/) for automated releases. Format:
+```
+feat(scope): add new feature
+fix(scope): fix bug
+```
+
+## 🏷️ Versioning
+
+Coda uses date-based versioning in the format: `year.month.day.HHMM`
+
+- Example: `2025.1.3.1430` for January 3, 2025 at 14:30 UTC
+- To update version: `make version`
+- Version is automatically shown in CLI with `coda --version`
+
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE) file for details

@@ -6,6 +6,12 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.prompt import Prompt
 
+try:
+    from ..__version__ import __version__
+except ImportError:
+    # Fallback for when package structure isn't available
+    __version__ = "dev"
+
 console = Console()
 
 
@@ -15,13 +21,13 @@ console = Console()
 @click.option('--compartment-id', '-c', help='OCI compartment ID (for oci_genai provider)')
 @click.option('--debug', is_flag=True, help='Enable debug output')
 @click.option('--one-shot', help='Execute a single prompt and exit')
-@click.version_option(version='0.1.0', prog_name='coda')
+@click.version_option(version=__version__, prog_name='coda')
 def main(provider: str, model: str, compartment_id: str, debug: bool, one_shot: str):
     """Coda - A multi-provider code assistant"""
     
     welcome_text = Text.from_markup(
         "[bold cyan]Coda[/bold cyan] - Code Assistant\n"
-        "[dim]Multi-provider AI coding companion[/dim]"
+        f"[dim]Multi-provider AI coding companion v{__version__}[/dim]"
     )
     
     console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
