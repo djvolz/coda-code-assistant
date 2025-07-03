@@ -60,11 +60,31 @@ Key directories for OCI GenAI implementation reference:
 - [ ] Performance benchmarks
 - [x] Example scripts (created demo_oci.py)
 
+### 1.4 CLI Integration
+- [x] **Functional CLI Entry Point**
+  - [x] Interactive chat mode with model selection
+  - [x] One-shot execution mode
+  - [x] Streaming response display
+  - [x] Rich terminal UI with colors and formatting
+  - [x] Debug mode support
+
+- [x] **Configuration Management**
+  - [x] Config file support (~/.config/coda/config.toml)
+  - [x] Environment variable fallback
+  - [x] Command-line parameter override
+  - [x] Multi-source configuration priority
+
+- [x] **User Experience**
+  - [x] Model selection interface (top 10 models)
+  - [x] Auto-selection for one-shot mode
+  - [x] Clear error messages and setup guidance
+  - [x] Exit/clear commands in interactive mode
+
 ## Phase 2: Core Provider Architecture
 
 ### 2.1 Provider Interface Design
-- [ ] Create abstract base provider class
-- [ ] Define standard methods: chat, chat_stream, list_models, get_model_info
+- [x] Create abstract base provider class (base.py)
+- [x] Define standard methods: chat, chat_stream, list_models, get_model_info
 - [ ] Implement provider registry/factory pattern
 - [ ] Add provider configuration management
 
@@ -215,11 +235,13 @@ Key directories for OCI GenAI implementation reference:
 
 ## Milestones
 
-### v0.1.0 - OCI Foundation (Week 1-2)
-- Native OCI GenAI provider implementation
-- Basic chat completion support
-- Streaming responses
-- Simple CLI test interface
+### v0.1.0 - OCI Foundation (Week 1-2) ✅ COMPLETED
+- ✅ Native OCI GenAI provider implementation
+- ✅ Basic chat completion support
+- ✅ Streaming responses
+- ✅ Functional CLI with interactive and one-shot modes
+- ✅ Dynamic model discovery (30+ models)
+- ✅ Configuration file support
 
 ### v0.2.0 - Provider Architecture (Week 3-4)
 - Abstract provider interface
