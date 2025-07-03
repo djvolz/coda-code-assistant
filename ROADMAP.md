@@ -258,7 +258,7 @@ Key directories for OCI GenAI implementation reference:
 
 ## Milestones
 
-### 2025.1.2 - OCI Foundation ✅ COMPLETED
+### 2025.7.2 - OCI Foundation ✅ COMPLETED
 - ✅ Native OCI GenAI provider implementation
 - ✅ Basic chat completion support
 - ✅ Streaming responses
@@ -266,7 +266,7 @@ Key directories for OCI GenAI implementation reference:
 - ✅ Dynamic model discovery (30+ models)
 - ✅ Configuration file support
 
-### 2025.1.3 - Versioning & Release Automation ✅ COMPLETED
+### 2025.7.3 - Versioning & Release Automation ✅ COMPLETED
 - ✅ Date-based versioning (year.month.day.HHMM format)
 - ✅ Automated release workflow with GitHub Actions
 - ✅ Conventional commits support
@@ -276,28 +276,28 @@ Key directories for OCI GenAI implementation reference:
 - ✅ PyPI upload preparation
 - ✅ Git commit message template
 
-### 2025.1.mid - Provider Architecture (Target: Mid January)
+### 2025.7.5 - Provider Architecture (Target: July 5)
 - Abstract provider interface
 - Provider registry
 - LiteLLM integration
 - Ollama native support
 
-### 2025.1.late - Enhanced CLI (Target: Late January)
+### 2025.7.7 - Enhanced CLI (Target: July 7)
 - Slash commands
 - Developer modes
 - Rich UI features
 
-### 2025.2.early - Persistence (Target: Early February)
+### 2025.7.10 - Persistence (Target: July 10)
 - Session management
 - Context handling
 - Search functionality
 
-### 2025.2.mid - Tools (Target: Mid February)
+### 2025.7.12 - Tools (Target: July 12)
 - MCP integration
 - Core tool set
 - Custom tools
 
-### 2025.3.1 - Production Ready (Target: March 1)
+### 2025.7.15 - Production Ready (Target: July 15)
 - Full test coverage
 - Documentation
 - Performance optimized
