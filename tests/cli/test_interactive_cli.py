@@ -44,30 +44,34 @@ class TestInteractiveCLI:
             assert cmd in cli.commands
             assert isinstance(cli.commands[cmd], SlashCommand)
     
-    def test_process_slash_command_valid(self, cli):
+    @pytest.mark.asyncio
+    async def test_process_slash_command_valid(self, cli):
         """Test processing a valid slash command."""
-        result = cli.process_slash_command("/help")
+        result = await cli.process_slash_command("/help")
         assert result is True
         cli.console.print.assert_called()
     
-    def test_process_slash_command_with_args(self, cli):
+    @pytest.mark.asyncio
+    async def test_process_slash_command_with_args(self, cli):
         """Test processing slash command with arguments."""
-        result = cli.process_slash_command("/mode debug")
+        result = await cli.process_slash_command("/mode debug")
         assert result is True
         assert cli.current_mode == DeveloperMode.DEBUG
     
-    def test_process_slash_command_alias(self, cli):
+    @pytest.mark.asyncio
+    async def test_process_slash_command_alias(self, cli):
         """Test processing slash command using alias."""
         # Clear the console mock first
         cli.console.reset_mock()
         
-        result = cli.process_slash_command("/h")  # alias for help
+        result = await cli.process_slash_command("/h")  # alias for help
         assert result is True
         cli.console.print.assert_called()
     
-    def test_process_slash_command_invalid(self, cli):
+    @pytest.mark.asyncio
+    async def test_process_slash_command_invalid(self, cli):
         """Test processing an invalid slash command."""
-        result = cli.process_slash_command("/invalid")
+        result = await cli.process_slash_command("/invalid")
         assert result is True
         
         # Check error message was printed

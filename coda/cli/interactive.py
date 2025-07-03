@@ -40,20 +40,24 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
             # Select model if not specified
             if not model:
+                from .model_selector import ModelSelector
+                
                 chat_models = [m for m in models if 'CHAT' in m.metadata.get('capabilities', [])]
-                console.print("\n[bold]Available models:[/bold]")
-                for i, m in enumerate(chat_models[:10], 1):
-                    console.print(f"{i:2d}. {m.id} ({m.provider})")
-
-                if len(chat_models) > 10:
-                    console.print(f"    ... and {len(chat_models) - 10} more")
-
-                # Let user choose
-                choice = console.input("\nSelect model number [1]: ") or "1"
-                model = chat_models[int(choice) - 1].id
+                selector = ModelSelector(chat_models, console)
+                
+                # Use interactive selector
+                model = await selector.select_model_interactive()
+                
+                if not model:
+                    console.print("\n[yellow]No model selected. Exiting.[/yellow]")
+                    return
 
             console.print(f"[green]Model:[/green] {model}")
             console.print("\n[dim]Type /help for commands, /exit to quit[/dim]\n")
+            
+            # Set model info in CLI for /model command
+            cli.current_model = model
+            cli.available_models = chat_models
 
             # Interactive chat loop
             messages = []
@@ -64,7 +68,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
                 # Handle slash commands
                 if user_input.startswith('/'):
-                    if cli.process_slash_command(user_input):
+                    if await cli.process_slash_command(user_input):
                         continue
 
                 # Check for multiline indicator
@@ -90,7 +94,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 full_response = ""
                 for chunk in oci_provider.chat_stream(
                     messages=chat_messages,
-                    model=model,
+                    model=cli.current_model,  # Use current model from CLI
                     temperature=0.7,
                     max_tokens=2000
                 ):

@@ -1,5 +1,6 @@
 """Interactive CLI with prompt-toolkit for enhanced user experience."""
 
+import asyncio
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
@@ -92,6 +93,8 @@ class InteractiveCLI:
     def __init__(self, console: Console = None):
         self.console = console or Console()
         self.current_mode = DeveloperMode.CODE
+        self.current_model = None
+        self.available_models = []
         self.session = None
         self.commands = self._init_commands()
         self.style = self._create_style()
@@ -194,7 +197,7 @@ class InteractiveCLI:
             if multiline:
                 self.session.default_buffer.multiline = False
 
-    def process_slash_command(self, command_text: str) -> bool:
+    async def process_slash_command(self, command_text: str) -> bool:
         """Process a slash command. Returns True if handled, False otherwise."""
         parts = command_text[1:].split(maxsplit=1)
         if not parts:
@@ -205,13 +208,22 @@ class InteractiveCLI:
 
         # Check direct command match
         if cmd_name in self.commands:
-            self.commands[cmd_name].handler(args)
+            handler = self.commands[cmd_name].handler
+            # Check if handler is async
+            if asyncio.iscoroutinefunction(handler):
+                await handler(args)
+            else:
+                handler(args)
             return True
 
         # Check aliases
         for _name, cmd in self.commands.items():
             if cmd_name in cmd.aliases:
-                cmd.handler(args)
+                handler = cmd.handler
+                if asyncio.iscoroutinefunction(handler):
+                    await handler(args)
+                else:
+                    handler(args)
                 return True
 
         self.console.print(f"[red]Unknown command: /{cmd_name}[/red]")
@@ -227,13 +239,33 @@ class InteractiveCLI:
             self.console.print(f"  [cyan]/{name}[/cyan]{aliases_str} - {cmd.help_text}")
         self.console.print()
 
-    def _cmd_model(self, args: str):
+    async def _cmd_model(self, args: str):
         """Switch AI model."""
+        if not self.available_models:
+            self.console.print("[yellow]No models available. Please connect to a provider first.[/yellow]")
+            return
+            
         if not args:
-            self.console.print("[yellow]Current model: Not implemented yet[/yellow]")
-            self.console.print("Usage: /model <model-name>")
+            # Show interactive model selector
+            from .model_selector import ModelSelector
+            selector = ModelSelector(self.available_models, self.console)
+            
+            new_model = await selector.select_model_interactive()
+            if new_model:
+                self.current_model = new_model
+                self.console.print(f"\n[green]Switched to model: {new_model}[/green]")
+            else:
+                self.console.print(f"\n[yellow]Current model: {self.current_model}[/yellow]")
         else:
-            self.console.print(f"[yellow]Switching to model: {args} (not implemented yet)[/yellow]")
+            # Direct model switch
+            # Check if the model exists
+            matching_models = [m for m in self.available_models if args.lower() in m.id.lower()]
+            if matching_models:
+                self.current_model = matching_models[0].id
+                self.console.print(f"[green]Switched to model: {self.current_model}[/green]")
+            else:
+                self.console.print(f"[red]Model not found: {args}[/red]")
+                self.console.print("Use /model without arguments to see available models.")
 
     def _cmd_provider(self, args: str):
         """Switch provider."""
