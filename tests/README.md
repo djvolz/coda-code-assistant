@@ -199,7 +199,7 @@ Coverage configuration in `pyproject.toml`:
 
 ### GitHub Actions Workflow
 
-1. **Matrix Testing**: Tests run on Python 3.11 and 3.12
+1. **Matrix Testing**: Tests run on Python 3.11, 3.12, and 3.13
 2. **Caching**: Dependencies cached for faster runs
 3. **Coverage**: Uploaded to Codecov on successful runs
 4. **Integration Tests**: Run conditionally based on:

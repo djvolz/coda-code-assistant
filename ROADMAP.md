@@ -9,6 +9,11 @@ Key directories for OCI GenAI implementation reference:
 - **OCI Python SDK**: `/Users/danny/Developer/forks/litellm-oci-using-claude/oci-python-sdk`
 - **LiteLLM Fork with OCI**: `/Users/danny/Developer/forks/litellm-oci-using-claude/litellm`
 
+## Bugs & Fixes (Top Priority - Must be addressed before any phase work)
+
+### Active Bugs
+None currently - all bugs have been resolved!
+
 ## Phase 1: Native OCI GenAI Integration (Current Priority)
 
 ### 1.1 Study Reference Implementations
@@ -79,6 +84,10 @@ Key directories for OCI GenAI implementation reference:
   - [x] Auto-selection for one-shot mode
   - [x] Clear error messages and setup guidance
   - [x] Exit/clear commands in interactive mode
+
+### 1.5 Versioning
+- [x] Version based on date/time
+- [x] Automate CI versioining and release schedule
 
 ## Phase 2: Core Provider Architecture
 
@@ -174,6 +183,8 @@ Key directories for OCI GenAI implementation reference:
 - [ ] Language-specific optimizations
 - [ ] Dependency awareness
 - [ ] Test generation
+- [ ] Support for external projects (work on codebases outside current directory)
+- [ ] Multi-project management (handle multiple projects simultaneously)
 
 ### 6.3 Collaboration Features
 - [ ] Session sharing via URLs
@@ -238,11 +249,16 @@ Key directories for OCI GenAI implementation reference:
 
 ## Development Workflow
 
-### Branch Strategy
-- `main`: Stable releases
-- `develop`: Integration branch
-- `feature/*`: Feature branches
+### Branch Strategy & Release Pipeline
+- `main`: Stable releases (production-ready)
+- `develop`: Integration branch (staging)
+- `feature/*`: Feature branches (development)
 - `fix/*`: Bug fixes
+
+**Future Enhancement**: Implement dev → staging → stable pipeline
+- Automated testing gates between stages
+- Staging environment for pre-release validation
+- Stable releases with semantic versioning
 
 ### Testing Strategy
 - Unit tests for each provider
@@ -320,3 +336,11 @@ Key directories for OCI GenAI implementation reference:
 - Web UI is optional/secondary
 - Focus on reliability and performance
 - Maintain compatibility with existing LiteLLM code
+
+## Completed Items
+
+### Bugs Fixed (2025.7.3)
+- [x] **Fix CI pipeline** - Resolved version extraction error by using portable grep syntax instead of -P flag
+- [x] **Fix uv sync bug on other machine** - Identified as VPN/proxy interference, added general troubleshooting guide
+- [x] **Add Python 3.13 support** - Updated test matrices, Black configuration, and documentation
+- [x] **Remove dedicated flag for compartment-id** - Removed provider-specific CLI flag; now uses env var or config file

@@ -66,8 +66,13 @@ uv run coda --provider ollama
 
 #### ☁️ Oracle OCI GenAI
 ```bash
+# Set compartment ID via environment variable
 export OCI_COMPARTMENT_ID="ocid1.compartment.oc1..."
-uv run coda --provider oci --model cohere.command-r-plus
+uv run coda --provider oci_genai --model cohere.command-r-plus
+
+# Or configure in ~/.config/coda/config.toml:
+# [providers.oci_genai]
+# compartment_id = "ocid1.compartment.oc1..."
 ```
 
 #### 🤖 OpenAI

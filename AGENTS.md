@@ -152,6 +152,23 @@ See [PR #2](https://github.com/djvolz/coda-code-assistant/pull/2) for example.
 - `fd` instead of find
 - `uv` instead of pip
 - `gh` for GitHub operations
+- Use Task tool for complex searches across multiple files
+- Batch multiple tool calls for better performance
+
+## General Workflow
+
+1. **Explore** - Read AGENTS.md and understand the codebase structure
+2. **Plan** - Use TodoWrite to break down complex tasks
+3. **Code** - Implement changes following project conventions
+4. **Test** - Run tests and linting as specified above
+5. **Commit** - Use conventional commits as documented
+
+## Important Reminders
+
+- Never create documentation files unless explicitly requested
+- Always prefer editing existing files over creating new ones
+- Never commit changes unless explicitly asked
+- Follow security best practices - never expose secrets or credentials
 
 ## Release Process
 
