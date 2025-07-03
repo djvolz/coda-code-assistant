@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "coda-code-assistant"
 dynamic = ["version"]
@@ -33,7 +37,6 @@ dev = [
 
 [tool.uv]
 package = true
-index-url = "https://pypi.org/simple"
 
 [tool.hatch.version]
 path = "coda/__version__.py"
