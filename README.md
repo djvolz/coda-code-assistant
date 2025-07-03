@@ -1,6 +1,14 @@
-# 🤖 Coda - Code Assistant
+<div align="center">
+  <img src="assets/logos/coda-terminal-logo.svg" alt="Coda Terminal Logo" width="400" height="280">
+  
+  # Coda - Code Assistant
+  
+  A powerful, multi-provider AI code assistant that brings the best of AI-powered development directly to your terminal.
+</div>
 
-A powerful, multi-provider AI code assistant that brings the best of AI-powered development directly to your terminal. Coda seamlessly integrates with multiple AI providers while maintaining a consistent, developer-friendly interface.
+---
+
+Coda seamlessly integrates with multiple AI providers while maintaining a consistent, developer-friendly interface.
 
 ## ✨ What is Coda?
 
