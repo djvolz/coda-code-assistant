@@ -91,14 +91,14 @@ jobs:
       id: version
       run: |
         # Get current version
-        OLD_VERSION=$(grep -oP '(?<=__version__ = ")[^"]+' coda/__version__.py)
+        OLD_VERSION=$(grep '^__version__ = ' coda/__version__.py | cut -d'"' -f2)
         echo "Current version: $OLD_VERSION"
         
         # Update to new timestamp version
         uv run python scripts/update_version.py
         
         # Get the new version after update
-        NEW_VERSION=$(grep -oP '(?<=__version__ = ")[^"]+' coda/__version__.py)
+        NEW_VERSION=$(grep '^__version__ = ' coda/__version__.py | cut -d'"' -f2)
         
         echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_OUTPUT
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
