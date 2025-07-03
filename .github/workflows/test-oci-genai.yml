@@ -26,22 +26,22 @@ jobs:
       run: uv python install ${{ matrix.python-version }}
     
     - name: Install dependencies
-      run: uv sync --dev
+      run: uv sync --all-extras
     
     - name: Run basic unit tests
-      run: uv run pytest tests/test_oci_genai_basic.py -v
+      run: uv run python -m pytest tests/test_oci_genai_basic.py -v
     
     - name: Run interactive mode tests (if expect available)
       run: |
         if command -v expect &> /dev/null; then
-          uv run pytest tests/test_interactive_mode.py -v || echo "Interactive tests failed"
+          uv run python -m pytest tests/test_interactive_mode.py -v || echo "Interactive tests failed"
         else
           echo "Skipping interactive tests - expect not available"
         fi
     
     - name: Run tests with coverage
       run: |
-        uv run pytest tests/test_oci_genai_basic.py \
+        uv run python -m pytest tests/test_oci_genai_basic.py \
           --cov=coda.providers.oci_genai \
           --cov-report=term-missing \
           --cov-report=xml
@@ -69,7 +69,7 @@ jobs:
       run: uv python install 3.11
     
     - name: Install dependencies
-      run: uv sync --dev
+      run: uv sync --all-extras
     
     - name: Run integration tests
       env:
@@ -83,7 +83,7 @@ jobs:
           echo "$OCI_KEY_FILE" > ~/.oci/key.pem
           chmod 600 ~/.oci/config ~/.oci/key.pem
           
-          uv run pytest tests/integration/test_oci_genai_integration.py \
+          uv run python -m pytest tests/integration/test_oci_genai_integration.py \
             --run-integration -v
         else
           echo "Skipping integration tests - OCI secrets not configured"
