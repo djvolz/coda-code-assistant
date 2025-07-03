@@ -183,6 +183,8 @@ None currently - all bugs have been resolved!
 - [ ] Language-specific optimizations
 - [ ] Dependency awareness
 - [ ] Test generation
+- [ ] Support for external projects (work on codebases outside current directory)
+- [ ] Multi-project management (handle multiple projects simultaneously)
 
 ### 6.3 Collaboration Features
 - [ ] Session sharing via URLs
@@ -247,11 +249,16 @@ None currently - all bugs have been resolved!
 
 ## Development Workflow
 
-### Branch Strategy
-- `main`: Stable releases
-- `develop`: Integration branch
-- `feature/*`: Feature branches
+### Branch Strategy & Release Pipeline
+- `main`: Stable releases (production-ready)
+- `develop`: Integration branch (staging)
+- `feature/*`: Feature branches (development)
 - `fix/*`: Bug fixes
+
+**Future Enhancement**: Implement dev → staging → stable pipeline
+- Automated testing gates between stages
+- Staging environment for pre-release validation
+- Stable releases with semantic versioning
 
 ### Testing Strategy
 - Unit tests for each provider
