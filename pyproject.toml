@@ -33,6 +33,7 @@ dev = [
 
 [tool.uv]
 package = true
+index-url = "https://pypi.org/simple"
 
 [tool.hatch.version]
 path = "coda/__version__.py"
