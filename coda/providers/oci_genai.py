@@ -460,24 +460,76 @@ class OCIGenAIProvider(BaseProvider):
                 try:
                     # Parse the SSE data
                     data = json.loads(event.data)
-                    chat_response = data.get("chatResponse", {})
-                    choices = chat_response.get("choices", [])
                     
-                    if choices:
-                        choice = choices[0]
-                        delta = choice.get("delta", {})
-                        content = delta.get("content", "")
+                    
+                    # Handle different response formats based on provider
+                    if "cohere" in model.lower():
+                        # Cohere models might have a different format
+                        # Check for text directly in data
+                        if "text" in data and "finishReason" not in data:
+                            # Regular streaming chunk
+                            yield ChatCompletionChunk(
+                                content=data.get("text", ""),
+                                model=model,
+                                finish_reason=None,
+                                usage=None,
+                                metadata={}
+                            )
+                        elif "finishReason" in data:
+                            # Final event - don't include text to avoid duplication
+                            yield ChatCompletionChunk(
+                                content="",
+                                model=model,
+                                finish_reason=data.get("finishReason"),
+                                usage=None,
+                                metadata={}
+                            )
+                        # Check for eventType and other Cohere-specific fields
+                        elif "eventType" in data:
+                            if data["eventType"] == "text-generation":
+                                yield ChatCompletionChunk(
+                                    content=data.get("text", ""),
+                                    model=model,
+                                    finish_reason=None,
+                                    usage=None,
+                                    metadata={}
+                                )
+                            elif data["eventType"] == "stream-end":
+                                yield ChatCompletionChunk(
+                                    content="",
+                                    model=model,
+                                    finish_reason=data.get("finishReason", "stop"),
+                                    usage=None,
+                                    metadata={}
+                                )
+                    else:
+                        # Handle xAI and Meta models (existing logic)
+                        message = data.get("message", {})
+                        content = ""
+                        finish_reason = data.get("finishReason")
                         
-                        if isinstance(content, list) and content:
-                            content = content[0].get("text", "")
-                        
-                        yield ChatCompletionChunk(
-                            content=content,
-                            model=model,
-                            finish_reason=choice.get("finishReason"),
-                            usage=chat_response.get("usage"),
-                            metadata={}
-                        )
+                        if message:
+                            # Extract content from message.content[0].text
+                            message_content = message.get("content", [])
+                            if message_content and isinstance(message_content, list):
+                                content = message_content[0].get("text", "")
+                            
+                            yield ChatCompletionChunk(
+                                content=content,
+                                model=model,
+                                finish_reason=finish_reason,
+                                usage=None,
+                                metadata={}
+                            )
+                        elif finish_reason:
+                            # Handle final event with finish reason
+                            yield ChatCompletionChunk(
+                                content="",
+                                model=model,
+                                finish_reason=finish_reason,
+                                usage=None,
+                                metadata={}
+                            )
                 except json.JSONDecodeError:
                     continue
     
