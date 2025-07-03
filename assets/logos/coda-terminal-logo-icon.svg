@@ -1,0 +1,23 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="headerGradientIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff9d"/>
+      <stop offset="50%" style="stop-color:#00bfff"/>
+      <stop offset="100%" style="stop-color:#9d00ff"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Terminal Window -->
+  <rect x="0" y="0" width="80" height="80" rx="16" fill="#0d1117" stroke="#00ff9d" stroke-width="2"/>
+  
+  <!-- Header -->
+  <rect x="2" y="2" width="76" height="20" rx="9" fill="url(#headerGradientIcon)"/>
+  
+  <!-- Traffic Light Dots -->
+  <circle cx="10" cy="12" r="2" fill="rgba(255,255,255,0.9)"/>
+  <circle cx="16" cy="12" r="2" fill="rgba(255,255,255,0.9)"/>
+  <circle cx="22" cy="12" r="2" fill="rgba(255,255,255,0.9)"/>
+  
+  <!-- Content - Large C -->
+  <text x="40" y="56" text-anchor="middle" fill="#00ff9d" font-family="SF Mono, Monaco, monospace" font-size="32" font-weight="700">C</text>
+</svg>
