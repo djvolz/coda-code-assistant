@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-coda = "coda.cli:main"
+coda = "coda.cli.main:main"
 
 [project.optional-dependencies]
 dev = [
@@ -29,3 +29,6 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
+
+[tool.uv]
+package = true

@@ -41,15 +41,17 @@ uv run coda
 ### Basic Usage
 
 ```bash
-# Start interactive chat with default provider (Ollama)
+# Start interactive chat with OCI GenAI (auto-selects model)
 uv run coda
 
-# Use a specific provider
-uv run coda --provider openai --model gpt-4
-uv run coda --provider oci --model cohere.command-r-plus
+# Use a specific model
+uv run coda --model cohere.command-r-plus-08-2024
 
-# One-shot command
-uv run coda --one-shot "explain this regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+# One-shot command (no interaction needed)
+uv run coda --one-shot "What is the capital of France?"
+
+# Enable debug output
+uv run coda --debug
 ```
 
 ### Provider Setup
