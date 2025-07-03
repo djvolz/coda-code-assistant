@@ -114,7 +114,7 @@ AI Prompt: "implement session management that saves conversations" (edited by ag
 
 ## License
 
-[To be determined]
+MIT License - see [LICENSE](LICENSE) file for details
 
 ## Related Projects
 
