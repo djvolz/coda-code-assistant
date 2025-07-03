@@ -12,17 +12,7 @@ Key directories for OCI GenAI implementation reference:
 ## Bugs & Fixes (Top Priority - Must be addressed before any phase work)
 
 ### Active Bugs
-- [ ] Fix CI pipeline
-    ```
-    Run # Get current version
-    Updated version from 2025.7.3.0703
-    {new_version} to 2025.7.3.0751
-    Error: Unable to process file command 'output' successfully.
-    Error: Invalid format '{new_version}'
-    ```
-- [ ] Fix uv sync bug on other machine 
-- [ ] Add python 3.13 support
-- [ ] Remove dedicated flag for compartment-id. Shouldn't have options specific to one provider. Update docs about removal
+None currently - all bugs have been resolved!
 
 ## Phase 1: Native OCI GenAI Integration (Current Priority)
 
@@ -339,3 +329,11 @@ Key directories for OCI GenAI implementation reference:
 - Web UI is optional/secondary
 - Focus on reliability and performance
 - Maintain compatibility with existing LiteLLM code
+
+## Completed Items
+
+### Bugs Fixed (2025.7.3)
+- [x] **Fix CI pipeline** - Resolved version extraction error by using portable grep syntax instead of -P flag
+- [x] **Fix uv sync bug on other machine** - Identified as VPN/proxy interference, added general troubleshooting guide
+- [x] **Add Python 3.13 support** - Updated test matrices, Black configuration, and documentation
+- [x] **Remove dedicated flag for compartment-id** - Removed provider-specific CLI flag; now uses env var or config file
