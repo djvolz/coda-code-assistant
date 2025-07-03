@@ -147,6 +147,13 @@ coda/
 └── utils/      # Shared utilities
 ```
 
+## 📚 Documentation
+
+- [Roadmap](ROADMAP.md) - Roadmap and technical architecture
+- [OCI GenAI Integration](docs/oci-genai-integration.md) - Deep dive into Oracle Cloud integration
+- [Test Suite Documentation](tests/README.md) - Testing strategy and guidelines
+- [AI Assistant Guidelines](AGENTS.md) - Guidelines for AI-assisted development
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) and check out our [AGENTS.md](AGENTS.md) file for AI-assisted development guidelines.

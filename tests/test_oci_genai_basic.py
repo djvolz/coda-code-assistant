@@ -10,6 +10,7 @@ from unittest.mock import Mock
 from coda.providers.base import ChatCompletionChunk
 
 
+@pytest.mark.unit
 class TestOCIGenAIStreaming:
     """Test the streaming response parsing logic."""
     

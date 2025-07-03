@@ -12,8 +12,8 @@ from coda.providers.base import Message, Role
 
 @pytest.mark.integration
 @pytest.mark.skipif(
-    os.getenv("SKIP_INTEGRATION_TESTS") == "1",
-    reason="Integration tests disabled"
+    os.getenv("CI") == "true" and not os.getenv("RUN_INTEGRATION_TESTS"),
+    reason="Integration tests disabled in CI unless explicitly enabled"
 )
 class TestOCIGenAIIntegration:
     """Integration tests that interact with actual OCI GenAI service."""

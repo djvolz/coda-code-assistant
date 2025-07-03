@@ -1,4 +1,4 @@
-# Coda Development Plan
+# Coda Roadmap
 
 ## Project Vision
 Build a multi-provider, CLI-focused code assistant that provides a unified interface for AI-powered development across Oracle OCI GenAI, Ollama, and other LiteLLM-supported providers.
@@ -170,6 +170,7 @@ Key directories for OCI GenAI implementation reference:
 
 ### 6.2 Project Intelligence
 - [ ] Automatic project type detection
+    - [ ] Specifically handle multiple version control systems beyond just git. Very important.
 - [ ] Language-specific optimizations
 - [ ] Dependency awareness
 - [ ] Test generation
@@ -185,13 +186,29 @@ Key directories for OCI GenAI implementation reference:
 - [ ] Provider status and health
 - [ ] Model selection and comparison
 - [ ] Usage statistics
+    - [ ] Add the token usage stats on session end like [gemini cli](https://github.com/google-gemini/gemini-cli)
 - [ ] Cost tracking (for paid providers)
 
 ### 7.2 Chat Interface
 - [ ] Web-based chat UI
 - [ ] Code highlighting
 - [ ] File upload/download
+    - [ ] PDF and image support
 - [ ] Session management UI
+
+## Phase 8: Other. Too be categorized
+- [ ] Opentelemetry support
+    - [ ] Metrics for daily active users and other telemetry
+- [ ] Pyroscope for debugging
+- [ ] Containerize coda and package ollama by default
+- [ ] Compacting conversation to automatically handle context
+- [ ] Repo mapping like [aider](https://aider.chat/docs/repomap.html)
+    - [ ] tree-sitter using [aider ts implementation](https://github.com/Aider-AI/aider/tree/main/aider/queries)
+        - [ ] Make sure to support documentation, function, class, struct, etc (not just ref and def like aider does)
+- [ ] Wiki update checker
+- [ ] Changelog detecter
+- [ ] Review code helper
+
 
 ## Technical Decisions
 
