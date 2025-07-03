@@ -4,18 +4,31 @@
 
 The Coda logo represents a terminal window with AI capabilities, embodying our commitment to terminal-first AI development tools. The logo features a gradient header bar and terminal-style typography.
 
-## Logo Files
+## Logo Variants
 
-### Available Formats
+### 1. Main Logo
+Full terminal window with command prompt and "AI ready" text.
+- **SVG**: `coda-terminal-logo.svg`
+- **PNG**: `coda-terminal-logo-{size}x{height}.png`
+- **Sizes**: 64x44, 128x89, 256x179, 512x358, 1024x716
+- **Use cases**: README headers, documentation, marketing materials
 
-- **SVG** (`coda-terminal-logo.svg`) - Scalable vector format, preferred for web and documentation
-- **PNG** - Raster format in multiple sizes:
-  - `coda-terminal-logo-64x44.png` - Small icons
-  - `coda-terminal-logo-128x89.png` - Medium icons
-  - `coda-terminal-logo-256x179.png` - Large icons
-  - `coda-terminal-logo-512x358.png` - High-res displays
-  - `coda-terminal-logo-1024x716.png` - Marketing materials
-- **ICO** (`coda-terminal-logo.ico`) - Favicon format
+### 2. Compact Logo
+Smaller terminal window with just the command prompt.
+- **SVG**: `coda-terminal-logo-compact.svg`
+- **PNG**: `coda-terminal-logo-compact-{size}x{height}.png`
+- **Sizes**: 64x48, 128x96, 256x192, 512x384
+- **Use cases**: Smaller spaces, inline documentation, badges
+
+### 3. Icon Logo
+Square terminal window with large "C" letter.
+- **SVG**: `coda-terminal-logo-icon.svg`
+- **PNG**: `coda-terminal-logo-icon-{size}x{size}.png`
+- **Sizes**: 16x16, 32x32, 48x48, 64x64, 128x128, 256x256, 512x512
+- **Use cases**: App icons, favicons, avatar images
+
+### Additional Files
+- **ICO**: `coda-terminal-logo.ico` - Multi-resolution favicon (16x16 to 64x64)
 
 ## Color Palette
 
@@ -56,20 +69,49 @@ Maintain clear space around the logo equal to the height of the terminal header 
 
 ### Markdown
 ```markdown
+<!-- Main logo for headers -->
 ![Coda Logo](assets/logos/coda-terminal-logo.svg)
+
+<!-- Compact logo for inline use -->
+![Coda](assets/logos/coda-terminal-logo-compact.svg)
+
+<!-- Icon for small spaces -->
+![Coda Icon](assets/logos/coda-terminal-logo-icon.svg)
 ```
 
 ### HTML
 ```html
-<img src="assets/logos/coda-terminal-logo.svg" alt="Coda Terminal Logo" width="200">
+<!-- Main logo -->
+<img src="assets/logos/coda-terminal-logo.svg" alt="Coda Terminal Logo" width="400">
+
+<!-- Compact logo -->
+<img src="assets/logos/coda-terminal-logo-compact.svg" alt="Coda Compact Logo" width="120">
+
+<!-- Icon -->
+<img src="assets/logos/coda-terminal-logo-icon.svg" alt="Coda Icon" width="80">
 ```
 
 ### CSS Background
 ```css
-.logo {
+/* Main logo */
+.logo-main {
   background-image: url('assets/logos/coda-terminal-logo.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
+  width: 200px;
+  height: 140px;
+}
+
+/* Compact logo */
+.logo-compact {
+  background-image: url('assets/logos/coda-terminal-logo-compact.svg');
+  width: 120px;
+  height: 90px;
+}
+
+/* Icon */
+.logo-icon {
+  background-image: url('assets/logos/coda-terminal-logo-icon.svg');
+  width: 80px;
+  height: 80px;
 }
 ```
 

@@ -1,0 +1,30 @@
+<svg width="120" height="90" viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="headerGradientCompact" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff9d"/>
+      <stop offset="50%" style="stop-color:#00bfff"/>
+      <stop offset="100%" style="stop-color:#9d00ff"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Terminal Window -->
+  <rect x="0" y="0" width="120" height="90" rx="8" fill="#0d1117" stroke="#00ff9d" stroke-width="2"/>
+  
+  <!-- Header -->
+  <rect x="2" y="2" width="116" height="24" rx="6" fill="url(#headerGradientCompact)"/>
+  
+  <!-- Traffic Light Dots -->
+  <circle cx="12" cy="14" r="3" fill="rgba(255,255,255,0.9)"/>
+  <circle cx="20" cy="14" r="3" fill="rgba(255,255,255,0.9)"/>
+  <circle cx="28" cy="14" r="3" fill="rgba(255,255,255,0.9)"/>
+  
+  <!-- Title -->
+  <text x="60" y="17" text-anchor="middle" fill="#0d1117" font-family="SF Mono, Monaco, monospace" font-size="9" font-weight="600">CODA</text>
+  
+  <!-- Content -->
+  <text x="10" y="48" fill="#888" font-family="SF Mono, Monaco, monospace" font-size="14">$</text>
+  <text x="18" y="48" fill="#00ff9d" font-family="SF Mono, Monaco, monospace" font-size="14">coda</text>
+  <rect x="50" y="38" width="8" height="14" fill="#00ff9d" opacity="1">
+    <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+  </rect>
+</svg>

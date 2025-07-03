@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate logo assets in various formats and sizes from the SVG source."""
+"""Generate logo assets in various formats and sizes from the SVG sources."""
 
 import subprocess
 import os
@@ -9,10 +9,25 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 ASSETS_DIR = PROJECT_ROOT / "assets" / "logos"
-SVG_FILE = ASSETS_DIR / "coda-terminal-logo.svg"
 
-# PNG sizes to generate
-PNG_SIZES = [64, 128, 256, 512, 1024]
+# Logo variants with their aspect ratios
+LOGO_VARIANTS = {
+    "main": {
+        "file": "coda-terminal-logo.svg",
+        "aspect_ratio": 10/7,  # 200:140
+        "sizes": [64, 128, 256, 512, 1024]
+    },
+    "compact": {
+        "file": "coda-terminal-logo-compact.svg", 
+        "aspect_ratio": 4/3,  # 120:90
+        "sizes": [64, 128, 256, 512]
+    },
+    "icon": {
+        "file": "coda-terminal-logo-icon.svg",
+        "aspect_ratio": 1/1,  # 80:80 (square)
+        "sizes": [16, 32, 48, 64, 128, 256, 512]
+    }
+}
 
 def check_dependencies():
     """Check if required tools are installed."""
@@ -25,59 +40,73 @@ def check_dependencies():
         return False
 
 def generate_png_files():
-    """Generate PNG files in various sizes."""
+    """Generate PNG files for all variants in various sizes."""
     if not check_dependencies():
         return False
     
     print("Generating PNG files...")
-    for size in PNG_SIZES:
-        # Maintain aspect ratio (200:140 = 10:7)
-        height = int(size * 0.7)
-        output_file = ASSETS_DIR / f"coda-terminal-logo-{size}x{height}.png"
+    
+    for variant_name, variant_info in LOGO_VARIANTS.items():
+        svg_file = ASSETS_DIR / variant_info["file"]
+        if not svg_file.exists():
+            print(f"  ✗ SVG source not found: {svg_file}")
+            continue
+            
+        print(f"\n  {variant_name.capitalize()} variant:")
         
-        cmd = [
-            "convert",
-            "-background", "none",
-            "-density", "300",
-            str(SVG_FILE),
-            "-resize", f"{size}x{height}",
-            str(output_file)
-        ]
-        
-        try:
-            subprocess.run(cmd, check=True)
-            print(f"  ✓ Generated {output_file.name}")
-        except subprocess.CalledProcessError as e:
-            print(f"  ✗ Failed to generate {output_file.name}: {e}")
-            return False
+        for size in variant_info["sizes"]:
+            # Calculate height based on aspect ratio
+            height = int(size / variant_info["aspect_ratio"]) if variant_info["aspect_ratio"] != 1 else size
+            
+            # Generate filename based on variant
+            if variant_name == "main":
+                output_file = ASSETS_DIR / f"coda-terminal-logo-{size}x{height}.png"
+            else:
+                output_file = ASSETS_DIR / f"coda-terminal-logo-{variant_name}-{size}x{height}.png"
+            
+            cmd = [
+                "convert",
+                "-background", "none",
+                "-density", "300",
+                str(svg_file),
+                "-resize", f"{size}x{height}",
+                str(output_file)
+            ]
+            
+            try:
+                subprocess.run(cmd, check=True)
+                print(f"    ✓ Generated {output_file.name}")
+            except subprocess.CalledProcessError as e:
+                print(f"    ✗ Failed to generate {output_file.name}: {e}")
+                return False
     
     return True
 
 def generate_ico_file():
-    """Generate ICO file for favicon."""
+    """Generate ICO file for favicon using the icon variant."""
     if not check_dependencies():
         return False
     
-    print("Generating ICO file...")
+    print("\nGenerating ICO file...")
     ico_file = ASSETS_DIR / "coda-terminal-logo.ico"
+    icon_svg = ASSETS_DIR / "coda-terminal-logo-icon.svg"
     
-    # Create multiple sizes for ICO
-    ico_sizes = [16, 32, 48]
+    # Use icon variant for ICO, multiple sizes
+    ico_sizes = [16, 32, 48, 64]
     temp_files = []
     
     try:
         # Generate temporary PNG files for ICO
         for size in ico_sizes:
-            height = int(size * 0.7)
-            temp_file = ASSETS_DIR / f"temp-{size}.png"
+            temp_file = ASSETS_DIR / f"temp-ico-{size}.png"
             temp_files.append(temp_file)
             
             cmd = [
                 "convert",
                 "-background", "none",
                 "-density", "300",
-                str(SVG_FILE),
-                "-resize", f"{size}x{height}",
+                str(icon_svg),
+                "-resize", f"{size}x{size}",
                 str(temp_file)
             ]
             subprocess.run(cmd, check=True)
@@ -105,23 +134,36 @@ def main():
     print("Coda Logo Asset Generator")
     print("=" * 40)
     
-    if not SVG_FILE.exists():
-        print(f"Error: SVG source file not found at {SVG_FILE}")
+    # Check that all SVG source files exist
+    missing_files = []
+    for variant_name, variant_info in LOGO_VARIANTS.items():
+        svg_file = ASSETS_DIR / variant_info["file"]
+        if not svg_file.exists():
+            missing_files.append(svg_file)
+    
+    if missing_files:
+        print("Error: Missing SVG source files:")
+        for f in missing_files:
+            print(f"  - {f}")
         return 1
     
     success = True
     
-    # Generate PNG files
+    # Generate PNG files for all variants
     if not generate_png_files():
         success = False
     
-    # Generate ICO file
+    # Generate ICO file from icon variant
     if not generate_ico_file():
         success = False
     
     if success:
         print("\n✅ All assets generated successfully!")
         print(f"\nFiles created in: {ASSETS_DIR}")
+        print("\nVariants generated:")
+        print("  - Main: Full terminal logo")
+        print("  - Compact: Small terminal logo") 
+        print("  - Icon: Square app icon")
     else:
         print("\n❌ Some assets failed to generate.")
         return 1
