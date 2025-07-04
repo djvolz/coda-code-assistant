@@ -88,7 +88,11 @@ None currently - all bugs have been resolved!
 
 ### 1.5 Versioning
 - [x] Version based on date/time
-- [x] Automate CI versioining and release schedule
+- [x] Automate CI versioning and release schedule
+
+### 1.6 Branding
+- [x] Project logo integration (terminal-themed design)
+- [x] Logo variants for different contexts (PNG assets)
 
 ## Phase 2: Core Provider Architecture
 
@@ -118,30 +122,39 @@ None currently - all bugs have been resolved!
 - [ ] Token counting and limits
 - [ ] Response formatting
 
-## Phase 3: Enhanced CLI Experience (In Progress)
+## Phase 3: Enhanced CLI Experience ✅ (Complete)
 
-### 3.1 Interactive Shell ✅
+### 3.1 Interactive Shell ✅ (Complete)
 - [x] Rich prompt with syntax highlighting using prompt-toolkit
 - [x] Multi-line input support (use \ at end of line)
-- [x] Command history and search
-- [x] Auto-completion for commands and file paths
+- [x] Command history and search (with file-based persistence)
+- [x] Auto-completion for commands and file paths (Tab-only)
+- [x] Keyboard shortcuts (Ctrl+C, Ctrl+D, arrow keys)
+- [x] Clean interrupt handling during AI responses
 
-### 3.2 Slash Commands ✅
-- [x] `/help` - Context-aware help
-- [x] `/model` - Switch models on the fly (handler ready, integration pending)
-- [x] `/provider` - Switch providers (handler ready, integration pending)
-- [x] `/mode` - Change AI personality (code, debug, explain, review)
-- [ ] `/session` - Save/load/branch conversations (placeholder implemented)
-- [ ] `/theme` - Change UI theme (placeholder implemented)
-- [ ] `/export` - Export conversations (placeholder implemented)
-- [ ] `/tools` - Manage MCP tools (placeholder implemented)
+### 3.2 Slash Commands ✅ (Complete for Phase 3)
+- [x] `/help` (`/h`, `/?`) - Show available commands and keyboard shortcuts
+- [x] `/model` (`/m`) - Interactive model selection with search
+- [x] `/provider` (`/p`) - Switch providers (OCI GenAI supported)
+- [x] `/mode` - Change AI personality with 7 modes
+- [x] `/clear` (`/cls`) - Clear conversation (placeholder)
+- [x] `/exit` (`/quit`, `/q`) - Exit application
 
-### 3.3 Developer Modes ✅
-- [x] **Code Mode**: Optimized for writing new code
-- [x] **Debug Mode**: Focus on error analysis and fixes
-- [x] **Explain Mode**: Code explanation and documentation
-- [x] **Review Mode**: Security and best practices review
-- [x] **Refactor Mode**: Code improvement suggestions
+### 3.3 Developer Modes ✅ (Complete)
+- [x] **General Mode**: Default conversational AI assistant
+- [x] **Code Mode**: Optimized for writing new code with best practices
+- [x] **Debug Mode**: Focus on error analysis and debugging assistance
+- [x] **Explain Mode**: Detailed code explanations and documentation
+- [x] **Review Mode**: Security and code quality review
+- [x] **Refactor Mode**: Code improvement and optimization suggestions
+- [x] **Plan Mode**: Architecture planning and system design
+
+### 3.4 Additional Features Implemented
+- [x] Interactive vs Basic mode selection based on TTY detection
+- [x] Model deduplication in selection UI
+- [x] Multi-level tab completion for slash commands
+- [x] Empty input validation to save API credits
+- [x] Proper signal handling for clean exits
 
 ## Phase 4: Session Management
 
@@ -151,7 +164,20 @@ None currently - all bugs have been resolved!
 - [ ] Full-text search across sessions
 - [ ] Session branching and merging
 
-### 4.2 Context Management
+### 4.2 Session Commands
+- [ ] `/session` (`/s`) - Save/load/branch conversations
+  - [ ] `save` - Save current conversation
+  - [ ] `load` - Load a saved conversation
+  - [ ] `list` - List all saved sessions
+  - [ ] `branch` - Create a branch from current conversation
+  - [ ] `delete` - Delete a saved session
+- [ ] `/export` (`/e`) - Export conversations
+  - [ ] `markdown` - Export as Markdown file
+  - [ ] `json` - Export as JSON with metadata
+  - [ ] `txt` - Export as plain text
+  - [ ] `html` - Export as HTML with syntax highlighting
+
+### 4.3 Context Management
 - [ ] Intelligent context windowing
 - [ ] File reference tracking (@mentions)
 - [ ] Context summarization for long sessions
@@ -165,7 +191,15 @@ None currently - all bugs have been resolved!
 - [ ] Web search and fetch
 - [ ] Git operations
 
-### 5.2 MCP Protocol
+### 5.2 Tool Commands
+- [ ] `/tools` (`/t`) - Manage MCP tools
+  - [ ] `list` - List available MCP tools
+  - [ ] `enable` - Enable specific tools
+  - [ ] `disable` - Disable specific tools
+  - [ ] `config` - Configure tool settings
+  - [ ] `status` - Show tool status
+
+### 5.3 MCP Protocol
 - [ ] MCP server implementation
 - [ ] Tool discovery and registration
 - [ ] Permission management
@@ -187,7 +221,15 @@ None currently - all bugs have been resolved!
 - [ ] Support for external projects (work on codebases outside current directory)
 - [ ] Multi-project management (handle multiple projects simultaneously)
 
-### 6.3 Collaboration Features
+### 6.3 UI Customization
+- [ ] `/theme` - Change UI theme
+  - [ ] `default` - Default color scheme
+  - [ ] `dark` - Dark mode optimized
+  - [ ] `light` - Light terminal theme
+  - [ ] `minimal` - Minimal colors
+  - [ ] `vibrant` - High contrast colors
+
+### 6.4 Collaboration Features
 - [ ] Session sharing via URLs
 - [ ] Team knowledge base
 - [ ] Shared prompt library
