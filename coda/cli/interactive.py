@@ -301,16 +301,9 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
 def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
     """Get system prompt based on developer mode."""
-    prompts = {
-        DeveloperMode.GENERAL: "You are a helpful AI assistant. Provide clear, accurate, and useful responses to any questions or requests.",
-        DeveloperMode.CODE: "You are a helpful coding assistant. Focus on writing clean, efficient, and well-documented code following best practices.",
-        DeveloperMode.DEBUG: "You are a debugging expert. Focus on identifying issues, analyzing error messages, and providing clear solutions with explanations.",
-        DeveloperMode.EXPLAIN: "You are a patient teacher. Provide detailed explanations of code, concepts, and implementations in a clear and educational manner.",
-        DeveloperMode.REVIEW: "You are a code reviewer. Focus on security, performance, best practices, and potential improvements in the code.",
-        DeveloperMode.REFACTOR: "You are a refactoring specialist. Suggest improvements for code clarity, performance, and maintainability while preserving functionality.",
-        DeveloperMode.PLAN: "You are a software architect. Help with system design, architecture planning, technology choices, and breaking down complex problems into manageable components.",
-    }
-    return prompts.get(mode, "")
+    from coda.cli.shared import get_system_prompt
+
+    return get_system_prompt(mode)
 
 
 @click.command()

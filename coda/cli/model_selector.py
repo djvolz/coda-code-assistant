@@ -1,6 +1,5 @@
 """Interactive model selection using prompt-toolkit."""
 
-
 from prompt_toolkit import Application
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings

@@ -2,7 +2,6 @@
 
 import asyncio
 from collections.abc import Callable
-from enum import Enum
 from pathlib import Path
 from threading import Event
 
@@ -15,17 +14,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-
-class DeveloperMode(Enum):
-    """Available developer modes with different AI personalities."""
-
-    GENERAL = "general"
-    CODE = "code"
-    DEBUG = "debug"
-    EXPLAIN = "explain"
-    REVIEW = "review"
-    REFACTOR = "refactor"
-    PLAN = "plan"
+from .shared import CommandHandler, CommandResult, DeveloperMode, get_mode_description
 
 
 class SlashCommand:
@@ -208,14 +197,11 @@ class EnhancedCompleter(Completer):
             return
 
 
-class InteractiveCLI:
+class InteractiveCLI(CommandHandler):
     """Interactive CLI with advanced prompt features using prompt-toolkit."""
 
     def __init__(self, console: Console = None):
-        self.console = console or Console()
-        self.current_mode = DeveloperMode.GENERAL
-        self.current_model = None
-        self.available_models = []
+        super().__init__(console or Console())
         self.session = None
         self.commands = self._init_commands()
         self.style = self._create_style()
@@ -377,8 +363,8 @@ class InteractiveCLI:
         return True
 
     # Command handlers
-    def _cmd_help(self, args: str):
-        """Show help for commands."""
+    def show_help(self) -> CommandResult:
+        """Show help for commands - interactive mode specific."""
         self.console.print("\n[bold]Available Commands[/bold]\n")
 
         # Group commands by category
@@ -405,9 +391,14 @@ class InteractiveCLI:
         self.console.print()
 
         self.console.print("[dim]Type any command without arguments to see its options[/dim]")
+        return CommandResult.HANDLED
+
+    def _cmd_help(self, args: str):
+        """Wrapper for show_help to maintain compatibility."""
+        self.show_help()
 
     async def _cmd_model(self, args: str):
-        """Switch AI model."""
+        """Switch AI model - enhanced for interactive mode."""
         if not self.available_models:
             self.console.print(
                 "[yellow]No models available. Please connect to a provider first.[/yellow]"
@@ -427,87 +418,16 @@ class InteractiveCLI:
             else:
                 self.console.print(f"\n[yellow]Current model: {self.current_model}[/yellow]")
         else:
-            # Direct model switch
-            # Check if the model exists
-            matching_models = [m for m in self.available_models if args.lower() in m.id.lower()]
-            if matching_models:
-                self.current_model = matching_models[0].id
-                self.console.print(f"[green]Switched to model: {self.current_model}[/green]")
-            else:
-                self.console.print(f"[red]Model not found: {args}[/red]")
-                self.console.print("Use /model without arguments to see available models.")
+            # Use the shared model switching logic
+            self.switch_model(args)
 
     def _cmd_provider(self, args: str):
         """Switch provider."""
-        if not args:
-            self.console.print("\n[bold]Provider Management[/bold]")
-            self.console.print("[yellow]Current provider:[/yellow] oci_genai\n")
-
-            self.console.print("[bold]Available providers:[/bold]")
-            self.console.print("  [green]▶ oci_genai[/green] - Oracle Cloud Infrastructure GenAI")
-            self.console.print(
-                "  [cyan]ollama[/cyan] - Local models via Ollama [yellow](Coming soon)[/yellow]"
-            )
-            self.console.print(
-                "  [cyan]openai[/cyan] - OpenAI GPT models [yellow](Coming soon)[/yellow]"
-            )
-            self.console.print(
-                "  [cyan]litellm[/cyan] - 100+ providers via LiteLLM [yellow](Coming soon)[/yellow]"
-            )
-            self.console.print("\n[dim]Usage: /provider <provider_name>[/dim]")
-        else:
-            if args.lower() == "oci_genai":
-                self.console.print("[green]Already using oci_genai provider[/green]")
-            else:
-                self.console.print(f"[yellow]Provider '{args}' not implemented yet[/yellow]")
-                self.console.print("Currently supported: oci_genai")
+        self.show_provider_info(args)
 
     def _cmd_mode(self, args: str):
         """Change developer mode."""
-        if not args:
-            self.console.print(f"\n[yellow]Current mode:[/yellow] {self.current_mode.value}")
-            self.console.print(f"[dim]{self._get_mode_description(self.current_mode)}[/dim]\n")
-
-            self.console.print("[bold]Available modes:[/bold]")
-            for mode in DeveloperMode:
-                if mode == self.current_mode:
-                    self.console.print(
-                        f"  [green]▶ {mode.value}[/green] - {self._get_mode_description(mode)}"
-                    )
-                else:
-                    self.console.print(
-                        f"  [cyan]{mode.value}[/cyan] - {self._get_mode_description(mode)}"
-                    )
-
-            self.console.print("\n[dim]Usage: /mode <mode_name>[/dim]")
-            return
-
-        try:
-            self.current_mode = DeveloperMode(args.lower())
-            self.console.print(f"[green]Switched to {self.current_mode.value} mode[/green]")
-            self._show_mode_description()
-        except ValueError:
-            self.console.print(f"[red]Invalid mode: {args}[/red]")
-            self.console.print(
-                "Valid modes: " + ", ".join(f"[cyan]{m.value}[/cyan]" for m in DeveloperMode)
-            )
-
-    def _get_mode_description(self, mode: DeveloperMode) -> str:
-        """Get description for a specific mode."""
-        descriptions = {
-            DeveloperMode.GENERAL: "General conversation and assistance",
-            DeveloperMode.CODE: "Optimized for writing new code with best practices",
-            DeveloperMode.DEBUG: "Focus on error analysis and debugging assistance",
-            DeveloperMode.EXPLAIN: "Detailed code explanations and documentation",
-            DeveloperMode.REVIEW: "Security and code quality review",
-            DeveloperMode.REFACTOR: "Code improvement and optimization suggestions",
-            DeveloperMode.PLAN: "Architecture planning and system design",
-        }
-        return descriptions.get(mode, "")
-
-    def _show_mode_description(self):
-        """Show description for current mode."""
-        self.console.print(f"[dim]{self._get_mode_description(self.current_mode)}[/dim]")
+        self.switch_mode(args)
 
     def _show_coming_soon_command(
         self, command_name: str, title: str, options: list[tuple[str, str]], usage: str
@@ -564,6 +484,7 @@ class InteractiveCLI:
     def _cmd_clear(self, args: str):
         """Clear conversation."""
         self.console.print("[yellow]Conversation cleared (placeholder)[/yellow]")
+        # Note: Actual clearing is handled by the caller
 
     def _cmd_exit(self, args: str):
         """Exit the application."""

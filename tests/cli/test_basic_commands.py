@@ -3,7 +3,8 @@
 import pytest
 from rich.console import Console
 
-from coda.cli.basic_commands import BasicCommandProcessor, DeveloperMode
+from coda.cli.basic_commands import BasicCommandProcessor
+from coda.cli.shared import DeveloperMode
 from coda.providers import ProviderFactory
 
 
@@ -130,7 +131,9 @@ class TestBasicCommands:
 
     def test_mode_descriptions(self, cmd_processor):
         """Test that all modes have descriptions."""
+        from coda.cli.shared import get_mode_description
+        
         for mode in DeveloperMode:
-            desc = cmd_processor._get_mode_description(mode)
+            desc = get_mode_description(mode)
             assert isinstance(desc, str)
             assert len(desc) > 0

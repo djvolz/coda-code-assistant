@@ -135,7 +135,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
                 provider, provider_instance, factory, model, unique_models
             )
             # Set initial mode from CLI argument
-            from .basic_commands import DeveloperMode
+            from .shared import DeveloperMode
 
             cmd_processor.current_mode = DeveloperMode(mode)
 
@@ -170,7 +170,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
                 provider, provider_instance, factory, model, unique_models
             )
             # Set initial mode from CLI argument
-            from .basic_commands import DeveloperMode
+            from .shared import DeveloperMode
 
             cmd_processor.current_mode = DeveloperMode(mode)
 
