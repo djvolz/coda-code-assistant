@@ -6,6 +6,7 @@ import sys
 import click
 from rich.console import Console
 from rich.panel import Panel
+from rich.status import Status
 from rich.text import Text
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
@@ -155,40 +156,42 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     first_chunk = True
 
     try:
-        # Show thinking message on its own line
-        console.print(f"\n[dim cyan]{thinking_msg}...[/dim cyan]")
+        # Create a status spinner for thinking animation
+        # Using "dots" spinner style - other options: "line", "star", "bouncingBar", "arrow3"
+        with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
+            # Get generation parameters from config or defaults
+            if not config:
+                from coda.configuration import get_config
 
-        # Get generation parameters from config or defaults
-        if not config:
-            from coda.configuration import get_config
+                config = get_config()
+            temperature = config.to_dict().get("temperature", 0.7)
+            max_tokens = config.to_dict().get("max_tokens", 2000)
 
-            config = get_config()
-        temperature = config.to_dict().get("temperature", 0.7)
-        max_tokens = config.to_dict().get("max_tokens", 2000)
+            stream = provider_instance.chat_stream(
+                messages=chat_messages,
+                model=cli.current_model,  # Use current model from CLI
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
 
-        stream = provider_instance.chat_stream(
-            messages=chat_messages,
-            model=cli.current_model,  # Use current model from CLI
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+            # Get first chunk to stop spinner
+            for chunk in stream:
+                if first_chunk:
+                    # Stop the spinner when we get the first chunk
+                    status.stop()
+                    # Just print the assistant label
+                    console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                    first_chunk = False
 
-        # Get first chunk to stop spinner
-        for chunk in stream:
-            if first_chunk:
-                # Just print the assistant label
-                console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
-                first_chunk = False
+                # Check for interrupt
+                if cli.interrupt_event.is_set():
+                    interrupted = True
+                    console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                    break
 
-            # Check for interrupt
-            if cli.interrupt_event.is_set():
-                interrupted = True
-                console.print("\n\n[yellow]Response interrupted by user[/yellow]")
-                break
-
-            # Stream the response as plain text
-            console.print(chunk.content, end="")
-            full_response += chunk.content
+                # Stream the response as plain text
+                console.print(chunk.content, end="")
+                full_response += chunk.content
 
         # Add newline after streaming
         if full_response:
