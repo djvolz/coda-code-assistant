@@ -151,25 +151,11 @@ class SlashCommandCompleter(Completer):
 
 
 class EnhancedCompleter(Completer):
-    """Combined completer for slash commands, paths, and common words."""
+    """Combined completer for slash commands and file paths."""
 
     def __init__(self, slash_commands: dict[str, SlashCommand]):
         self.slash_completer = SlashCommandCompleter(slash_commands)
         self.path_completer = PathCompleter(expanduser=True)
-        
-        # Common starter phrases for AI interactions
-        self.common_starters = [
-            ("Can you help me", "Ask for assistance"),
-            ("Explain", "Request explanation"),
-            ("How do I", "Ask how to do something"),
-            ("What is", "Ask for definition"),
-            ("Debug this", "Request debugging help"),
-            ("Review this code", "Request code review"),
-            ("Refactor", "Request code refactoring"),
-            ("Write a", "Request code generation"),
-            ("Fix", "Request bug fix"),
-            ("Improve", "Request improvements"),
-        ]
 
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
@@ -177,9 +163,9 @@ class EnhancedCompleter(Completer):
         # If line starts with /, use slash completer
         if text.startswith('/'):
             yield from self.slash_completer.get_completions(document, complete_event)
-        # If empty or just whitespace, show both slash commands and common starters
+        # If empty or just whitespace, show available slash commands
         elif not text.strip():
-            # Show all slash commands first
+            # Show all slash commands
             for cmd_name, cmd in self.slash_completer.commands.items():
                 yield Completion(
                     f'/{cmd_name}',
@@ -187,29 +173,13 @@ class EnhancedCompleter(Completer):
                     display_meta=cmd.help_text,
                     style='fg:cyan',
                 )
-            
-            # Then show common starter phrases
-            for starter, description in self.common_starters:
-                yield Completion(
-                    starter,
-                    start_position=0,
-                    display_meta=description,
-                    style='fg:gray',
-                )
-        else:
-            # Check if we're typing a common starter
-            lower_text = text.lower()
-            for starter, description in self.common_starters:
-                if starter.lower().startswith(lower_text):
-                    yield Completion(
-                        starter,
-                        start_position=-len(text),
-                        display_meta=description,
-                        style='fg:gray',
-                    )
-            
-            # Also use path completer
+        # Only show path completions if text contains / or ~ (indicating a path)
+        elif '/' in text or text.startswith('~'):
             yield from self.path_completer.get_completions(document, complete_event)
+        # Otherwise, no completions for regular text
+        else:
+            # Explicitly return nothing - no completions for regular text
+            return
 
 
 class InteractiveCLI:
@@ -281,61 +251,19 @@ class InteractiveCLI:
         # Create key bindings
         kb = KeyBindings()
         
-        @kb.add(Keys.Escape)
-        def handle_escape(event):
-            """Handle escape key for interrupt."""
-            current_time = time.time()
-            # Check if this is a double escape (within 0.5 seconds)
-            if current_time - self.last_escape_time < 0.5:
-                self.escape_count += 1
-                if self.escape_count >= 2:
-                    self.interrupt_event.set()
-                    self.console.print("\n[yellow]Interrupting response... (Press Enter to continue)[/yellow]")
-                    self.escape_count = 0
-            else:
-                self.escape_count = 1
-            self.last_escape_time = current_time
-        
-        @kb.add(Keys.ControlC)
-        def handle_ctrl_c(event):
-            """Handle Ctrl+C for clearing prompt or exit."""
-            current_time = time.time()
-            
-            # If we're currently getting a response, interrupt it
-            if self.interrupt_event.is_set():
-                self.interrupt_event.set()
-                return
-            
-            # Check if this is a double Ctrl+C (within 1 second)
-            if current_time - self.last_ctrl_c_time < 1.0:
-                self.ctrl_c_count += 1
-                if self.ctrl_c_count >= 2:
-                    # Double Ctrl+C - exit
-                    event.app.exit(exception=KeyboardInterrupt)
-                    return
-            else:
-                self.ctrl_c_count = 1
-                # Single Ctrl+C - clear current line and show hint
-                event.app.current_buffer.reset()
-                # Move to new line and show hint
-                event.app.output.write('\n')
-                event.app.output.write('[Press Ctrl+C again to exit]\r')
-                event.app.output.flush()
-                # Redraw prompt
-                event.app.invalidate()
-                
-            self.last_ctrl_c_time = current_time
+        # Note: We handle interrupts via signal handler during AI responses
+        # Double escape is not reliable with prompt-toolkit during streaming
 
         self.session = PromptSession(
             history=FileHistory(str(history_file)),
-            auto_suggest=AutoSuggestFromHistory(),
+            auto_suggest=None,  # Disable auto-suggestions from history
             completer=EnhancedCompleter(self.commands),
             style=self.style,
             multiline=False,  # We'll handle multiline manually
             enable_history_search=True,
             vi_mode=False,  # Can be toggled later
             mouse_support=True,
-            complete_while_typing=True,
+            complete_while_typing=False,  # Only show completions on Tab
             complete_in_thread=True,  # Better performance
             complete_style='MULTI_COLUMN',  # Show completions in columns
             wrap_lines=True,
@@ -377,11 +305,10 @@ class InteractiveCLI:
         except EOFError:
             return '/exit'
         except KeyboardInterrupt:
-            # Handle double Ctrl+C exit
-            if self.ctrl_c_count >= 2:
-                self.console.print("\n[dim]Goodbye! (Double Ctrl+C detected)[/dim]")
-                raise SystemExit(0)
-            # Single Ctrl+C - return empty to skip
+            # Handle Ctrl+C gracefully
+            # Clear the current line and return empty string
+            # The main loop will skip empty input
+            self.console.print()  # New line for cleaner display
             return ''
         finally:
             # Reset multiline mode
@@ -441,6 +368,13 @@ class InteractiveCLI:
                     aliases_str = f" (/{'/'.join(cmd.aliases)})" if cmd.aliases else ""
                     self.console.print(f"  [cyan]/{cmd_name}[/cyan]{aliases_str} - {cmd.help_text}")
             self.console.print()
+        
+        self.console.print("[bold]Keyboard Shortcuts:[/bold]")
+        self.console.print("  [cyan]Ctrl+C[/cyan] - Clear input line / Interrupt AI response")
+        self.console.print("  [cyan]Ctrl+D[/cyan] - Exit the application")
+        self.console.print("  [cyan]Tab[/cyan] - Auto-complete commands and paths")
+        self.console.print("  [cyan]↑/↓[/cyan] - Navigate command history")
+        self.console.print()
         
         self.console.print("[dim]Type any command without arguments to see its options[/dim]")
 
@@ -601,3 +535,20 @@ class InteractiveCLI:
         self.interrupt_event.clear()
         self.escape_count = 0
         self.ctrl_c_count = 0
+    
+    def start_interrupt_listener(self):
+        """Start signal handler for Ctrl+C during AI response."""
+        import signal
+        
+        def interrupt_handler(signum, frame):
+            """Handle Ctrl+C during AI response."""
+            self.interrupt_event.set()
+        
+        # Store the old handler
+        self.old_sigint_handler = signal.signal(signal.SIGINT, interrupt_handler)
+    
+    def stop_interrupt_listener(self):
+        """Restore original signal handler."""
+        import signal
+        if hasattr(self, 'old_sigint_handler'):
+            signal.signal(signal.SIGINT, self.old_sigint_handler)
