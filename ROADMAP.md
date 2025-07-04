@@ -177,11 +177,18 @@ None currently - all bugs have been resolved!
 
 ## Phase 4: Session Management
 
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 are being developed in parallel on separate branches. To minimize merge conflicts:
+- Phase 4 branch: `feature/session-management` (focuses on persistence layer)
+- Phase 5 branch: `feature/mcp-tools` (focuses on tool execution)
+- Integration points: Session schema will need `tool_invocations` table from Phase 5
+- Merge strategy: Phase 4 merges first, then Phase 5 rebases and adds tool logging
+
 ### 4.1 Persistence Layer
-- [ ] SQLite database for sessions
+- [ ] SQLite database for sessions (stored in `~/.cache/coda/sessions.db`)
 - [ ] Message storage with metadata
 - [ ] Full-text search across sessions
 - [ ] Session branching and merging
+- [ ] **API Design**: Create clear interfaces that Phase 5 can mock
 
 ### 4.2 Session Commands
 - [ ] `/session` (`/s`) - Save/load/branch conversations
@@ -204,11 +211,19 @@ None currently - all bugs have been resolved!
 
 ## Phase 5: Tool Integration (MCP)
 
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Being developed in parallel with Phase 4. Key considerations:
+- Work on branch: `feature/mcp-tools`
+- Mock the session storage API during development
+- Plan for adding `tool_invocations` to session schema after merge
+- Avoid modifying core files that Phase 4 is likely to change (cli/main.py, config.py)
+- Focus on creating new files: `tools/`, `mcp/` directories
+
 ### 5.1 Core Tools
 - [ ] File operations (read, write, edit)
 - [ ] Shell command execution
 - [ ] Web search and fetch
 - [ ] Git operations
+- [ ] **Tool Result Storage**: Design format for session integration
 
 ### 5.2 Tool Commands
 - [ ] `/tools` (`/t`) - Manage MCP tools
