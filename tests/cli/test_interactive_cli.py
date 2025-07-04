@@ -4,7 +4,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from coda.cli.interactive_cli import DeveloperMode, InteractiveCLI, SlashCommand
+from coda.cli.interactive_cli import InteractiveCLI, SlashCommand
+from coda.cli.shared import DeveloperMode
 
 
 @pytest.mark.unit
@@ -231,6 +232,8 @@ class TestInteractiveCLI:
 
     def test_provider_command_with_args(self, cli):
         """Test provider command with provider name."""
+        # Set up the provider name
+        cli.provider_name = "oci_genai"
         cli._cmd_provider("oci_genai")
         
         calls = [str(call) for call in cli.console.print.call_args_list]
@@ -241,7 +244,7 @@ class TestInteractiveCLI:
         cli._cmd_provider("ollama")
         
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("not implemented yet" in str(call) for call in calls)
+        assert any("not supported in current mode" in str(call) for call in calls)
 
     def test_session_command(self, cli):
         """Test session command (coming soon)."""
