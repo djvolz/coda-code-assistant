@@ -4,6 +4,8 @@ import asyncio
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
+import time
+from threading import Event, Thread
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.filters import Condition
@@ -12,6 +14,8 @@ from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
 from rich.console import Console
 
 
@@ -219,6 +223,11 @@ class InteractiveCLI:
         self.session = None
         self.commands = self._init_commands()
         self.style = self._create_style()
+        
+        # For interrupt handling
+        self.interrupt_event = Event()
+        self.last_escape_time = 0
+        self.escape_count = 0
 
         # Initialize session with all features
         self._init_session()
@@ -266,6 +275,24 @@ class InteractiveCLI:
         history_dir = Path.home() / '.local' / 'share' / 'coda'
         history_dir.mkdir(parents=True, exist_ok=True)
         history_file = history_dir / 'history.txt'
+        
+        # Create key bindings
+        kb = KeyBindings()
+        
+        @kb.add(Keys.Escape)
+        def handle_escape(event):
+            """Handle escape key for interrupt."""
+            current_time = time.time()
+            # Check if this is a double escape (within 0.5 seconds)
+            if current_time - self.last_escape_time < 0.5:
+                self.escape_count += 1
+                if self.escape_count >= 2:
+                    self.interrupt_event.set()
+                    self.console.print("\n[yellow]Interrupting response... (Press Enter to continue)[/yellow]")
+                    self.escape_count = 0
+            else:
+                self.escape_count = 1
+            self.last_escape_time = current_time
 
         self.session = PromptSession(
             history=FileHistory(str(history_file)),
@@ -280,6 +307,7 @@ class InteractiveCLI:
             complete_in_thread=True,  # Better performance
             complete_style='MULTI_COLUMN',  # Show completions in columns
             wrap_lines=True,
+            key_bindings=kb,
         )
 
     def _get_prompt(self) -> HTML:
@@ -526,3 +554,8 @@ class InteractiveCLI:
         """Exit the application."""
         self.console.print("[dim]Goodbye![/dim]")
         raise SystemExit(0)
+    
+    def reset_interrupt(self):
+        """Reset the interrupt state."""
+        self.interrupt_event.clear()
+        self.escape_count = 0
