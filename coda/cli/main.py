@@ -33,7 +33,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
             # Pass control to the interactive CLI
             ctx = click.get_current_context()
             ctx.invoke(interactive_main, provider=provider, model=model, debug=debug,
-                      one_shot=one_shot, mode='code')
+                      one_shot=one_shot, mode='general')
             return
         except ImportError:
             # Fall back to basic mode if prompt-toolkit is not available
