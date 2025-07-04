@@ -21,6 +21,7 @@ dependencies = [
     "oci>=2.119.1",
     "cryptography>=3.4.7",
     "pygments>=2.19.2",
+    "pyyaml>=6.0.1",
 ]
 
 [project.scripts]

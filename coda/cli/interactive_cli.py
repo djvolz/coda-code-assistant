@@ -6,6 +6,7 @@ from enum import Enum
 from pathlib import Path
 import time
 from threading import Event, Thread
+import yaml
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.filters import Condition
@@ -44,8 +45,14 @@ class SlashCommandCompleter(Completer):
 
     def __init__(self, commands: dict[str, SlashCommand]):
         self.commands = commands
-        # Define available options for specific commands
-        self.command_options = {
+        self.command_options = self._load_command_options()
+    
+    def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
+        """Load command options from configuration file."""
+        config_path = Path(__file__).parent / 'commands_config.yaml'
+        
+        # Fallback to hardcoded options if config file not found
+        default_options = {
             'mode': [
                 ('general', 'General conversation and assistance'),
                 ('code', 'Optimized for writing new code'),
@@ -89,6 +96,24 @@ class SlashCommandCompleter(Completer):
                 ('status', 'Show tool status'),
             ],
         }
+        
+        try:
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                    
+                options = {}
+                for cmd_name, cmd_data in config.get('commands', {}).items():
+                    options[cmd_name] = [
+                        (opt['name'], opt['description'])
+                        for opt in cmd_data.get('options', [])
+                    ]
+                return options
+        except Exception:
+            # If anything fails, use defaults
+            pass
+            
+        return default_options
 
     def get_completions(self, document, complete_event):
         # Get the current text
@@ -96,58 +121,68 @@ class SlashCommandCompleter(Completer):
         
         # If we just typed '/', show all commands immediately
         if text == '/':
-            for cmd_name, cmd in self.commands.items():
-                yield Completion(
-                    '/' + cmd_name,  # Include the slash
-                    start_position=-1,  # Replace just the '/'
-                    display_meta=cmd.help_text
-                )
+            yield from self._complete_all_commands()
         elif text.startswith('/'):
             # Check if we have a complete command with a space
             parts = text.split(' ', 1)
             
             if len(parts) == 2:  # We have a command and possibly partial argument
-                cmd_part = parts[0][1:]  # Remove the slash
-                arg_part = parts[1]
-                
-                # Check if this is a valid command
-                if cmd_part in self.command_options:
-                    # Show completions for command arguments
-                    options = self.command_options[cmd_part]
-                    
-                    if not arg_part:  # Just typed space, show all options
-                        for option, description in options:
-                            yield Completion(
-                                option,
-                                start_position=0,
-                                display_meta=description
-                            )
-                    else:  # Partial argument typed
-                        for option, description in options:
-                            if option.startswith(arg_part):
-                                yield Completion(
-                                    option,
-                                    start_position=-len(arg_part),
-                                    display_meta=description
-                                )
+                yield from self._complete_command_arguments(parts[0][1:], parts[1])
             else:
                 # Complete the command itself
-                word = text[1:]  # Get the part after '/'
-                for cmd_name, cmd in self.commands.items():
-                    if cmd_name.startswith(word):
-                        yield Completion(
-                            '/' + cmd_name,  # Include the slash in completion
-                            start_position=-len(text),  # Replace entire text including '/'
-                            display_meta=cmd.help_text
-                        )
-                    # Also complete aliases
-                    for alias in cmd.aliases:
-                        if alias.startswith(word):
-                            yield Completion(
-                                '/' + alias,  # Include the slash in completion
-                                start_position=-len(text),  # Replace entire text including '/'
-                                display_meta=f'Alias for /{cmd_name}'
-                            )
+                yield from self._complete_command_names(text)
+    
+    def _complete_all_commands(self):
+        """Yield completions for all available commands."""
+        for cmd_name, cmd in self.commands.items():
+            yield Completion(
+                '/' + cmd_name,  # Include the slash
+                start_position=-1,  # Replace just the '/'
+                display_meta=cmd.help_text
+            )
+    
+    def _complete_command_arguments(self, cmd_part: str, arg_part: str):
+        """Yield completions for command arguments."""
+        if cmd_part not in self.command_options:
+            return
+            
+        options = self.command_options[cmd_part]
+        
+        if not arg_part:  # Just typed space, show all options
+            for option, description in options:
+                yield Completion(
+                    option,
+                    start_position=0,
+                    display_meta=description
+                )
+        else:  # Partial argument typed
+            for option, description in options:
+                if option.startswith(arg_part):
+                    yield Completion(
+                        option,
+                        start_position=-len(arg_part),
+                        display_meta=description
+                    )
+    
+    def _complete_command_names(self, text: str):
+        """Yield completions for command names and aliases."""
+        word = text[1:]  # Get the part after '/'
+        
+        for cmd_name, cmd in self.commands.items():
+            if cmd_name.startswith(word):
+                yield Completion(
+                    '/' + cmd_name,  # Include the slash in completion
+                    start_position=-len(text),  # Replace entire text including '/'
+                    display_meta=cmd.help_text
+                )
+            # Also complete aliases
+            for alias in cmd.aliases:
+                if alias.startswith(word):
+                    yield Completion(
+                        '/' + alias,  # Include the slash in completion
+                        start_position=-len(text),  # Replace entire text including '/'
+                        display_meta=f'Alias for /{cmd_name}'
+                    )
 
 
 class EnhancedCompleter(Completer):
