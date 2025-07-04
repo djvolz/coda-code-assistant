@@ -17,11 +17,13 @@ class TestInteractiveCLI:
     
     def test_developer_modes(self, cli):
         """Test developer mode enumeration."""
+        assert DeveloperMode.GENERAL.value == "general"
         assert DeveloperMode.CODE.value == "code"
         assert DeveloperMode.DEBUG.value == "debug"
         assert DeveloperMode.EXPLAIN.value == "explain"
         assert DeveloperMode.REVIEW.value == "review"
         assert DeveloperMode.REFACTOR.value == "refactor"
+        assert DeveloperMode.PLAN.value == "plan"
     
     def test_slash_command_init(self):
         """Test SlashCommand initialization."""
@@ -90,7 +92,7 @@ class TestInteractiveCLI:
         """Test switching to invalid mode."""
         cli._cmd_mode("invalid_mode")
         # Mode should not change
-        assert cli.current_mode == DeveloperMode.CODE  # default mode
+        assert cli.current_mode == DeveloperMode.GENERAL  # default mode
         
         # Check error message
         calls = [str(call) for call in cli.console.print.call_args_list]

@@ -17,11 +17,13 @@ from rich.console import Console
 
 class DeveloperMode(Enum):
     """Available developer modes with different AI personalities."""
+    GENERAL = "general"
     CODE = "code"
     DEBUG = "debug"
     EXPLAIN = "explain"
     REVIEW = "review"
     REFACTOR = "refactor"
+    PLAN = "plan"
 
 
 class SlashCommand:
@@ -41,11 +43,13 @@ class SlashCommandCompleter(Completer):
         # Define available options for specific commands
         self.command_options = {
             'mode': [
+                ('general', 'General conversation and assistance'),
                 ('code', 'Optimized for writing new code'),
                 ('debug', 'Focus on error analysis'),
                 ('explain', 'Detailed code explanations'),
                 ('review', 'Security and code quality review'),
                 ('refactor', 'Code improvement suggestions'),
+                ('plan', 'Architecture planning and system design'),
             ],
             'provider': [
                 ('oci_genai', 'Oracle Cloud Infrastructure GenAI'),
@@ -209,7 +213,7 @@ class InteractiveCLI:
 
     def __init__(self, console: Console = None):
         self.console = console or Console()
-        self.current_mode = DeveloperMode.CODE
+        self.current_mode = DeveloperMode.GENERAL
         self.current_model = None
         self.available_models = []
         self.session = None
@@ -281,11 +285,13 @@ class InteractiveCLI:
     def _get_prompt(self) -> HTML:
         """Generate the prompt with mode indicator."""
         mode_color = {
+            DeveloperMode.GENERAL: 'white',
             DeveloperMode.CODE: 'green',
             DeveloperMode.DEBUG: 'yellow',
             DeveloperMode.EXPLAIN: 'blue',
             DeveloperMode.REVIEW: 'magenta',
             DeveloperMode.REFACTOR: 'cyan',
+            DeveloperMode.PLAN: 'red',
         }.get(self.current_mode, 'white')
 
         return HTML(
@@ -443,11 +449,13 @@ class InteractiveCLI:
     def _get_mode_description(self, mode: DeveloperMode) -> str:
         """Get description for a specific mode."""
         descriptions = {
+            DeveloperMode.GENERAL: "General conversation and assistance",
             DeveloperMode.CODE: "Optimized for writing new code with best practices",
             DeveloperMode.DEBUG: "Focus on error analysis and debugging assistance",
             DeveloperMode.EXPLAIN: "Detailed code explanations and documentation",
             DeveloperMode.REVIEW: "Security and code quality review",
             DeveloperMode.REFACTOR: "Code improvement and optimization suggestions",
+            DeveloperMode.PLAN: "Architecture planning and system design",
         }
         return descriptions.get(mode, "")
     
