@@ -15,6 +15,8 @@ except ImportError:
 from coda.configuration import get_config
 from coda.providers import Message, ProviderFactory, Role
 
+from .basic_commands import BasicCommandProcessor
+
 console = Console()
 
 
@@ -24,8 +26,14 @@ console = Console()
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--one-shot", help="Execute a single prompt and exit")
 @click.option("--basic", is_flag=True, help="Use basic CLI mode (no prompt-toolkit)")
+@click.option(
+    "--mode",
+    type=click.Choice(["general", "code", "debug", "explain", "review", "refactor", "plan"]),
+    default="general",
+    help="Initial developer mode (basic mode only)",
+)
 @click.version_option(version=__version__, prog_name="coda")
-def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
+def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mode: str):
     """Coda - A multi-provider code assistant"""
 
     # Load configuration
@@ -53,7 +61,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
                 model=model,
                 debug=debug,
                 one_shot=one_shot,
-                mode="general",
+                mode=mode,
             )
             return
         except ImportError:
@@ -88,11 +96,12 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
         if not model:
             # Filter for chat models - different providers use different indicators
             chat_models = [
-                m for m in models 
-                if "CHAT" in m.metadata.get("capabilities", []) or  # OCI GenAI
-                   m.provider in ["ollama", "litellm"]  # These providers only list chat models
+                m
+                for m in models
+                if "CHAT" in m.metadata.get("capabilities", [])  # OCI GenAI
+                or m.provider in ["ollama", "litellm"]  # These providers only list chat models
             ]
-            
+
             # If no chat models found, use all models
             if not chat_models:
                 chat_models = models
@@ -120,46 +129,110 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
 
         # Handle one-shot or interactive
         if one_shot:
-            # One-shot execution
+            # One-shot execution with mode support
+            cmd_processor = BasicCommandProcessor(console)
+            cmd_processor.set_provider_info(
+                provider, provider_instance, factory, model, unique_models
+            )
+            # Set initial mode from CLI argument
+            from .basic_commands import DeveloperMode
+
+            cmd_processor.current_mode = DeveloperMode(mode)
+
             console.print(f"\n[bold cyan]User:[/bold cyan] {one_shot}")
             console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
 
-            messages = [Message(role=Role.USER, content=one_shot)]
+            # Get system prompt based on mode (default to general)
+            system_prompt = cmd_processor.get_system_prompt()
+
+            messages = []
+            if system_prompt:
+                messages.append(Message(role=Role.SYSTEM, content=system_prompt))
+            messages.append(Message(role=Role.USER, content=one_shot))
+
+            # Get generation parameters from config
+            temperature = config.to_dict().get("temperature", 0.7)
+            max_tokens = config.to_dict().get("max_tokens", 2000)
+
             for chunk in provider_instance.chat_stream(
-                messages=messages, model=model, temperature=0.7, max_tokens=500
+                messages=messages, model=model, temperature=temperature, max_tokens=max_tokens
             ):
                 console.print(chunk.content, end="")
             console.print("\n")
         else:
-            # Interactive chat
-            console.print("\n[dim]Type 'exit' to quit, 'clear' to reset conversation[/dim]\n")
+            # Interactive chat with slash command support
+            console.print("\n[dim]Type /help for commands, /exit to quit[/dim]\n")
             messages = []
+
+            # Initialize command processor
+            cmd_processor = BasicCommandProcessor(console)
+            cmd_processor.set_provider_info(
+                provider, provider_instance, factory, model, unique_models
+            )
+            # Set initial mode from CLI argument
+            from .basic_commands import DeveloperMode
+
+            cmd_processor.current_mode = DeveloperMode(mode)
 
             while True:
                 # Get user input
                 user_input = Prompt.ask("[bold]You[/bold]")
 
-                if user_input.lower() == "exit":
+                # Process potential slash commands
+                cmd_result = cmd_processor.process_command(user_input)
+
+                if cmd_result == "exit":
                     break
-                elif user_input.lower() == "clear":
+                elif cmd_result == "clear":
                     messages = []
                     console.print("[yellow]Conversation cleared[/yellow]\n")
                     continue
+                elif cmd_result == "continue":
+                    # Command was handled, continue to next iteration
+                    continue
+                elif cmd_result is not None:
+                    # Unknown command result
+                    continue
 
-                # Add user message
-                messages.append(Message(role=Role.USER, content=user_input))
+                # Skip empty input
+                if not user_input.strip():
+                    continue
+
+                # Get system prompt based on mode
+                system_prompt = cmd_processor.get_system_prompt()
+
+                # Prepare messages with system prompt
+                chat_messages = []
+                if system_prompt:
+                    chat_messages.append(Message(role=Role.SYSTEM, content=system_prompt))
+
+                # Add conversation history and new message
+                chat_messages.extend(messages)
+                chat_messages.append(Message(role=Role.USER, content=user_input))
 
                 # Get AI response
                 console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
 
                 full_response = ""
-                for chunk in provider_instance.chat_stream(
-                    messages=messages, model=model, temperature=0.7, max_tokens=500
-                ):
-                    console.print(chunk.content, end="")
-                    full_response += chunk.content
+                try:
+                    # Get generation parameters from config
+                    temperature = config.to_dict().get("temperature", 0.7)
+                    max_tokens = config.to_dict().get("max_tokens", 2000)
 
-                # Add assistant message to history
+                    for chunk in provider_instance.chat_stream(
+                        messages=chat_messages,
+                        model=cmd_processor.current_model or model,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                    ):
+                        console.print(chunk.content, end="")
+                        full_response += chunk.content
+                except KeyboardInterrupt:
+                    console.print("\n\n[yellow]Response interrupted[/yellow]")
+                    full_response += " [interrupted]"
+
+                # Add messages to history
+                messages.append(Message(role=Role.USER, content=user_input))
                 messages.append(Message(role=Role.ASSISTANT, content=full_response))
                 console.print("\n")
 
