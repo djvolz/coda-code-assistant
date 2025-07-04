@@ -56,7 +56,7 @@ def print_interactive_keyboard_shortcuts(console: Console):
     console.print("  [cyan]Ctrl+K[/cyan] - Delete from cursor to end of line")
     console.print("  [cyan]Ctrl+U[/cyan] - Delete from cursor to beginning of line")
     console.print("  [cyan]Ctrl+W[/cyan] - Delete word before cursor")
-    console.print("  [cyan]\\[/cyan] at line end - Continue input on next line")
+    console.print("  [cyan]\\\\[/cyan] at line end - Continue input on next line")
     console.print()
 
 
