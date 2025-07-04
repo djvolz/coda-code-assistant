@@ -77,13 +77,59 @@ class EnhancedCompleter(Completer):
     def __init__(self, slash_commands: dict[str, SlashCommand]):
         self.slash_completer = SlashCommandCompleter(slash_commands)
         self.path_completer = PathCompleter(expanduser=True)
+        
+        # Common starter phrases for AI interactions
+        self.common_starters = [
+            ("Can you help me", "Ask for assistance"),
+            ("Explain", "Request explanation"),
+            ("How do I", "Ask how to do something"),
+            ("What is", "Ask for definition"),
+            ("Debug this", "Request debugging help"),
+            ("Review this code", "Request code review"),
+            ("Refactor", "Request code refactoring"),
+            ("Write a", "Request code generation"),
+            ("Fix", "Request bug fix"),
+            ("Improve", "Request improvements"),
+        ]
 
     def get_completions(self, document, complete_event):
+        text = document.text_before_cursor
+        
         # If line starts with /, use slash completer
-        if document.text.startswith('/'):
+        if text.startswith('/'):
             yield from self.slash_completer.get_completions(document, complete_event)
+        # If empty or just whitespace, show both slash commands and common starters
+        elif not text.strip():
+            # Show all slash commands first
+            for cmd_name, cmd in self.slash_completer.commands.items():
+                yield Completion(
+                    f'/{cmd_name}',
+                    start_position=0,
+                    display_meta=cmd.help_text,
+                    style='fg:cyan',
+                )
+            
+            # Then show common starter phrases
+            for starter, description in self.common_starters:
+                yield Completion(
+                    starter,
+                    start_position=0,
+                    display_meta=description,
+                    style='fg:gray',
+                )
         else:
-            # Otherwise use path completer
+            # Check if we're typing a common starter
+            lower_text = text.lower()
+            for starter, description in self.common_starters:
+                if starter.lower().startswith(lower_text):
+                    yield Completion(
+                        starter,
+                        start_position=-len(text),
+                        display_meta=description,
+                        style='fg:gray',
+                    )
+            
+            # Also use path completer
             yield from self.path_completer.get_completions(document, complete_event)
 
 
@@ -124,12 +170,16 @@ class InteractiveCLI:
             'prompt': '#00aa00 bold',
             'prompt.mode': '#888888',
 
-            # Completion colors
-            'completion-menu': 'bg:#008888 #ffffff',
-            'completion-menu.completion': 'bg:#008888 #ffffff',
-            'completion-menu.completion.current': 'bg:#00aaaa #000000',
-            'completion-menu.meta.completion': 'bg:#008888 #aaaaaa',
-            'completion-menu.meta.completion.current': 'bg:#00aaaa #ffffff',
+            # Completion colors - more visible
+            'completion-menu': 'bg:#2c2c2c #ffffff',
+            'completion-menu.completion': 'bg:#2c2c2c #ffffff',
+            'completion-menu.completion.current': 'bg:#005588 #ffffff bold',
+            'completion-menu.meta.completion': 'bg:#2c2c2c #888888',
+            'completion-menu.meta.completion.current': 'bg:#005588 #aaaaaa',
+            
+            # Scrollbar
+            'scrollbar.background': 'bg:#2c2c2c',
+            'scrollbar.button': 'bg:#888888',
 
             # Status bar
             'status-bar': 'bg:#444444 #ffffff',
@@ -142,11 +192,6 @@ class InteractiveCLI:
         history_dir.mkdir(parents=True, exist_ok=True)
         history_file = history_dir / 'history.txt'
 
-        # Custom filter to show completions immediately after typing '/'
-        @Condition
-        def show_completions():
-            return True  # Always show completions
-            
         self.session = PromptSession(
             history=FileHistory(str(history_file)),
             auto_suggest=AutoSuggestFromHistory(),
@@ -156,7 +201,7 @@ class InteractiveCLI:
             enable_history_search=True,
             vi_mode=False,  # Can be toggled later
             mouse_support=True,
-            complete_while_typing=show_completions,
+            complete_while_typing=True,
             complete_in_thread=True,  # Better performance
             complete_style='MULTI_COLUMN',  # Show completions in columns
             wrap_lines=True,
