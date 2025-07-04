@@ -1,6 +1,5 @@
 """Tests for shared mode functionality."""
 
-import pytest
 
 from coda.cli.shared import DeveloperMode, get_mode_description, get_system_prompt
 
@@ -41,7 +40,7 @@ class TestDeveloperModes:
             DeveloperMode.REFACTOR: "Code improvement and optimization suggestions",
             DeveloperMode.PLAN: "Architecture planning and system design",
         }
-        
+
         for mode, expected_desc in descriptions.items():
             assert get_mode_description(mode) == expected_desc
 
@@ -56,7 +55,7 @@ class TestDeveloperModes:
             DeveloperMode.REFACTOR: ["refactoring specialist", "improvements"],
             DeveloperMode.PLAN: ["software architect", "system design"],
         }
-        
+
         for mode, keywords in prompt_keywords.items():
             prompt = get_system_prompt(mode)
             for keyword in keywords:
@@ -64,11 +63,12 @@ class TestDeveloperModes:
 
     def test_invalid_mode_handling(self):
         """Test handling of invalid modes."""
+
         # Since we're using an enum, we can't pass invalid values directly
         # But we can test the fallback behavior
         class FakeMode:
             value = "nonexistent"
-        
+
         # These should return empty strings for invalid modes
         assert get_mode_description(FakeMode) == ""
         assert get_system_prompt(FakeMode) == ""

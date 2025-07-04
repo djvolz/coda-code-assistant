@@ -3,7 +3,6 @@ import sys
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Prompt
 from rich.text import Text
 
 try:
@@ -13,9 +12,10 @@ except ImportError:
     __version__ = "dev"
 
 from coda.configuration import get_config
-from coda.providers import Message, ProviderFactory, Role
 
-from .basic_commands import BasicCommandProcessor
+from .chat_session import ChatSession
+from .error_handler import CLIErrorHandler
+from .provider_manager import ProviderManager
 
 console = Console()
 
@@ -43,9 +43,8 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
     if debug:
         config.debug = True
 
-    # Use default provider if not specified
-    if not provider:
-        provider = config.default_provider
+    # Initialize error handler
+    error_handler = CLIErrorHandler(console, debug)
 
     # Check if we should use interactive mode
     if not basic and not one_shot and sys.stdin.isatty():
@@ -69,208 +68,73 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
             console.print("[yellow]Note: Interactive mode not available, using basic mode[/yellow]")
 
     # Basic mode
+    run_basic_mode(provider, model, config, one_shot, mode, error_handler)
+
+
+def run_basic_mode(
+    provider_name: str, model: str, config, one_shot: str, mode: str, error_handler: CLIErrorHandler
+):
+    """Run the CLI in basic mode (no prompt-toolkit)."""
+    # Show welcome banner
+    show_welcome_banner(one_shot)
+
+    # Initialize provider manager
+    provider_manager = ProviderManager(config, console)
+
+    try:
+        # Initialize provider
+        provider = provider_manager.initialize_provider(provider_name)
+
+        # Get available models
+        all_models, unique_models = provider_manager.get_chat_models(provider)
+
+        # Select model
+        selected_model = provider_manager.select_model(unique_models, model, bool(one_shot))
+        console.print(f"[green]Model:[/green] {selected_model}")
+
+        # Create chat session
+        session = ChatSession(
+            provider=provider,
+            model=selected_model,
+            config=config,
+            console=console,
+            provider_name=provider_name or config.default_provider,
+            factory=provider_manager.factory,
+            unique_models=unique_models,
+        )
+
+        # Set initial mode
+        session.set_mode(mode)
+
+        # Run one-shot or interactive
+        if one_shot:
+            session.run_one_shot(one_shot)
+        else:
+            session.run_interactive()
+
+    except ValueError as e:
+        error_handler.handle_provider_error(
+            e, provider_name or config.default_provider, provider_manager.factory
+        )
+    except Exception as e:
+        error_handler.handle_general_error(e)
+
+
+def show_welcome_banner(one_shot: str):
+    """Display the welcome banner."""
+    mode_text = "One-shot mode" if one_shot else "Basic mode"
+    if not one_shot and not sys.stdin.isatty():
+        mode_text = "Basic mode (TTY not detected)"
+
     welcome_text = Text.from_markup(
         "[bold cyan]Coda[/bold cyan] - Code Assistant\n"
         f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
-        f"[dim]{'Basic mode' if basic else 'One-shot mode' if one_shot else 'Basic mode (TTY not detected)'}[/dim]"
+        f"[dim]{mode_text}[/dim]"
     )
 
     console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
 
-    # Create provider using factory
-    factory = ProviderFactory(config.to_dict())
-
-    try:
-        console.print(f"\n[green]Provider:[/green] {provider}")
-        console.print(f"[yellow]Initializing {provider}...[/yellow]")
-
-        # Create provider instance
-        provider_instance = factory.create(provider)
-        console.print(f"[green]✓ Connected to {provider}[/green]")
-
-        # List models
-        models = provider_instance.list_models()
-        console.print(f"[green]✓ Found {len(models)} available models[/green]")
-
-        # Select model - always get unique_models for later use
-        # Filter for chat models - different providers use different indicators
-        chat_models = [
-            m
-            for m in models
-            if "CHAT" in m.metadata.get("capabilities", [])  # OCI GenAI
-            or m.provider in ["ollama", "litellm"]  # These providers only list chat models
-        ]
-
-        # If no chat models found, use all models
-        if not chat_models:
-            chat_models = models
-
-        # Deduplicate models by ID
-        seen = set()
-        unique_models = []
-        for m in chat_models:
-            if m.id not in seen:
-                seen.add(m.id)
-                unique_models.append(m)
-
-        if not model:
-            if one_shot:
-                # For one-shot, use the first available chat model
-                model = unique_models[0].id
-                console.print(f"[green]Auto-selected model:[/green] {model}")
-            else:
-                # Use basic model selector for basic mode
-                from .model_selector import ModelSelector
-
-                selector = ModelSelector(unique_models, console)
-                model = selector.select_model_basic()
-
-        console.print(f"[green]Model:[/green] {model}")
-
-        # Handle one-shot or interactive
-        if one_shot:
-            # One-shot execution with mode support
-            cmd_processor = BasicCommandProcessor(console)
-            cmd_processor.set_provider_info(
-                provider, provider_instance, factory, model, unique_models
-            )
-            # Set initial mode from CLI argument
-            from .shared import DeveloperMode
-
-            cmd_processor.current_mode = DeveloperMode(mode)
-
-            console.print(f"\n[bold cyan]User:[/bold cyan] {one_shot}")
-            console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
-
-            # Get system prompt based on mode (default to general)
-            system_prompt = cmd_processor.get_system_prompt()
-
-            messages = []
-            if system_prompt:
-                messages.append(Message(role=Role.SYSTEM, content=system_prompt))
-            messages.append(Message(role=Role.USER, content=one_shot))
-
-            # Get generation parameters from config
-            temperature = config.to_dict().get("temperature", 0.7)
-            max_tokens = config.to_dict().get("max_tokens", 2000)
-
-            for chunk in provider_instance.chat_stream(
-                messages=messages, model=model, temperature=temperature, max_tokens=max_tokens
-            ):
-                console.print(chunk.content, end="")
-            console.print("\n")
-        else:
-            # Interactive chat with slash command support
-            console.print("\n[dim]Type /help for commands, /exit to quit[/dim]\n")
-            messages = []
-
-            # Initialize command processor
-            cmd_processor = BasicCommandProcessor(console)
-            cmd_processor.set_provider_info(
-                provider, provider_instance, factory, model, unique_models
-            )
-            # Set initial mode from CLI argument
-            from .shared import DeveloperMode
-
-            cmd_processor.current_mode = DeveloperMode(mode)
-
-            while True:
-                try:
-                    # Get user input
-                    user_input = Prompt.ask("[bold]You[/bold]")
-                except KeyboardInterrupt:
-                    # Handle Ctrl+C gracefully - just clear the line and continue
-                    console.print()  # New line for cleaner display
-                    continue
-                except EOFError:
-                    # Handle Ctrl+D as exit
-                    console.print("\n[dim]Goodbye![/dim]")
-                    break
-
-                # Process potential slash commands
-                cmd_result = cmd_processor.process_command(user_input)
-
-                if cmd_result == "exit":
-                    break
-                elif cmd_result == "clear":
-                    messages = []
-                    console.print("[yellow]Conversation cleared[/yellow]\n")
-                    continue
-                elif cmd_result == "continue":
-                    # Command was handled, continue to next iteration
-                    continue
-                elif cmd_result is not None:
-                    # Unknown command result
-                    continue
-
-                # Skip empty input
-                if not user_input.strip():
-                    continue
-
-                # Get system prompt based on mode
-                system_prompt = cmd_processor.get_system_prompt()
-
-                # Prepare messages with system prompt
-                chat_messages = []
-                if system_prompt:
-                    chat_messages.append(Message(role=Role.SYSTEM, content=system_prompt))
-
-                # Add conversation history and new message
-                chat_messages.extend(messages)
-                chat_messages.append(Message(role=Role.USER, content=user_input))
-
-                # Get AI response
-                console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
-
-                full_response = ""
-                try:
-                    # Get generation parameters from config
-                    temperature = config.to_dict().get("temperature", 0.7)
-                    max_tokens = config.to_dict().get("max_tokens", 2000)
-
-                    for chunk in provider_instance.chat_stream(
-                        messages=chat_messages,
-                        model=cmd_processor.current_model or model,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                    ):
-                        console.print(chunk.content, end="")
-                        full_response += chunk.content
-                except KeyboardInterrupt:
-                    console.print("\n\n[yellow]Response interrupted[/yellow]")
-                    full_response += " [interrupted]"
-
-                # Add messages to history
-                messages.append(Message(role=Role.USER, content=user_input))
-                messages.append(Message(role=Role.ASSISTANT, content=full_response))
-                console.print("\n")
-
-    except ValueError as e:
-        if "compartment_id is required" in str(e):
-            console.print("\n[red]Error:[/red] OCI compartment ID not configured")
-            console.print("\nPlease set it via one of these methods:")
-            console.print(
-                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
-            )
-            console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
-        elif "Unknown provider" in str(e):
-            console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
-            console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
-        else:
-            console.print(f"\n[red]Error:[/red] {e}")
-        if debug:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
-    except Exception as e:
-        console.print(f"\n[red]Error:[/red] {e}")
-        if debug:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
+

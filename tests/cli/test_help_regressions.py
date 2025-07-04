@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock
 
-import pytest
-
 from coda.cli.basic_commands import BasicCommandProcessor
 from coda.cli.interactive_cli import InteractiveCLI
 from coda.cli.shared import print_interactive_keyboard_shortcuts
@@ -16,14 +14,14 @@ class TestHelpRegressions:
         """Regression test: Ensure backslash displays correctly, not as [/cyan]."""
         console = Mock()
         print_interactive_keyboard_shortcuts(console)
-        
+
         # Check that the backslash line was called correctly
         calls = [str(call) for call in console.print.call_args_list]
         backslash_calls = [call for call in calls if "line end" in str(call)]
-        
+
         assert len(backslash_calls) > 0
         backslash_call = str(backslash_calls[0])
-        
+
         # Should contain escaped backslash
         assert "\\\\" in backslash_call
         # The actual output contains the escaped backslash followed by [/cyan]
@@ -38,17 +36,17 @@ class TestHelpRegressions:
         basic = BasicCommandProcessor(basic_console)
         basic.process_command("/help")
         basic_calls = str(basic_console.print.call_args_list)
-        
+
         # Should say it clears input/interrupts like interactive mode now
         assert "Clear input line" in basic_calls
         assert "Interrupt AI response" in basic_calls
-        
+
         # Interactive mode
         interactive_console = Mock()
         interactive = InteractiveCLI(interactive_console)
         interactive._cmd_help("")
         interactive_calls = str(interactive_console.print.call_args_list)
-        
+
         # Should say it clears input/interrupts
         assert "Clear input line" in interactive_calls
         assert "Interrupt AI response" in interactive_calls
@@ -58,9 +56,9 @@ class TestHelpRegressions:
         console = Mock()
         processor = BasicCommandProcessor(console)
         processor.process_command("/help")
-        
+
         calls = str(console.print.call_args_list)
-        
+
         # Should NOT mention arrow keys for history
         assert "Navigate command history" not in calls
         # Should mention limited shortcuts
@@ -73,16 +71,16 @@ class TestHelpRegressions:
         basic = BasicCommandProcessor(basic_console)
         basic.process_command("/help")
         basic_calls = str(basic_console.print.call_args_list)
-        
+
         assert "Ctrl+R" not in basic_calls
         assert "Reverse search" not in basic_calls
-        
+
         # Interactive mode - should have Ctrl+R
         interactive_console = Mock()
         interactive = InteractiveCLI(interactive_console)
         interactive._cmd_help("")
         interactive_calls = str(interactive_console.print.call_args_list)
-        
+
         assert "Ctrl+R" in interactive_calls
         assert "Reverse search" in interactive_calls
 
@@ -93,15 +91,15 @@ class TestHelpRegressions:
         basic = BasicCommandProcessor(basic_console)
         basic.process_command("/help")
         basic_calls = str(basic_console.print.call_args_list)
-        
+
         assert "Tab" not in basic_calls or "Auto-complete" not in basic_calls
-        
+
         # Interactive mode
         interactive_console = Mock()
         interactive = InteractiveCLI(interactive_console)
         interactive._cmd_help("")
         interactive_calls = str(interactive_console.print.call_args_list)
-        
+
         assert "Tab" in interactive_calls
         assert "Auto-complete" in interactive_calls
 
@@ -110,9 +108,9 @@ class TestHelpRegressions:
         console = Mock()
         cli = InteractiveCLI(console)
         cli._cmd_help("")
-        
+
         calls = str(console.print.call_args_list)
-        
+
         # Should mark session/export/tools/theme as interactive only
         assert "Interactive mode only" in calls
         assert "/session" in calls
@@ -127,13 +125,13 @@ class TestHelpRegressions:
         basic = BasicCommandProcessor(basic_console)
         basic.process_command("/help")
         basic_calls = str(basic_console.print.call_args_list)
-        
+
         # Get descriptions from interactive mode
         interactive_console = Mock()
         interactive = InteractiveCLI(interactive_console)
         interactive._cmd_help("")
         interactive_calls = str(interactive_console.print.call_args_list)
-        
+
         # Check that mode descriptions are the same
         mode_descriptions = [
             "General conversation and assistance",
@@ -142,9 +140,9 @@ class TestHelpRegressions:
             "Detailed code explanations and documentation",
             "Security and code quality review",
             "Code improvement and optimization suggestions",
-            "Architecture planning and system design"
+            "Architecture planning and system design",
         ]
-        
+
         for desc in mode_descriptions:
             assert desc in basic_calls
             assert desc in interactive_calls
@@ -156,21 +154,21 @@ class TestHelpRegressions:
             ("(/p)", "provider"),
             ("(/cls)", "clear"),
             ("(/h, /?)", "help"),
-            ("(/quit, /q)", "exit")
+            ("(/quit, /q)", "exit"),
         ]
-        
+
         # Basic mode
         basic_console = Mock()
         basic = BasicCommandProcessor(basic_console)
         basic.process_command("/help")
         basic_calls = str(basic_console.print.call_args_list)
-        
+
         # Interactive mode
         interactive_console = Mock()
         interactive = InteractiveCLI(interactive_console)
         interactive._cmd_help("")
         interactive_calls = str(interactive_console.print.call_args_list)
-        
+
         for alias, _ in aliases_to_check:
             assert alias in basic_calls
             assert alias in interactive_calls

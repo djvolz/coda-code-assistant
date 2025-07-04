@@ -1,0 +1,114 @@
+"""Provider management and initialization for CLI."""
+
+
+from rich.console import Console
+
+from coda.configuration import CodaConfig
+from coda.providers import BaseProvider, Model, ProviderFactory
+
+
+class ProviderManager:
+    """Manages provider initialization and model discovery."""
+
+    def __init__(self, config: CodaConfig, console: Console):
+        self.config = config
+        self.console = console
+        self.factory = ProviderFactory(config.to_dict())
+
+    def initialize_provider(self, provider_name: str | None = None) -> BaseProvider:
+        """Initialize and connect to a provider."""
+        # Use default provider if not specified
+        provider_name = provider_name or self.config.default_provider
+
+        self.console.print(f"\n[green]Provider:[/green] {provider_name}")
+        self.console.print(f"[yellow]Initializing {provider_name}...[/yellow]")
+
+        # Create provider instance
+        provider_instance = self.factory.create(provider_name)
+        self.console.print(f"[green]✓ Connected to {provider_name}[/green]")
+
+        return provider_instance
+
+    def get_chat_models(self, provider: BaseProvider) -> tuple[list[Model], list[Model]]:
+        """Get available chat models from provider.
+
+        Returns:
+            Tuple of (all_models, unique_chat_models)
+        """
+        # List all models
+        models = provider.list_models()
+        self.console.print(f"[green]✓ Found {len(models)} available models[/green]")
+
+        # Filter for chat models - different providers use different indicators
+        chat_models = [
+            m
+            for m in models
+            if "CHAT" in m.metadata.get("capabilities", [])  # OCI GenAI
+            or m.provider in ["ollama", "litellm"]  # These providers only list chat models
+        ]
+
+        # If no chat models found, use all models
+        if not chat_models:
+            chat_models = models
+
+        # Deduplicate models by ID
+        seen = set()
+        unique_models = []
+        for m in chat_models:
+            if m.id not in seen:
+                seen.add(m.id)
+                unique_models.append(m)
+
+        return models, unique_models
+
+    def select_model(
+        self, unique_models: list[Model], model: str | None = None, one_shot: bool = False
+    ) -> str:
+        """Select a model for chat.
+
+        Args:
+            unique_models: List of unique chat models
+            model: Pre-selected model ID
+            one_shot: Whether in one-shot mode (auto-select first model)
+
+        Returns:
+            Selected model ID
+        """
+        if model:
+            return model
+
+        if one_shot:
+            # For one-shot, use the first available chat model
+            selected = unique_models[0].id
+            self.console.print(f"[green]Auto-selected model:[/green] {selected}")
+            return selected
+
+        # Use basic model selector for interactive selection
+        from .model_selector import ModelSelector
+
+        selector = ModelSelector(unique_models, self.console)
+        return selector.select_model_basic()
+
+    def get_provider_error_message(
+        self, error: Exception, provider_name: str
+    ) -> tuple[str, str | None]:
+        """Get user-friendly error message for provider errors.
+
+        Returns:
+            Tuple of (error_message, help_text)
+        """
+        error_str = str(error)
+
+        if "compartment_id is required" in error_str:
+            return (
+                "OCI compartment ID not configured",
+                "Please set it via one of these methods:\n"
+                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]\n"
+                "2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]",
+            )
+        elif "Unknown provider" in error_str:
+            available = ", ".join(self.factory.list_available())
+            return (f"Provider '{provider_name}' not found", f"Available providers: {available}")
+        else:
+            return (str(error), None)
+

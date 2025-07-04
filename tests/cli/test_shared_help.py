@@ -24,7 +24,7 @@ class TestSharedHelp:
     def test_print_command_help_no_mode(self, mock_console):
         """Test command help without mode suffix."""
         print_command_help(mock_console)
-        
+
         # Check that it was called with expected content
         calls = [str(call) for call in mock_console.print.call_args_list]
         assert any("Available Commands" in str(call) for call in calls)
@@ -38,14 +38,14 @@ class TestSharedHelp:
     def test_print_command_help_with_mode(self, mock_console):
         """Test command help with mode suffix."""
         print_command_help(mock_console, "Test Mode")
-        
+
         calls = [str(call) for call in mock_console.print.call_args_list]
         assert any("Available Commands (Test Mode)" in str(call) for call in calls)
 
     def test_print_developer_modes(self, mock_console):
         """Test developer modes display."""
         print_developer_modes(mock_console)
-        
+
         calls = [str(call) for call in mock_console.print.call_args_list]
         assert any("Developer Modes" in str(call) for call in calls)
         # Check all modes are shown
@@ -55,7 +55,7 @@ class TestSharedHelp:
     def test_print_basic_keyboard_shortcuts(self, mock_console):
         """Test basic keyboard shortcuts display."""
         print_basic_keyboard_shortcuts(mock_console)
-        
+
         calls = [str(call) for call in mock_console.print.call_args_list]
         assert any("Keyboard Shortcuts" in str(call) for call in calls)
         assert any("Ctrl+C" in str(call) for call in calls)
@@ -67,7 +67,7 @@ class TestSharedHelp:
     def test_print_interactive_keyboard_shortcuts(self, mock_console):
         """Test interactive keyboard shortcuts display."""
         print_interactive_keyboard_shortcuts(mock_console)
-        
+
         calls = [str(call) for call in mock_console.print.call_args_list]
         assert any("Keyboard Shortcuts" in str(call) for call in calls)
         assert any("Ctrl+C" in str(call) for call in calls)
@@ -81,7 +81,7 @@ class TestSharedHelp:
     def test_print_interactive_only_commands(self, mock_console):
         """Test interactive-only commands display."""
         print_interactive_only_commands(mock_console)
-        
+
         calls = [str(call) for call in mock_console.print.call_args_list]
         assert any("Session" in str(call) for call in calls)
         assert any("/session" in str(call) for call in calls)
@@ -94,7 +94,7 @@ class TestSharedHelp:
     def test_command_aliases_shown(self, mock_console):
         """Test that command aliases are shown in help."""
         print_command_help(mock_console)
-        
+
         calls = [str(call) for call in mock_console.print.call_args_list]
         # Check for aliases
         assert any("(/m)" in str(call) for call in calls)  # model alias
@@ -106,7 +106,7 @@ class TestSharedHelp:
     def test_no_duplicate_content(self, mock_console):
         """Test that help content is not duplicated."""
         print_command_help(mock_console)
-        
+
         # Count occurrences of unique strings
         calls_str = str(mock_console.print.call_args_list)
         assert calls_str.count("AI Settings:") == 1

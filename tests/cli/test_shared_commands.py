@@ -9,6 +9,7 @@ from coda.cli.shared import CommandHandler, CommandResult, DeveloperMode
 
 class MockModel:
     """Mock model for testing."""
+
     def __init__(self, id: str):
         self.id = id
         self.provider = "test"
@@ -17,7 +18,7 @@ class MockModel:
 
 class TestCommandHandler(CommandHandler):
     """Concrete implementation for testing."""
-    
+
     def show_help(self) -> CommandResult:
         """Test implementation of show_help."""
         return CommandResult.HANDLED
@@ -46,9 +47,9 @@ class TestSharedCommands:
         models = [MockModel("model1"), MockModel("model2")]
         factory = Mock()
         provider = Mock()
-        
+
         handler.set_provider_info("test_provider", provider, factory, "model1", models)
-        
+
         assert handler.provider_name == "test_provider"
         assert handler.provider_instance == provider
         assert handler.factory == factory
@@ -58,7 +59,7 @@ class TestSharedCommands:
     def test_switch_mode_no_args(self, handler):
         """Test mode switching without arguments."""
         result = handler.switch_mode("")
-        
+
         assert result == CommandResult.HANDLED
         calls = [str(call) for call in handler.console.print.call_args_list]
         assert any("Current mode" in str(call) for call in calls)
@@ -67,7 +68,7 @@ class TestSharedCommands:
     def test_switch_mode_valid(self, handler):
         """Test switching to a valid mode."""
         result = handler.switch_mode("code")
-        
+
         assert result == CommandResult.HANDLED
         assert handler.current_mode == DeveloperMode.CODE
         calls = [str(call) for call in handler.console.print.call_args_list]
@@ -77,7 +78,7 @@ class TestSharedCommands:
         """Test switching to an invalid mode."""
         original_mode = handler.current_mode
         result = handler.switch_mode("invalid")
-        
+
         assert result == CommandResult.HANDLED
         assert handler.current_mode == original_mode
         calls = [str(call) for call in handler.console.print.call_args_list]
@@ -86,7 +87,7 @@ class TestSharedCommands:
     def test_switch_model_no_models(self, handler):
         """Test model switching when no models available."""
         result = handler.switch_model("")
-        
+
         assert result == CommandResult.HANDLED
         calls = [str(call) for call in handler.console.print.call_args_list]
         assert any("No models available" in str(call) for call in calls)
@@ -96,9 +97,9 @@ class TestSharedCommands:
         models = [MockModel(f"model{i}") for i in range(15)]
         handler.available_models = models
         handler.current_model = "model0"
-        
+
         result = handler.switch_model("")
-        
+
         assert result == CommandResult.HANDLED
         calls = [str(call) for call in handler.console.print.call_args_list]
         assert any("Current model" in str(call) for call in calls)
@@ -113,9 +114,9 @@ class TestSharedCommands:
         """Test switching to a valid model."""
         models = [MockModel("gpt-4"), MockModel("gpt-3.5"), MockModel("claude")]
         handler.available_models = models
-        
+
         result = handler.switch_model("gpt-4")
-        
+
         assert result == CommandResult.HANDLED
         assert handler.current_model == "gpt-4"
         calls = [str(call) for call in handler.console.print.call_args_list]
@@ -125,9 +126,9 @@ class TestSharedCommands:
         """Test model switching with partial match."""
         models = [MockModel("test-model-large"), MockModel("test-model-small")]
         handler.available_models = models
-        
+
         result = handler.switch_model("large")
-        
+
         assert result == CommandResult.HANDLED
         assert handler.current_model == "test-model-large"
 
@@ -136,9 +137,9 @@ class TestSharedCommands:
         models = [MockModel("model1")]
         handler.available_models = models
         handler.current_model = "model1"
-        
+
         result = handler.switch_model("nonexistent")
-        
+
         assert result == CommandResult.HANDLED
         assert handler.current_model == "model1"  # Unchanged
         calls = [str(call) for call in handler.console.print.call_args_list]
@@ -147,9 +148,9 @@ class TestSharedCommands:
     def test_show_provider_info_no_args(self, handler):
         """Test showing provider info without arguments."""
         handler.provider_name = "test_provider"
-        
+
         result = handler.show_provider_info("")
-        
+
         assert result == CommandResult.HANDLED
         calls = [str(call) for call in handler.console.print.call_args_list]
         assert any("Provider Management" in str(call) for call in calls)
@@ -161,9 +162,9 @@ class TestSharedCommands:
         factory = Mock()
         factory.list_available.return_value = ["oci_genai", "ollama", "litellm"]
         handler.factory = factory
-        
+
         result = handler.show_provider_info("")
-        
+
         assert result == CommandResult.HANDLED
         calls = [str(call) for call in handler.console.print.call_args_list]
         assert any("oci_genai" in str(call) for call in calls)
@@ -173,9 +174,9 @@ class TestSharedCommands:
     def test_show_provider_info_same_provider(self, handler):
         """Test provider info when trying to switch to same provider."""
         handler.provider_name = "oci_genai"
-        
+
         result = handler.show_provider_info("oci_genai")
-        
+
         assert result == CommandResult.HANDLED
         calls = [str(call) for call in handler.console.print.call_args_list]
         assert any("Already using oci_genai" in str(call) for call in calls)
@@ -183,9 +184,9 @@ class TestSharedCommands:
     def test_show_provider_info_different_provider(self, handler):
         """Test provider info when trying to switch to different provider."""
         handler.provider_name = "oci_genai"
-        
+
         result = handler.show_provider_info("ollama")
-        
+
         assert result == CommandResult.HANDLED
         calls = [str(call) for call in handler.console.print.call_args_list]
         assert any("not supported in current mode" in str(call) for call in calls)

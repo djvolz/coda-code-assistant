@@ -6,7 +6,6 @@ import sys
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.status import Status
 from rich.text import Text
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
@@ -225,7 +224,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
     # Load configuration
     from coda.configuration import get_config
-    from coda.providers import Message, ProviderFactory, Role
+    from coda.providers import ProviderFactory
 
     config = get_config()
 

@@ -14,7 +14,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-from .shared import CommandHandler, CommandResult, DeveloperMode, get_mode_description
+from .shared import CommandHandler, CommandResult, DeveloperMode
 
 
 class SlashCommand:
@@ -481,6 +481,7 @@ class InteractiveCLI(CommandHandler):
     def get_system_prompt(self) -> str:
         """Get system prompt based on current mode."""
         from .shared import get_system_prompt
+
         return get_system_prompt(self.current_mode)
 
     def reset_interrupt(self):
