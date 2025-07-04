@@ -119,6 +119,10 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
                         messages = []
                         console.print("[yellow]Conversation cleared[/yellow]\n")
                         continue
+                    
+                    # Skip empty or whitespace-only input
+                    if not user_input.strip():
+                        continue
 
                     # Add user message
                     messages.append(Message(role=Role.USER, content=user_input))
