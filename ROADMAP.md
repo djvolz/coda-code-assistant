@@ -191,11 +191,17 @@ None currently - all bugs have been resolved!
 ### 6.1 Multi-Modal Support
 - [ ] Image understanding (for providers that support it)
 - [ ] Code screenshot analysis
+- [ ] Important documents to support
+    - [ ] PDF support
+    - [ ] Microsoft Word doc support
+    - [ ] Microsoft Powerpoint support
+    - [ ] Microsoft Excel support
 - [ ] Diagram generation
+- [ ] Use [diagram-renderer](https://github.com/djvolz/diagram-renderer)
 
 ### 6.2 Project Intelligence
 - [ ] Automatic project type detection
-    - [ ] Specifically handle multiple version control systems beyond just git. Very important.
+- [ ] Specifically handle multiple version control systems beyond just git. Very important.
 - [ ] Language-specific optimizations
 - [ ] Dependency awareness
 - [ ] Test generation
@@ -213,14 +219,13 @@ None currently - all bugs have been resolved!
 - [ ] Provider status and health
 - [ ] Model selection and comparison
 - [ ] Usage statistics
-    - [ ] Add the token usage stats on session end like [gemini cli](https://github.com/google-gemini/gemini-cli)
+- [ ] Add the token usage stats on session end like [gemini cli](https://github.com/google-gemini/gemini-cli)
 - [ ] Cost tracking (for paid providers)
 
 ### 7.2 Chat Interface
 - [ ] Web-based chat UI
 - [ ] Code highlighting
 - [ ] File upload/download
-    - [ ] PDF and image support
 - [ ] Session management UI
 
 ## Phase 8: Other. Too be categorized
@@ -232,8 +237,9 @@ None currently - all bugs have been resolved!
 - [ ] Repo mapping like [aider](https://aider.chat/docs/repomap.html)
     - [ ] tree-sitter using [aider ts implementation](https://github.com/Aider-AI/aider/tree/main/aider/queries)
         - [ ] Make sure to support documentation, function, class, struct, etc (not just ref and def like aider does)
-- [ ] Wiki update checker
+- [ ] Our own wiki update checker
 - [ ] Changelog detecter
+- [ ] Given any two points in the code (hash to hash but make this VCS agnostic) generate a changelog
 - [ ] Review code helper
 
 
@@ -242,6 +248,7 @@ None currently - all bugs have been resolved!
 ### Architecture
 - **Async First**: Use asyncio throughout for better performance
 - **Plugin System**: Providers and tools as plugins
+- ** Modularity **: We want to make this code as modular as possible so other projects can use self-contained pieces as APIs (without the need for our UI)
 - **Type Safety**: Full type hints and mypy compliance
 - **Testing**: Comprehensive test suite with mocked providers
 
@@ -339,13 +346,12 @@ None currently - all bugs have been resolved!
 
 ## Next Steps
 
-1. Begin Phase 2: Provider Architecture
-2. Design abstract provider interface
-3. Implement provider registry/factory pattern
-4. Add LiteLLM integration for 100+ providers
-5. Create native Ollama provider
-6. Ensure backward compatibility with OCI provider
-7. Add provider-specific configuration management
+1. Begin Phase 3: Enhanced CLI Experience (assigned to another developer)
+2. Implement interactive shell with rich prompt
+3. Add slash commands for runtime configuration
+4. Create developer modes (code, debug, explain, review, refactor)
+5. Integrate command history and auto-completion
+6. Ensure compatibility with Phase 2 provider architecture
 
 ## Notes
 
