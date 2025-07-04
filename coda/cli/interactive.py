@@ -43,7 +43,16 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 from .model_selector import ModelSelector
                 
                 chat_models = [m for m in models if 'CHAT' in m.metadata.get('capabilities', [])]
-                selector = ModelSelector(chat_models, console)
+                
+                # Deduplicate models by ID
+                seen = set()
+                unique_models = []
+                for m in chat_models:
+                    if m.id not in seen:
+                        seen.add(m.id)
+                        unique_models.append(m)
+                
+                selector = ModelSelector(unique_models, console)
                 
                 # Use interactive selector
                 model = await selector.select_model_interactive()
@@ -53,11 +62,12 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                     return
 
             console.print(f"[green]Model:[/green] {model}")
+            console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
             console.print("\n[dim]Type /help for commands, /exit to quit[/dim]\n")
             
             # Set model info in CLI for /model command
             cli.current_model = model
-            cli.available_models = chat_models
+            cli.available_models = unique_models
 
             # Interactive chat loop
             messages = []

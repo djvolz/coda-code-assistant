@@ -67,16 +67,24 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
             # Select model
             if not model:
                 chat_models = [m for m in models if 'CHAT' in m.metadata.get('capabilities', [])]
+                
+                # Deduplicate models by ID
+                seen = set()
+                unique_models = []
+                for m in chat_models:
+                    if m.id not in seen:
+                        seen.add(m.id)
+                        unique_models.append(m)
 
                 if one_shot:
                     # For one-shot, use the first available chat model
-                    model = chat_models[0].id
+                    model = unique_models[0].id
                     console.print(f"[green]Auto-selected model:[/green] {model}")
                 else:
                     # Use basic model selector for basic mode
                     from .model_selector import ModelSelector
                     
-                    selector = ModelSelector(chat_models, console)
+                    selector = ModelSelector(unique_models, console)
                     model = selector.select_model_basic()
 
             console.print(f"[green]Model:[/green] {model}")
