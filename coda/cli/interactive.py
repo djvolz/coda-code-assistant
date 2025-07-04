@@ -65,9 +65,8 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
             console.print(f"[green]Model:[/green] {model}")
             console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
-            console.print("\n[dim]Type /help for commands, /exit to quit[/dim]")
-            console.print("[dim]Press Esc twice or Ctrl+C to interrupt responses[/dim]")
-            console.print("[dim]Press Ctrl+C twice to exit[/dim]\n")
+            console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
+            console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]\n")
             
             # Set model info in CLI for /model command
             cli.current_model = model
@@ -114,7 +113,10 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 chat_messages.extend(messages)
 
                 # Clear interrupt event before starting
-                cli.interrupt_event.clear()
+                cli.reset_interrupt()
+                
+                # Start listening for interrupts
+                cli.start_interrupt_listener()
                 
                 full_response = ""
                 interrupted = False
@@ -140,6 +142,9 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                         console.print("\n\n[yellow]Response interrupted by user[/yellow]")
                     else:
                         raise
+                finally:
+                    # Stop the interrupt listener
+                    cli.stop_interrupt_listener()
 
                 # Add assistant message to history (even if interrupted)
                 if full_response or interrupted:
@@ -161,6 +166,10 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
         except SystemExit:
             # Clean exit from /exit command
             pass
+        except KeyboardInterrupt:
+            # Handle Ctrl+C gracefully - just exit cleanly
+            console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+            sys.exit(0)
         except Exception as e:
             console.print(f"\n[red]Error:[/red] {e}")
             if debug:
@@ -215,4 +224,9 @@ def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode
 
 
 if __name__ == "__main__":
-    interactive_main()
+    try:
+        interactive_main()
+    except KeyboardInterrupt:
+        # Handle Ctrl+C at the top level
+        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        sys.exit(0)
