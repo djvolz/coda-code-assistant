@@ -66,7 +66,8 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
             console.print(f"[green]Model:[/green] {model}")
             console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
             console.print("\n[dim]Type /help for commands, /exit to quit[/dim]")
-            console.print("[dim]Press Esc twice quickly to interrupt responses[/dim]\n")
+            console.print("[dim]Press Esc twice or Ctrl+C to interrupt responses[/dim]")
+            console.print("[dim]Press Ctrl+C twice to exit[/dim]\n")
             
             # Set model info in CLI for /model command
             cli.current_model = model
@@ -78,6 +79,10 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
             while True:
                 # Get user input with enhanced features
                 user_input = await cli.get_input()
+                
+                # Skip empty input (from Ctrl+C)
+                if not user_input:
+                    continue
 
                 # Handle slash commands
                 if user_input.startswith('/'):
