@@ -509,58 +509,55 @@ class InteractiveCLI:
         """Show description for current mode."""
         self.console.print(f"[dim]{self._get_mode_description(self.current_mode)}[/dim]")
 
+    def _show_coming_soon_command(
+        self, command_name: str, title: str, options: list[tuple[str, str]], usage: str
+    ):
+        """Helper to show coming soon commands with consistent formatting."""
+        self.console.print(f"\n[bold]{title}[/bold] [yellow](Coming soon)[/yellow]")
+        self.console.print(
+            f"\n[bold]Planned {('subcommands' if 'subcommand' in usage else 'options')}:[/bold]"
+        )
+        for option, description in options:
+            self.console.print(f"  [cyan]{option}[/cyan] - {description}")
+        self.console.print(f"\n[dim]Usage: {usage}[/dim]")
+
     def _cmd_session(self, args: str):
         """Manage sessions."""
         if not args:
-            self.console.print("\n[bold]Session Management[/bold] [yellow](Coming soon)[/yellow]")
-            self.console.print("\n[bold]Planned subcommands:[/bold]")
-            self.console.print("  [cyan]save[/cyan] - Save current conversation")
-            self.console.print("  [cyan]load[/cyan] - Load a saved conversation")
-            self.console.print("  [cyan]list[/cyan] - List all saved sessions")
-            self.console.print("  [cyan]branch[/cyan] - Create a branch from current conversation")
-            self.console.print("  [cyan]delete[/cyan] - Delete a saved session")
-            self.console.print("\n[dim]Usage: /session <subcommand>[/dim]")
+            options = self.command_options.get("session", [])
+            self._show_coming_soon_command(
+                "session", "Session Management", options, "/session <subcommand>"
+            )
         else:
             self.console.print(f"[yellow]Session command '{args}' not implemented yet[/yellow]")
 
     def _cmd_theme(self, args: str):
         """Change UI theme."""
         if not args:
-            self.console.print("\n[bold]Theme Settings[/bold] [yellow](Coming soon)[/yellow]")
-            self.console.print("\n[bold]Planned themes:[/bold]")
-            self.console.print("  [cyan]default[/cyan] - Default color scheme")
-            self.console.print("  [cyan]dark[/cyan] - Dark mode optimized")
-            self.console.print("  [cyan]light[/cyan] - Light terminal theme")
-            self.console.print("  [cyan]minimal[/cyan] - Minimal colors")
-            self.console.print("  [cyan]vibrant[/cyan] - High contrast colors")
-            self.console.print("\n[dim]Usage: /theme <theme_name>[/dim]")
+            options = self.command_options.get("theme", [])
+            self._show_coming_soon_command(
+                "theme", "Theme Settings", options, "/theme <theme_name>"
+            )
         else:
             self.console.print(f"[yellow]Theme '{args}' not implemented yet[/yellow]")
 
     def _cmd_export(self, args: str):
         """Export conversation."""
         if not args:
-            self.console.print("\n[bold]Export Options[/bold] [yellow](Coming soon)[/yellow]")
-            self.console.print("\n[bold]Planned formats:[/bold]")
-            self.console.print("  [cyan]markdown[/cyan] - Export as Markdown file")
-            self.console.print("  [cyan]json[/cyan] - Export as JSON with metadata")
-            self.console.print("  [cyan]txt[/cyan] - Export as plain text")
-            self.console.print("  [cyan]html[/cyan] - Export as HTML with syntax highlighting")
-            self.console.print("\n[dim]Usage: /export <format> [filename][/dim]")
+            options = self.command_options.get("export", [])
+            self._show_coming_soon_command(
+                "export", "Export Options", options, "/export <format> [filename]"
+            )
         else:
             self.console.print(f"[yellow]Export format '{args}' not implemented yet[/yellow]")
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
         if not args:
-            self.console.print("\n[bold]MCP Tools Management[/bold] [yellow](Coming soon)[/yellow]")
-            self.console.print("\n[bold]Planned subcommands:[/bold]")
-            self.console.print("  [cyan]list[/cyan] - List available MCP tools")
-            self.console.print("  [cyan]enable[/cyan] - Enable specific tools")
-            self.console.print("  [cyan]disable[/cyan] - Disable specific tools")
-            self.console.print("  [cyan]config[/cyan] - Configure tool settings")
-            self.console.print("  [cyan]status[/cyan] - Show tool status")
-            self.console.print("\n[dim]Usage: /tools <subcommand>[/dim]")
+            options = self.command_options.get("tools", [])
+            self._show_coming_soon_command(
+                "tools", "MCP Tools Management", options, "/tools <subcommand>"
+            )
         else:
             self.console.print(f"[yellow]Tools command '{args}' not implemented yet[/yellow]")
 
