@@ -2,6 +2,8 @@
 
 import asyncio
 import sys
+import time
+from threading import Event
 
 import click
 from rich.console import Console
@@ -63,7 +65,8 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
             console.print(f"[green]Model:[/green] {model}")
             console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
-            console.print("\n[dim]Type /help for commands, /exit to quit[/dim]\n")
+            console.print("\n[dim]Type /help for commands, /exit to quit[/dim]")
+            console.print("[dim]Press Esc twice quickly to interrupt responses[/dim]\n")
             
             # Set model info in CLI for /model command
             cli.current_model = model
@@ -101,18 +104,37 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                     chat_messages.append(Message(role=Role.SYSTEM, content=system_prompt))
                 chat_messages.extend(messages)
 
+                # Clear interrupt event before starting
+                cli.interrupt_event.clear()
+                
                 full_response = ""
-                for chunk in oci_provider.chat_stream(
-                    messages=chat_messages,
-                    model=cli.current_model,  # Use current model from CLI
-                    temperature=0.7,
-                    max_tokens=2000
-                ):
-                    console.print(chunk.content, end="")
-                    full_response += chunk.content
+                interrupted = False
+                
+                try:
+                    for chunk in oci_provider.chat_stream(
+                        messages=chat_messages,
+                        model=cli.current_model,  # Use current model from CLI
+                        temperature=0.7,
+                        max_tokens=2000
+                    ):
+                        # Check for interrupt
+                        if cli.interrupt_event.is_set():
+                            interrupted = True
+                            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                            break
+                            
+                        console.print(chunk.content, end="")
+                        full_response += chunk.content
+                except Exception as e:
+                    if cli.interrupt_event.is_set():
+                        interrupted = True
+                        console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                    else:
+                        raise
 
-                # Add assistant message to history
-                messages.append(Message(role=Role.ASSISTANT, content=full_response))
+                # Add assistant message to history (even if interrupted)
+                if full_response or interrupted:
+                    messages.append(Message(role=Role.ASSISTANT, content=full_response))
                 console.print("\n")
 
         except ValueError as e:
