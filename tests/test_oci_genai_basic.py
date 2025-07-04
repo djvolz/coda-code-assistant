@@ -30,7 +30,6 @@ class TestOCIGenAIStreaming:
         message = data.get("message", {})
         assert message != {}
 
-        content = ""
         message_content = message.get("content", [])
         assert len(message_content) == 1
         assert message_content[0]["type"] == "TEXT"
@@ -133,7 +132,7 @@ class TestOCIGenAIStreaming:
             try:
                 if invalid:
                     json.loads(invalid)
-                    assert False, f"Should have raised JSONDecodeError for: {invalid}"
+                    raise AssertionError(f"Should have raised JSONDecodeError for: {invalid}")
             except (json.JSONDecodeError, TypeError):
                 # This is expected - the code should continue when this happens
                 pass

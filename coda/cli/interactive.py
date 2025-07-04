@@ -23,44 +23,66 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
 
-    # Handle OCI GenAI provider
-    if provider == "oci_genai":
-        try:
-            from coda.providers import Message, OCIGenAIProvider, Role
+    # Load configuration
+    from coda.configuration import get_config
+    from coda.providers import Message, ProviderFactory, Role
 
-            console.print(f"\n[green]Provider:[/green] {provider}")
-            console.print("[yellow]Initializing OCI GenAI...[/yellow]")
+    config = get_config()
+    
+    # Apply debug override
+    if debug:
+        config.debug = True
+    
+    # Use default provider if not specified
+    if not provider:
+        provider = config.default_provider
 
-            oci_provider = OCIGenAIProvider()
-            console.print("[green]✓ Connected to OCI GenAI[/green]")
+    # Create provider using factory
+    factory = ProviderFactory(config.to_dict())
 
-            # List models
-            models = oci_provider.list_models()
-            console.print(f"[green]✓ Found {len(models)} available models[/green]")
+    try:
+        console.print(f"\n[green]Provider:[/green] {provider}")
+        console.print(f"[yellow]Initializing {provider}...[/yellow]")
 
-            # Filter and deduplicate chat models
-            chat_models = [m for m in models if "CHAT" in m.metadata.get("capabilities", [])]
+        # Create provider instance
+        provider_instance = factory.create(provider)
+        console.print(f"[green]✓ Connected to {provider}[/green]")
 
-            # Deduplicate models by ID
-            seen = set()
-            unique_models = []
-            for m in chat_models:
-                if m.id not in seen:
-                    seen.add(m.id)
-                    unique_models.append(m)
+        # List models
+        models = provider_instance.list_models()
+        console.print(f"[green]✓ Found {len(models)} available models[/green]")
 
-            # Select model if not specified
+        # Filter for chat models - different providers use different indicators
+        chat_models = [
+            m for m in models 
+            if "CHAT" in m.metadata.get("capabilities", []) or  # OCI GenAI
+               m.provider in ["ollama", "litellm"]  # These providers only list chat models
+        ]
+        
+        # If no chat models found, use all models
+        if not chat_models:
+            chat_models = models
+
+        # Deduplicate models by ID
+        seen = set()
+        unique_models = []
+        for m in chat_models:
+            if m.id not in seen:
+                seen.add(m.id)
+                unique_models.append(m)
+
+        # Select model if not specified
+        if not model:
+            from .model_selector import ModelSelector
+
+            selector = ModelSelector(unique_models, console)
+
+            # Use interactive selector
+            model = await selector.select_model_interactive()
+
             if not model:
-                from .model_selector import ModelSelector
-
-                selector = ModelSelector(unique_models, console)
-
-                # Use interactive selector
-                model = await selector.select_model_interactive()
-
-                if not model:
-                    console.print("\n[yellow]No model selected. Exiting.[/yellow]")
-                    return
+                console.print("\n[yellow]No model selected. Exiting.[/yellow]")
+                return
 
             console.print(f"[green]Model:[/green] {model}")
             console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
@@ -142,7 +164,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                     # Show thinking message on its own line
                     console.print(f"\n[dim cyan]{thinking_msg}...[/dim cyan]")
 
-                    stream = oci_provider.chat_stream(
+                    stream = provider_instance.chat_stream(
                         messages=chat_messages,
                         model=cli.current_model,  # Use current model from CLI
                         temperature=0.7,
@@ -184,38 +206,38 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                     messages.append(Message(role=Role.ASSISTANT, content=full_response))
                 console.print("\n")  # Add spacing after response
 
-        except ValueError as e:
-            if "compartment_id is required" in str(e):
-                console.print("\n[red]Error:[/red] OCI compartment ID not configured")
-                console.print("\nPlease set it via one of these methods:")
-                console.print(
-                    "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
-                )
-                console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
-            else:
-                console.print(f"\n[red]Error:[/red] {e}")
-            if debug:
-                import traceback
-
-                traceback.print_exc()
-            sys.exit(1)
-        except SystemExit:
-            # Clean exit from /exit command
-            pass
-        except KeyboardInterrupt:
-            # Handle Ctrl+C gracefully - just exit cleanly
-            console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
-            sys.exit(0)
-        except Exception as e:
+    except ValueError as e:
+        if "compartment_id is required" in str(e):
+            console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+            console.print("\nPlease set it via one of these methods:")
+            console.print(
+                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+            )
+            console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+        elif "Unknown provider" in str(e):
+            console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
+            console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
+        else:
             console.print(f"\n[red]Error:[/red] {e}")
-            if debug:
-                import traceback
+        if debug:
+            import traceback
 
-                traceback.print_exc()
-            sys.exit(1)
-    else:
-        console.print(f"\n[yellow]Provider '{provider}' not implemented yet.[/yellow]")
-        console.print("Currently supported: oci_genai")
+            traceback.print_exc()
+        sys.exit(1)
+    except SystemExit:
+        # Clean exit from /exit command
+        pass
+    except KeyboardInterrupt:
+        # Handle Ctrl+C gracefully - just exit cleanly
+        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        sys.exit(0)
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {e}")
+        if debug:
+            import traceback
+
+            traceback.print_exc()
+        sys.exit(1)
 
 
 def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
