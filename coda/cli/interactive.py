@@ -2,14 +2,11 @@
 
 import asyncio
 import sys
-import time
-from threading import Event
 
 import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-from rich.markdown import Markdown
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
 
@@ -41,25 +38,26 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
             models = oci_provider.list_models()
             console.print(f"[green]✓ Found {len(models)} available models[/green]")
 
+            # Filter and deduplicate chat models
+            chat_models = [m for m in models if "CHAT" in m.metadata.get("capabilities", [])]
+
+            # Deduplicate models by ID
+            seen = set()
+            unique_models = []
+            for m in chat_models:
+                if m.id not in seen:
+                    seen.add(m.id)
+                    unique_models.append(m)
+
             # Select model if not specified
             if not model:
                 from .model_selector import ModelSelector
-                
-                chat_models = [m for m in models if 'CHAT' in m.metadata.get('capabilities', [])]
-                
-                # Deduplicate models by ID
-                seen = set()
-                unique_models = []
-                for m in chat_models:
-                    if m.id not in seen:
-                        seen.add(m.id)
-                        unique_models.append(m)
-                
+
                 selector = ModelSelector(unique_models, console)
-                
+
                 # Use interactive selector
                 model = await selector.select_model_interactive()
-                
+
                 if not model:
                     console.print("\n[yellow]No model selected. Exiting.[/yellow]")
                     return
@@ -68,7 +66,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
             console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
             console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
             console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]\n")
-            
+
             # Set model info in CLI for /model command
             cli.current_model = model
             cli.available_models = unique_models
@@ -83,13 +81,13 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 except Exception as e:
                     console.print(f"[red]Error getting input: {e}[/red]")
                     continue
-                
+
                 # Skip empty input (from Ctrl+C)
                 if not user_input:
                     continue
 
                 # Handle slash commands
-                if user_input.startswith('/'):
+                if user_input.startswith("/"):
                     try:
                         if await cli.process_slash_command(user_input):
                             continue
@@ -98,10 +96,10 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                         continue
 
                 # Check for multiline indicator
-                if user_input.endswith('\\'):
+                if user_input.endswith("\\"):
                     # Get multiline input
-                    user_input = user_input[:-1] + '\n' + await cli.get_input(multiline=True)
-                
+                    user_input = user_input[:-1] + "\n" + await cli.get_input(multiline=True)
+
                 # Validate input - skip if only whitespace
                 if not user_input.strip():
                     continue
@@ -132,46 +130,46 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
                 # Clear interrupt event before starting
                 cli.reset_interrupt()
-                
+
                 # Start listening for interrupts
                 cli.start_interrupt_listener()
-                
+
                 full_response = ""
                 interrupted = False
                 first_chunk = True
-                
+
                 try:
                     # Show thinking message on its own line
                     console.print(f"\n[dim cyan]{thinking_msg}...[/dim cyan]")
-                    
+
                     stream = oci_provider.chat_stream(
                         messages=chat_messages,
                         model=cli.current_model,  # Use current model from CLI
                         temperature=0.7,
-                        max_tokens=2000
+                        max_tokens=2000,
                     )
-                    
+
                     # Get first chunk to stop spinner
                     for chunk in stream:
                         if first_chunk:
                             # Just print the assistant label
                             console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
                             first_chunk = False
-                        
+
                         # Check for interrupt
                         if cli.interrupt_event.is_set():
                             interrupted = True
                             console.print("\n\n[yellow]Response interrupted by user[/yellow]")
                             break
-                            
+
                         # Stream the response as plain text
                         console.print(chunk.content, end="")
                         full_response += chunk.content
-                    
+
                     # Add newline after streaming
                     if full_response:
                         console.print()  # Ensure we end on a new line
-                except Exception as e:
+                except Exception:
                     if cli.interrupt_event.is_set():
                         interrupted = True
                         console.print("\n\n[yellow]Response interrupted by user[/yellow]")
@@ -190,12 +188,15 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
             if "compartment_id is required" in str(e):
                 console.print("\n[red]Error:[/red] OCI compartment ID not configured")
                 console.print("\nPlease set it via one of these methods:")
-                console.print("1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]")
+                console.print(
+                    "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+                )
                 console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
             else:
                 console.print(f"\n[red]Error:[/red] {e}")
             if debug:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
         except SystemExit:
@@ -209,6 +210,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
             console.print(f"\n[red]Error:[/red] {e}")
             if debug:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
     else:
@@ -231,13 +233,17 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
 
 
 @click.command()
-@click.option('--provider', '-p', default='oci_genai', help='LLM provider to use')
-@click.option('--model', '-m', help='Model to use')
-@click.option('--debug', is_flag=True, help='Enable debug output')
-@click.option('--one-shot', help='Execute a single prompt and exit')
-@click.option('--mode', type=click.Choice([m.value for m in DeveloperMode]),
-              default=DeveloperMode.GENERAL.value, help='Initial developer mode')
-@click.version_option(version=__version__, prog_name='coda')
+@click.option("--provider", "-p", default="oci_genai", help="LLM provider to use")
+@click.option("--model", "-m", help="Model to use")
+@click.option("--debug", is_flag=True, help="Enable debug output")
+@click.option("--one-shot", help="Execute a single prompt and exit")
+@click.option(
+    "--mode",
+    type=click.Choice([m.value for m in DeveloperMode]),
+    default=DeveloperMode.GENERAL.value,
+    help="Initial developer mode",
+)
+@click.version_option(version=__version__, prog_name="coda")
 def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str):
     """Run Coda in interactive mode with rich CLI features"""
 

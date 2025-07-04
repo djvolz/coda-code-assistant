@@ -16,12 +16,14 @@ console = Console()
 
 
 @click.command()
-@click.option('--provider', '-p', default='oci_genai', help='LLM provider to use (oci_genai, ollama, openai)')
-@click.option('--model', '-m', help='Model to use')
-@click.option('--debug', is_flag=True, help='Enable debug output')
-@click.option('--one-shot', help='Execute a single prompt and exit')
-@click.option('--basic', is_flag=True, help='Use basic CLI mode (no prompt-toolkit)')
-@click.version_option(version=__version__, prog_name='coda')
+@click.option(
+    "--provider", "-p", default="oci_genai", help="LLM provider to use (oci_genai, ollama, openai)"
+)
+@click.option("--model", "-m", help="Model to use")
+@click.option("--debug", is_flag=True, help="Enable debug output")
+@click.option("--one-shot", help="Execute a single prompt and exit")
+@click.option("--basic", is_flag=True, help="Use basic CLI mode (no prompt-toolkit)")
+@click.version_option(version=__version__, prog_name="coda")
 def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
     """Coda - A multi-provider code assistant"""
 
@@ -30,10 +32,17 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
         # Import and run the interactive mode with prompt-toolkit
         try:
             from .interactive import interactive_main
+
             # Pass control to the interactive CLI
             ctx = click.get_current_context()
-            ctx.invoke(interactive_main, provider=provider, model=model, debug=debug,
-                      one_shot=one_shot, mode='general')
+            ctx.invoke(
+                interactive_main,
+                provider=provider,
+                model=model,
+                debug=debug,
+                one_shot=one_shot,
+                mode="general",
+            )
             return
         except ImportError:
             # Fall back to basic mode if prompt-toolkit is not available
@@ -66,8 +75,8 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
 
             # Select model
             if not model:
-                chat_models = [m for m in models if 'CHAT' in m.metadata.get('capabilities', [])]
-                
+                chat_models = [m for m in models if "CHAT" in m.metadata.get("capabilities", [])]
+
                 # Deduplicate models by ID
                 seen = set()
                 unique_models = []
@@ -83,7 +92,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
                 else:
                     # Use basic model selector for basic mode
                     from .model_selector import ModelSelector
-                    
+
                     selector = ModelSelector(unique_models, console)
                     model = selector.select_model_basic()
 
@@ -97,10 +106,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
 
                 messages = [Message(role=Role.USER, content=one_shot)]
                 for chunk in oci_provider.chat_stream(
-                    messages=messages,
-                    model=model,
-                    temperature=0.7,
-                    max_tokens=500
+                    messages=messages, model=model, temperature=0.7, max_tokens=500
                 ):
                     console.print(chunk.content, end="")
                 console.print("\n")
@@ -119,7 +125,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
                         messages = []
                         console.print("[yellow]Conversation cleared[/yellow]\n")
                         continue
-                    
+
                     # Skip empty or whitespace-only input
                     if not user_input.strip():
                         continue
@@ -132,10 +138,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
 
                     full_response = ""
                     for chunk in oci_provider.chat_stream(
-                        messages=messages,
-                        model=model,
-                        temperature=0.7,
-                        max_tokens=500
+                        messages=messages, model=model, temperature=0.7, max_tokens=500
                     ):
                         console.print(chunk.content, end="")
                         full_response += chunk.content
@@ -148,19 +151,25 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool):
             if "compartment_id is required" in str(e):
                 console.print("\n[red]Error:[/red] OCI compartment ID not configured")
                 console.print("\nPlease set it via one of these methods:")
-                console.print("1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]")
+                console.print(
+                    "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+                )
                 console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
-                console.print("3. Command parameter: [cyan]coda --compartment-id 'your-compartment-id'[/cyan]")
+                console.print(
+                    "3. Command parameter: [cyan]coda --compartment-id 'your-compartment-id'[/cyan]"
+                )
             else:
                 console.print(f"\n[red]Error:[/red] {e}")
             if debug:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
         except Exception as e:
             console.print(f"\n[red]Error:[/red] {e}")
             if debug:
                 import traceback
+
                 traceback.print_exc()
             sys.exit(1)
 
