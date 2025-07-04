@@ -478,6 +478,11 @@ class InteractiveCLI(CommandHandler):
         self.console.print("[dim]Goodbye![/dim]")
         raise SystemExit(0)
 
+    def get_system_prompt(self) -> str:
+        """Get system prompt based on current mode."""
+        from .shared import get_system_prompt
+        return get_system_prompt(self.current_mode)
+
     def reset_interrupt(self):
         """Reset the interrupt state."""
         self.interrupt_event.clear()
