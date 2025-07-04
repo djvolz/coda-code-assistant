@@ -51,6 +51,30 @@ class ProviderRegistry:
         return list(cls._providers.keys())
 
     @classmethod
+    def _hash_config(cls, config: dict) -> str:
+        """Create a stable hash of configuration, handling non-hashable types."""
+        import json
+        
+        def serialize_value(obj):
+            """Convert objects to JSON-serializable form."""
+            if isinstance(obj, (list, dict)):
+                return json.dumps(obj, sort_keys=True)
+            elif hasattr(obj, '__dict__'):
+                return json.dumps(obj.__dict__, sort_keys=True)
+            else:
+                return str(obj)
+        
+        # Create a sorted list of key-value pairs with serialized values
+        items = []
+        for key, value in sorted(config.items()):
+            serialized_value = serialize_value(value)
+            items.append(f"{key}:{serialized_value}")
+        
+        # Hash the joined string
+        config_str = "|".join(items)
+        return str(hash(config_str))
+
+    @classmethod
     def create_provider(cls, name: str, **kwargs) -> BaseProvider:
         """
         Create a provider instance.
@@ -71,7 +95,7 @@ class ProviderRegistry:
             raise ValueError(f"Unknown provider: {name}. Available providers: {available}")
 
         # Create a unique key for this provider instance
-        config_key = f"{name}_{hash(frozenset(kwargs.items()))}"
+        config_key = f"{name}_{cls._hash_config(kwargs)}"
 
         # Return existing instance if already created with same config
         if config_key in cls._instances:
