@@ -9,10 +9,6 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-from rich.live import Live
-from rich.spinner import Spinner
-from rich.table import Table
-from rich.box import ROUNDED
 from rich.markdown import Markdown
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
@@ -108,27 +104,17 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 # Add user message
                 messages.append(Message(role=Role.USER, content=user_input))
 
-                # Show thinking indicator
-                
-                # Choose spinner and message based on mode
-                spinner_style = {
-                    DeveloperMode.GENERAL: ("dots", "Thinking"),
-                    DeveloperMode.CODE: ("dots2", "Generating code"),
-                    DeveloperMode.DEBUG: ("line", "Analyzing"),
-                    DeveloperMode.EXPLAIN: ("dots3", "Preparing explanation"),
-                    DeveloperMode.REVIEW: ("arc", "Reviewing"),
-                    DeveloperMode.REFACTOR: ("bouncingBar", "Analyzing code structure"),
-                    DeveloperMode.PLAN: ("circleHalves", "Planning"),
-                }.get(cli.current_mode, ("dots", "Thinking"))
-                
-                # Create a table for the thinking indicator
-                thinking_table = Table.grid(padding=0)
-                thinking_table.add_column(style="cyan", justify="left")
-                thinking_table.add_column()
-                thinking_table.add_row(
-                    Spinner(spinner_style[0], style="cyan"),
-                    f"[dim]{spinner_style[1]}...[/dim]"
-                )
+                # Choose thinking message based on mode
+                thinking_messages = {
+                    DeveloperMode.GENERAL: "Thinking",
+                    DeveloperMode.CODE: "Generating code",
+                    DeveloperMode.DEBUG: "Analyzing",
+                    DeveloperMode.EXPLAIN: "Preparing explanation",
+                    DeveloperMode.REVIEW: "Reviewing",
+                    DeveloperMode.REFACTOR: "Analyzing code structure",
+                    DeveloperMode.PLAN: "Planning",
+                }
+                thinking_msg = thinking_messages.get(cli.current_mode, "Thinking")
 
                 # Prepare messages with system prompt
                 chat_messages = []
@@ -147,39 +133,36 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 first_chunk = True
                 
                 try:
-                    # Show thinking spinner
-                    with Live(thinking_table, console=console, refresh_per_second=10, transient=True) as spinner_live:
-                        stream = oci_provider.chat_stream(
-                            messages=chat_messages,
-                            model=cli.current_model,  # Use current model from CLI
-                            temperature=0.7,
-                            max_tokens=2000
-                        )
-                        
-                        # Get first chunk to stop spinner
-                        for chunk in stream:
-                            if first_chunk:
-                                spinner_live.stop()
-                                console.print("\n[bold cyan]Assistant:[/bold cyan]")
-                                first_chunk = False
-                            
-                            # Check for interrupt
-                            if cli.interrupt_event.is_set():
-                                interrupted = True
-                                break
-                                
-                            full_response += chunk.content
+                    # Show thinking message on its own line
+                    console.print(f"\n[dim cyan]{thinking_msg}...[/dim cyan]")
                     
-                    # After streaming is complete, render the full response as markdown
-                    if full_response and not interrupted:
-                        markdown = Markdown(full_response, code_theme="monokai")
-                        console.print(markdown)
-                    elif interrupted:
-                        # Show partial response as markdown if interrupted
-                        if full_response:
-                            markdown = Markdown(full_response, code_theme="monokai")
-                            console.print(markdown)
-                        console.print("\n[yellow]Response interrupted by user[/yellow]")
+                    stream = oci_provider.chat_stream(
+                        messages=chat_messages,
+                        model=cli.current_model,  # Use current model from CLI
+                        temperature=0.7,
+                        max_tokens=2000
+                    )
+                    
+                    # Get first chunk to stop spinner
+                    for chunk in stream:
+                        if first_chunk:
+                            # Just print the assistant label
+                            console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                            first_chunk = False
+                        
+                        # Check for interrupt
+                        if cli.interrupt_event.is_set():
+                            interrupted = True
+                            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                            break
+                            
+                        # Stream the response as plain text for now
+                        console.print(chunk.content, end="")
+                        full_response += chunk.content
+                    
+                    # Add newline after streaming
+                    if full_response:
+                        console.print()  # Ensure we end on a new line
                 except Exception as e:
                     if cli.interrupt_event.is_set():
                         interrupted = True
