@@ -92,28 +92,28 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
         models = provider_instance.list_models()
         console.print(f"[green]✓ Found {len(models)} available models[/green]")
 
-        # Select model
+        # Select model - always get unique_models for later use
+        # Filter for chat models - different providers use different indicators
+        chat_models = [
+            m
+            for m in models
+            if "CHAT" in m.metadata.get("capabilities", [])  # OCI GenAI
+            or m.provider in ["ollama", "litellm"]  # These providers only list chat models
+        ]
+
+        # If no chat models found, use all models
+        if not chat_models:
+            chat_models = models
+
+        # Deduplicate models by ID
+        seen = set()
+        unique_models = []
+        for m in chat_models:
+            if m.id not in seen:
+                seen.add(m.id)
+                unique_models.append(m)
+
         if not model:
-            # Filter for chat models - different providers use different indicators
-            chat_models = [
-                m
-                for m in models
-                if "CHAT" in m.metadata.get("capabilities", [])  # OCI GenAI
-                or m.provider in ["ollama", "litellm"]  # These providers only list chat models
-            ]
-
-            # If no chat models found, use all models
-            if not chat_models:
-                chat_models = models
-
-            # Deduplicate models by ID
-            seen = set()
-            unique_models = []
-            for m in chat_models:
-                if m.id not in seen:
-                    seen.add(m.id)
-                    unique_models.append(m)
-
             if one_shot:
                 # For one-shot, use the first available chat model
                 model = unique_models[0].id
@@ -175,8 +175,17 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
             cmd_processor.current_mode = DeveloperMode(mode)
 
             while True:
-                # Get user input
-                user_input = Prompt.ask("[bold]You[/bold]")
+                try:
+                    # Get user input
+                    user_input = Prompt.ask("[bold]You[/bold]")
+                except KeyboardInterrupt:
+                    # Handle Ctrl+C gracefully - just clear the line and continue
+                    console.print()  # New line for cleaner display
+                    continue
+                except EOFError:
+                    # Handle Ctrl+D as exit
+                    console.print("\n[dim]Goodbye![/dim]")
+                    break
 
                 # Process potential slash commands
                 cmd_result = cmd_processor.process_command(user_input)
