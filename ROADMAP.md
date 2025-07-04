@@ -3,6 +3,25 @@
 ## Project Vision
 Build a multi-provider, CLI-focused code assistant that provides a unified interface for AI-powered development across Oracle OCI GenAI, Ollama, and other LiteLLM-supported providers.
 
+## Current State & Priorities
+
+✅ **Completed Phases**:
+- **Phase 1**: Native OCI GenAI Integration (30+ models, streaming, dynamic discovery)
+- **Phase 2**: Core Provider Architecture (LiteLLM, Ollama, provider registry)
+- **Phase 3**: Enhanced CLI Experience (interactive shell, slash commands, developer modes)
+
+🚧 **Current Focus**: Phase 4 - Session Management (Target: July 10)
+- SQLite persistence layer
+- Session commands (/session save/load/list/branch/delete)
+- Full-text search across sessions
+- Context management
+
+📅 **Upcoming**:
+- Phase 5: Tool Integration (MCP) - July 12
+- Phase 6: Advanced Features - July 15
+- Phase 7: Web UI (Streamlit)
+- Phase 8: Additional features
+
 ## Reference Directories
 Key directories for OCI GenAI implementation reference:
 - **LangChain OCI Integration**: `/Users/danny/Developer/forks/litellm-oci-using-claude/langchain-community`
@@ -94,7 +113,7 @@ None currently - all bugs have been resolved!
 - [x] Project logo integration (terminal-themed design)
 - [x] Logo variants for different contexts (PNG assets)
 
-## Phase 2: Core Provider Architecture ✅ COMPLETED
+## Phase 2: Core Provider Architecture ✅ COMPLETED (July 4, 2025)
 
 ### 2.1 Provider Interface Design
 - [x] Create abstract base provider class (base.py)
@@ -122,9 +141,9 @@ None currently - all bugs have been resolved!
 - [x] Token counting and limits
 - [x] Response formatting
 
-## Phase 3: Enhanced CLI Experience ✅ (Complete)
+## Phase 3: Enhanced CLI Experience ✅ COMPLETED (July 4, 2025)
 
-### 3.1 Interactive Shell ✅ (Complete)
+### 3.1 Interactive Shell ✅ 
 - [x] Rich prompt with syntax highlighting using prompt-toolkit
 - [x] Multi-line input support (use \ at end of line)
 - [x] Command history and search (with file-based persistence)
@@ -132,7 +151,7 @@ None currently - all bugs have been resolved!
 - [x] Keyboard shortcuts (Ctrl+C, Ctrl+D, arrow keys)
 - [x] Clean interrupt handling during AI responses
 
-### 3.2 Slash Commands ✅ (Complete for Phase 3)
+### 3.2 Slash Commands ✅ 
 - [x] `/help` (`/h`, `/?`) - Show available commands and keyboard shortcuts
 - [x] `/model` (`/m`) - Interactive model selection with search
 - [x] `/provider` (`/p`) - Switch providers (OCI GenAI supported)
@@ -140,7 +159,7 @@ None currently - all bugs have been resolved!
 - [x] `/clear` (`/cls`) - Clear conversation (placeholder)
 - [x] `/exit` (`/quit`, `/q`) - Exit application
 
-### 3.3 Developer Modes ✅ (Complete)
+### 3.3 Developer Modes ✅ 
 - [x] **General Mode**: Default conversational AI assistant
 - [x] **Code Mode**: Optimized for writing new code with best practices
 - [x] **Debug Mode**: Focus on error analysis and debugging assistance
@@ -348,7 +367,8 @@ None currently - all bugs have been resolved!
 - ✅ PyPI upload preparation
 - ✅ Git commit message template
 
-### 2025.7.5 - Provider Architecture ✅ COMPLETED
+### 2025.7.4 - Provider Architecture & Enhanced CLI ✅ COMPLETED
+**Phase 2 - Provider Architecture**:
 - ✅ Abstract provider interface with BaseProvider class
 - ✅ Provider registry and factory pattern
 - ✅ LiteLLM integration (100+ providers)
@@ -356,70 +376,70 @@ None currently - all bugs have been resolved!
 - ✅ Configuration management system
 - ✅ Multi-source config priority (CLI > env > project > user > defaults)
 
-### 2025.7.4 - Enhanced CLI with Phase 2 Integration ✅ COMPLETED
-- ✅ **Phase 3 Core Features**:
-  - ✅ Interactive shell with prompt-toolkit
-  - ✅ Slash commands (/help, /model, /mode, etc.)
-  - ✅ 7 Developer modes (general, code, debug, explain, review, refactor, plan)
-  - ✅ Rich UI features (tab completion, history, keyboard shortcuts)
-  - ✅ Model deduplication and interactive selection
-  - ✅ Improved error handling and user experience
+**Phase 3 - Enhanced CLI Experience**:
+- ✅ Interactive shell with prompt-toolkit
+- ✅ Slash commands (/help, /model, /mode, etc.)
+- ✅ 7 Developer modes (general, code, debug, explain, review, refactor, plan)
+- ✅ Rich UI features (tab completion, history, keyboard shortcuts)
+- ✅ Model deduplication and interactive selection
+- ✅ Improved error handling and user experience
 
-- ✅ **Phase 2 & 3 Integration** (July 4):
-  - ✅ **Concurrent Development Challenge**: Phases 2 and 3 developed simultaneously
-  - ✅ **Merge Resolution**: Successfully resolved conflicts in 4 files during integration
-    - `ROADMAP.md`: Combined Phase 2 and Phase 3 completion status
-    - `coda/cli/main.py`: Integrated provider factory while preserving --basic flag
-    - `coda/providers/__init__.py`: Merged imports from both development branches
-    - `tests/test_oci_genai_basic.py`: Preserved Phase 2 test improvements
-  - ✅ **Unified Architecture**: All Phase 3 CLI features now work with Phase 2 provider system
-  - ✅ **Multi-Provider Interactive Mode**: OCI GenAI, LiteLLM, and Ollama all work in interactive CLI
-  - ✅ **Code Quality Improvements**:
-    - ✅ Refactored 220-line function into focused helper methods
-    - ✅ Externalized hardcoded values to configuration system
-    - ✅ Improved error handling with specific exception types
-    - ✅ Added comprehensive integration tests
-    - ✅ Applied consistent code formatting
+**Integration Notes**:
+- ✅ Successfully merged concurrent Phase 2 & 3 development
+- ✅ Resolved conflicts in 4 files during integration
+- ✅ All Phase 3 CLI features work with Phase 2 provider system
+- ✅ Multi-provider support in interactive mode (OCI GenAI, LiteLLM, Ollama)
+- ✅ Code refactoring: 220-line function split into focused helpers
+- ✅ Comprehensive test coverage for slash commands
 
-### 2025.7.10 - Persistence (Target: July 10)
-- Session management
-- Context handling
-- Search functionality
+### 2025.7.10 - Session Management (Target: July 10)
+- SQLite database for sessions
+- Message persistence with metadata
+- Session commands (/session save/load/list/branch/delete)
+- Full-text search across sessions
+- Context windowing and summarization
 
-### 2025.7.12 - Tools (Target: July 12)
-- MCP integration
-- Core tool set
-- Custom tools
+### 2025.7.12 - Tool Integration / MCP (Target: July 12)
+- MCP server implementation
+- Core tools (file ops, shell, web search, git)
+- Tool commands (/tools list/enable/disable/config/status)
+- Permission management
+- Custom tool SDK
 
-### 2025.7.15 - Production Ready (Target: July 15)
-- Full test coverage
-- Documentation
-- Performance optimized
-- Stable API
+### 2025.7.15 - Advanced Features (Target: July 15)
+- Multi-modal support (image understanding)
+- Document support (PDF, Word, PowerPoint, Excel)
+- Enhanced response rendering (live markdown)
+- Project intelligence (VCS support, language optimizations)
+- UI customization (/theme command)
 
 ## Next Steps
 
-**Current Status**: Phase 3 complete with Phase 2 integration. Ready for PR to main branch.
+**Current Status**: Phases 1, 2, and 3 are complete. Ready to begin Phase 4.
 
-1. **Immediate**: Create pull request for Phase 3 (Enhanced CLI Experience)
-   - Merge feature/enhanced-cli-experience into main
-   - Includes all interactive CLI features and provider integration
-   
-2. Begin Phase 4: Session Management
+1. **Immediate Priority - Phase 4**: Session Management (Target: July 10)
    - SQLite database for sessions
    - Message persistence with metadata
    - Session branching and search
    - Full-text search across sessions
+   - Implementation of `/session` command with all subcommands
    
-3. Implement MCP (Model Context Protocol) integration
+2. **Next - Phase 5**: Tool Integration (MCP) (Target: July 12)
    - Core tools for file operations
    - Shell command execution
    - Web search and fetch capabilities
+   - Git operations
+   - Implementation of `/tools` command
    
-4. Add multi-modal support
-   - Image understanding for supported providers
+3. **Following - Phase 6**: Advanced Features (Target: July 15)
+   - Multi-modal support (image understanding)
    - Code screenshot analysis
-   - PDF and document support
+   - Document support (PDF, Word, PowerPoint, Excel)
+   - Enhanced response rendering with live markdown
+   
+4. **Future Phases**:
+   - Phase 7: Web UI with Streamlit
+   - Phase 8: Additional features (containerization, repo mapping, telemetry)
 
 ## Notes
 
