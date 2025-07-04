@@ -37,10 +37,10 @@ def print_basic_keyboard_shortcuts(console: Console):
     console.print("[bold]Keyboard Shortcuts:[/bold]")
     console.print("  [cyan]Ctrl+C[/cyan] - Interrupt current operation / Cancel input")
     console.print("  [cyan]Ctrl+D[/cyan] - Exit the application (EOF)")
-    console.print("  [cyan]↑/↓[/cyan] - Navigate command history (if supported by terminal)")
     console.print()
-    console.print("[dim]Note: Basic mode uses your terminal's built-in line editing.[/dim]")
-    console.print("[dim]For enhanced features, run without --basic flag.[/dim]")
+    console.print("[dim]Note: Basic mode has limited keyboard shortcuts.[/dim]")
+    console.print("[dim]For command history, tab completion, and advanced editing,[/dim]")
+    console.print("[dim]run without the --basic flag to use interactive mode.[/dim]")
     console.print()
 
 
