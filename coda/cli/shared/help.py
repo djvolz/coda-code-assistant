@@ -35,7 +35,7 @@ def print_developer_modes(console: Console):
 def print_basic_keyboard_shortcuts(console: Console):
     """Print basic keyboard shortcuts available in basic mode."""
     console.print("[bold]Keyboard Shortcuts:[/bold]")
-    console.print("  [cyan]Ctrl+C[/cyan] - Exit the application immediately")
+    console.print("  [cyan]Ctrl+C[/cyan] - Clear input line (during input) / Interrupt AI response")
     console.print("  [cyan]Ctrl+D[/cyan] - Exit the application (EOF)")
     console.print()
     console.print("[dim]Note: Basic mode has limited keyboard shortcuts.[/dim]")
@@ -56,7 +56,7 @@ def print_interactive_keyboard_shortcuts(console: Console):
     console.print("  [cyan]Ctrl+K[/cyan] - Delete from cursor to end of line")
     console.print("  [cyan]Ctrl+U[/cyan] - Delete from cursor to beginning of line")
     console.print("  [cyan]Ctrl+W[/cyan] - Delete word before cursor")
-    console.print("  [cyan]\\\\[/cyan] at line end - Continue input on next line")
+    console.print(r"  [cyan]\\[/cyan] at line end - Continue input on next line")
     console.print()
 
 
