@@ -1,11 +1,18 @@
 """Integration tests for the interactive CLI module."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from rich.console import Console
 
-from coda.cli.interactive import run_interactive_session
+from coda.cli.interactive import (
+    _get_chat_models,
+    _handle_chat_interaction,
+    _initialize_provider,
+    _select_model,
+    run_interactive_session,
+)
+from coda.cli.interactive_cli import DeveloperMode, InteractiveCLI
 
 
 @pytest.mark.integration
@@ -48,8 +55,8 @@ class TestInteractiveSession:
     @pytest.fixture
     def mock_interactive_cli(self, mock_console):
         """Create a mock InteractiveCLI."""
-        cli = Mock()
-        cli.console = mock_console
+        cli = Mock(spec=InteractiveCLI)
+        cli.current_mode = DeveloperMode.GENERAL
         cli.current_model = "test.model.1"
         cli.available_models = []
         cli.interrupt_event = Mock()
@@ -57,26 +64,161 @@ class TestInteractiveSession:
         cli.reset_interrupt = Mock()
         cli.start_interrupt_listener = Mock()
         cli.stop_interrupt_listener = Mock()
-
-        # Create async get_input mock
-        async def mock_get_input():
-            return "/exit"
-
-        cli.get_input = mock_get_input
-
-        # Create async process_slash_command mock
-        async def mock_process_slash_command(cmd):
-            if cmd == "/exit":
-                raise SystemExit(0)
-            return True
-
-        cli.process_slash_command = mock_process_slash_command
-
+        cli.get_input = AsyncMock(return_value="test message")
+        cli.process_slash_command = AsyncMock(return_value=False)
         return cli
+
+    @pytest.fixture
+    def mock_config(self):
+        """Create a mock configuration."""
+        config = Mock()
+        config.to_dict = Mock(
+            return_value={"temperature": 0.7, "max_tokens": 2000, "default_provider": "oci_genai"}
+        )
+        config.debug = False
+        config.default_provider = "oci_genai"
+        return config
+
+    @pytest.mark.asyncio
+    async def test_initialize_provider(self, mock_config):
+        """Test provider initialization."""
+        with patch("coda.cli.interactive.ProviderFactory") as mock_factory_class:
+            mock_factory = Mock()
+            mock_factory.create = Mock(return_value=Mock())
+            mock_factory_class.return_value = mock_factory
+
+            console = Mock()
+
+            result = await _initialize_provider(mock_factory, "test_provider", console)
+
+            assert result is not None
+            mock_factory.create.assert_called_once_with("test_provider")
+            assert console.print.call_count >= 2  # Should print initialization messages
+
+    @pytest.mark.asyncio
+    async def test_get_chat_models(self):
+        """Test chat model filtering and deduplication."""
+        mock_provider = Mock()
+        mock_provider.list_models = Mock(
+            return_value=[
+                Mock(id="model1", metadata={"capabilities": ["CHAT"]}, provider="test"),
+                Mock(id="model2", metadata={"capabilities": ["TEXT_GENERATION"]}, provider="test"),
+                Mock(
+                    id="model1", metadata={"capabilities": ["CHAT"]}, provider="test"
+                ),  # Duplicate
+                Mock(id="model3", metadata={}, provider="ollama"),  # Ollama model
+            ]
+        )
+
+        console = Mock()
+
+        result = await _get_chat_models(mock_provider, console)
+
+        assert len(result) == 3  # Should deduplicate model1
+        model_ids = [m.id for m in result]
+        assert "model1" in model_ids
+        assert "model2" in model_ids
+        assert "model3" in model_ids
+
+    @pytest.mark.asyncio
+    async def test_select_model_with_interactive(self):
+        """Test interactive model selection."""
+        unique_models = [Mock(id="model1"), Mock(id="model2")]
+        console = Mock()
+
+        with patch("coda.cli.interactive.ModelSelector") as mock_selector_class:
+            mock_selector = Mock()
+            mock_selector.select_model_interactive = AsyncMock(return_value="selected_model")
+            mock_selector_class.return_value = mock_selector
+
+            result = await _select_model(unique_models, None, console)
+
+            assert result == "selected_model"
+            mock_selector_class.assert_called_once_with(unique_models, console)
+
+    @pytest.mark.asyncio
+    async def test_select_model_with_specified_model(self):
+        """Test model selection when model is already specified."""
+        unique_models = [Mock(id="model1"), Mock(id="model2")]
+        console = Mock()
+
+        result = await _select_model(unique_models, "specified_model", console)
+
+        assert result == "specified_model"
+        assert console.print.call_count >= 3  # Should print model selection messages
+
+    @pytest.mark.asyncio
+    async def test_handle_chat_interaction_with_slash_command(
+        self, mock_interactive_cli, mock_config
+    ):
+        """Test chat interaction that processes a slash command."""
+        mock_provider = Mock()
+        messages = []
+        console = Mock()
+
+        # Mock CLI to return a slash command
+        mock_interactive_cli.get_input = AsyncMock(return_value="/help")
+        mock_interactive_cli.process_slash_command = AsyncMock(return_value=True)
+
+        result = await _handle_chat_interaction(
+            mock_provider, mock_interactive_cli, messages, console, mock_config
+        )
+
+        assert result is True
+        mock_interactive_cli.process_slash_command.assert_called_once_with("/help")
+
+    @pytest.mark.asyncio
+    async def test_handle_chat_interaction_with_regular_message(
+        self, mock_interactive_cli, mock_config
+    ):
+        """Test chat interaction with a regular message."""
+        mock_provider = Mock()
+        mock_stream = [Mock(content="Hello"), Mock(content=" world")]
+        mock_provider.chat_stream = Mock(return_value=mock_stream)
+
+        messages = []
+        console = Mock()
+
+        # Mock CLI to return regular input
+        mock_interactive_cli.get_input = AsyncMock(return_value="Hello AI")
+        mock_interactive_cli.process_slash_command = AsyncMock(return_value=False)
+
+        result = await _handle_chat_interaction(
+            mock_provider, mock_interactive_cli, messages, console, mock_config
+        )
+
+        assert result is True
+        assert len(messages) == 2  # User message + Assistant message
+        mock_provider.chat_stream.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_handle_chat_interaction_with_interrupt(self, mock_interactive_cli, mock_config):
+        """Test chat interaction with user interrupt."""
+        mock_provider = Mock()
+        mock_stream = [Mock(content="Hello"), Mock(content=" world")]
+        mock_provider.chat_stream = Mock(return_value=mock_stream)
+
+        messages = []
+        console = Mock()
+
+        # Mock interrupt event
+        mock_interactive_cli.interrupt_event.is_set = Mock(
+            side_effect=[False, True]
+        )  # Interrupt on second chunk
+        mock_interactive_cli.get_input = AsyncMock(return_value="Hello AI")
+        mock_interactive_cli.process_slash_command = AsyncMock(return_value=False)
+
+        result = await _handle_chat_interaction(
+            mock_provider, mock_interactive_cli, messages, console, mock_config
+        )
+
+        assert result is True
+        mock_interactive_cli.start_interrupt_listener.assert_called_once()
+        mock_interactive_cli.stop_interrupt_listener.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("coda.cli.interactive.InteractiveCLI")
-    @patch("coda.providers.OCIGenAIProvider")
+    @patch("coda.providers.ProviderFactory")
     async def test_run_interactive_session_basic(
         self, mock_oci_class, mock_cli_class, mock_oci_provider, mock_interactive_cli
     ):
