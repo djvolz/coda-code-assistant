@@ -78,7 +78,11 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
             while True:
                 # Get user input with enhanced features
-                user_input = await cli.get_input()
+                try:
+                    user_input = await cli.get_input()
+                except Exception as e:
+                    console.print(f"[red]Error getting input: {e}[/red]")
+                    continue
                 
                 # Skip empty input (from Ctrl+C)
                 if not user_input:
@@ -86,7 +90,11 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
                 # Handle slash commands
                 if user_input.startswith('/'):
-                    if await cli.process_slash_command(user_input):
+                    try:
+                        if await cli.process_slash_command(user_input):
+                            continue
+                    except Exception as e:
+                        console.print(f"[red]Error processing command: {e}[/red]")
                         continue
 
                 # Check for multiline indicator
@@ -143,27 +151,26 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                         max_tokens=2000
                     )
                     
-                    # Collect the response
+                    # Get first chunk to stop spinner
                     for chunk in stream:
+                        if first_chunk:
+                            # Just print the assistant label
+                            console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                            first_chunk = False
+                        
                         # Check for interrupt
                         if cli.interrupt_event.is_set():
                             interrupted = True
+                            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
                             break
                             
+                        # Stream the response as plain text
+                        console.print(chunk.content, end="")
                         full_response += chunk.content
                     
-                    # Display the response as markdown
-                    if full_response and not interrupted:
-                        console.print("\n[bold cyan]Assistant:[/bold cyan]")
-                        markdown = Markdown(full_response, code_theme="monokai")
-                        console.print(markdown)
-                    elif interrupted:
-                        # Show partial response as markdown if interrupted
-                        console.print("\n[bold cyan]Assistant:[/bold cyan]")
-                        if full_response:
-                            markdown = Markdown(full_response, code_theme="monokai")
-                            console.print(markdown)
-                        console.print("\n[yellow]Response interrupted by user[/yellow]")
+                    # Add newline after streaming
+                    if full_response:
+                        console.print()  # Ensure we end on a new line
                 except Exception as e:
                     if cli.interrupt_event.is_set():
                         interrupted = True
