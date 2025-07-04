@@ -302,7 +302,7 @@ class InteractiveCLI:
             current_time = time.time()
             
             # If we're currently getting a response, interrupt it
-            if self.interrupt_event.is_set() or hasattr(event.app, 'is_done'):
+            if self.interrupt_event.is_set():
                 self.interrupt_event.set()
                 return
             
@@ -311,13 +311,18 @@ class InteractiveCLI:
                 self.ctrl_c_count += 1
                 if self.ctrl_c_count >= 2:
                     # Double Ctrl+C - exit
-                    self.console.print("\n[dim]Goodbye! (Double Ctrl+C detected)[/dim]")
-                    raise SystemExit(0)
+                    event.app.exit(exception=KeyboardInterrupt)
+                    return
             else:
                 self.ctrl_c_count = 1
-                # Single Ctrl+C - clear current line
+                # Single Ctrl+C - clear current line and show hint
                 event.app.current_buffer.reset()
-                self.console.print("[dim](Press Ctrl+C again to exit)[/dim]", end="\r")
+                # Move to new line and show hint
+                event.app.output.write('\n')
+                event.app.output.write('[Press Ctrl+C again to exit]\r')
+                event.app.output.flush()
+                # Redraw prompt
+                event.app.invalidate()
                 
             self.last_ctrl_c_time = current_time
 
@@ -372,7 +377,11 @@ class InteractiveCLI:
         except EOFError:
             return '/exit'
         except KeyboardInterrupt:
-            # This shouldn't happen with our key binding, but just in case
+            # Handle double Ctrl+C exit
+            if self.ctrl_c_count >= 2:
+                self.console.print("\n[dim]Goodbye! (Double Ctrl+C detected)[/dim]")
+                raise SystemExit(0)
+            # Single Ctrl+C - return empty to skip
             return ''
         finally:
             # Reset multiline mode

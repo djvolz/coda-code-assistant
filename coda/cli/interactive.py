@@ -93,6 +93,10 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 if user_input.endswith('\\'):
                     # Get multiline input
                     user_input = user_input[:-1] + '\n' + await cli.get_input(multiline=True)
+                
+                # Validate input - skip if only whitespace
+                if not user_input.strip():
+                    continue
 
                 # Add system prompt based on mode
                 system_prompt = _get_system_prompt_for_mode(cli.current_mode)
