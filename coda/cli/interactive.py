@@ -9,6 +9,10 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
+from rich.live import Live
+from rich.spinner import Spinner
+from rich.table import Table
+from rich.box import ROUNDED
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
 
@@ -102,9 +106,40 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
                 # Add user message
                 messages.append(Message(role=Role.USER, content=user_input))
+                
+                # Display user prompt in a nice box
+                user_panel = Panel(
+                    user_input,
+                    title=f"[bold cyan]You[/bold cyan] [dim]({cli.current_mode.value} mode)[/dim]",
+                    title_align="left",
+                    border_style="cyan",
+                    box=ROUNDED,
+                    padding=(0, 1),
+                )
+                console.print("\n", user_panel)
 
-                # Get AI response
-                console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                # Show thinking indicator
+                console.print()  # New line after user panel
+                
+                # Choose spinner and message based on mode
+                spinner_style = {
+                    DeveloperMode.GENERAL: ("dots", "Thinking"),
+                    DeveloperMode.CODE: ("dots2", "Generating code"),
+                    DeveloperMode.DEBUG: ("line", "Analyzing"),
+                    DeveloperMode.EXPLAIN: ("dots3", "Preparing explanation"),
+                    DeveloperMode.REVIEW: ("arc", "Reviewing"),
+                    DeveloperMode.REFACTOR: ("bouncingBar", "Analyzing code structure"),
+                    DeveloperMode.PLAN: ("circleHalves", "Planning"),
+                }.get(cli.current_mode, ("dots", "Thinking"))
+                
+                # Create a table for the thinking indicator
+                thinking_table = Table.grid(padding=0)
+                thinking_table.add_column(style="cyan", justify="left")
+                thinking_table.add_column()
+                thinking_table.add_row(
+                    Spinner(spinner_style[0], style="cyan"),
+                    f"[dim]{spinner_style[1]}...[/dim]"
+                )
 
                 # Prepare messages with system prompt
                 chat_messages = []
@@ -120,22 +155,35 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 
                 full_response = ""
                 interrupted = False
+                first_chunk = True
                 
                 try:
-                    for chunk in oci_provider.chat_stream(
-                        messages=chat_messages,
-                        model=cli.current_model,  # Use current model from CLI
-                        temperature=0.7,
-                        max_tokens=2000
-                    ):
-                        # Check for interrupt
-                        if cli.interrupt_event.is_set():
-                            interrupted = True
-                            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
-                            break
+                    # Show thinking spinner until first chunk arrives
+                    with Live(thinking_table, console=console, refresh_per_second=10, transient=True) as live:
+                        stream = oci_provider.chat_stream(
+                            messages=chat_messages,
+                            model=cli.current_model,  # Use current model from CLI
+                            temperature=0.7,
+                            max_tokens=2000
+                        )
+                        
+                        for chunk in stream:
+                            # Stop spinner on first chunk
+                            if first_chunk:
+                                live.stop()
+                                # Clear the thinking line and show response
+                                console.print("\r" + " " * 50 + "\r", end="")  # Clear line
+                                console.print("[bold cyan]Assistant:[/bold cyan] ", end="")
+                                first_chunk = False
                             
-                        console.print(chunk.content, end="")
-                        full_response += chunk.content
+                            # Check for interrupt
+                            if cli.interrupt_event.is_set():
+                                interrupted = True
+                                console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                                break
+                                
+                            console.print(chunk.content, end="")
+                            full_response += chunk.content
                 except Exception as e:
                     if cli.interrupt_event.is_set():
                         interrupted = True
@@ -149,7 +197,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 # Add assistant message to history (even if interrupted)
                 if full_response or interrupted:
                     messages.append(Message(role=Role.ASSISTANT, content=full_response))
-                console.print("\n")
+                console.print("\n")  # Add spacing after response
 
         except ValueError as e:
             if "compartment_id is required" in str(e):
