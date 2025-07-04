@@ -111,7 +111,12 @@ class TestInteractiveCLI:
         
         # Should print all commands
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Available commands" in str(call) for call in calls)
+        assert any("Available Commands" in str(call) for call in calls)
+        
+        # Check that categories are shown
+        assert any("AI Settings" in str(call) for call in calls)
+        assert any("Session" in str(call) for call in calls)
+        assert any("System" in str(call) for call in calls)
         
         # Check that all commands are mentioned
         for cmd_name in cli.commands:
