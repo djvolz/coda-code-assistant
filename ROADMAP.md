@@ -347,10 +347,13 @@ None currently - all bugs have been resolved!
 - LiteLLM integration
 - Ollama native support
 
-### 2025.7.7 - Enhanced CLI (Target: July 7)
-- Slash commands
-- Developer modes
-- Rich UI features
+### 2025.7.4 - Enhanced CLI ✅ COMPLETED
+- ✅ Interactive shell with prompt-toolkit
+- ✅ Slash commands (/help, /model, /mode, etc.)
+- ✅ 7 Developer modes (general, code, debug, explain, review, refactor, plan)
+- ✅ Rich UI features (tab completion, history, keyboard shortcuts)
+- ✅ Model deduplication and interactive selection
+- ✅ Improved error handling and user experience
 
 ### 2025.7.10 - Persistence (Target: July 10)
 - Session management
@@ -370,13 +373,15 @@ None currently - all bugs have been resolved!
 
 ## Next Steps
 
-1. Begin Phase 2: Provider Architecture
-2. Design abstract provider interface
-3. Implement provider registry/factory pattern
-4. Add LiteLLM integration for 100+ providers
-5. Create native Ollama provider
-6. Ensure backward compatibility with OCI provider
-7. Add provider-specific configuration management
+1. Continue Phase 2: Provider Architecture
+   - Abstract provider interface is complete (base.py)
+   - Next: Implement provider registry/factory pattern
+2. Add LiteLLM integration for 100+ providers
+3. Create native Ollama provider
+4. Begin Phase 4: Session Management
+   - SQLite database for sessions
+   - Message persistence with metadata
+   - Session branching and search
 
 ## Notes
 
