@@ -77,7 +77,8 @@ async def _select_model(unique_models, model: str, console: Console):
     console.print(f"[green]Model:[/green] {model}")
     console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
     console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
-    console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]\n")
+    console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
+    console.print("[dim]Press Ctrl+R to search command history[/dim]\n")
 
     return model
 

@@ -386,8 +386,13 @@ class InteractiveCLI(CommandHandler):
         self.console.print("[bold]Keyboard Shortcuts:[/bold]")
         self.console.print("  [cyan]Ctrl+C[/cyan] - Clear input line / Interrupt AI response")
         self.console.print("  [cyan]Ctrl+D[/cyan] - Exit the application")
+        self.console.print("  [cyan]Ctrl+R[/cyan] - Reverse search through command history")
         self.console.print("  [cyan]Tab[/cyan] - Auto-complete commands and paths")
         self.console.print("  [cyan]↑/↓[/cyan] - Navigate command history")
+        self.console.print("  [cyan]Ctrl+A/E[/cyan] - Jump to beginning/end of line")
+        self.console.print("  [cyan]Ctrl+K[/cyan] - Delete from cursor to end of line")
+        self.console.print("  [cyan]Ctrl+U[/cyan] - Delete from cursor to beginning of line")
+        self.console.print("  [cyan]Ctrl+W[/cyan] - Delete word before cursor")
         self.console.print()
 
         self.console.print("[dim]Type any command without arguments to see its options[/dim]")
