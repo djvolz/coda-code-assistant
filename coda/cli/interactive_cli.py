@@ -228,6 +228,8 @@ class InteractiveCLI:
         self.interrupt_event = Event()
         self.last_escape_time = 0
         self.escape_count = 0
+        self.last_ctrl_c_time = 0
+        self.ctrl_c_count = 0
 
         # Initialize session with all features
         self._init_session()
@@ -293,6 +295,31 @@ class InteractiveCLI:
             else:
                 self.escape_count = 1
             self.last_escape_time = current_time
+        
+        @kb.add(Keys.ControlC)
+        def handle_ctrl_c(event):
+            """Handle Ctrl+C for clearing prompt or exit."""
+            current_time = time.time()
+            
+            # If we're currently getting a response, interrupt it
+            if self.interrupt_event.is_set() or hasattr(event.app, 'is_done'):
+                self.interrupt_event.set()
+                return
+            
+            # Check if this is a double Ctrl+C (within 1 second)
+            if current_time - self.last_ctrl_c_time < 1.0:
+                self.ctrl_c_count += 1
+                if self.ctrl_c_count >= 2:
+                    # Double Ctrl+C - exit
+                    self.console.print("\n[dim]Goodbye! (Double Ctrl+C detected)[/dim]")
+                    raise SystemExit(0)
+            else:
+                self.ctrl_c_count = 1
+                # Single Ctrl+C - clear current line
+                event.app.current_buffer.reset()
+                self.console.print("[dim](Press Ctrl+C again to exit)[/dim]", end="\r")
+                
+            self.last_ctrl_c_time = current_time
 
         self.session = PromptSession(
             history=FileHistory(str(history_file)),
@@ -339,9 +366,14 @@ class InteractiveCLI:
                 self._get_prompt(),
                 multiline=multiline,
             )
+            # Reset Ctrl+C count on successful input
+            self.ctrl_c_count = 0
             return text.strip()
-        except (EOFError, KeyboardInterrupt):
+        except EOFError:
             return '/exit'
+        except KeyboardInterrupt:
+            # This shouldn't happen with our key binding, but just in case
+            return ''
         finally:
             # Reset multiline mode
             if multiline:
@@ -559,3 +591,4 @@ class InteractiveCLI:
         """Reset the interrupt state."""
         self.interrupt_event.clear()
         self.escape_count = 0
+        self.ctrl_c_count = 0
