@@ -233,11 +233,25 @@ class InteractiveCLI:
     # Command handlers
     def _cmd_help(self, args: str):
         """Show help for commands."""
-        self.console.print("\n[bold]Available commands:[/bold]")
-        for name, cmd in sorted(self.commands.items()):
-            aliases_str = f" (aliases: {', '.join('/' + a for a in cmd.aliases)})" if cmd.aliases else ""
-            self.console.print(f"  [cyan]/{name}[/cyan]{aliases_str} - {cmd.help_text}")
-        self.console.print()
+        self.console.print("\n[bold]Available Commands[/bold]\n")
+        
+        # Group commands by category
+        categories = {
+            "AI Settings": ["model", "provider", "mode"],
+            "Session": ["session", "export", "clear"],
+            "System": ["tools", "theme", "help", "exit"],
+        }
+        
+        for category, cmd_names in categories.items():
+            self.console.print(f"[bold]{category}:[/bold]")
+            for cmd_name in cmd_names:
+                if cmd_name in self.commands:
+                    cmd = self.commands[cmd_name]
+                    aliases_str = f" (/{'/'.join(cmd.aliases)})" if cmd.aliases else ""
+                    self.console.print(f"  [cyan]/{cmd_name}[/cyan]{aliases_str} - {cmd.help_text}")
+            self.console.print()
+        
+        self.console.print("[dim]Type any command without arguments to see its options[/dim]")
 
     async def _cmd_model(self, args: str):
         """Switch AI model."""
@@ -270,16 +284,36 @@ class InteractiveCLI:
     def _cmd_provider(self, args: str):
         """Switch provider."""
         if not args:
-            self.console.print("[yellow]Current provider: Not implemented yet[/yellow]")
-            self.console.print("Usage: /provider <provider-name>")
+            self.console.print("\n[bold]Provider Management[/bold]")
+            self.console.print("[yellow]Current provider:[/yellow] oci_genai\n")
+            
+            self.console.print("[bold]Available providers:[/bold]")
+            self.console.print("  [green]▶ oci_genai[/green] - Oracle Cloud Infrastructure GenAI")
+            self.console.print("  [cyan]ollama[/cyan] - Local models via Ollama [yellow](Coming soon)[/yellow]")
+            self.console.print("  [cyan]openai[/cyan] - OpenAI GPT models [yellow](Coming soon)[/yellow]")
+            self.console.print("  [cyan]litellm[/cyan] - 100+ providers via LiteLLM [yellow](Coming soon)[/yellow]")
+            self.console.print("\n[dim]Usage: /provider <provider_name>[/dim]")
         else:
-            self.console.print(f"[yellow]Switching to provider: {args} (not implemented yet)[/yellow]")
+            if args.lower() == "oci_genai":
+                self.console.print("[green]Already using oci_genai provider[/green]")
+            else:
+                self.console.print(f"[yellow]Provider '{args}' not implemented yet[/yellow]")
+                self.console.print("Currently supported: oci_genai")
 
     def _cmd_mode(self, args: str):
         """Change developer mode."""
         if not args:
-            self.console.print(f"[yellow]Current mode: {self.current_mode.value}[/yellow]")
-            self.console.print("Available modes: " + ", ".join(m.value for m in DeveloperMode))
+            self.console.print(f"\n[yellow]Current mode:[/yellow] {self.current_mode.value}")
+            self.console.print(f"[dim]{self._get_mode_description(self.current_mode)}[/dim]\n")
+            
+            self.console.print("[bold]Available modes:[/bold]")
+            for mode in DeveloperMode:
+                if mode == self.current_mode:
+                    self.console.print(f"  [green]▶ {mode.value}[/green] - {self._get_mode_description(mode)}")
+                else:
+                    self.console.print(f"  [cyan]{mode.value}[/cyan] - {self._get_mode_description(mode)}")
+            
+            self.console.print("\n[dim]Usage: /mode <mode_name>[/dim]")
             return
 
         try:
@@ -288,10 +322,10 @@ class InteractiveCLI:
             self._show_mode_description()
         except ValueError:
             self.console.print(f"[red]Invalid mode: {args}[/red]")
-            self.console.print("Available modes: " + ", ".join(m.value for m in DeveloperMode))
+            self.console.print("Valid modes: " + ", ".join(f"[cyan]{m.value}[/cyan]" for m in DeveloperMode))
 
-    def _show_mode_description(self):
-        """Show description for current mode."""
+    def _get_mode_description(self, mode: DeveloperMode) -> str:
+        """Get description for a specific mode."""
         descriptions = {
             DeveloperMode.CODE: "Optimized for writing new code with best practices",
             DeveloperMode.DEBUG: "Focus on error analysis and debugging assistance",
@@ -299,23 +333,66 @@ class InteractiveCLI:
             DeveloperMode.REVIEW: "Security and code quality review",
             DeveloperMode.REFACTOR: "Code improvement and optimization suggestions",
         }
-        self.console.print(f"[dim]{descriptions[self.current_mode]}[/dim]")
+        return descriptions.get(mode, "")
+    
+    def _show_mode_description(self):
+        """Show description for current mode."""
+        self.console.print(f"[dim]{self._get_mode_description(self.current_mode)}[/dim]")
 
     def _cmd_session(self, args: str):
         """Manage sessions."""
-        self.console.print("[yellow]Session management not implemented yet[/yellow]")
+        if not args:
+            self.console.print("\n[bold]Session Management[/bold] [yellow](Coming soon)[/yellow]")
+            self.console.print("\n[bold]Planned subcommands:[/bold]")
+            self.console.print("  [cyan]save[/cyan] - Save current conversation")
+            self.console.print("  [cyan]load[/cyan] - Load a saved conversation")
+            self.console.print("  [cyan]list[/cyan] - List all saved sessions")
+            self.console.print("  [cyan]branch[/cyan] - Create a branch from current conversation")
+            self.console.print("  [cyan]delete[/cyan] - Delete a saved session")
+            self.console.print("\n[dim]Usage: /session <subcommand>[/dim]")
+        else:
+            self.console.print(f"[yellow]Session command '{args}' not implemented yet[/yellow]")
 
     def _cmd_theme(self, args: str):
         """Change UI theme."""
-        self.console.print("[yellow]Theme switching not implemented yet[/yellow]")
+        if not args:
+            self.console.print("\n[bold]Theme Settings[/bold] [yellow](Coming soon)[/yellow]")
+            self.console.print("\n[bold]Planned themes:[/bold]")
+            self.console.print("  [cyan]default[/cyan] - Default color scheme")
+            self.console.print("  [cyan]dark[/cyan] - Dark mode optimized")
+            self.console.print("  [cyan]light[/cyan] - Light terminal theme")
+            self.console.print("  [cyan]minimal[/cyan] - Minimal colors")
+            self.console.print("  [cyan]vibrant[/cyan] - High contrast colors")
+            self.console.print("\n[dim]Usage: /theme <theme_name>[/dim]")
+        else:
+            self.console.print(f"[yellow]Theme '{args}' not implemented yet[/yellow]")
 
     def _cmd_export(self, args: str):
         """Export conversation."""
-        self.console.print("[yellow]Export functionality not implemented yet[/yellow]")
+        if not args:
+            self.console.print("\n[bold]Export Options[/bold] [yellow](Coming soon)[/yellow]")
+            self.console.print("\n[bold]Planned formats:[/bold]")
+            self.console.print("  [cyan]markdown[/cyan] - Export as Markdown file")
+            self.console.print("  [cyan]json[/cyan] - Export as JSON with metadata")
+            self.console.print("  [cyan]txt[/cyan] - Export as plain text")
+            self.console.print("  [cyan]html[/cyan] - Export as HTML with syntax highlighting")
+            self.console.print("\n[dim]Usage: /export <format> [filename][/dim]")
+        else:
+            self.console.print(f"[yellow]Export format '{args}' not implemented yet[/yellow]")
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
-        self.console.print("[yellow]MCP tools management not implemented yet[/yellow]")
+        if not args:
+            self.console.print("\n[bold]MCP Tools Management[/bold] [yellow](Coming soon)[/yellow]")
+            self.console.print("\n[bold]Planned subcommands:[/bold]")
+            self.console.print("  [cyan]list[/cyan] - List available MCP tools")
+            self.console.print("  [cyan]enable[/cyan] - Enable specific tools")
+            self.console.print("  [cyan]disable[/cyan] - Disable specific tools")
+            self.console.print("  [cyan]config[/cyan] - Configure tool settings")
+            self.console.print("  [cyan]status[/cyan] - Show tool status")
+            self.console.print("\n[dim]Usage: /tools <subcommand>[/dim]")
+        else:
+            self.console.print(f"[yellow]Tools command '{args}' not implemented yet[/yellow]")
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
