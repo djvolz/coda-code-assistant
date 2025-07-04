@@ -262,7 +262,7 @@ class InteractiveCLI:
             multiline=False,  # We'll handle multiline manually
             enable_history_search=True,
             vi_mode=False,  # Can be toggled later
-            mouse_support=True,
+            mouse_support=False,  # Disable to preserve terminal scrollback
             complete_while_typing=False,  # Only show completions on Tab
             complete_in_thread=True,  # Better performance
             complete_style='MULTI_COLUMN',  # Show completions in columns
