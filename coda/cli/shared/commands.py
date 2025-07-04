@@ -163,4 +163,3 @@ class CommandHandler(ABC):
     def exit_application(self) -> CommandResult:
         """Exit the application."""
         return CommandResult.EXIT
-

@@ -63,31 +63,20 @@ class BasicCommandProcessor(CommandHandler):
 
     def show_help(self) -> CommandResult:
         """Show help for commands."""
-        self.console.print("\n[bold]Available Commands (Basic Mode)[/bold]\n")
+        from coda.cli.shared import (
+            print_basic_keyboard_shortcuts,
+            print_command_help,
+            print_developer_modes,
+        )
 
-        self.console.print("[bold]AI Settings:[/bold]")
-        self.console.print("  [cyan]/model[/cyan] (/m) - Switch AI model")
-        self.console.print("  [cyan]/provider[/cyan] (/p) - Switch provider")
-        self.console.print("  [cyan]/mode[/cyan] - Change developer mode")
-        self.console.print()
+        print_command_help(self.console, "Basic Mode")
+        print_developer_modes(self.console)
+        print_basic_keyboard_shortcuts(self.console)
 
-        self.console.print("[bold]System:[/bold]")
-        self.console.print("  [cyan]/clear[/cyan] (/cls) - Clear conversation")
-        self.console.print("  [cyan]/help[/cyan] (/h, /?) - Show this help")
-        self.console.print("  [cyan]/exit[/cyan] (/quit, /q) - Exit the application")
-        self.console.print()
-
-        self.console.print("[bold]Developer Modes:[/bold]")
-        for mode in DeveloperMode:
-            from coda.cli.shared import get_mode_description
-
-            desc = get_mode_description(mode)
-            self.console.print(f"  [cyan]{mode.value}[/cyan] - {desc}")
-        self.console.print()
+        self.console.print("[dim]Type any command without arguments to see its options[/dim]")
 
         return CommandResult.HANDLED
 
     def get_system_prompt(self) -> str:
         """Get system prompt based on current mode."""
         return get_system_prompt(self.current_mode)
-

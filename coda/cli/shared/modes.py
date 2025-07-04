@@ -44,4 +44,3 @@ def get_mode_description(mode: DeveloperMode) -> str:
 def get_system_prompt(mode: DeveloperMode) -> str:
     """Get system prompt based on mode."""
     return SYSTEM_PROMPTS.get(mode, "")
-

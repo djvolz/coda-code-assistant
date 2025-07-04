@@ -365,35 +365,17 @@ class InteractiveCLI(CommandHandler):
     # Command handlers
     def show_help(self) -> CommandResult:
         """Show help for commands - interactive mode specific."""
-        self.console.print("\n[bold]Available Commands[/bold]\n")
+        from coda.cli.shared import (
+            print_command_help,
+            print_developer_modes,
+            print_interactive_keyboard_shortcuts,
+            print_interactive_only_commands,
+        )
 
-        # Group commands by category
-        categories = {
-            "AI Settings": ["model", "provider", "mode"],
-            "Session": ["session", "export", "clear"],
-            "System": ["tools", "theme", "help", "exit"],
-        }
-
-        for category, cmd_names in categories.items():
-            self.console.print(f"[bold]{category}:[/bold]")
-            for cmd_name in cmd_names:
-                if cmd_name in self.commands:
-                    cmd = self.commands[cmd_name]
-                    aliases_str = f" (/{'/'.join(cmd.aliases)})" if cmd.aliases else ""
-                    self.console.print(f"  [cyan]/{cmd_name}[/cyan]{aliases_str} - {cmd.help_text}")
-            self.console.print()
-
-        self.console.print("[bold]Keyboard Shortcuts:[/bold]")
-        self.console.print("  [cyan]Ctrl+C[/cyan] - Clear input line / Interrupt AI response")
-        self.console.print("  [cyan]Ctrl+D[/cyan] - Exit the application")
-        self.console.print("  [cyan]Ctrl+R[/cyan] - Reverse search through command history")
-        self.console.print("  [cyan]Tab[/cyan] - Auto-complete commands and paths")
-        self.console.print("  [cyan]↑/↓[/cyan] - Navigate command history")
-        self.console.print("  [cyan]Ctrl+A/E[/cyan] - Jump to beginning/end of line")
-        self.console.print("  [cyan]Ctrl+K[/cyan] - Delete from cursor to end of line")
-        self.console.print("  [cyan]Ctrl+U[/cyan] - Delete from cursor to beginning of line")
-        self.console.print("  [cyan]Ctrl+W[/cyan] - Delete word before cursor")
-        self.console.print()
+        print_command_help(self.console, "Interactive Mode")
+        print_interactive_only_commands(self.console)
+        print_developer_modes(self.console)
+        print_interactive_keyboard_shortcuts(self.console)
 
         self.console.print("[dim]Type any command without arguments to see its options[/dim]")
         return CommandResult.HANDLED
