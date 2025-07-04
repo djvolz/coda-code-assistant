@@ -11,7 +11,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
-from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.formatted_text import HTML, FormattedText
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style
 from prompt_toolkit.key_binding import KeyBindings
@@ -282,10 +282,10 @@ class InteractiveCLI:
             DeveloperMode.PLAN: 'red',
         }.get(self.current_mode, 'white')
 
+        # Simple prompt
         return HTML(
             f'<prompt>[<prompt.mode>{self.current_mode.value}</prompt.mode>]</prompt> '
             f'<b><ansi{mode_color}>You</ansi{mode_color}></b> '
-            f'<ansi{mode_color}>›</ansi{mode_color}> '
         )
 
     async def get_input(self, multiline: bool = False) -> str:

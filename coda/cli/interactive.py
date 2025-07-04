@@ -13,6 +13,7 @@ from rich.live import Live
 from rich.spinner import Spinner
 from rich.table import Table
 from rich.box import ROUNDED
+from rich.markdown import Markdown
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
 
@@ -106,20 +107,8 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
 
                 # Add user message
                 messages.append(Message(role=Role.USER, content=user_input))
-                
-                # Display user prompt in a nice box
-                user_panel = Panel(
-                    user_input,
-                    title=f"[bold cyan]You[/bold cyan] [dim]({cli.current_mode.value} mode)[/dim]",
-                    title_align="left",
-                    border_style="cyan",
-                    box=ROUNDED,
-                    padding=(0, 1),
-                )
-                console.print("\n", user_panel)
 
                 # Show thinking indicator
-                console.print()  # New line after user panel
                 
                 # Choose spinner and message based on mode
                 spinner_style = {
@@ -158,8 +147,8 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                 first_chunk = True
                 
                 try:
-                    # Show thinking spinner until first chunk arrives
-                    with Live(thinking_table, console=console, refresh_per_second=10, transient=True) as live:
+                    # Show thinking spinner
+                    with Live(thinking_table, console=console, refresh_per_second=10, transient=True) as spinner_live:
                         stream = oci_provider.chat_stream(
                             messages=chat_messages,
                             model=cli.current_model,  # Use current model from CLI
@@ -167,23 +156,30 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
                             max_tokens=2000
                         )
                         
+                        # Get first chunk to stop spinner
                         for chunk in stream:
-                            # Stop spinner on first chunk
                             if first_chunk:
-                                live.stop()
-                                # Clear the thinking line and show response
-                                console.print("\r" + " " * 50 + "\r", end="")  # Clear line
-                                console.print("[bold cyan]Assistant:[/bold cyan] ", end="")
+                                spinner_live.stop()
+                                console.print("\n[bold cyan]Assistant:[/bold cyan]")
                                 first_chunk = False
                             
                             # Check for interrupt
                             if cli.interrupt_event.is_set():
                                 interrupted = True
-                                console.print("\n\n[yellow]Response interrupted by user[/yellow]")
                                 break
                                 
-                            console.print(chunk.content, end="")
                             full_response += chunk.content
+                    
+                    # After streaming is complete, render the full response as markdown
+                    if full_response and not interrupted:
+                        markdown = Markdown(full_response, code_theme="monokai")
+                        console.print(markdown)
+                    elif interrupted:
+                        # Show partial response as markdown if interrupted
+                        if full_response:
+                            markdown = Markdown(full_response, code_theme="monokai")
+                            console.print(markdown)
+                        console.print("\n[yellow]Response interrupted by user[/yellow]")
                 except Exception as e:
                     if cli.interrupt_event.is_set():
                         interrupted = True
