@@ -6,11 +6,12 @@ import pytest
 
 from coda.cli.basic_commands import BasicCommandProcessor
 from coda.cli.interactive_cli import InteractiveCLI
-from coda.cli.shared import CommandResult, DeveloperMode
+from coda.cli.shared import DeveloperMode
 
 
 class MockModel:
     """Mock model for testing."""
+
     def __init__(self, id: str):
         self.id = id
         self.provider = "test"
@@ -29,17 +30,17 @@ class TestBasicModeIntegration:
     def test_basic_help_command(self, processor):
         """Test that help command works in basic mode."""
         result = processor.process_command("/help")
-        
+
         assert result == "continue"
         calls = [str(call) for call in processor.console.print.call_args_list]
-        
+
         # Check basic mode specific content
         assert any("Available Commands (Basic Mode)" in str(call) for call in calls)
         assert any("Ctrl+C" in str(call) for call in calls)
         assert any("Clear input line" in str(call) for call in calls)
         assert any("Interrupt AI response" in str(call) for call in calls)
         assert any("limited keyboard shortcuts" in str(call) for call in calls)
-        
+
         # Check shared content
         assert any("Developer Modes" in str(call) for call in calls)
         assert any("/model" in str(call) for call in calls)
@@ -48,10 +49,10 @@ class TestBasicModeIntegration:
         """Test mode switching in basic mode."""
         # Switch to code mode
         result = processor.process_command("/mode code")
-        
+
         assert result == "continue"
         assert processor.current_mode == DeveloperMode.CODE
-        
+
         # Get system prompt
         prompt = processor.get_system_prompt()
         assert "coding assistant" in prompt
@@ -60,9 +61,9 @@ class TestBasicModeIntegration:
         """Test model switching in basic mode."""
         models = [MockModel("model1"), MockModel("model2")]
         processor.set_provider_info("test", None, None, "model1", models)
-        
+
         result = processor.process_command("/model model2")
-        
+
         assert result == "continue"
         assert processor.current_model == "model2"
 
@@ -75,7 +76,7 @@ class TestBasicModeIntegration:
             assert result == "continue"
             calls = str(processor.console.print.call_args_list)
             assert "Available Commands" in calls
-        
+
         # Test exit aliases
         for alias in ["/quit", "/q"]:
             result = processor.process_command(alias)
@@ -85,14 +86,14 @@ class TestBasicModeIntegration:
         """Test clear command in basic mode."""
         result = processor.process_command("/clear")
         assert result == "clear"
-        
+
         result = processor.process_command("/cls")
         assert result == "clear"
 
     def test_basic_unknown_command(self, processor):
         """Test unknown command handling in basic mode."""
         result = processor.process_command("/unknown")
-        
+
         assert result == "continue"
         calls = [str(call) for call in processor.console.print.call_args_list]
         assert any("Unknown command" in str(call) for call in calls)
@@ -102,19 +103,20 @@ class TestBasicModeIntegration:
         assert processor.process_command("hello world") is None
         assert processor.process_command("") is None
         assert processor.process_command("  ") is None
-    
-    @patch('rich.prompt.Prompt.ask')
+
+    @patch("rich.prompt.Prompt.ask")
     def test_basic_ctrl_c_handling(self, mock_ask):
         """Test that Ctrl+C is handled gracefully in basic mode."""
-        from coda.cli.main import main
         from click.testing import CliRunner
-        
+
+        from coda.cli.main import main
+
         # Simulate Ctrl+C followed by /exit
         mock_ask.side_effect = [KeyboardInterrupt, "/exit"]
-        
+
         runner = CliRunner()
-        result = runner.invoke(main, ['--basic', '--provider', 'oci_genai'])
-        
+        result = runner.invoke(main, ["--basic", "--provider", "oci_genai"])
+
         # Should not crash, exit code depends on whether provider was initialized
         # Just verify the command ran without raising an exception
         assert isinstance(result.exit_code, int)
@@ -132,9 +134,9 @@ class TestInteractiveModeIntegration:
     def test_interactive_help_command(self, cli):
         """Test that help command works in interactive mode."""
         cli._cmd_help("")
-        
+
         calls = [str(call) for call in cli.console.print.call_args_list]
-        
+
         # Check interactive mode specific content
         assert any("Available Commands (Interactive Mode)" in str(call) for call in calls)
         assert any("Ctrl+R" in str(call) for call in calls)
@@ -142,14 +144,14 @@ class TestInteractiveModeIntegration:
         assert any("Tab" in str(call) for call in calls)
         assert any("\\\\" in str(call) for call in calls)
         assert any("Interactive mode only" in str(call) for call in calls)
-        
+
         # Check shared content
         assert any("Developer Modes" in str(call) for call in calls)
 
     def test_interactive_mode_switching(self, cli):
         """Test mode switching in interactive mode."""
         cli._cmd_mode("debug")
-        
+
         assert cli.current_mode == DeveloperMode.DEBUG
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Switched to debug mode" in str(call) for call in calls)
@@ -159,16 +161,16 @@ class TestInteractiveModeIntegration:
         """Test model switching with direct argument."""
         models = [MockModel("gpt-4"), MockModel("gpt-3.5")]
         cli.available_models = models
-        
+
         await cli._cmd_model("gpt-4")
-        
+
         assert cli.current_model == "gpt-4"
 
     def test_interactive_provider_command(self, cli):
         """Test provider command in interactive mode."""
         cli.provider_name = "oci_genai"
         cli._cmd_provider("oci_genai")
-        
+
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Already using oci_genai" in str(call) for call in calls)
 
@@ -179,13 +181,13 @@ class TestInteractiveModeIntegration:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Session Management" in str(call) for call in calls)
         assert any("Coming soon" in str(call) for call in calls)
-        
+
         # Theme command
         cli.console.reset_mock()
         cli._cmd_theme("")
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Theme Settings" in str(call) for call in calls)
-        
+
         # Tools command
         cli.console.reset_mock()
         cli._cmd_tools("")
@@ -196,7 +198,7 @@ class TestInteractiveModeIntegration:
         """Test exit command in interactive mode."""
         with pytest.raises(SystemExit) as exc_info:
             cli._cmd_exit("")
-        
+
         assert exc_info.value.code == 0
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Goodbye" in str(call) for call in calls)
@@ -204,7 +206,7 @@ class TestInteractiveModeIntegration:
     def test_interactive_clear_command(self, cli):
         """Test clear command in interactive mode."""
         cli._cmd_clear("")
-        
+
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Conversation cleared" in str(call) for call in calls)
 
@@ -212,7 +214,7 @@ class TestInteractiveModeIntegration:
     async def test_interactive_slash_command_processing(self, cli):
         """Test slash command processing through process_slash_command."""
         result = await cli.process_slash_command("/help")
-        
+
         assert result is True
         calls = str(cli.console.print.call_args_list)
         assert "Available Commands" in calls
@@ -223,7 +225,7 @@ class TestInteractiveModeIntegration:
         # Test through process_slash_command
         result = await cli.process_slash_command("/h")
         assert result is True
-        
+
         # Mode should process correctly
         result = await cli.process_slash_command("/mode code")
         assert result is True
@@ -239,18 +241,19 @@ class TestModeCompatibility:
         basic_console = Mock()
         basic = BasicCommandProcessor(basic_console)
         basic.process_command("/mode plan")
-        
+
         # Interactive mode
         interactive_console = Mock()
         interactive = InteractiveCLI(interactive_console)
         interactive._cmd_mode("plan")
-        
+
         # Both should be in plan mode
         assert basic.current_mode == DeveloperMode.PLAN
         assert interactive.current_mode == DeveloperMode.PLAN
-        
+
         # Both should have same system prompt
         from coda.cli.shared import get_system_prompt
+
         assert get_system_prompt(basic.current_mode) == get_system_prompt(interactive.current_mode)
 
     def test_help_command_shared_content(self):
@@ -260,17 +263,17 @@ class TestModeCompatibility:
         basic = BasicCommandProcessor(basic_console)
         basic.process_command("/help")
         basic_calls = str(basic_console.print.call_args_list)
-        
+
         # Interactive mode
         interactive_console = Mock()
         interactive = InteractiveCLI(interactive_console)
         interactive._cmd_help("")
         interactive_calls = str(interactive_console.print.call_args_list)
-        
+
         # Both should show developer modes
         assert "Developer Modes" in basic_calls
         assert "Developer Modes" in interactive_calls
-        
+
         # Both should show all modes
         for mode in ["general", "code", "debug", "explain", "review", "refactor", "plan"]:
             assert mode in basic_calls

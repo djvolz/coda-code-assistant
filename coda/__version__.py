@@ -11,7 +11,6 @@ from datetime import UTC, datetime
 __version__ = "2025.7.4.0155"  # Auto-updated
 
 
-
 def get_current_version():
     """Generate current version based on UTC time."""
     now = datetime.now(UTC)

@@ -1,8 +1,7 @@
 """Basic mode slash command handling."""
 
-from rich.console import Console
 
-from coda.cli.shared import CommandHandler, CommandResult, DeveloperMode, get_system_prompt
+from coda.cli.shared import CommandHandler, CommandResult, get_system_prompt
 
 
 class BasicCommandProcessor(CommandHandler):
