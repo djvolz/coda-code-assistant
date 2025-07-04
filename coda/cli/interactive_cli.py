@@ -524,7 +524,7 @@ class InteractiveCLI:
     def _cmd_session(self, args: str):
         """Manage sessions."""
         if not args:
-            options = self.command_options.get("session", [])
+            options = self.session.completer.slash_completer.command_options.get("session", [])
             self._show_coming_soon_command(
                 "session", "Session Management", options, "/session <subcommand>"
             )
@@ -534,7 +534,7 @@ class InteractiveCLI:
     def _cmd_theme(self, args: str):
         """Change UI theme."""
         if not args:
-            options = self.command_options.get("theme", [])
+            options = self.session.completer.slash_completer.command_options.get("theme", [])
             self._show_coming_soon_command(
                 "theme", "Theme Settings", options, "/theme <theme_name>"
             )
@@ -544,7 +544,7 @@ class InteractiveCLI:
     def _cmd_export(self, args: str):
         """Export conversation."""
         if not args:
-            options = self.command_options.get("export", [])
+            options = self.session.completer.slash_completer.command_options.get("export", [])
             self._show_coming_soon_command(
                 "export", "Export Options", options, "/export <format> [filename]"
             )
@@ -554,7 +554,7 @@ class InteractiveCLI:
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
         if not args:
-            options = self.command_options.get("tools", [])
+            options = self.session.completer.slash_completer.command_options.get("tools", [])
             self._show_coming_soon_command(
                 "tools", "MCP Tools Management", options, "/tools <subcommand>"
             )
