@@ -47,26 +47,26 @@ class SlashCommandCompleter(Completer):
         if text == '/':
             for cmd_name, cmd in self.commands.items():
                 yield Completion(
-                    cmd_name,
-                    start_position=-1,
+                    '/' + cmd_name,  # Include the slash
+                    start_position=-1,  # Replace just the '/'
                     display_meta=cmd.help_text
                 )
         elif text.startswith('/'):
             # Complete based on what's after the slash
-            word = text[1:]
+            word = text[1:]  # Get the part after '/'
             for cmd_name, cmd in self.commands.items():
                 if cmd_name.startswith(word):
                     yield Completion(
-                        cmd_name,
-                        start_position=-len(text),
+                        '/' + cmd_name,  # Include the slash in completion
+                        start_position=-len(text),  # Replace entire text including '/'
                         display_meta=cmd.help_text
                     )
                 # Also complete aliases
                 for alias in cmd.aliases:
                     if alias.startswith(word):
                         yield Completion(
-                            alias,
-                            start_position=-len(text),
+                            '/' + alias,  # Include the slash in completion
+                            start_position=-len(text),  # Replace entire text including '/'
                             display_meta=f'Alias for /{cmd_name}'
                         )
 
