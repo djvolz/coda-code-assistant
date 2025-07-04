@@ -285,6 +285,7 @@ class InteractiveCLI:
         return HTML(
             f'<prompt>[<prompt.mode>{self.current_mode.value}</prompt.mode>]</prompt> '
             f'<b><ansi{mode_color}>You</ansi{mode_color}></b> '
+            f'<ansi{mode_color}>›</ansi{mode_color}> '
         )
 
     async def get_input(self, multiline: bool = False) -> str:
