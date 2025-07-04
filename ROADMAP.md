@@ -228,6 +228,12 @@ None currently - all bugs have been resolved!
   - [ ] `light` - Light terminal theme
   - [ ] `minimal` - Minimal colors
   - [ ] `vibrant` - High contrast colors
+- [ ] **Enhanced Response Rendering**
+  - [ ] Live markdown rendering during streaming
+  - [ ] Syntax highlighting for code blocks
+  - [ ] Proper handling of tables and lists
+  - [ ] Toggle between raw and formatted view
+  - [ ] Preserve terminal scrollback while rendering
 
 ### 6.4 Collaboration Features
 - [ ] Session sharing via URLs
