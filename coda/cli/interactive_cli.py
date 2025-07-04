@@ -38,6 +38,49 @@ class SlashCommandCompleter(Completer):
 
     def __init__(self, commands: dict[str, SlashCommand]):
         self.commands = commands
+        # Define available options for specific commands
+        self.command_options = {
+            'mode': [
+                ('code', 'Optimized for writing new code'),
+                ('debug', 'Focus on error analysis'),
+                ('explain', 'Detailed code explanations'),
+                ('review', 'Security and code quality review'),
+                ('refactor', 'Code improvement suggestions'),
+            ],
+            'provider': [
+                ('oci_genai', 'Oracle Cloud Infrastructure GenAI'),
+                ('ollama', 'Local models via Ollama (coming soon)'),
+                ('openai', 'OpenAI GPT models (coming soon)'),
+                ('litellm', '100+ providers via LiteLLM (coming soon)'),
+            ],
+            'session': [
+                ('save', 'Save current conversation'),
+                ('load', 'Load a saved conversation'),
+                ('list', 'List all saved sessions'),
+                ('branch', 'Create a branch from current conversation'),
+                ('delete', 'Delete a saved session'),
+            ],
+            'theme': [
+                ('default', 'Default color scheme'),
+                ('dark', 'Dark mode optimized'),
+                ('light', 'Light terminal theme'),
+                ('minimal', 'Minimal colors'),
+                ('vibrant', 'High contrast colors'),
+            ],
+            'export': [
+                ('markdown', 'Export as Markdown file'),
+                ('json', 'Export as JSON with metadata'),
+                ('txt', 'Export as plain text'),
+                ('html', 'Export as HTML with syntax highlighting'),
+            ],
+            'tools': [
+                ('list', 'List available MCP tools'),
+                ('enable', 'Enable specific tools'),
+                ('disable', 'Disable specific tools'),
+                ('config', 'Configure tool settings'),
+                ('status', 'Show tool status'),
+            ],
+        }
 
     def get_completions(self, document, complete_event):
         # Get the current text
@@ -52,23 +95,51 @@ class SlashCommandCompleter(Completer):
                     display_meta=cmd.help_text
                 )
         elif text.startswith('/'):
-            # Complete based on what's after the slash
-            word = text[1:]  # Get the part after '/'
-            for cmd_name, cmd in self.commands.items():
-                if cmd_name.startswith(word):
-                    yield Completion(
-                        '/' + cmd_name,  # Include the slash in completion
-                        start_position=-len(text),  # Replace entire text including '/'
-                        display_meta=cmd.help_text
-                    )
-                # Also complete aliases
-                for alias in cmd.aliases:
-                    if alias.startswith(word):
+            # Check if we have a complete command with a space
+            parts = text.split(' ', 1)
+            
+            if len(parts) == 2:  # We have a command and possibly partial argument
+                cmd_part = parts[0][1:]  # Remove the slash
+                arg_part = parts[1]
+                
+                # Check if this is a valid command
+                if cmd_part in self.command_options:
+                    # Show completions for command arguments
+                    options = self.command_options[cmd_part]
+                    
+                    if not arg_part:  # Just typed space, show all options
+                        for option, description in options:
+                            yield Completion(
+                                option,
+                                start_position=0,
+                                display_meta=description
+                            )
+                    else:  # Partial argument typed
+                        for option, description in options:
+                            if option.startswith(arg_part):
+                                yield Completion(
+                                    option,
+                                    start_position=-len(arg_part),
+                                    display_meta=description
+                                )
+            else:
+                # Complete the command itself
+                word = text[1:]  # Get the part after '/'
+                for cmd_name, cmd in self.commands.items():
+                    if cmd_name.startswith(word):
                         yield Completion(
-                            '/' + alias,  # Include the slash in completion
+                            '/' + cmd_name,  # Include the slash in completion
                             start_position=-len(text),  # Replace entire text including '/'
-                            display_meta=f'Alias for /{cmd_name}'
+                            display_meta=cmd.help_text
                         )
+                    # Also complete aliases
+                    for alias in cmd.aliases:
+                        if alias.startswith(word):
+                            yield Completion(
+                                '/' + alias,  # Include the slash in completion
+                                start_position=-len(text),  # Replace entire text including '/'
+                                display_meta=f'Alias for /{cmd_name}'
+                            )
 
 
 class EnhancedCompleter(Completer):
