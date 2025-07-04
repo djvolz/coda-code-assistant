@@ -35,7 +35,7 @@ def print_developer_modes(console: Console):
 def print_basic_keyboard_shortcuts(console: Console):
     """Print basic keyboard shortcuts available in basic mode."""
     console.print("[bold]Keyboard Shortcuts:[/bold]")
-    console.print("  [cyan]Ctrl+C[/cyan] - Interrupt current operation / Cancel input")
+    console.print("  [cyan]Ctrl+C[/cyan] - Exit the application immediately")
     console.print("  [cyan]Ctrl+D[/cyan] - Exit the application (EOF)")
     console.print()
     console.print("[dim]Note: Basic mode has limited keyboard shortcuts.[/dim]")
