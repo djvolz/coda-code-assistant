@@ -65,6 +65,17 @@ class ChatSession:
     def run_one_shot(self, prompt: str):
         """Execute a single prompt and exit."""
         self.console.print(f"\n[bold cyan]User:[/bold cyan] {prompt}")
+        
+        # Check if this is a slash command
+        if prompt.startswith("/"):
+            cmd_result = self.cmd_processor.process_command(prompt)
+            if cmd_result == "exit":
+                return
+            elif cmd_result == "continue":
+                return
+            # If command was handled, don't send to AI
+            return
+        
         self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
 
         # Get system prompt based on mode

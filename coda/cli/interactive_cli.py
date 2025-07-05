@@ -76,11 +76,11 @@ class SlashCommandCompleter(Completer):
                 ("html", "Export as HTML with syntax highlighting"),
             ],
             "tools": [
-                ("list", "List available MCP tools"),
-                ("enable", "Enable specific tools"),
-                ("disable", "Disable specific tools"),
-                ("config", "Configure tool settings"),
-                ("status", "Show tool status"),
+                ("list", "List all available tools"),
+                ("info", "Show detailed tool information"),
+                ("categories", "Show all tool categories"),
+                ("stats", "Show tool statistics"),
+                ("help", "Show detailed tools help"),
             ],
         }
 
@@ -460,13 +460,9 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("tools", [])
-            self._show_coming_soon_command(
-                "tools", "MCP Tools Management", options, "/tools <subcommand>"
-            )
-        else:
-            self.console.print(f"[yellow]Tools command '{args}' not implemented yet[/yellow]")
+        # Use the shared command handler
+        result = self.handle_tools_command(args)
+        return result
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""

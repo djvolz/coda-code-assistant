@@ -16,6 +16,10 @@ def print_command_help(console: Console, mode: str = ""):
     console.print("  [cyan]/mode[/cyan] - Change developer mode")
     console.print()
 
+    console.print("[bold]Tools:[/bold]")
+    console.print("  [cyan]/tools[/cyan] (/t) - Manage MCP tools")
+    console.print()
+
     console.print("[bold]System:[/bold]")
     console.print("  [cyan]/clear[/cyan] (/cls) - Clear conversation")
     console.print("  [cyan]/help[/cyan] (/h, /?) - Show this help")
@@ -70,6 +74,5 @@ def print_interactive_only_commands(console: Console):
     console.print()
 
     console.print("[bold]Advanced:[/bold] [dim](Interactive mode only)[/dim]")
-    console.print("  [cyan]/tools[/cyan] (/t) - Manage MCP tools [yellow](Coming soon)[/yellow]")
     console.print("  [cyan]/theme[/cyan] - Change UI theme [yellow](Coming soon)[/yellow]")
     console.print()
