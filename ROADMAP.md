@@ -11,7 +11,7 @@ Build a multi-provider, CLI-focused code assistant that provides a unified inter
 - **Phase 3**: Enhanced CLI Experience (interactive shell, slash commands, developer modes)
 
 ✅ **Phase 4**: Session Management - COMPLETED (July 5, 2025) | 🚧 Enhancement 4.5 Pending
-- SQLite persistence layer with automatic migrations
+- SQLite persistence layer (stored in ~/.cache/coda/sessions.db)
 - Session commands (/session save/load/list/branch/delete/info/search)
 - Export commands (/export json/markdown/txt/html)
 - Full-text search across sessions
