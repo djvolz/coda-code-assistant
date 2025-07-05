@@ -351,19 +351,159 @@ None currently - all bugs have been resolved!
 - [ ] File upload/download
 - [ ] Session management UI
 
-## Phase 8: Other. Too be categorized
-- [ ] Opentelemetry support
-    - [ ] Metrics for daily active users and other telemetry
-- [ ] Pyroscope for debugging
-- [ ] Containerize coda and package ollama by default
-- [ ] Compacting conversation to automatically handle context
-- [ ] Repo mapping like [aider](https://aider.chat/docs/repomap.html)
-    - [ ] tree-sitter using [aider ts implementation](https://github.com/Aider-AI/aider/tree/main/aider/queries)
-        - [ ] Make sure to support documentation, function, class, struct, etc (not just ref and def like aider does)
-- [ ] Our own wiki update checker
-- [ ] Changelog detecter
-- [ ] Given any two points in the code (hash to hash but make this VCS agnostic) generate a changelog
-- [ ] Review code helper
+## Phase 8: Vector Embedding & Semantic Search
+
+### 8.1 Embedding Providers
+- [ ] **OCI Embedding Service Integration**
+  - [ ] OCI GenAI embedding models (multilingual-e5, cohere-embed-multilingual-v3.0)
+  - [ ] Batch embedding support for large datasets
+  - [ ] Authentication and configuration management
+  - [ ] Cost optimization and caching strategies
+
+- [ ] **Open Source Embedding Services**
+  - [ ] Local sentence-transformers integration
+  - [ ] Ollama embedding models support
+  - [ ] HuggingFace embedding models
+  - [ ] Custom embedding model support
+
+### 8.2 Vector Storage Backends
+- [ ] **Oracle Vector Database**
+  - [ ] Oracle Database 23ai vector support
+  - [ ] Vector similarity search queries
+  - [ ] Hybrid search (vector + traditional SQL)
+  - [ ] Connection pooling and optimization
+
+- [ ] **In-Memory FAISS**
+  - [ ] Local FAISS index management
+  - [ ] Persistent index storage
+  - [ ] Multiple index types (flat, IVF, HNSW)
+  - [ ] Memory usage optimization
+
+- [ ] **Additional Vector Stores**
+  - [ ] ChromaDB integration
+  - [ ] Pinecone support (optional)
+  - [ ] Local SQLite vector extension
+
+### 8.3 Semantic Search Features
+- [ ] **Content Indexing**
+  - [ ] Code file embedding and indexing
+  - [ ] Documentation and comment extraction
+  - [ ] Session history semantic search
+  - [ ] Multi-modal content support (code + docs)
+
+- [ ] **Search Interface**
+  - [ ] `/search semantic <query>` - Semantic similarity search
+  - [ ] `/search code <query>` - Code-specific semantic search
+  - [ ] `/search similar` - Find similar code patterns
+  - [ ] Hybrid search combining keyword and semantic
+
+- [ ] **Integration with Existing Features**
+  - [ ] Enhance session search with semantic capabilities
+  - [ ] Context-aware code suggestions
+  - [ ] Related code discovery
+  - [ ] Intelligent context selection for AI prompts
+
+## Phase 9: Codebase Intelligence
+
+### 9.1 Repository Analysis
+- [ ] **Repo Mapping**
+  - [ ] Repo mapping like [aider](https://aider.chat/docs/repomap.html)
+  - [ ] Tree-sitter integration using [aider ts implementation](https://github.com/Aider-AI/aider/tree/main/aider/queries)
+  - [ ] Support for documentation, function, class, struct, etc (beyond aider's ref/def approach)
+  - [ ] Multi-language code structure analysis
+  - [ ] Dependency graph generation
+
+### 9.2 Context Management
+- [ ] **Intelligent Context Handling**
+  - [ ] Automatic conversation compacting for long sessions
+  - [ ] Smart context window management based on codebase structure
+  - [ ] Context relevance scoring for code snippets (enhanced by semantic search)
+  - [ ] Token usage optimization with semantic understanding
+
+### 9.3 Code Understanding
+- [ ] **Semantic Analysis**
+  - [ ] Function and class relationship mapping
+  - [ ] Call graph generation
+  - [ ] Import/dependency tracking
+  - [ ] Code pattern recognition (enhanced by embeddings)
+  - [ ] Documentation extraction and indexing
+
+- [ ] **Review & Analysis Tools**
+  - [ ] AI-powered code review helper
+  - [ ] Security vulnerability detection
+  - [ ] Code quality assessment
+  - [ ] Performance bottleneck identification
+
+## Phase 10: Help Mode Integration
+
+### 10.1 Wiki-Based Help System
+- [ ] **Wiki Integration**
+  - [ ] GitHub wiki API client for fetching content from https://github.com/djvolz/coda-code-assistant/wiki/
+  - [ ] Local caching of wiki pages for offline access
+  - [ ] Automatic wiki content updates and sync
+  - [ ] Search functionality across wiki content (enhanced by semantic search)
+  
+- [ ] **Help Commands**
+  - [ ] `/help wiki` - Interactive wiki search and navigation
+  - [ ] `/help search <query>` - Search wiki for specific topics
+  - [ ] `/help topics` - List available help topics from wiki
+  - [ ] `/help refresh` - Force refresh of cached wiki content
+  
+- [ ] **Context-Aware Help**
+  - [ ] Analyze user questions to suggest relevant wiki pages
+  - [ ] Auto-suggest help topics based on current conversation context
+  - [ ] Integration with existing `/help` command to include wiki results
+  - [ ] Smart routing: CLI help vs wiki help based on query type
+
+- [ ] **Enhanced Help Experience**
+  - [ ] Formatted display of wiki content in terminal
+  - [ ] Markdown rendering for wiki pages
+  - [ ] Link resolution between wiki pages
+  - [ ] Breadcrumb navigation for wiki sections
+
+### 10.2 Implementation Details
+- [ ] **Wiki Content Processing**
+  - [ ] Parse GitHub wiki markdown format
+  - [ ] Extract and index searchable content
+  - [ ] Handle wiki page relationships and cross-references
+  - [ ] Support for code examples and syntax highlighting in help
+
+- [ ] **Caching Strategy**
+  - [ ] Store wiki content in `~/.cache/coda/wiki/`
+  - [ ] Implement cache expiration and refresh logic
+  - [ ] Offline mode fallback to cached content
+  - [ ] Delta updates for modified wiki pages
+
+## Phase 11: Observability & Performance
+
+### 11.1 Monitoring & Telemetry
+- [ ] **OpenTelemetry Integration**
+  - [ ] Metrics for daily active users and session statistics
+  - [ ] Performance monitoring (response times, token usage)
+  - [ ] Error tracking and alerting
+  - [ ] Provider health monitoring
+
+- [ ] **Debugging & Profiling**
+  - [ ] Pyroscope integration for performance profiling
+  - [ ] Debug mode enhancements
+  - [ ] Memory usage tracking
+  - [ ] Bottleneck identification
+
+## Phase 12: DevOps & Automation
+
+### 12.1 Deployment & Distribution
+- [ ] **Containerization**
+  - [ ] Containerize coda with ollama bundled by default
+  - [ ] Docker compose setup for development
+  - [ ] Multi-architecture container builds
+  - [ ] Container optimization for size and performance
+
+### 12.2 Development Workflow
+- [ ] **Version Control Integration**
+  - [ ] Wiki update checker and notification system
+  - [ ] Changelog generator (VCS-agnostic, hash-to-hash)
+  - [ ] Automated changelog detection from commits
+  - [ ] Git workflow optimization tools
 
 
 ## Technical Decisions
