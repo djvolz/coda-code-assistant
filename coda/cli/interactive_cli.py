@@ -15,6 +15,7 @@ from prompt_toolkit.styles import Style
 from rich.console import Console
 
 from .shared import CommandHandler, CommandResult, DeveloperMode
+from coda.session import SessionCommands
 
 
 class SlashCommand:
@@ -212,6 +213,9 @@ class InteractiveCLI(CommandHandler):
         self.escape_count = 0
         self.last_ctrl_c_time = 0
         self.ctrl_c_count = 0
+        
+        # Initialize session management
+        self.session_commands = SessionCommands()
 
         # Initialize session with all features
         self._init_session()
@@ -430,13 +434,10 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_session(self, args: str):
         """Manage sessions."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("session", [])
-            self._show_coming_soon_command(
-                "session", "Session Management", options, "/session <subcommand>"
-            )
-        else:
-            self.console.print(f"[yellow]Session command '{args}' not implemented yet[/yellow]")
+        # Pass the arguments to session commands handler
+        result = self.session_commands.handle_session_command(args.split() if args else [])
+        if result:
+            self.console.print(result)
 
     def _cmd_theme(self, args: str):
         """Change UI theme."""
@@ -450,13 +451,10 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_export(self, args: str):
         """Export conversation."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("export", [])
-            self._show_coming_soon_command(
-                "export", "Export Options", options, "/export <format> [filename]"
-            )
-        else:
-            self.console.print(f"[yellow]Export format '{args}' not implemented yet[/yellow]")
+        # Pass the arguments to session commands handler for export
+        result = self.session_commands.handle_export_command(args.split() if args else [])
+        if result:
+            self.console.print(result)
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
@@ -470,7 +468,9 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
-        self.console.print("[yellow]Conversation cleared (placeholder)[/yellow]")
+        # Clear session manager's conversation
+        self.session_commands.clear_conversation()
+        self.console.print("[green]Conversation cleared[/green]")
         # Note: Actual clearing is handled by the caller
 
     def _cmd_exit(self, args: str):
