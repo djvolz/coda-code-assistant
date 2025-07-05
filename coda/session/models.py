@@ -35,7 +35,8 @@ session_tags = Table(
     'session_tags',
     Base.metadata,
     Column('session_id', String, ForeignKey('sessions.id'), primary_key=True),
-    Column('tag_id', String, ForeignKey('tags.id'), primary_key=True)
+    Column('tag_id', String, ForeignKey('tags.id'), primary_key=True),
+    Index('idx_session_tags_tag', 'tag_id', 'session_id'),  # For tag-based lookups
 )
 
 
@@ -84,6 +85,10 @@ class Session(Base):
         Index('idx_session_updated', 'updated_at'),
         Index('idx_session_status', 'status'),
         Index('idx_session_provider_model', 'provider', 'model'),
+        Index('idx_session_created', 'created_at'),  # For /session last queries
+        Index('idx_session_accessed', 'accessed_at'),  # For access-based ordering
+        Index('idx_session_name', 'name'),  # For name-based lookups
+        Index('idx_session_parent', 'parent_id'),  # For branch navigation
     )
 
 

@@ -223,10 +223,10 @@ None currently - all bugs have been resolved!
 - [x] Edge case and error handling tests
 
 ### 4.5 Automatic Session Saving (Enhancement)
-- [ ] **Auto-Save by Default**
-  - [ ] Automatic session creation on first message
-  - [ ] Anonymous sessions with timestamp names (e.g., `auto-20250105-143022`)
-  - [ ] Zero configuration required - just start chatting
+- [x] **Auto-Save by Default** ✅ COMPLETED
+  - [x] Automatic session creation on first message
+  - [x] Anonymous sessions with timestamp names (e.g., `auto-20250105-143022`)
+  - [x] Zero configuration required - just start chatting
   - [ ] Async saves to avoid blocking chat flow
   
 - [ ] **Rolling Window Management** (Option 1 - Recommended)
@@ -235,11 +235,15 @@ None currently - all bugs have been resolved!
   - [ ] Maintain parent-child relationships for full history
   - [ ] Transparent access to archived content via search
   
-- [ ] **User Control Options**
-  - [ ] `/session rename` - Rename auto-created sessions
-  - [ ] `--no-save` CLI flag - Opt out for sensitive conversations
-  - [ ] Config option: `auto_save_enabled = true/false`
+- [x] **User Control Options** ✅ MOSTLY COMPLETED
+  - [x] `/session rename` - Rename auto-created sessions
+  - [x] `--no-save` CLI flag - Opt out for sensitive conversations
+  - [x] Config option: `auto_save_enabled = true/false` (uses existing `autosave`)
   - [ ] Bulk delete options for privacy
+  
+- [x] **Additional Features** ✅ COMPLETED
+  - [x] `/session last` - Load most recent session
+  - [x] `--resume` CLI flag - Auto-load last session on startup
   
 - [ ] **Performance Optimizations**
   - [ ] Batch message inserts for efficiency
@@ -251,7 +255,7 @@ None currently - all bugs have been resolved!
   - [ ] Clear notification about auto-save on first run
   - [ ] Easy bulk delete commands
   - [ ] Optional encryption for stored sessions
-  - [ ] Respect XDG data directories
+  - [x] Respect XDG data directories (already implemented)
 
 ## Phase 5: Tool Integration (MCP)
 

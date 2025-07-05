@@ -18,6 +18,59 @@ except ImportError:
 console = Console()
 
 
+async def _check_first_run(console: Console, auto_save_enabled: bool):
+    """Check if this is the first run and show auto-save notification."""
+    import os
+    from pathlib import Path
+    
+    # Check for first-run marker in XDG data directory
+    data_dir = Path(os.path.expanduser("~/.local/share/coda"))
+    first_run_marker = data_dir / ".first_run_complete"
+    
+    if not first_run_marker.exists():
+        # This is the first run
+        data_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Show notification
+        from rich.panel import Panel
+        
+        if auto_save_enabled:
+            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+
+[yellow]Auto-Save is ENABLED[/yellow] 💾
+
+Your conversations will be automatically saved when you start chatting.
+This helps you resume conversations and search through history.
+
+[dim]To disable auto-save:[/dim]
+• Use [cyan]--no-save[/cyan] flag when starting Coda
+• Set [cyan]autosave = false[/cyan] in ~/.config/coda/config.toml
+• Delete sessions with [cyan]/session delete-all[/cyan]
+
+[dim]Your privacy matters - sessions are stored locally only.[/dim]"""
+        else:
+            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+
+[yellow]Auto-Save is DISABLED[/yellow] 🔒
+
+Your conversations will NOT be saved automatically.
+
+[dim]To enable auto-save for future sessions:[/dim]
+• Remove [cyan]--no-save[/cyan] flag when starting Coda
+• Set [cyan]autosave = true[/cyan] in ~/.config/coda/config.toml"""
+        
+        console.print("\n")
+        console.print(Panel(notification, title="First Run", border_style="blue"))
+        console.print("\n")
+        
+        # Create marker file
+        try:
+            first_run_marker.touch()
+        except Exception:
+            # Don't fail if we can't create the marker
+            pass
+
+
 async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
     """Initialize and connect to the provider."""
     console.print(f"\n[green]Provider:[/green] {provider}")
@@ -271,6 +324,9 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
     else:
         # Use config value, defaulting to True if not specified
         cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
+    
+    # Check for first run and show auto-save notification
+    await _check_first_run(console, cli.session_commands.auto_save_enabled)
     
     # Load last session if requested
     if resume:
