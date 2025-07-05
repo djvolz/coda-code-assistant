@@ -181,6 +181,88 @@ class CommandRegistry:
         ),
     ]
     
+    # Provider options
+    PROVIDER_OPTIONS = [
+        CommandDefinition(
+            name="oci_genai",
+            description="Oracle Cloud Infrastructure GenAI",
+            type=CommandType.OPTION
+        ),
+        CommandDefinition(
+            name="ollama",
+            description="Local models via Ollama",
+            type=CommandType.OPTION
+        ),
+        CommandDefinition(
+            name="openai",
+            description="OpenAI GPT models (coming soon)",
+            type=CommandType.OPTION
+        ),
+        CommandDefinition(
+            name="litellm",
+            description="100+ providers via LiteLLM",
+            type=CommandType.OPTION
+        ),
+    ]
+    
+    # Theme options
+    THEME_OPTIONS = [
+        CommandDefinition(
+            name="default",
+            description="Default color scheme",
+            type=CommandType.OPTION
+        ),
+        CommandDefinition(
+            name="dark",
+            description="Dark mode optimized",
+            type=CommandType.OPTION
+        ),
+        CommandDefinition(
+            name="light",
+            description="Light terminal theme",
+            type=CommandType.OPTION
+        ),
+        CommandDefinition(
+            name="minimal",
+            description="Minimal colors",
+            type=CommandType.OPTION
+        ),
+        CommandDefinition(
+            name="vibrant",
+            description="High contrast colors",
+            type=CommandType.OPTION
+        ),
+    ]
+    
+    # Tools subcommands
+    TOOLS_SUBCOMMANDS = [
+        CommandDefinition(
+            name="list",
+            description="List available MCP tools",
+            type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="enable",
+            description="Enable specific tools",
+            type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="disable",
+            description="Disable specific tools",
+            type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="config",
+            description="Configure tool settings",
+            type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="status",
+            description="Show tool status",
+            type=CommandType.SUBCOMMAND
+        ),
+    ]
+    
     # Main commands
     COMMANDS = [
         CommandDefinition(
@@ -211,6 +293,7 @@ class CommandRegistry:
             name="provider",
             description="Switch provider",
             aliases=["p"],
+            subcommands=PROVIDER_OPTIONS,
             examples=["/provider", "/provider ollama"]
         ),
         CommandDefinition(
@@ -236,12 +319,14 @@ class CommandRegistry:
         CommandDefinition(
             name="theme",
             description="Change UI theme",
+            subcommands=THEME_OPTIONS,
             examples=["/theme", "/theme dark"]
         ),
         CommandDefinition(
             name="tools",
             description="Manage MCP tools",
             aliases=["t"],
+            subcommands=TOOLS_SUBCOMMANDS,
             examples=["/tools", "/tools list"]
         ),
     ]

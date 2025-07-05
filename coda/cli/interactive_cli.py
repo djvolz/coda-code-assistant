@@ -36,107 +36,12 @@ class SlashCommandCompleter(Completer):
         self.command_options = self._load_command_options()
 
     def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
-        """Load command options from configuration file."""
-        config_path = Path(__file__).parent / "commands_config.yaml"
+        """Load command options from the command registry."""
+        from coda.cli.command_registry import CommandRegistry
         
-        # First try to use the command registry
-        try:
-            from coda.cli.command_registry import CommandRegistry
-            registry_options = CommandRegistry.get_autocomplete_options()
-            # Add any additional options not in registry
-            registry_options.update({
-                "provider": [
-                    ("oci_genai", "Oracle Cloud Infrastructure GenAI"),
-                    ("ollama", "Local models via Ollama"),
-                    ("openai", "OpenAI GPT models (coming soon)"),
-                    ("litellm", "100+ providers via LiteLLM"),
-                ],
-                "theme": [
-                    ("default", "Default color scheme"),
-                    ("dark", "Dark mode optimized"),
-                    ("light", "Light terminal theme"),
-                    ("minimal", "Minimal colors"),
-                    ("vibrant", "High contrast colors"),
-                ],
-                "tools": [
-                    ("list", "List available MCP tools"),
-                    ("enable", "Enable specific tools"),
-                    ("disable", "Disable specific tools"),
-                    ("config", "Configure tool settings"),
-                    ("status", "Show tool status"),
-                ],
-            })
-            return registry_options
-        except ImportError:
-            pass
-
-        # Fallback to hardcoded options if config file not found
-        default_options = {
-            "mode": [
-                ("general", "General conversation and assistance"),
-                ("code", "Optimized for writing new code"),
-                ("debug", "Focus on error analysis"),
-                ("explain", "Detailed code explanations"),
-                ("review", "Security and code quality review"),
-                ("refactor", "Code improvement suggestions"),
-                ("plan", "Architecture planning and system design"),
-            ],
-            "provider": [
-                ("oci_genai", "Oracle Cloud Infrastructure GenAI"),
-                ("ollama", "Local models via Ollama (coming soon)"),
-                ("openai", "OpenAI GPT models (coming soon)"),
-                ("litellm", "100+ providers via LiteLLM (coming soon)"),
-            ],
-            "session": [
-                ("save", "Save current conversation"),
-                ("load", "Load a saved conversation"),
-                ("last", "Load the most recent session"),
-                ("list", "List all saved sessions"),
-                ("branch", "Create a branch from current conversation"),
-                ("delete", "Delete a saved session"),
-                ("delete-all", "Delete all sessions (use --auto-only for just auto-saved)"),
-                ("rename", "Rename a session"),
-                ("info", "Show session details"),
-                ("search", "Search sessions"),
-            ],
-            "theme": [
-                ("default", "Default color scheme"),
-                ("dark", "Dark mode optimized"),
-                ("light", "Light terminal theme"),
-                ("minimal", "Minimal colors"),
-                ("vibrant", "High contrast colors"),
-            ],
-            "export": [
-                ("markdown", "Export as Markdown file"),
-                ("json", "Export as JSON with metadata"),
-                ("txt", "Export as plain text"),
-                ("html", "Export as HTML with syntax highlighting"),
-            ],
-            "tools": [
-                ("list", "List available MCP tools"),
-                ("enable", "Enable specific tools"),
-                ("disable", "Disable specific tools"),
-                ("config", "Configure tool settings"),
-                ("status", "Show tool status"),
-            ],
-        }
-
-        try:
-            if config_path.exists():
-                with open(config_path) as f:
-                    config = yaml.safe_load(f)
-
-                options = {}
-                for cmd_name, cmd_data in config.get("commands", {}).items():
-                    options[cmd_name] = [
-                        (opt["name"], opt["description"]) for opt in cmd_data.get("options", [])
-                    ]
-                return options
-        except Exception:
-            # If anything fails, use defaults
-            pass
-
-        return default_options
+        # Get autocomplete options from the registry
+        # This currently only includes commands with subcommands
+        return CommandRegistry.get_autocomplete_options()
 
     def get_completions(self, document, complete_event):
         # Get the current text
