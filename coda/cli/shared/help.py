@@ -7,6 +7,16 @@ from .modes import DeveloperMode, get_mode_description
 
 def print_command_help(console: Console, mode: str = ""):
     """Print the command help section."""
+    # Try to use command registry
+    try:
+        from coda.cli.command_registry import CommandRegistry
+        help_text = CommandRegistry.get_command_help(mode=mode)
+        console.print(help_text)
+        return
+    except ImportError:
+        pass
+    
+    # Fallback to hardcoded help
     mode_suffix = f" ({mode})" if mode else ""
     console.print(f"\n[bold]Available Commands{mode_suffix}[/bold]\n")
 
@@ -14,6 +24,11 @@ def print_command_help(console: Console, mode: str = ""):
     console.print("  [cyan]/model[/cyan] (/m) - Switch AI model")
     console.print("  [cyan]/provider[/cyan] (/p) - Switch provider")
     console.print("  [cyan]/mode[/cyan] - Change developer mode")
+    console.print()
+
+    console.print("[bold]Session Management:[/bold]")
+    console.print("  [cyan]/session[/cyan] (/s) - Save/load/manage conversations")
+    console.print("  [cyan]/export[/cyan] (/e) - Export conversation to file")
     console.print()
 
     console.print("[bold]System:[/bold]")
@@ -63,10 +78,8 @@ def print_interactive_keyboard_shortcuts(console: Console):
 def print_interactive_only_commands(console: Console):
     """Print commands that are only available in interactive mode."""
     console.print("[bold]Session:[/bold] [dim](Interactive mode only)[/dim]")
-    console.print("  [cyan]/session[/cyan] (/s) - Manage sessions [yellow](Coming soon)[/yellow]")
-    console.print(
-        "  [cyan]/export[/cyan] (/e) - Export conversation [yellow](Coming soon)[/yellow]"
-    )
+    console.print("  [cyan]/session[/cyan] (/s) - Save/load/manage conversations")
+    console.print("  [cyan]/export[/cyan] (/e) - Export conversation to file")
     console.print()
 
     console.print("[bold]Advanced:[/bold] [dim](Interactive mode only)[/dim]")

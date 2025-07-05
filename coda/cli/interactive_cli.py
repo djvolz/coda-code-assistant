@@ -15,6 +15,7 @@ from prompt_toolkit.styles import Style
 from rich.console import Console
 
 from .shared import CommandHandler, CommandResult, DeveloperMode
+from coda.session import SessionCommands
 
 
 class SlashCommand:
@@ -35,71 +36,12 @@ class SlashCommandCompleter(Completer):
         self.command_options = self._load_command_options()
 
     def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
-        """Load command options from configuration file."""
-        config_path = Path(__file__).parent / "commands_config.yaml"
-
-        # Fallback to hardcoded options if config file not found
-        default_options = {
-            "mode": [
-                ("general", "General conversation and assistance"),
-                ("code", "Optimized for writing new code"),
-                ("debug", "Focus on error analysis"),
-                ("explain", "Detailed code explanations"),
-                ("review", "Security and code quality review"),
-                ("refactor", "Code improvement suggestions"),
-                ("plan", "Architecture planning and system design"),
-            ],
-            "provider": [
-                ("oci_genai", "Oracle Cloud Infrastructure GenAI"),
-                ("ollama", "Local models via Ollama (coming soon)"),
-                ("openai", "OpenAI GPT models (coming soon)"),
-                ("litellm", "100+ providers via LiteLLM (coming soon)"),
-            ],
-            "session": [
-                ("save", "Save current conversation"),
-                ("load", "Load a saved conversation"),
-                ("list", "List all saved sessions"),
-                ("branch", "Create a branch from current conversation"),
-                ("delete", "Delete a saved session"),
-            ],
-            "theme": [
-                ("default", "Default color scheme"),
-                ("dark", "Dark mode optimized"),
-                ("light", "Light terminal theme"),
-                ("minimal", "Minimal colors"),
-                ("vibrant", "High contrast colors"),
-            ],
-            "export": [
-                ("markdown", "Export as Markdown file"),
-                ("json", "Export as JSON with metadata"),
-                ("txt", "Export as plain text"),
-                ("html", "Export as HTML with syntax highlighting"),
-            ],
-            "tools": [
-                ("list", "List available MCP tools"),
-                ("enable", "Enable specific tools"),
-                ("disable", "Disable specific tools"),
-                ("config", "Configure tool settings"),
-                ("status", "Show tool status"),
-            ],
-        }
-
-        try:
-            if config_path.exists():
-                with open(config_path) as f:
-                    config = yaml.safe_load(f)
-
-                options = {}
-                for cmd_name, cmd_data in config.get("commands", {}).items():
-                    options[cmd_name] = [
-                        (opt["name"], opt["description"]) for opt in cmd_data.get("options", [])
-                    ]
-                return options
-        except Exception:
-            # If anything fails, use defaults
-            pass
-
-        return default_options
+        """Load command options from the command registry."""
+        from coda.cli.command_registry import CommandRegistry
+        
+        # Get autocomplete options from the registry
+        # This currently only includes commands with subcommands
+        return CommandRegistry.get_autocomplete_options()
 
     def get_completions(self, document, complete_event):
         # Get the current text
@@ -212,24 +154,47 @@ class InteractiveCLI(CommandHandler):
         self.escape_count = 0
         self.last_ctrl_c_time = 0
         self.ctrl_c_count = 0
+        
+        # Initialize session management
+        self.session_commands = SessionCommands()
 
         # Initialize session with all features
         self._init_session()
 
     def _init_commands(self) -> dict[str, SlashCommand]:
-        """Initialize slash commands."""
-        return {
-            "help": SlashCommand("help", self._cmd_help, "Show available commands", ["h", "?"]),
-            "model": SlashCommand("model", self._cmd_model, "Switch AI model", ["m"]),
-            "provider": SlashCommand("provider", self._cmd_provider, "Switch provider", ["p"]),
-            "mode": SlashCommand("mode", self._cmd_mode, "Change developer mode"),
-            "session": SlashCommand("session", self._cmd_session, "Manage sessions", ["s"]),
-            "theme": SlashCommand("theme", self._cmd_theme, "Change UI theme"),
-            "export": SlashCommand("export", self._cmd_export, "Export conversation", ["e"]),
-            "tools": SlashCommand("tools", self._cmd_tools, "Manage MCP tools", ["t"]),
-            "clear": SlashCommand("clear", self._cmd_clear, "Clear conversation", ["cls"]),
-            "exit": SlashCommand("exit", self._cmd_exit, "Exit the application", ["quit", "q"]),
+        """Initialize slash commands from the command registry."""
+        from coda.cli.command_registry import CommandRegistry
+        
+        # Map command names to their handlers
+        handler_map = {
+            "help": self._cmd_help,
+            "model": self._cmd_model,
+            "provider": self._cmd_provider,
+            "mode": self._cmd_mode,
+            "session": self._cmd_session,
+            "export": self._cmd_export,
+            "clear": self._cmd_clear,
+            "exit": self._cmd_exit,
         }
+        
+        # Add handlers for commands not yet implemented
+        placeholder_handlers = {
+            "theme": self._cmd_theme,
+            "tools": self._cmd_tools,
+        }
+        handler_map.update(placeholder_handlers)
+        
+        commands = {}
+        for cmd_def in CommandRegistry.COMMANDS:
+            if cmd_def.name in handler_map:
+                commands[cmd_def.name] = SlashCommand(
+                    name=cmd_def.name,
+                    handler=handler_map[cmd_def.name],
+                    help_text=cmd_def.description,
+                    aliases=cmd_def.aliases
+                )
+        
+        return commands
 
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
@@ -430,13 +395,10 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_session(self, args: str):
         """Manage sessions."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("session", [])
-            self._show_coming_soon_command(
-                "session", "Session Management", options, "/session <subcommand>"
-            )
-        else:
-            self.console.print(f"[yellow]Session command '{args}' not implemented yet[/yellow]")
+        # Pass the arguments to session commands handler
+        result = self.session_commands.handle_session_command(args.split() if args else [])
+        if result:
+            self.console.print(result)
 
     def _cmd_theme(self, args: str):
         """Change UI theme."""
@@ -450,13 +412,10 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_export(self, args: str):
         """Export conversation."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("export", [])
-            self._show_coming_soon_command(
-                "export", "Export Options", options, "/export <format> [filename]"
-            )
-        else:
-            self.console.print(f"[yellow]Export format '{args}' not implemented yet[/yellow]")
+        # Pass the arguments to session commands handler for export
+        result = self.session_commands.handle_export_command(args.split() if args else [])
+        if result:
+            self.console.print(result)
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
@@ -470,7 +429,9 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
-        self.console.print("[yellow]Conversation cleared (placeholder)[/yellow]")
+        # Clear session manager's conversation
+        self.session_commands.clear_conversation()
+        self.console.print("[green]Conversation cleared[/green]")
         # Note: Actual clearing is handled by the caller
 
     def _cmd_exit(self, args: str):
