@@ -4,6 +4,8 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 import tiktoken
 
+from coda.providers.base import BaseProvider
+
 
 @dataclass
 class ContextWindow:
@@ -17,17 +19,20 @@ class ContextWindow:
 class ContextManager:
     """Manages context windowing and optimization for sessions."""
     
-    def __init__(self, model: str = "gpt-3.5-turbo"):
+    def __init__(self, model: str = "gpt-3.5-turbo", provider: Optional[BaseProvider] = None):
         """Initialize context manager.
         
         Args:
             model: Model name for token counting
+            provider: Optional provider instance to get model info from
         """
         self.model = model
+        self.provider = provider
         self._init_tokenizer()
         
-        # Default context windows for different models
-        self.model_context_limits = {
+        # Fallback context limits for when provider info is not available
+        # These are kept for backwards compatibility and as defaults
+        self.fallback_context_limits = {
             # OCI GenAI models
             "cohere.command-r-plus": 128000,
             "cohere.command-r-16k": 16000,
@@ -104,18 +109,25 @@ class ContextManager:
         Returns:
             Maximum context tokens
         """
+        # First try to get from provider if available
+        if self.provider:
+            model_info = self.provider.get_model_info(model)
+            if model_info and model_info.context_length:
+                return model_info.context_length
+        
+        # Fall back to hardcoded limits
         # Check exact match first
-        if model in self.model_context_limits:
-            return self.model_context_limits[model]
+        if model in self.fallback_context_limits:
+            return self.fallback_context_limits[model]
         
         # Check partial matches
         model_lower = model.lower()
-        for key, limit in self.model_context_limits.items():
+        for key, limit in self.fallback_context_limits.items():
             if key in model_lower or model_lower in key:
                 return limit
         
         # Default
-        return self.model_context_limits["default"]
+        return self.fallback_context_limits["default"]
     
     def optimize_context(
         self,
