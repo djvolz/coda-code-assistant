@@ -111,15 +111,20 @@ class IntegratedTextualCLI(App):
 
     #chat-container {
         height: 1fr;
-        overflow-y: auto;
         margin: 1;
         padding: 1;
+        scrollbar-gutter: stable;
+    }
+
+    #messages {
+        height: auto;
     }
 
     MessageBox {
         margin-bottom: 1;
         padding: 1;
         border: solid $primary;
+        height: auto;
     }
 
     MessageBox.user {
@@ -173,6 +178,10 @@ class IntegratedTextualCLI(App):
         ("ctrl+l", "clear", "Clear"),
         ("ctrl+p", "command_palette", "Commands"),
         ("f1", "help", "Help"),
+        ("pageup", "scroll_up", "Scroll up"),
+        ("pagedown", "scroll_down", "Scroll down"),
+        ("home", "scroll_home", "Scroll to top"),
+        ("end", "scroll_end", "Scroll to bottom"),
     ]
     
     COMMANDS = {ModeCommands, ProviderCommands, GeneralCommands}
@@ -283,7 +292,9 @@ class IntegratedTextualCLI(App):
             msg_box.update(content)
         
         # Scroll to bottom
-        self.query_one("#chat-container").scroll_end()
+        chat_container = self.query_one("#chat-container")
+        # Use call_after_refresh to ensure scroll happens after layout
+        self.call_after_refresh(chat_container.scroll_end)
 
     @on(Input.Submitted, "#main-input")
     async def handle_input_submitted(self, event: Input.Submitted):
@@ -377,6 +388,10 @@ class IntegratedTextualCLI(App):
                     except Exception:
                         msg_widget.update(response_text)
                     
+                    # Auto-scroll during streaming
+                    chat_container = self.query_one("#chat-container")
+                    self.call_after_refresh(chat_container.scroll_end)
+                    
             # Update final message in history
             if self._messages and self._messages[-1]["content"] == "*Thinking...*":
                 self._messages[-1]["content"] = response_text
@@ -445,6 +460,8 @@ class IntegratedTextualCLI(App):
 - **Ctrl+L** - Clear chat
 - **F1** - Show help
 - **Ctrl+C** - Quit
+- **Page Up/Down** - Scroll chat
+- **Home/End** - Scroll to top/bottom
 
 ### Developer Modes
 - **general** - General conversation
@@ -497,6 +514,26 @@ class IntegratedTextualCLI(App):
     async def action_help(self):
         """Help action."""
         self.show_help()
+
+    def action_scroll_up(self):
+        """Scroll chat up."""
+        chat_container = self.query_one("#chat-container")
+        chat_container.scroll_up()
+
+    def action_scroll_down(self):
+        """Scroll chat down."""
+        chat_container = self.query_one("#chat-container")
+        chat_container.scroll_down()
+
+    def action_scroll_home(self):
+        """Scroll to top of chat."""
+        chat_container = self.query_one("#chat-container")
+        chat_container.scroll_home()
+
+    def action_scroll_end(self):
+        """Scroll to bottom of chat."""
+        chat_container = self.query_one("#chat-container")
+        chat_container.scroll_end()
 
 
 def run_integrated_textual_cli(provider_factory=None, provider_name=None, model=None, config=None):
