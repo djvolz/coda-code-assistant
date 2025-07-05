@@ -12,6 +12,29 @@ from rich.syntax import Syntax
 
 from .manager import SessionManager
 from .models import Session, Message
+from ..constants import (
+    SESSION_LIST_LIMIT,
+    SESSION_SEARCH_LIMIT,
+    SESSION_DELETE_LIMIT,
+    SESSION_INFO_LIMIT,
+    SESSION_LAST_LIMIT,
+    AUTO_SESSION_PREFIX,
+    AUTO_SESSION_DATE_FORMAT,
+    EXPORT_FORMAT_JSON,
+    EXPORT_FORMAT_MARKDOWN,
+    EXPORT_FORMAT_TXT,
+    EXPORT_FORMAT_HTML,
+    AVAILABLE_EXPORT_FORMATS,
+    ERROR_SESSION_NOT_FOUND,
+    ERROR_INVALID_EXPORT_FORMAT,
+    CONSOLE_STYLE_SUCCESS,
+    CONSOLE_STYLE_ERROR,
+    CONSOLE_STYLE_WARNING,
+    CONSOLE_STYLE_INFO,
+    CONSOLE_STYLE_DIM,
+    CONSOLE_STYLE_BOLD,
+    FTS_TABLE_NAME,
+)
 
 
 class SessionCommands:
@@ -208,7 +231,7 @@ class SessionCommands:
     
     def _list_sessions(self, args: List[str]) -> str:
         """List saved sessions."""
-        sessions = self.manager.get_active_sessions(limit=50)
+        sessions = self.manager.get_active_sessions(limit=SESSION_LIST_LIMIT)
         
         if not sessions:
             return "No saved sessions found."
@@ -338,7 +361,7 @@ class SessionCommands:
             return "Please provide a search query."
         
         query = " ".join(args)
-        results = self.manager.search_sessions(query, limit=10)
+        results = self.manager.search_sessions(query, limit=SESSION_SEARCH_LIMIT)
         
         if not results:
             return f"No sessions found matching: {query}"
@@ -366,7 +389,7 @@ class SessionCommands:
     def _load_last_session(self) -> str:
         """Load the most recent session."""
         # Get the most recent session
-        sessions = self.manager.get_active_sessions(limit=1)
+        sessions = self.manager.get_active_sessions(limit=SESSION_LAST_LIMIT)
         
         if not sessions:
             return "No sessions found to load."
@@ -460,14 +483,14 @@ class SessionCommands:
         auto_only = "--auto-only" in args
         
         # Get all sessions
-        sessions = self.manager.get_active_sessions(limit=1000)
+        sessions = self.manager.get_active_sessions(limit=SESSION_DELETE_LIMIT)
         
         if not sessions:
             return "No sessions found to delete."
         
         # Filter for auto-saved sessions if requested
         if auto_only:
-            sessions = [s for s in sessions if s.name.startswith("auto-")]
+            sessions = [s for s in sessions if s.name.startswith(AUTO_SESSION_PREFIX)]
             if not sessions:
                 return "No auto-saved sessions found to delete."
         
@@ -516,7 +539,7 @@ class SessionCommands:
     def _find_session(self, session_ref: str) -> Optional[Session]:
         """Find session by ID or name."""
         # First try by ID
-        sessions = self.manager.get_active_sessions(limit=100)
+        sessions = self.manager.get_active_sessions(limit=SESSION_INFO_LIMIT)
         
         # Try exact ID match
         for session in sessions:
@@ -644,8 +667,8 @@ class SessionCommands:
             len(self.current_messages) >= 2):  # At least user + assistant message
             
             # Auto-create session with timestamp name
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            auto_name = f"auto-{timestamp}"
+            timestamp = datetime.now().strftime(AUTO_SESSION_DATE_FORMAT)
+            auto_name = f"{AUTO_SESSION_PREFIX}{timestamp}"
             
             # Get provider and model from metadata
             provider = metadata.get('provider', 'unknown') if metadata else 'unknown'

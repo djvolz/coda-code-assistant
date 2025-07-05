@@ -10,6 +10,11 @@ from sqlalchemy.orm import sessionmaker, Session as DBSession
 from sqlalchemy.pool import StaticPool
 
 from .models import Base
+from ..constants import (
+    SESSION_DB_PATH,
+    FTS_TABLE_NAME,
+    FTS_CONTENT_TABLE,
+)
 
 
 class SessionDatabase:
@@ -22,9 +27,7 @@ class SessionDatabase:
             db_path: Path to SQLite database file. If None, uses default location.
         """
         if db_path is None:
-            # Use XDG cache directory
-            cache_dir = Path(os.environ.get('XDG_CACHE_HOME', Path.home() / '.cache'))
-            db_path = cache_dir / 'coda' / 'sessions.db'
+            db_path = SESSION_DB_PATH
         
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -65,11 +68,11 @@ class SessionDatabase:
         with self.engine.connect() as conn:
             # Check if FTS table exists
             result = conn.execute(text(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='messages_fts'"
+                f"SELECT name FROM sqlite_master WHERE type='table' AND name='{FTS_TABLE_NAME}'"
             ))
             if not result.fetchone():
-                conn.execute(text("""
-                    CREATE VIRTUAL TABLE messages_fts USING fts5(
+                conn.execute(text(f"""
+                    CREATE VIRTUAL TABLE {FTS_TABLE_NAME} USING fts5(
                         message_id UNINDEXED,
                         session_id UNINDEXED,
                         content,

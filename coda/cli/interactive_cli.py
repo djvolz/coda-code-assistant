@@ -16,6 +16,14 @@ from rich.console import Console
 
 from .shared import CommandHandler, CommandResult, DeveloperMode
 from coda.session import SessionCommands
+from ..themes import get_prompt_style
+from ..constants import (
+    HISTORY_FILE_PATH,
+    CONSOLE_STYLE_SUCCESS,
+    CONSOLE_STYLE_ERROR,
+    CONSOLE_STYLE_INFO,
+    CONSOLE_STYLE_WARNING,
+)
 
 
 class SlashCommand:
@@ -198,31 +206,27 @@ class InteractiveCLI(CommandHandler):
 
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
-        return Style.from_dict(
-            {
-                # Prompt colors
-                "prompt": "#00aa00 bold",
-                "prompt.mode": "#888888",
-                # Completion colors - more visible
-                "completion-menu": "bg:#2c2c2c #ffffff",
-                "completion-menu.completion": "bg:#2c2c2c #ffffff",
-                "completion-menu.completion.current": "bg:#005588 #ffffff bold",
-                "completion-menu.meta.completion": "bg:#2c2c2c #888888",
-                "completion-menu.meta.completion.current": "bg:#005588 #aaaaaa",
-                # Scrollbar
-                "scrollbar.background": "bg:#2c2c2c",
-                "scrollbar.button": "bg:#888888",
-                # Status bar
-                "status-bar": "bg:#444444 #ffffff",
-            }
-        )
+        # Get theme-based style and extend it with additional styles
+        base_style = get_prompt_style()
+        custom_additions = Style.from_dict({
+            # Additional prompt-specific styles
+            "prompt.mode": "#888888",
+            # Completion menu enhancements
+            "completion-menu": "bg:#2c2c2c #ffffff",
+            "completion-menu.completion": "bg:#2c2c2c #ffffff",
+            "completion-menu.completion.current": "bg:#005588 #ffffff bold",
+            "completion-menu.meta.completion": "bg:#2c2c2c #888888",
+            "completion-menu.meta.completion.current": "bg:#005588 #aaaaaa",
+            # Scrollbar
+            "scrollbar.background": "bg:#2c2c2c",
+            "scrollbar.button": "bg:#888888",
+        })
+        return base_style.merge(custom_additions)
 
     def _init_session(self):
         """Initialize the prompt session with all features."""
         # Create history directory if it doesn't exist
-        history_dir = Path.home() / ".local" / "share" / "coda"
-        history_dir.mkdir(parents=True, exist_ok=True)
-        history_file = history_dir / "history.txt"
+        HISTORY_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
         # Create key bindings
         kb = KeyBindings()
@@ -231,7 +235,7 @@ class InteractiveCLI(CommandHandler):
         # Double escape is not reliable with prompt-toolkit during streaming
 
         self.session = PromptSession(
-            history=FileHistory(str(history_file)),
+            history=FileHistory(str(HISTORY_FILE_PATH)),
             auto_suggest=None,  # Disable auto-suggestions from history
             completer=EnhancedCompleter(self.commands),
             style=self.style,
