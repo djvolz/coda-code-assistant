@@ -233,6 +233,17 @@ class CommandRegistry:
             subcommands=EXPORT_SUBCOMMANDS,
             examples=["/export json", "/export markdown", "/e html"]
         ),
+        CommandDefinition(
+            name="theme",
+            description="Change UI theme",
+            examples=["/theme", "/theme dark"]
+        ),
+        CommandDefinition(
+            name="tools",
+            description="Manage MCP tools",
+            aliases=["t"],
+            examples=["/tools", "/tools list"]
+        ),
     ]
     
     @classmethod
@@ -255,7 +266,7 @@ class CommandRegistry:
         return options
     
     @classmethod
-    def get_command_help(cls, command_name: Optional[str] = None) -> str:
+    def get_command_help(cls, command_name: Optional[str] = None, mode: str = "") -> str:
         """Get formatted help text for a command or all commands."""
         if command_name:
             cmd = cls.get_command(command_name)
@@ -283,7 +294,8 @@ class CommandRegistry:
             return help_text
         else:
             # Return help for all commands
-            help_text = "[bold]Available Commands:[/bold]\n\n"
+            mode_suffix = f" ({mode})" if mode else ""
+            help_text = f"[bold]Available Commands{mode_suffix}:[/bold]\n\n"
             for cmd in cls.COMMANDS:
                 help_text += f"[cyan]/{cmd.name}[/cyan]"
                 if cmd.aliases:

@@ -257,19 +257,39 @@ class InteractiveCLI(CommandHandler):
         self._init_session()
 
     def _init_commands(self) -> dict[str, SlashCommand]:
-        """Initialize slash commands."""
-        return {
-            "help": SlashCommand("help", self._cmd_help, "Show available commands", ["h", "?"]),
-            "model": SlashCommand("model", self._cmd_model, "Switch AI model", ["m"]),
-            "provider": SlashCommand("provider", self._cmd_provider, "Switch provider", ["p"]),
-            "mode": SlashCommand("mode", self._cmd_mode, "Change developer mode"),
-            "session": SlashCommand("session", self._cmd_session, "Manage sessions", ["s"]),
-            "theme": SlashCommand("theme", self._cmd_theme, "Change UI theme"),
-            "export": SlashCommand("export", self._cmd_export, "Export conversation", ["e"]),
-            "tools": SlashCommand("tools", self._cmd_tools, "Manage MCP tools", ["t"]),
-            "clear": SlashCommand("clear", self._cmd_clear, "Clear conversation", ["cls"]),
-            "exit": SlashCommand("exit", self._cmd_exit, "Exit the application", ["quit", "q"]),
+        """Initialize slash commands from the command registry."""
+        from coda.cli.command_registry import CommandRegistry
+        
+        # Map command names to their handlers
+        handler_map = {
+            "help": self._cmd_help,
+            "model": self._cmd_model,
+            "provider": self._cmd_provider,
+            "mode": self._cmd_mode,
+            "session": self._cmd_session,
+            "export": self._cmd_export,
+            "clear": self._cmd_clear,
+            "exit": self._cmd_exit,
         }
+        
+        # Add handlers for commands not yet implemented
+        placeholder_handlers = {
+            "theme": self._cmd_theme,
+            "tools": self._cmd_tools,
+        }
+        handler_map.update(placeholder_handlers)
+        
+        commands = {}
+        for cmd_def in CommandRegistry.COMMANDS:
+            if cmd_def.name in handler_map:
+                commands[cmd_def.name] = SlashCommand(
+                    name=cmd_def.name,
+                    handler=handler_map[cmd_def.name],
+                    help_text=cmd_def.description,
+                    aliases=cmd_def.aliases
+                )
+        
+        return commands
 
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
