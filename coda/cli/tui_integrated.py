@@ -1,12 +1,13 @@
-"""Integrated Textual CLI with provider support."""
+"""Integrated Terminal User Interface (TUI) with provider support."""
 
 import asyncio
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 from rich.console import Console as RichConsole
 from rich.markdown import Markdown
-from textual import on, work
+from textual import events, on, work
 from textual.app import App, ComposeResult
 from textual.command import DiscoveryHit, Hit, Hits, Provider as CommandProvider
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
@@ -15,6 +16,144 @@ from textual.widgets import Button, Footer, Header, Input, Static
 from coda.providers import Message, ProviderFactory, Role
 
 from .shared import DeveloperMode, get_system_prompt
+
+
+class CompletionHelper:
+    """Helper class for generating completions."""
+    
+    def __init__(self):
+        self.commands = {
+            "help": "Show available commands",
+            "mode": "Switch developer mode", 
+            "model": "Show available models",
+            "clear": "Clear conversation",
+            "exit": "Exit application",
+            "quit": "Exit application",
+        }
+        
+        self.modes = [
+            "general", "code", "debug", "explain", "review", "refactor", "plan"
+        ]
+        
+        self.providers = ["oci_genai", "litellm", "ollama"]
+    
+    def get_completions(self, text: str) -> List[Tuple[str, str]]:
+        """Get completions for the given text."""
+        if not text:
+            # Show available commands when empty
+            return [(f"/{cmd}", desc) for cmd, desc in self.commands.items()]
+        
+        if text.startswith("/"):
+            return self._complete_command(text)
+        elif "/" in text or text.startswith("~"):
+            return self._complete_path(text)
+        else:
+            return []
+    
+    def _complete_command(self, text: str) -> List[Tuple[str, str]]:
+        """Complete slash commands."""
+        if " " in text:
+            # Command with arguments
+            parts = text.split(" ", 1)
+            cmd = parts[0][1:]  # Remove /
+            arg = parts[1] if len(parts) > 1 else ""
+            
+            if cmd == "mode":
+                return [(f"/mode {mode}", f"Switch to {mode} mode") 
+                       for mode in self.modes if mode.startswith(arg)]
+            elif cmd == "provider":
+                return [(f"/provider {prov}", f"Switch to {prov} provider")
+                       for prov in self.providers if prov.startswith(arg)]
+        else:
+            # Complete command names
+            prefix = text[1:]  # Remove /
+            return [(f"/{cmd}", desc) for cmd, desc in self.commands.items() 
+                   if cmd.startswith(prefix)]
+        
+        return []
+    
+    def _complete_path(self, text: str) -> List[Tuple[str, str]]:
+        """Complete file paths."""
+        try:
+            if text.startswith("~"):
+                text = str(Path(text).expanduser())
+            
+            path = Path(text)
+            if path.is_dir():
+                directory = path
+                prefix = ""
+            else:
+                directory = path.parent
+                prefix = path.name
+            
+            completions = []
+            try:
+                for item in directory.iterdir():
+                    if item.name.startswith(prefix):
+                        display = str(item)
+                        if item.is_dir():
+                            display += "/"
+                        completions.append((display, "File" if item.is_file() else "Directory"))
+            except PermissionError:
+                pass
+            
+            return completions[:10]  # Limit to 10 items
+        except Exception:
+            return []
+
+
+class TabCompletableInput(Input):
+    """Input widget with tab completion support."""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.completion_helper = CompletionHelper()
+        self.completions: List[Tuple[str, str]] = []
+        self.completion_index = -1
+        self.original_text = ""
+    
+    def on_key(self, event: events.Key) -> None:
+        """Handle key events for tab completion."""
+        if event.key == "tab":
+            self._handle_tab_completion()
+            event.prevent_default()
+        elif event.key in ("escape", "ctrl+c"):
+            # Cancel completion
+            self._cancel_completion()
+            # Let the parent handle escape/ctrl+c normally
+        elif self.completion_index >= 0:
+            # If we're in completion mode and user types something else, cancel
+            if event.key not in ("tab", "shift+tab"):
+                self._cancel_completion()
+            # Let parent handle the key for normal typing
+    
+    def _handle_tab_completion(self):
+        """Handle tab completion."""
+        current_text = self.value
+        
+        if self.completion_index == -1:
+            # Start new completion
+            self.original_text = current_text
+            self.completions = self.completion_helper.get_completions(current_text)
+            self.completion_index = 0 if self.completions else -1
+        else:
+            # Cycle through completions
+            self.completion_index = (self.completion_index + 1) % len(self.completions)
+        
+        if self.completions and self.completion_index >= 0:
+            completion, _ = self.completions[self.completion_index]
+            self.value = completion
+            # Move cursor to end
+            self.cursor_position = len(completion)
+    
+    def _cancel_completion(self):
+        """Cancel current completion."""
+        if self.completion_index >= 0:
+            self.value = self.original_text
+            self.cursor_position = len(self.original_text)
+        self.completion_index = -1
+        self.completions = []
+        self.original_text = ""
 
 
 class ProviderCommands(CommandProvider):
@@ -28,13 +167,17 @@ class ProviderCommands(CommandProvider):
         from coda.providers.registry import ProviderRegistry
         providers = ProviderRegistry.list_providers()
         
-        app = self.app
         for provider_name in providers:
             if matcher.match(f"provider:{provider_name}"):
+                def make_provider_callback(name):
+                    return lambda: self.app.switch_provider(name)
+                
+                score = matcher.match(f"provider:{provider_name}")
                 yield Hit(
+                    score,
                     f"Switch to {provider_name} provider",
-                    lambda p=provider_name: app.switch_provider(p),
-                    f"provider:{provider_name}"
+                    make_provider_callback(provider_name),
+                    help=f"Switch to {provider_name} provider"
                 )
 
 
@@ -57,10 +200,15 @@ class ModeCommands(CommandProvider):
         
         for mode_name, description in modes:
             if matcher.match(f"mode:{mode_name}") or matcher.match(description):
+                def make_mode_callback(name):
+                    return lambda: self.app.switch_mode(name)
+                
+                score = matcher.match(f"mode:{mode_name}") or matcher.match(description)
                 yield Hit(
+                    score,
                     f"Mode: {mode_name} - {description}",
-                    lambda m=mode_name: self.app.switch_mode(m),
-                    f"mode:{mode_name}"
+                    make_mode_callback(mode_name),
+                    help=description
                 )
 
 
@@ -72,7 +220,7 @@ class GeneralCommands(CommandProvider):
         matcher = self.matcher(query)
         
         commands = [
-            ("clear", "Clear conversation", self.app.clear_chat),
+            ("clear", "Clear conversation", lambda: self.app.action_clear()),
             ("help", "Show help", self.app.show_help),
             ("export:markdown", "Export conversation as Markdown", lambda: self.app.export("markdown")),
             ("export:json", "Export conversation as JSON", lambda: self.app.export("json")),
@@ -80,11 +228,13 @@ class GeneralCommands(CommandProvider):
         ]
         
         for cmd_id, description, callback in commands:
-            if matcher.match(cmd_id) or matcher.match(description):
+            score = matcher.match(cmd_id) or matcher.match(description)
+            if score > 0:
                 yield Hit(
+                    score,
                     description,
                     callback,
-                    cmd_id
+                    help=description
                 )
 
 
@@ -99,8 +249,8 @@ class MessageBox(Static):
         self.border_title = f"{role} - {self.timestamp.strftime('%H:%M:%S')}"
 
 
-class IntegratedTextualCLI(App):
-    """Textual CLI with full provider integration."""
+class IntegratedTUICLI(App):
+    """Terminal User Interface with full provider integration."""
     
     CSS = """
     Screen {
@@ -194,7 +344,7 @@ class IntegratedTextualCLI(App):
         self._provider = None
         self._model = model
         self._config = config
-        self._current_mode = DeveloperMode.GENERAL
+        self._developer_mode = DeveloperMode.GENERAL
         self._messages = []
         self._available_models = []
 
@@ -208,8 +358,8 @@ class IntegratedTextualCLI(App):
         
         # Input area
         with Vertical(id="input-container"):
-            yield Input(
-                placeholder="Type your message or press Ctrl+P for commands...",
+            yield TabCompletableInput(
+                placeholder="Type your message, press Tab to complete, or Ctrl+P for commands...",
                 id="main-input"
             )
             with Horizontal(classes="buttons"):
@@ -227,7 +377,7 @@ class IntegratedTextualCLI(App):
         """Get status bar text."""
         provider = self._provider_name or "Not connected"
         model = self._model or "No model"
-        return f"Mode: {self._current_mode.value} | Provider: {provider} | Model: {model}"
+        return f"Mode: {self._developer_mode.value} | Provider: {provider} | Model: {model}"
 
     async def on_mount(self):
         """Initialize on mount."""
@@ -294,8 +444,8 @@ class IntegratedTextualCLI(App):
         # Use call_after_refresh to ensure scroll happens after layout
         self.call_after_refresh(chat_container.scroll_end)
 
-    @on(Input.Submitted, "#main-input")
-    async def handle_input_submitted(self, event: Input.Submitted):
+    @on(TabCompletableInput.Submitted, "#main-input")
+    async def handle_input_submitted(self, event: TabCompletableInput.Submitted):
         """Handle input submission."""
         text = event.value.strip()
         if not text:
@@ -346,7 +496,7 @@ class IntegratedTextualCLI(App):
         messages = []
         
         # Add system prompt
-        system_prompt = get_system_prompt(self._current_mode)
+        system_prompt = get_system_prompt(self._developer_mode)
         messages.append(Message(role=Role.SYSTEM, content=system_prompt))
         
         # Add conversation history (filter out system messages)
@@ -412,9 +562,9 @@ class IntegratedTextualCLI(App):
     def switch_mode(self, mode_name: str):
         """Switch developer mode."""
         try:
-            self._current_mode = DeveloperMode(mode_name.lower())
+            self._developer_mode = DeveloperMode(mode_name.lower())
             self.query_one("#status-bar").update(self.get_status())
-            self.add_message("System", f"Switched to {self._current_mode.value} mode")
+            self.add_message("System", f"Switched to {self._developer_mode.value} mode")
         except ValueError:
             self.add_message("System", f"Invalid mode: {mode_name}")
 
@@ -422,7 +572,7 @@ class IntegratedTextualCLI(App):
         """Show available modes."""
         modes = [m.value for m in DeveloperMode]
         self.add_message("System", 
-            f"Current mode: **{self._current_mode.value}**\n\n"
+            f"Current mode: **{self._developer_mode.value}**\n\n"
             f"Available modes: {', '.join(modes)}\n\n"
             "Use `/mode <name>` to switch"
         )
@@ -457,6 +607,7 @@ class IntegratedTextualCLI(App):
 - `/exit` - Exit application
 
 ### Keyboard Shortcuts  
+- **Tab** - Auto-complete commands and paths
 - **Ctrl+P** - Open command palette
 - **Ctrl+L** - Clear chat
 - **F1** - Show help
@@ -489,7 +640,7 @@ class IntegratedTextualCLI(App):
     @on(Button.Pressed, "#send")
     async def send_pressed(self):
         """Handle send button."""
-        input_widget = self.query_one("#main-input", Input)
+        input_widget = self.query_one("#main-input", TabCompletableInput)
         if input_widget.value.strip():
             input_widget.action_submit()
 
@@ -537,9 +688,10 @@ class IntegratedTextualCLI(App):
         chat_container.scroll_end()
 
 
-def run_integrated_textual_cli(provider_factory=None, provider_name=None, model=None, config=None):
-    """Run the integrated Textual CLI."""
-    app = IntegratedTextualCLI(
+
+def run_integrated_tui_cli(provider_factory=None, provider_name=None, model=None, config=None):
+    """Run the integrated TUI CLI."""
+    app = IntegratedTUICLI(
         provider_factory=provider_factory,
         provider_name=provider_name,
         model=model,

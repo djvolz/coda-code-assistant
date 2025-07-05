@@ -1,4 +1,4 @@
-.PHONY: help test test-unit test-integration test-all test-cov test-fast lint format clean install-dev pre-commit version
+.PHONY: help test test-unit test-integration test-all test-cov test-fast test-tui test-tui-interactive lint format clean install-dev pre-commit version
 
 # Default target
 help:
@@ -10,6 +10,8 @@ help:
 	@echo "make test-integration - Run integration tests (needs credentials)"
 	@echo "make test-cov      - Run tests with coverage report"
 	@echo "make test-fast     - Run fast smoke tests"
+	@echo "make test-tui      - Run TUI interface tests"
+	@echo "make test-tui-interactive - Run interactive TUI tests (manual)"
 	@echo "make lint          - Run linters (ruff, mypy)"
 	@echo "make format        - Auto-format code"
 	@echo "make clean         - Clean generated files"
@@ -41,6 +43,16 @@ test-cov:
 # Run fast smoke tests
 test-fast:
 	uv run pytest tests/test_smoke.py -v
+
+# Run TUI interface tests (smoke tests only)
+test-tui:
+	uv run pytest tests/test_tui_smoke.py -v
+
+# Run interactive TUI tests (requires terminal)
+test-tui-interactive:
+	@echo "Running interactive TUI tests..."
+	@echo "This will launch the TUI app for manual testing"
+	uv run pytest tests/test_tui_interface.py -v -s
 
 # Lint code
 lint:

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Test scrolling in the Textual interface by adding many messages."""
+"""Test scrolling in the TUI interface by adding many messages."""
 
-from coda.cli.textual_integrated import IntegratedTextualCLI
+from coda.cli.tui_integrated import IntegratedTUICLI
 import asyncio
 
-class ScrollTestApp(IntegratedTextualCLI):
+class ScrollTestApp(IntegratedTUICLI):
     """Test app that adds many messages to test scrolling."""
     
     def on_mount(self):
@@ -38,7 +38,7 @@ class ScrollTestApp(IntegratedTextualCLI):
 
 def run_scroll_test():
     """Run the scroll test."""
-    print("Starting Textual scroll test...")
+    print("Starting TUI scroll test...")
     print("The interface will open with many messages to test scrolling.")
     print("Use Page Up/Down, Home/End to test manual scrolling.")
     print("Type messages to test auto-scrolling.")

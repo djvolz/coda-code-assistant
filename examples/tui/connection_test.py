@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Quick test of the Textual interface with actual provider."""
+"""Quick test of the TUI interface with actual provider."""
 
 import subprocess
 import time
@@ -8,7 +8,7 @@ import os
 
 def test_real_provider():
     """Test with real provider briefly."""
-    print("Testing Textual interface with OCI provider...")
+    print("Testing TUI interface with OCI provider...")
     
     try:
         # Start process

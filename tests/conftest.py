@@ -21,18 +21,26 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "integration: mark test as integration test")
     config.addinivalue_line("markers", "functional: mark test as functional test")
     config.addinivalue_line("markers", "unit: mark test as unit test")
+    config.addinivalue_line("markers", "tui: mark test as TUI (Terminal User Interface) test")
+    config.addinivalue_line("markers", "interactive: mark test as requiring terminal interaction")
 
 
 def pytest_collection_modifyitems(config, items):
     """Modify test collection based on markers."""
     skip_integration = pytest.mark.skip(reason="need --run-integration option to run")
     skip_functional = pytest.mark.skip(reason="need --run-functional option to run")
+    skip_interactive = pytest.mark.skip(reason="Interactive tests disabled in CI")
+
+    # Check if we're in CI environment
+    in_ci = os.environ.get("CI", "false").lower() == "true"
 
     for item in items:
         if "integration" in item.keywords and not config.getoption("--run-integration"):
             item.add_marker(skip_integration)
         if "functional" in item.keywords and not config.getoption("--run-functional"):
             item.add_marker(skip_functional)
+        if "interactive" in item.keywords and in_ci:
+            item.add_marker(skip_interactive)
 
 
 @pytest.fixture
@@ -183,3 +191,11 @@ def capture_streaming_output():
             return len(self.chunks)
 
     return StreamCapture()
+
+
+@pytest.fixture
+def disable_animations():
+    """Disable TUI animations for testing."""
+    os.environ["TEXTUAL_ANIMATIONS"] = "false"
+    yield
+    os.environ.pop("TEXTUAL_ANIMATIONS", None)

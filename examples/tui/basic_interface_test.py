@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Simple test of the Textual interface by creating a test message."""
+"""Simple test of the TUI interface by creating a test message."""
 
 # Test if we can create a simple textual app that shows our interface without provider
-from coda.cli.textual_integrated import IntegratedTextualCLI
+from coda.cli.tui_integrated import IntegratedTUICLI
 
 def test_simple():
     """Test basic functionality."""
-    print("Testing basic Textual interface creation...")
+    print("Testing basic TUI interface creation...")
     
     try:
         # Create app without provider
-        app = IntegratedTextualCLI()
+        app = IntegratedTUICLI()
         print("✓ App created successfully")
         
         # Test adding a message

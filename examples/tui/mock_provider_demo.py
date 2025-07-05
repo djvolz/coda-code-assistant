@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Demo the Textual interface with a simple mock provider."""
+"""Demo the TUI interface with a simple mock provider."""
 
-from coda.cli.textual_integrated import IntegratedTextualCLI
+from coda.cli.tui_integrated import IntegratedTUICLI
 from coda.providers import Message, Role
 import asyncio
 
@@ -18,7 +18,7 @@ class MockProvider:
     def chat_stream(self, messages, model, temperature=0.7, max_tokens=2000):
         """Mock chat_stream method that returns an iterator."""
         # Simulate streaming response
-        response = "Hello! This is a mock response from the AI. I received your message and I'm responding in a simulated streaming fashion. Each word appears progressively to demonstrate the streaming capability of the Textual interface. You can see how the text builds up character by character, creating a smooth streaming experience similar to real AI responses."
+        response = "Hello! This is a mock response from the AI. I received your message and I'm responding in a simulated streaming fashion. Each word appears progressively to demonstrate the streaming capability of the TUI interface. You can see how the text builds up character by character, creating a smooth streaming experience similar to real AI responses."
         
         class MockChunk:
             def __init__(self, content):
@@ -43,7 +43,7 @@ class MockFactory:
 
 def run_demo():
     """Run the demo."""
-    print("Starting Textual CLI demo with mock provider...")
+    print("Starting TUI CLI demo with mock provider...")
     print("Type 'hi' and press Enter to test.")
     print("Use Ctrl+C to exit.")
     
@@ -51,7 +51,7 @@ def run_demo():
     factory = MockFactory()
     
     # Run the app
-    app = IntegratedTextualCLI(
+    app = IntegratedTUICLI(
         provider_factory=factory,
         provider_name="mock",
         model="mock-model-1"
