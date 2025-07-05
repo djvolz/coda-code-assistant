@@ -119,6 +119,55 @@ class OCIGenAIProvider(BaseProvider):
 
         age = datetime.now() - self._cache_timestamp
         return age.total_seconds() < (self._cache_duration_hours * 3600)
+    
+    def _get_model_context_length(self, model_id: str) -> int:
+        """Get accurate context length for a model.
+        
+        Args:
+            model_id: Model ID
+            
+        Returns:
+            Context length in tokens
+        """
+        # Model context lengths (accurate values)
+        context_lengths = {
+            # Cohere models
+            "cohere.command-r-plus": 128000,
+            "cohere.command-r-16k": 16000,
+            "cohere.command": 4000,
+            
+            # Meta Llama models
+            "meta.llama-3.1-405b": 128000,
+            "meta.llama-3.1-70b": 128000,
+            "meta.llama-3.3-70b": 128000,
+            "meta.llama-4-3-90b": 131072,
+            
+            # XAI models
+            "xai.grok-3": 131072,
+        }
+        
+        # Check exact match
+        model_lower = model_id.lower()
+        for key, length in context_lengths.items():
+            if key in model_lower or model_lower.startswith(key):
+                return length
+        
+        # Default based on model name patterns
+        if "16k" in model_lower:
+            return 16384
+        elif "32k" in model_lower:
+            return 32768
+        elif "128k" in model_lower:
+            return 128000
+        elif "command-r-plus" in model_lower:
+            return 128000
+        elif "llama-3" in model_lower:
+            return 128000
+        elif "grok" in model_lower:
+            return 131072
+        
+        # Conservative default
+        return 4096
 
     def _discover_models(self) -> list[Model]:
         """Discover available models from OCI GenAI service."""
@@ -187,7 +236,7 @@ class OCIGenAIProvider(BaseProvider):
                     id=model_id,
                     name=display_name,
                     provider=provider,
-                    context_length=128000,  # Default context length for OCI GenAI models
+                    context_length=self._get_model_context_length(model_id),
                     max_tokens=4000,  # Default max tokens
                     supports_streaming=supports_streaming,
                     supports_functions=supports_functions,
@@ -226,34 +275,38 @@ class OCIGenAIProvider(BaseProvider):
 
     def _get_fallback_models(self) -> list[Model]:
         """Get fallback models if discovery fails."""
+        models = [
+            {
+                "id": "cohere.command-r-plus-08-2024",
+                "name": "Cohere Command R Plus (08-2024)",
+                "provider": "cohere",
+                "supports_functions": True,
+            },
+            {
+                "id": "cohere.command-r-08-2024",
+                "name": "Cohere Command R (08-2024)",
+                "provider": "cohere",
+                "supports_functions": True,
+            },
+            {
+                "id": "meta.llama-3.1-70b-instruct",
+                "name": "Meta Llama 3.1 70B Instruct",
+                "provider": "meta",
+                "supports_functions": False,
+            },
+        ]
+        
         return [
             Model(
-                id="cohere.command-r-plus-08-2024",
-                name="Cohere Command R Plus (08-2024)",
-                provider="cohere",
-                context_length=128000,
+                id=m["id"],
+                name=m["name"],
+                provider=m["provider"],
+                context_length=self._get_model_context_length(m["id"]),
                 max_tokens=4000,
                 supports_streaming=True,
-                supports_functions=True,
-            ),
-            Model(
-                id="cohere.command-r-08-2024",
-                name="Cohere Command R (08-2024)",
-                provider="cohere",
-                context_length=128000,
-                max_tokens=4000,
-                supports_streaming=True,
-                supports_functions=True,
-            ),
-            Model(
-                id="meta.llama-3.1-70b-instruct",
-                name="Meta Llama 3.1 70B Instruct",
-                provider="meta",
-                context_length=128000,
-                max_tokens=4000,
-                supports_streaming=True,
-                supports_functions=False,
-            ),
+                supports_functions=m["supports_functions"],
+            )
+            for m in models
         ]
 
     def _create_chat_request(
