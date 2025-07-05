@@ -214,8 +214,13 @@ class SessionManager:
     
     def get_session(self, session_id: str) -> Optional[Session]:
         """Get a session by ID."""
+        from sqlalchemy.orm import joinedload
         with self.db.get_session() as db:
-            return db.query(Session).filter_by(id=session_id).first()
+            session = db.query(Session).options(joinedload(Session.tags)).filter_by(id=session_id).first()
+            if session:
+                # Access tags to ensure they're loaded
+                _ = session.tags
+            return session
     
     def get_active_sessions(
         self, 

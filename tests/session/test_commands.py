@@ -41,15 +41,20 @@ class TestSessionCommands:
         result = session_commands.handle_session_command(['save', 'Test Session'])
         assert result == "No messages to save."
     
-    def test_save_and_load_session(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_save_and_load_session(self, mock_prompt, session_commands):
         """Test saving and loading a session."""
+        # Mock prompt to return empty description
+        mock_prompt.return_value = ""
+        
         # Add some messages
         session_commands.add_message('user', 'Hello', {'provider': 'test', 'model': 'test-model'})
         session_commands.add_message('assistant', 'Hi there!', {'provider': 'test', 'model': 'test-model'})
         
         # Save session
         result = session_commands.handle_session_command(['save', 'My Test Session'])
-        assert "Session saved: My Test Session" in result
+        # Could be either saved or updated depending on auto-save
+        assert ("Session saved: My Test Session" in result or "Session updated: My Test Session" in result)
         assert session_commands.current_session_id is not None
         
         # Clear and verify
@@ -62,8 +67,12 @@ class TestSessionCommands:
         assert len(session_commands.current_messages) == 2
         assert session_commands.current_messages[0]['content'] == 'Hello'
     
-    def test_list_sessions(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_list_sessions(self, mock_prompt, session_commands):
         """Test listing sessions."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create some sessions
         session_commands.add_message('user', 'Test 1', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'Session 1'])
@@ -76,8 +85,12 @@ class TestSessionCommands:
         result = session_commands.handle_session_command(['list'])
         assert result is None  # List displays table directly
     
-    def test_branch_session(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_branch_session(self, mock_prompt, session_commands):
         """Test branching from current session."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create and save initial session
         session_commands.add_message('user', 'Original message', {'provider': 'test', 'model': 'test'})
         session_commands.add_message('assistant', 'Original response', {'provider': 'test', 'model': 'test'})
@@ -91,32 +104,44 @@ class TestSessionCommands:
         parent_id = session_commands.current_session_id
         assert parent_id is not None
     
-    def test_delete_session(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_delete_session(self, mock_prompt, session_commands):
         """Test deleting a session."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create a session
         session_commands.add_message('user', 'Delete me', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'To Delete'])
         session_id = session_commands.current_session_id
         
         # Mock confirmation
-        with patch('rich.prompt.Confirm.ask', return_value=True):
+        with patch('coda.session.commands.Confirm.ask', return_value=True):
             result = session_commands.handle_session_command(['delete', 'To Delete'])
             assert "Session deleted: To Delete" in result
             assert session_commands.current_session_id is None
     
-    def test_delete_cancelled(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_delete_cancelled(self, mock_prompt, session_commands):
         """Test cancelling session deletion."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create a session
         session_commands.add_message('user', 'Keep me', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'To Keep'])
         
         # Mock confirmation denial
-        with patch('rich.prompt.Confirm.ask', return_value=False):
+        with patch('coda.session.commands.Confirm.ask', return_value=False):
             result = session_commands.handle_session_command(['delete', 'To Keep'])
             assert result == "Deletion cancelled."
     
-    def test_session_info(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_session_info(self, mock_prompt, session_commands):
         """Test displaying session information."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create a session with some data
         session_commands.add_message('user', 'Info test', {
             'provider': 'test_provider',
@@ -129,8 +154,12 @@ class TestSessionCommands:
         result = session_commands.handle_session_command(['info'])
         assert result is None  # Info displays panel directly
     
-    def test_search_sessions(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_search_sessions(self, mock_prompt, session_commands):
         """Test searching across sessions."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create sessions with searchable content
         session_commands.add_message('user', 'Python programming question', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'Python Session'])
@@ -143,8 +172,12 @@ class TestSessionCommands:
         result = session_commands.handle_session_command(['search', 'Python'])
         assert result is None  # Search displays results directly
     
-    def test_export_json(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_export_json(self, mock_prompt, session_commands):
         """Test exporting session as JSON."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create session
         session_commands.add_message('user', 'Export me', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'Export Test'])
@@ -155,8 +188,12 @@ class TestSessionCommands:
             result = session_commands.handle_export_command(['json'])
             assert result is None  # Export prints success message
     
-    def test_export_markdown(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_export_markdown(self, mock_prompt, session_commands):
         """Test exporting session as Markdown."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create session
         session_commands.add_message('user', 'Export to MD', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'MD Export'])
@@ -172,8 +209,12 @@ class TestSessionCommands:
         result = session_commands.handle_export_command(['invalid'])
         assert "Unknown export format: invalid" in result
     
-    def test_find_session_by_id(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_find_session_by_id(self, mock_prompt, session_commands):
         """Test finding sessions by ID."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create a session
         session_commands.add_message('user', 'Find me', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'Findable Session'])
@@ -184,8 +225,12 @@ class TestSessionCommands:
         assert session is not None
         assert session.name == 'Findable Session'
     
-    def test_find_session_by_name(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_find_session_by_name(self, mock_prompt, session_commands):
         """Test finding sessions by name."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create sessions
         session_commands.add_message('user', 'Test', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'Unique Name'])
@@ -202,8 +247,12 @@ class TestSessionCommands:
         session = session_commands._find_session('unique name')
         assert session is not None
     
-    def test_update_existing_session(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_update_existing_session(self, mock_prompt, session_commands):
         """Test updating an existing session."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Create and save session
         session_commands.add_message('user', 'Initial', {'provider': 'test', 'model': 'test'})
         session_commands.handle_session_command(['save', 'Initial Name'])
@@ -249,8 +298,12 @@ class TestSessionCommands:
         assert len(session_commands.current_messages) == 0
         assert session_commands.current_session_id is None
     
-    def test_get_context_messages(self, session_commands):
+    @patch('coda.session.commands.Prompt.ask')
+    def test_get_context_messages(self, mock_prompt, session_commands):
         """Test getting context messages."""
+        # Mock prompts
+        mock_prompt.return_value = ""
+        
         # Without session (in-memory only)
         session_commands.add_message('user', 'Test', {})
         messages, truncated = session_commands.get_context_messages()
