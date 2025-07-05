@@ -10,7 +10,7 @@ Build a multi-provider, CLI-focused code assistant that provides a unified inter
 - **Phase 2**: Core Provider Architecture (LiteLLM, Ollama, provider registry)
 - **Phase 3**: Enhanced CLI Experience (interactive shell, slash commands, developer modes)
 
-✅ **Phase 4**: Session Management - COMPLETED (July 5, 2025)
+✅ **Phase 4**: Session Management - COMPLETED (July 5, 2025) | 🚧 Enhancement 4.5 Pending
 - SQLite persistence layer with automatic migrations
 - Session commands (/session save/load/list/branch/delete/info/search)
 - Export commands (/export json/markdown/txt/html)
@@ -221,6 +221,37 @@ None currently - all bugs have been resolved!
 - [x] Tests for all CLI commands and developer modes
 - [x] Session workflow end-to-end tests
 - [x] Edge case and error handling tests
+
+### 4.5 Automatic Session Saving (Enhancement)
+- [ ] **Auto-Save by Default**
+  - [ ] Automatic session creation on first message
+  - [ ] Anonymous sessions with timestamp names (e.g., `auto-20250105-143022`)
+  - [ ] Zero configuration required - just start chatting
+  - [ ] Async saves to avoid blocking chat flow
+  
+- [ ] **Rolling Window Management** (Option 1 - Recommended)
+  - [ ] Keep last 1000 messages per session
+  - [ ] Archive older messages to linked archive sessions
+  - [ ] Maintain parent-child relationships for full history
+  - [ ] Transparent access to archived content via search
+  
+- [ ] **User Control Options**
+  - [ ] `/session rename` - Rename auto-created sessions
+  - [ ] `--no-save` CLI flag - Opt out for sensitive conversations
+  - [ ] Config option: `auto_save_enabled = true/false`
+  - [ ] Bulk delete options for privacy
+  
+- [ ] **Performance Optimizations**
+  - [ ] Batch message inserts for efficiency
+  - [ ] Background save queue to prevent UI blocking
+  - [ ] Index on created_at for fast queries
+  - [ ] Lazy loading of historical messages
+  
+- [ ] **Privacy & Disclosure**
+  - [ ] Clear notification about auto-save on first run
+  - [ ] Easy bulk delete commands
+  - [ ] Optional encryption for stored sessions
+  - [ ] Respect XDG data directories
 
 ## Phase 5: Tool Integration (MCP)
 
@@ -467,7 +498,7 @@ None currently - all bugs have been resolved!
 
 ## Next Steps
 
-**Current Status**: Phases 1, 2, 3, and 4 are complete. Ready to begin Phase 5.
+**Current Status**: Phases 1, 2, 3, and 4 are complete. Phase 4.5 (Auto-Save Enhancement) pending. Ready to begin Phase 5.
 
 1. **Completed - Phase 4**: Session Management ✅
    - SQLite database with automatic migrations
