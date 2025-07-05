@@ -27,6 +27,8 @@ class SessionCommands:
         self.console = Console()
         self.current_session_id: Optional[str] = None
         self.current_messages: List[Dict[str, Any]] = []
+        self.auto_save_enabled: bool = True  # Auto-save by default
+        self._has_user_message: bool = False  # Track if we have a user message
     
     def handle_session_command(self, args: List[str]) -> Optional[str]:
         """Handle /session command and subcommands.
@@ -56,6 +58,8 @@ class SessionCommands:
             return self._session_info(args[1:])
         elif subcommand in ['search']:
             return self._search_sessions(args[1:])
+        elif subcommand in ['rename', 'r']:
+            return self._rename_session(args[1:])
         else:
             return f"Unknown session subcommand: {subcommand}. Use /session help for options."
     
@@ -71,8 +75,9 @@ class SessionCommands:
 [cyan]/session delete <id|name>[/cyan] - Delete a session
 [cyan]/session info [id][/cyan] - Show session details
 [cyan]/session search <query>[/cyan] - Search sessions
+[cyan]/session rename [id] <new_name>[/cyan] - Rename a session
 
-[dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i[/dim]
+[dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r[/dim]
 """
         self.console.print(Panel(help_text, title="Session Help", border_style="blue"))
         return None
@@ -344,6 +349,49 @@ class SessionCommands:
         
         return None
     
+    def _rename_session(self, args: List[str]) -> str:
+        """Rename a session."""
+        if not args:
+            # If no args, rename current session
+            if not self.current_session_id:
+                return "No current session. Please specify a session ID or name to rename."
+            
+            new_name = Prompt.ask("New name for current session")
+            session_id = self.current_session_id
+        elif len(args) == 1:
+            # Only new name provided, rename current session
+            if not self.current_session_id:
+                return "No current session. Please specify a session ID or name to rename."
+            
+            new_name = args[0]
+            session_id = self.current_session_id
+        else:
+            # Session ref and new name provided
+            session_ref = args[0]
+            new_name = " ".join(args[1:])
+            
+            # Find the session
+            session = self._find_session(session_ref)
+            if not session:
+                return f"Session not found: {session_ref}"
+            
+            session_id = session.id
+        
+        # Update the session name
+        try:
+            self.manager.update_session(session_id, name=new_name)
+            
+            # If it's the current session, update our local name tracking
+            if session_id == self.current_session_id:
+                # Update the name in current_messages metadata if needed
+                for msg in self.current_messages:
+                    if msg.get('metadata', {}).get('session_name'):
+                        msg['metadata']['session_name'] = new_name
+            
+            return f"Session renamed to: {new_name}"
+        except Exception as e:
+            return f"Failed to rename session: {str(e)}"
+    
     def _find_session(self, session_ref: str) -> Optional[Session]:
         """Find session by ID or name."""
         # First try by ID
@@ -463,8 +511,59 @@ class SessionCommands:
         }
         self.current_messages.append(msg)
         
+        # Track if we have a user message
+        if role == "user":
+            self._has_user_message = True
+        
+        # Auto-create session on first user-assistant exchange if enabled
+        if (self.auto_save_enabled and 
+            not self.current_session_id and 
+            self._has_user_message and 
+            role == "assistant" and
+            len(self.current_messages) >= 2):  # At least user + assistant message
+            
+            # Auto-create session with timestamp name
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            auto_name = f"auto-{timestamp}"
+            
+            # Get provider and model from metadata
+            provider = metadata.get('provider', 'unknown') if metadata else 'unknown'
+            model = metadata.get('model', 'unknown') if metadata else 'unknown'
+            mode = metadata.get('mode', 'general') if metadata else 'general'
+            
+            try:
+                session = self.manager.create_session(
+                    name=auto_name,
+                    description="Auto-saved conversation",
+                    provider=provider,
+                    model=model,
+                    mode=mode
+                )
+                
+                self.current_session_id = session.id
+                
+                # Save all existing messages to the new session
+                for existing_msg in self.current_messages:
+                    self.manager.add_message(
+                        session_id=session.id,
+                        role=existing_msg['role'],
+                        content=existing_msg['content'],
+                        metadata=existing_msg.get('metadata', {}),
+                        model=existing_msg.get('metadata', {}).get('model'),
+                        provider=existing_msg.get('metadata', {}).get('provider'),
+                        token_usage=existing_msg.get('metadata', {}).get('token_usage'),
+                        cost=existing_msg.get('metadata', {}).get('cost')
+                    )
+                
+                # Notify user about auto-save (subtly)
+                self.console.print(f"[dim]💾 Auto-saved session: {auto_name}[/dim]")
+                
+            except Exception as e:
+                # Don't fail the conversation if auto-save fails
+                self.console.print(f"[dim yellow]⚠️  Auto-save failed: {str(e)}[/dim yellow]")
+        
         # If we have an active session, save to database
-        if self.current_session_id:
+        elif self.current_session_id:
             self.manager.add_message(
                 session_id=self.current_session_id,
                 role=role,

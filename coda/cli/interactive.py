@@ -253,16 +253,24 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     return True  # Continue loop
 
 
-async def run_interactive_session(provider: str, model: str, debug: bool):
+async def run_interactive_session(provider: str, model: str, debug: bool, no_save: bool):
     """Run the enhanced interactive session."""
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
-
+    
     # Load configuration
     from coda.configuration import get_config
     from coda.providers import ProviderFactory
 
     config = get_config()
+    
+    # Set auto-save based on config and CLI flag
+    # CLI flag takes precedence over config
+    if no_save:
+        cli.session_commands.auto_save_enabled = False
+    else:
+        # Use config value, defaulting to True if not specified
+        cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
 
     # Apply debug override
     if debug:
@@ -353,8 +361,9 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
     default=DeveloperMode.GENERAL.value,
     help="Initial developer mode",
 )
+@click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.version_option(version=__version__, prog_name="coda")
-def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str):
+def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool):
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
@@ -371,7 +380,7 @@ def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode
         console.print(f"Would execute: {one_shot}")
     else:
         # Run interactive session
-        asyncio.run(run_interactive_session(provider, model, debug))
+        asyncio.run(run_interactive_session(provider, model, debug, no_save))
 
 
 if __name__ == "__main__":

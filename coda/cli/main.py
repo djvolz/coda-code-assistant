@@ -32,8 +32,9 @@ console = Console()
     default="general",
     help="Initial developer mode (basic mode only)",
 )
+@click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.version_option(version=__version__, prog_name="coda")
-def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mode: str):
+def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mode: str, no_save: bool):
     """Coda - A multi-provider code assistant"""
 
     # Load configuration
@@ -61,6 +62,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
                 debug=debug,
                 one_shot=one_shot,
                 mode=mode,
+                no_save=no_save,
             )
             return
         except ImportError:
