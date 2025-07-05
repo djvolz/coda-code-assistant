@@ -35,5 +35,9 @@ theme = "default"
 show_model_info = true
 show_token_usage = false
 
+# Generation parameters
+temperature = 0.7
+max_tokens = 2000
+
 # Debug mode
 debug = false

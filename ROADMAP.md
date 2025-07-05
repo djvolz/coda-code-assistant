@@ -3,27 +3,31 @@
 ## Project Vision
 Build a multi-provider, CLI-focused code assistant that provides a unified interface for AI-powered development across Oracle OCI GenAI, Ollama, and other LiteLLM-supported providers.
 
+## Current State & Priorities
+
+✅ **Completed Phases**:
+- **Phase 1**: Native OCI GenAI Integration (30+ models, streaming, dynamic discovery)
+- **Phase 2**: Core Provider Architecture (LiteLLM, Ollama, provider registry)
+- **Phase 3**: Enhanced CLI Experience (interactive shell, slash commands, developer modes)
+
+🚧 **Current Focus**: Phase 4 - Session Management (Target: July 10)
+- SQLite persistence layer
+- Session commands (/session save/load/list/branch/delete)
+- Full-text search across sessions
+- Context management
+
+📅 **Upcoming**:
+- Phase 5: Tool Integration (MCP) - July 12
+- Phase 6: Advanced Features - July 15
+- Phase 7: Web UI (Streamlit)
+- Phase 8: Additional features
+
 ## Reference Directories
 Key directories for OCI GenAI implementation reference:
 - **LangChain OCI Integration**: `/Users/danny/Developer/forks/litellm-oci-using-claude/langchain-community`
 - **OCI Python SDK**: `/Users/danny/Developer/forks/litellm-oci-using-claude/oci-python-sdk`
 - **LiteLLM Fork with OCI**: `/Users/danny/Developer/forks/litellm-oci-using-claude/litellm`
 
-## Immediate Priority: Project Branding
-
-### Logo Integration
-- [x] Extract logo assets from `/tmp/logo.html` 
-- [x] Create `assets/logos/` directory structure
-- [x] Generate logo files in multiple formats:
-  - [x] SVG (scalable, main format)
-  - [x] PNG (64x64, 128x128, 256x256, 512x512, 1024x1024)
-  - [x] ICO (favicon)
-- [x] Integrate logos into:
-  - [x] README.md header
-  - [ ] Documentation (when created)
-  - [ ] Future web UI
-  - [ ] GitHub social preview
-- [x] Add logo usage guidelines to documentation
 
 ## Bugs & Fixes (Top Priority - Must be addressed before any phase work)
 
@@ -103,9 +107,13 @@ None currently - all bugs have been resolved!
 
 ### 1.5 Versioning
 - [x] Version based on date/time
-- [x] Automate CI versioining and release schedule
+- [x] Automate CI versioning and release schedule
 
-## Phase 2: Core Provider Architecture ✅ COMPLETED
+### 1.6 Branding
+- [x] Project logo integration (terminal-themed design)
+- [x] Logo variants for different contexts (PNG assets)
+
+## Phase 2: Core Provider Architecture ✅ COMPLETED (July 4, 2025)
 
 ### 2.1 Provider Interface Design
 - [x] Create abstract base provider class (base.py)
@@ -133,40 +141,69 @@ None currently - all bugs have been resolved!
 - [x] Token counting and limits
 - [x] Response formatting
 
-## Phase 3: Enhanced CLI Experience
+## Phase 3: Enhanced CLI Experience ✅ COMPLETED (July 4, 2025)
 
-### 3.1 Interactive Shell
-- [ ] Rich prompt with syntax highlighting
-- [ ] Multi-line input support
-- [ ] Command history and search
-- [ ] Auto-completion for commands and file paths
+### 3.1 Interactive Shell ✅ 
+- [x] Rich prompt with syntax highlighting using prompt-toolkit
+- [x] Multi-line input support (use \ at end of line)
+- [x] Command history and search (with file-based persistence)
+- [x] Auto-completion for commands and file paths (Tab-only)
+- [x] Keyboard shortcuts (Ctrl+C, Ctrl+D, arrow keys)
+- [x] Clean interrupt handling during AI responses
 
-### 3.2 Slash Commands
-- [ ] `/help` - Context-aware help
-- [ ] `/model` - Switch models on the fly
-- [ ] `/provider` - Switch providers
-- [ ] `/mode` - Change AI personality (code, debug, explain, review)
-- [ ] `/session` - Save/load/branch conversations
-- [ ] `/theme` - Change UI theme
-- [ ] `/export` - Export conversations
-- [ ] `/tools` - Manage MCP tools
+### 3.2 Slash Commands ✅ 
+- [x] `/help` (`/h`, `/?`) - Show available commands and keyboard shortcuts
+- [x] `/model` (`/m`) - Interactive model selection with search
+- [x] `/provider` (`/p`) - Switch providers (OCI GenAI supported)
+- [x] `/mode` - Change AI personality with 7 modes
+- [x] `/clear` (`/cls`) - Clear conversation (placeholder)
+- [x] `/exit` (`/quit`, `/q`) - Exit application
 
-### 3.3 Developer Modes
-- [ ] **Code Mode**: Optimized for writing new code
-- [ ] **Debug Mode**: Focus on error analysis and fixes
-- [ ] **Explain Mode**: Code explanation and documentation
-- [ ] **Review Mode**: Security and best practices review
-- [ ] **Refactor Mode**: Code improvement suggestions
+### 3.3 Developer Modes ✅ 
+- [x] **General Mode**: Default conversational AI assistant
+- [x] **Code Mode**: Optimized for writing new code with best practices
+- [x] **Debug Mode**: Focus on error analysis and debugging assistance
+- [x] **Explain Mode**: Detailed code explanations and documentation
+- [x] **Review Mode**: Security and code quality review
+- [x] **Refactor Mode**: Code improvement and optimization suggestions
+- [x] **Plan Mode**: Architecture planning and system design
+
+### 3.4 Additional Features Implemented
+- [x] Interactive vs Basic mode selection based on TTY detection
+- [x] Model deduplication in selection UI
+- [x] Multi-level tab completion for slash commands
+- [x] Empty input validation to save API credits
+- [x] Proper signal handling for clean exits
 
 ## Phase 4: Session Management
 
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 are being developed in parallel on separate branches. To minimize merge conflicts:
+- Phase 4 branch: `feature/session-management` (focuses on persistence layer)
+- Phase 5 branch: `feature/mcp-tools` (focuses on tool execution)
+- Integration points: Session schema will need `tool_invocations` table from Phase 5
+- Merge strategy: Phase 4 merges first, then Phase 5 rebases and adds tool logging
+
 ### 4.1 Persistence Layer
-- [ ] SQLite database for sessions
+- [ ] SQLite database for sessions (stored in `~/.cache/coda/sessions.db`)
 - [ ] Message storage with metadata
 - [ ] Full-text search across sessions
 - [ ] Session branching and merging
+- [ ] **API Design**: Create clear interfaces that Phase 5 can mock
 
-### 4.2 Context Management
+### 4.2 Session Commands
+- [ ] `/session` (`/s`) - Save/load/branch conversations
+  - [ ] `save` - Save current conversation
+  - [ ] `load` - Load a saved conversation
+  - [ ] `list` - List all saved sessions
+  - [ ] `branch` - Create a branch from current conversation
+  - [ ] `delete` - Delete a saved session
+- [ ] `/export` (`/e`) - Export conversations
+  - [ ] `markdown` - Export as Markdown file
+  - [ ] `json` - Export as JSON with metadata
+  - [ ] `txt` - Export as plain text
+  - [ ] `html` - Export as HTML with syntax highlighting
+
+### 4.3 Context Management
 - [ ] Intelligent context windowing
 - [ ] File reference tracking (@mentions)
 - [ ] Context summarization for long sessions
@@ -174,13 +211,29 @@ None currently - all bugs have been resolved!
 
 ## Phase 5: Tool Integration (MCP)
 
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Being developed in parallel with Phase 4. Key considerations:
+- Work on branch: `feature/mcp-tools`
+- Mock the session storage API during development
+- Plan for adding `tool_invocations` to session schema after merge
+- Avoid modifying core files that Phase 4 is likely to change (cli/main.py, config.py)
+- Focus on creating new files: `tools/`, `mcp/` directories
+
 ### 5.1 Core Tools
 - [ ] File operations (read, write, edit)
 - [ ] Shell command execution
 - [ ] Web search and fetch
 - [ ] Git operations
+- [ ] **Tool Result Storage**: Design format for session integration
 
-### 5.2 MCP Protocol
+### 5.2 Tool Commands
+- [ ] `/tools` (`/t`) - Manage MCP tools
+  - [ ] `list` - List available MCP tools
+  - [ ] `enable` - Enable specific tools
+  - [ ] `disable` - Disable specific tools
+  - [ ] `config` - Configure tool settings
+  - [ ] `status` - Show tool status
+
+### 5.3 MCP Protocol
 - [ ] MCP server implementation
 - [ ] Tool discovery and registration
 - [ ] Permission management
@@ -208,7 +261,21 @@ None currently - all bugs have been resolved!
 - [ ] Support for external projects (work on codebases outside current directory)
 - [ ] Multi-project management (handle multiple projects simultaneously)
 
-### 6.3 Collaboration Features
+### 6.3 UI Customization
+- [ ] `/theme` - Change UI theme
+  - [ ] `default` - Default color scheme
+  - [ ] `dark` - Dark mode optimized
+  - [ ] `light` - Light terminal theme
+  - [ ] `minimal` - Minimal colors
+  - [ ] `vibrant` - High contrast colors
+- [ ] **Enhanced Response Rendering**
+  - [ ] Live markdown rendering during streaming
+  - [ ] Syntax highlighting for code blocks
+  - [ ] Proper handling of tables and lists
+  - [ ] Toggle between raw and formatted view
+  - [ ] Preserve terminal scrollback while rendering
+
+### 6.4 Collaboration Features
 - [ ] Session sharing via URLs
 - [ ] Team knowledge base
 - [ ] Shared prompt library
@@ -315,7 +382,8 @@ None currently - all bugs have been resolved!
 - ✅ PyPI upload preparation
 - ✅ Git commit message template
 
-### 2025.7.5 - Provider Architecture ✅ COMPLETED
+### 2025.7.4 - Provider Architecture & Enhanced CLI ✅ COMPLETED
+**Phase 2 - Provider Architecture**:
 - ✅ Abstract provider interface with BaseProvider class
 - ✅ Provider registry and factory pattern
 - ✅ LiteLLM integration (100+ providers)
@@ -323,35 +391,70 @@ None currently - all bugs have been resolved!
 - ✅ Configuration management system
 - ✅ Multi-source config priority (CLI > env > project > user > defaults)
 
-### 2025.7.7 - Enhanced CLI (Target: July 7)
-- Slash commands
-- Developer modes
-- Rich UI features
+**Phase 3 - Enhanced CLI Experience**:
+- ✅ Interactive shell with prompt-toolkit
+- ✅ Slash commands (/help, /model, /mode, etc.)
+- ✅ 7 Developer modes (general, code, debug, explain, review, refactor, plan)
+- ✅ Rich UI features (tab completion, history, keyboard shortcuts)
+- ✅ Model deduplication and interactive selection
+- ✅ Improved error handling and user experience
 
-### 2025.7.10 - Persistence (Target: July 10)
-- Session management
-- Context handling
-- Search functionality
+**Integration Notes**:
+- ✅ Successfully merged concurrent Phase 2 & 3 development
+- ✅ Resolved conflicts in 4 files during integration
+- ✅ All Phase 3 CLI features work with Phase 2 provider system
+- ✅ Multi-provider support in interactive mode (OCI GenAI, LiteLLM, Ollama)
+- ✅ Code refactoring: 220-line function split into focused helpers
+- ✅ Comprehensive test coverage for slash commands
 
-### 2025.7.12 - Tools (Target: July 12)
-- MCP integration
-- Core tool set
-- Custom tools
+### 2025.7.10 - Session Management (Target: July 10)
+- SQLite database for sessions
+- Message persistence with metadata
+- Session commands (/session save/load/list/branch/delete)
+- Full-text search across sessions
+- Context windowing and summarization
 
-### 2025.7.15 - Production Ready (Target: July 15)
-- Full test coverage
-- Documentation
-- Performance optimized
-- Stable API
+### 2025.7.12 - Tool Integration / MCP (Target: July 12)
+- MCP server implementation
+- Core tools (file ops, shell, web search, git)
+- Tool commands (/tools list/enable/disable/config/status)
+- Permission management
+- Custom tool SDK
+
+### 2025.7.15 - Advanced Features (Target: July 15)
+- Multi-modal support (image understanding)
+- Document support (PDF, Word, PowerPoint, Excel)
+- Enhanced response rendering (live markdown)
+- Project intelligence (VCS support, language optimizations)
+- UI customization (/theme command)
 
 ## Next Steps
 
-1. Begin Phase 3: Enhanced CLI Experience (assigned to another developer)
-2. Implement interactive shell with rich prompt
-3. Add slash commands for runtime configuration
-4. Create developer modes (code, debug, explain, review, refactor)
-5. Integrate command history and auto-completion
-6. Ensure compatibility with Phase 2 provider architecture
+**Current Status**: Phases 1, 2, and 3 are complete. Ready to begin Phase 4.
+
+1. **Immediate Priority - Phase 4**: Session Management (Target: July 10)
+   - SQLite database for sessions
+   - Message persistence with metadata
+   - Session branching and search
+   - Full-text search across sessions
+   - Implementation of `/session` command with all subcommands
+   
+2. **Next - Phase 5**: Tool Integration (MCP) (Target: July 12)
+   - Core tools for file operations
+   - Shell command execution
+   - Web search and fetch capabilities
+   - Git operations
+   - Implementation of `/tools` command
+   
+3. **Following - Phase 6**: Advanced Features (Target: July 15)
+   - Multi-modal support (image understanding)
+   - Code screenshot analysis
+   - Document support (PDF, Word, PowerPoint, Excel)
+   - Enhanced response rendering with live markdown
+   
+4. **Future Phases**:
+   - Phase 7: Web UI with Streamlit
+   - Phase 8: Additional features (containerization, repo mapping, telemetry)
 
 ## Notes
 
@@ -362,6 +465,21 @@ None currently - all bugs have been resolved!
 - Maintain compatibility with existing LiteLLM code
 
 ## Completed Items
+
+### Project Branding (2025.7.3)
+- [x] Extract logo assets from `/tmp/logo.html` 
+- [x] Create `assets/logos/` directory structure
+- [x] Generate logo files in multiple formats:
+  - [x] SVG (scalable, main format)
+  - [x] PNG (64x64, 128x128, 256x256, 512x512, 1024x1024)
+  - [x] ICO (favicon)
+- [x] Integrate logos into:
+  - [x] README.md header
+  - [x] Add all three logo variants from original design
+  - [ ] Documentation (when created)
+  - [ ] Future web UI  
+  - [ ] GitHub social preview
+- [x] Add logo usage guidelines to documentation
 
 ### Bugs Fixed (2025.7.3)
 - [x] **Fix CI pipeline** - Resolved version extraction error by using portable grep syntax instead of -P flag

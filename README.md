@@ -23,7 +23,7 @@ Coda is your AI pair programmer that:
 
 - 🌐 **Multi-Provider Support**: Oracle OCI GenAI, Ollama (local), OpenAI, Anthropic, Google, and 100+ more via LiteLLM
 - 💻 **CLI-First Design**: Built for developers who live in the terminal
-- 🧠 **Smart Modes**: Specialized AI personalities for different tasks (code, debug, explain, review)
+- 🧠 **[Smart Modes](docs/modes.md)**: Specialized AI personalities for different tasks (code, debug, explain, review)
 - 💾 **Session Management**: Never lose a conversation - save, resume, and branch discussions
 - 🎨 **Beautiful Interface**: Rich terminal UI with syntax highlighting and multiple themes
 - ⚡ **Real-time Streaming**: See responses as they're generated
@@ -91,19 +91,23 @@ uv run coda --provider openai --model gpt-4
 
 ## 💡 Usage Examples
 
-### Interactive Development
+### Developer Modes
 ```bash
-# Start a coding session
-uv run coda
+# Start with a specific mode
+uv run coda --mode code
 
-# In the chat:
-You: /mode code
-You: Write a Python function to parse JSON with error handling
+# Switch modes during conversation
 You: /mode debug
-You: Help me fix this TypeError in @main.py
+You: Why am I getting "undefined is not a function"?
+
+You: /mode explain  
+You: How does async/await work in JavaScript?
+
 You: /mode review
-You: Review the security of @auth.py
+You: Check this SQL query for security issues: SELECT * FROM users WHERE id = ${userId}
 ```
+
+See the [Developer Modes Guide](docs/modes.md) for detailed information about each mode.
 
 ### Session Management
 ```bash
@@ -162,6 +166,7 @@ coda/
 
 ## 📚 Documentation
 
+- [Developer Modes Guide](docs/modes.md) - Complete guide to using specialized AI modes
 - [Roadmap](ROADMAP.md) - Roadmap and technical architecture
 - [OCI GenAI Integration](docs/oci-genai-integration.md) - Deep dive into Oracle Cloud integration
 - [Test Suite Documentation](tests/README.md) - Testing strategy and guidelines
