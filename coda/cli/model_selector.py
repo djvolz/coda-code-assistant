@@ -8,6 +8,13 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import TextArea
 from rich.console import Console
 
+from ..themes import get_prompt_style
+from ..constants import (
+    MAX_MODELS_DISPLAY,
+    MAX_MODELS_BASIC_DISPLAY,
+    CONSOLE_STYLE_ERROR,
+)
+
 
 class ModelSelector:
     """Interactive model selector with search and navigation."""
@@ -18,15 +25,8 @@ class ModelSelector:
         self.filtered_models = models
         self.selected_index = 0
         self.search_text = ""
-        self.style = Style.from_dict(
-            {
-                "selected": "bg:#00aa00 #ffffff bold",
-                "search": "bg:#444444 #ffffff",
-                "title": "#00aa00 bold",
-                "info": "#888888",
-                "provider": "#0088ff",
-            }
-        )
+        # Use theme-based style
+        self.style = get_prompt_style()
 
     def create_model_list_text(self) -> HTML:
         """Create formatted text for model list."""
@@ -43,8 +43,8 @@ class ModelSelector:
             else:
                 lines.append(f"  {model.id} <provider>({model.provider})</provider>")
 
-        if len(self.filtered_models) > 20:
-            lines.append(f"\n<info>... and {len(self.filtered_models) - 20} more</info>")
+        if len(self.filtered_models) > MAX_MODELS_DISPLAY:
+            lines.append(f"\n<info>... and {len(self.filtered_models) - MAX_MODELS_DISPLAY} more</info>")
 
         # Add help text
         lines.append("\n<info>↑/↓: Navigate  Enter: Select  /: Search  Esc: Cancel</info>")
@@ -151,11 +151,11 @@ class ModelSelector:
     def select_model_basic(self) -> str:
         """Basic model selection for non-interactive mode."""
         self.console.print("\n[bold]Available models:[/bold]")
-        for i, m in enumerate(self.models[:10], 1):
+        for i, m in enumerate(self.models[:MAX_MODELS_BASIC_DISPLAY], 1):
             self.console.print(f"{i:2d}. {m.id} ({m.provider})")
 
-        if len(self.models) > 10:
-            self.console.print(f"    ... and {len(self.models) - 10} more")
+        if len(self.models) > MAX_MODELS_BASIC_DISPLAY:
+            self.console.print(f"    ... and {len(self.models) - MAX_MODELS_BASIC_DISPLAY} more")
 
         while True:
             try:
@@ -164,8 +164,8 @@ class ModelSelector:
                 if 0 <= index < len(self.models):
                     return self.models[index].id
                 else:
-                    self.console.print("[red]Invalid selection. Please try again.[/red]")
+                    self.console.print(f"{CONSOLE_STYLE_ERROR}Invalid selection. Please try again.[/]")
             except ValueError:
-                self.console.print("[red]Please enter a number.[/red]")
+                self.console.print(f"{CONSOLE_STYLE_ERROR}Please enter a number.[/]")
             except KeyboardInterrupt:
                 raise SystemExit(0)

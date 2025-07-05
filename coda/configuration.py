@@ -5,6 +5,22 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .constants import (
+    DEFAULT_PROVIDER,
+    DEFAULT_MAX_HISTORY,
+    ENV_DEFAULT_PROVIDER,
+    ENV_DEBUG,
+    ENV_OCI_COMPARTMENT_ID,
+    ENV_XDG_CONFIG_HOME,
+    USER_CONFIG_PATH,
+    PROJECT_CONFIG_FILE,
+    SYSTEM_CONFIG_PATH,
+    get_data_dir,
+    HISTORY_FILE_NAME,
+    THEME_DEFAULT,
+    PROVIDER_OCI_GENAI,
+)
+
 try:
     import tomllib
 except ImportError:
@@ -19,7 +35,7 @@ class CodaConfig:
     """Main configuration class for Coda."""
 
     # Default provider
-    default_provider: str = "oci_genai"
+    default_provider: str = DEFAULT_PROVIDER
 
     # Provider configurations
     providers: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -27,8 +43,8 @@ class CodaConfig:
     # Session settings
     session: dict[str, Any] = field(
         default_factory=lambda: {
-            "history_file": "~/.local/share/coda/history",
-            "max_history": 1000,
+            "history_file": str(get_data_dir() / HISTORY_FILE_NAME),
+            "max_history": DEFAULT_MAX_HISTORY,
             "autosave": True,
         }
     )
@@ -36,7 +52,7 @@ class CodaConfig:
     # UI settings
     ui: dict[str, Any] = field(
         default_factory=lambda: {
-            "theme": "default",
+            "theme": THEME_DEFAULT,
             "show_model_info": True,
             "show_token_usage": False,
         }
@@ -95,15 +111,13 @@ class ConfigManager:
 
         # System config (lowest priority)
         if os.name != "nt":  # Unix-like systems
-            paths.append(Path("/etc/coda/config.toml"))
+            paths.append(SYSTEM_CONFIG_PATH)
 
         # User config
-        config_home = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
-        user_config = Path(config_home) / "coda" / "config.toml"
-        paths.append(user_config)
+        paths.append(USER_CONFIG_PATH)
 
         # Project config (highest priority)
-        project_config = Path(".coda") / "config.toml"
+        project_config = Path(PROJECT_CONFIG_FILE)
         if project_config.exists():
             paths.append(project_config)
 
@@ -137,19 +151,19 @@ class ConfigManager:
     def _apply_env_vars(self) -> None:
         """Apply environment variable overrides."""
         # Default provider
-        if provider := os.environ.get("CODA_DEFAULT_PROVIDER"):
+        if provider := os.environ.get(ENV_DEFAULT_PROVIDER):
             self.config.default_provider = provider
 
         # Debug mode
-        if os.environ.get("CODA_DEBUG", "").lower() in ("true", "1", "yes"):
+        if os.environ.get(ENV_DEBUG, "").lower() in ("true", "1", "yes"):
             self.config.debug = True
 
         # Provider-specific env vars
         # OCI GenAI
-        if compartment_id := os.environ.get("OCI_COMPARTMENT_ID"):
-            if "oci_genai" not in self.config.providers:
-                self.config.providers["oci_genai"] = {}
-            self.config.providers["oci_genai"]["compartment_id"] = compartment_id
+        if compartment_id := os.environ.get(ENV_OCI_COMPARTMENT_ID):
+            if PROVIDER_OCI_GENAI not in self.config.providers:
+                self.config.providers[PROVIDER_OCI_GENAI] = {}
+            self.config.providers[PROVIDER_OCI_GENAI]["compartment_id"] = compartment_id
 
         # Future providers can add their env vars here
         # Example:
@@ -167,8 +181,7 @@ class ConfigManager:
         if not tomllib:
             raise ImportError("toml library not available for saving config")
 
-        config_home = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
-        config_path = Path(config_home) / "coda" / "config.toml"
+        config_path = USER_CONFIG_PATH
 
         # Create directory if needed
         config_path.parent.mkdir(parents=True, exist_ok=True)

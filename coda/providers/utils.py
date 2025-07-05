@@ -3,6 +3,10 @@
 from typing import List, Dict, Any, Optional
 
 from .base import Message
+from ..constants import (
+    DEFAULT_CONTEXT_LENGTH,
+    DEFAULT_TEMPERATURE,
+)
 
 
 def convert_messages_basic(messages: List[Message]) -> List[Dict[str, Any]]:
@@ -56,14 +60,14 @@ def extract_basic_model_info(model_data: Dict[str, Any], name_key: str = "name")
         "name": model_data.get(name_key, "unknown"),
         "provider": model_data.get("provider", "unknown"),
         "description": model_data.get("description", ""),
-        "context_length": model_data.get("context_length", 4096),
+        "context_length": model_data.get("context_length", DEFAULT_CONTEXT_LENGTH),
         "capabilities": model_data.get("capabilities", []),
     }
 
 
 def build_request_params(
     model: str,
-    temperature: float = 0.7,
+    temperature: float = DEFAULT_TEMPERATURE,
     max_tokens: Optional[int] = None,
     top_p: Optional[float] = None,
     stop: Optional[List[str]] = None,
