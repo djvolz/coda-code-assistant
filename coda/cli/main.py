@@ -26,6 +26,7 @@ console = Console()
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--one-shot", help="Execute a single prompt and exit")
 @click.option("--basic", is_flag=True, help="Use basic CLI mode (no prompt-toolkit)")
+@click.option("--textual", is_flag=True, help="Use Textual-based UI (experimental)")
 @click.option(
     "--mode",
     type=click.Choice(["general", "code", "debug", "explain", "review", "refactor", "plan"]),
@@ -33,7 +34,7 @@ console = Console()
     help="Initial developer mode (basic mode only)",
 )
 @click.version_option(version=__version__, prog_name="coda")
-def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mode: str):
+def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, textual: bool, mode: str):
     """Coda - A multi-provider code assistant"""
 
     # Load configuration
@@ -45,6 +46,30 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
 
     # Initialize error handler
     error_handler = CLIErrorHandler(console, debug)
+
+    # Check if we should use Textual mode
+    if textual and not one_shot:
+        try:
+            from .textual_integrated import run_integrated_textual_cli
+            from .provider_manager import ProviderManager
+            
+            console.print("[bold green]Starting CODA with Textual UI...[/bold green]")
+            
+            # Initialize provider manager
+            provider_manager = ProviderManager(config, console)
+            
+            # Run integrated Textual CLI
+            run_integrated_textual_cli(
+                provider_factory=provider_manager.factory,
+                provider_name=provider or config.default_provider,
+                model=model,
+                config=config
+            )
+            return
+        except ImportError as e:
+            console.print(f"[red]Error: Textual not available. Install with: uv add textual[/red]")
+            console.print(f"[dim]Details: {e}[/dim]")
+            return
 
     # Check if we should use interactive mode
     if not basic and not one_shot and sys.stdin.isatty():
