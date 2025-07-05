@@ -59,9 +59,14 @@ class SlashCommandCompleter(Completer):
             "session": [
                 ("save", "Save current conversation"),
                 ("load", "Load a saved conversation"),
+                ("last", "Load the most recent session"),
                 ("list", "List all saved sessions"),
                 ("branch", "Create a branch from current conversation"),
                 ("delete", "Delete a saved session"),
+                ("delete-all", "Delete all sessions (use --auto-only for just auto-saved)"),
+                ("rename", "Rename a session"),
+                ("info", "Show session details"),
+                ("search", "Search sessions"),
             ],
             "theme": [
                 ("default", "Default color scheme"),
