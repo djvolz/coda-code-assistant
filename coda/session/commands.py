@@ -48,6 +48,8 @@ class SessionCommands:
             return self._save_session(args[1:])
         elif subcommand in ['load', 'l']:
             return self._load_session(args[1:])
+        elif subcommand in ['last']:
+            return self._load_last_session()
         elif subcommand in ['list', 'ls']:
             return self._list_sessions(args[1:])
         elif subcommand in ['branch', 'b']:
@@ -70,6 +72,7 @@ class SessionCommands:
 
 [cyan]/session save [name][/cyan] - Save current conversation
 [cyan]/session load <id|name>[/cyan] - Load a saved session
+[cyan]/session last[/cyan] - Load the most recent session
 [cyan]/session list[/cyan] - List all saved sessions
 [cyan]/session branch [name][/cyan] - Create a branch from current session
 [cyan]/session delete <id|name>[/cyan] - Delete a session
@@ -346,6 +349,54 @@ class SessionCommands:
                 self.console.print(f"  [dim]... and {len(messages) - 3} more matches[/dim]")
             
             self.console.print()
+        
+        return None
+    
+    def _load_last_session(self) -> str:
+        """Load the most recent session."""
+        # Get the most recent session
+        sessions = self.manager.get_active_sessions(limit=1)
+        
+        if not sessions:
+            return "No sessions found to load."
+        
+        # Load the most recent session
+        session = sessions[0]
+        
+        # Load messages
+        messages = self.manager.get_messages(session.id)
+        
+        # Convert to internal format
+        self.current_messages = []
+        for msg in messages:
+            self.current_messages.append({
+                'role': msg.role,
+                'content': msg.content,
+                'metadata': {
+                    'provider': msg.provider or session.provider,
+                    'model': msg.model or session.model,
+                    'mode': msg.message_metadata.get('mode', session.mode),
+                    'token_usage': {
+                        'prompt_tokens': msg.prompt_tokens,
+                        'completion_tokens': msg.completion_tokens,
+                        'total_tokens': msg.total_tokens
+                    } if msg.total_tokens else None,
+                    'cost': msg.cost
+                }
+            })
+        
+        self.current_session_id = session.id
+        
+        # Display session info
+        self.console.print(f"\n[green]Loaded last session:[/green] {session.name}")
+        self.console.print(f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}")
+        self.console.print(f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}")
+        
+        if session.description:
+            self.console.print(f"[dim]Description:[/dim] {session.description}")
+        
+        # Set flag to indicate messages were loaded for CLI integration
+        self._messages_loaded = True
         
         return None
     
