@@ -76,12 +76,12 @@ commands:
     description: "Manage MCP tools"
     options:
       - name: list
-        description: "List available MCP tools"
-      - name: enable
-        description: "Enable specific tools"
-      - name: disable
-        description: "Disable specific tools"
-      - name: config
-        description: "Configure tool settings"
-      - name: status
-        description: "Show tool status"
+        description: "List all available tools"
+      - name: info
+        description: "Show detailed tool information"
+      - name: categories
+        description: "Show all tool categories"
+      - name: stats
+        description: "Show tool statistics"
+      - name: help
+        description: "Show detailed tools help"
