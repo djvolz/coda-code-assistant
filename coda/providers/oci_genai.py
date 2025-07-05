@@ -131,13 +131,19 @@ class OCIGenAIProvider(BaseProvider):
             )
 
             discovered_models = []
+            seen_model_ids = {}  # Track which model IDs we've already seen
+
+            # Known working model mappings (as of Dec 2024)
+            # These override discovered IDs for models we know have issues
+            known_working_mappings = {
+                "cohere.command-r-plus": "cohere.command-r-plus-08-2024",
+                "cohere.command-r": "cohere.command-r-08-2024",
+            }
 
             for model_summary in response.data.items:
                 # Skip models that don't have chat capability
-                if not any(
-                    cap in ["TEXT_GENERATION", "CHAT"]
-                    for cap in getattr(model_summary, "capabilities", [])
-                ):
+                capabilities = getattr(model_summary, "capabilities", [])
+                if not any(cap in ["TEXT_GENERATION", "CHAT"] for cap in capabilities):
                     continue
 
                 # Get display name and derive a proper model ID
@@ -152,6 +158,23 @@ class OCIGenAIProvider(BaseProvider):
                     # Fall back to using vendor + a simplified name
                     model_id = f"{vendor}.{display_name}" if display_name else model_summary.id
                     provider = vendor
+
+                # Handle duplicates - prefer models with CHAT capability over TEXT_GENERATION only
+                if model_id in seen_model_ids:
+                    existing_model = seen_model_ids[model_id]
+                    existing_caps = existing_model.metadata.get("capabilities", [])
+
+                    # Skip if the existing model already has CHAT capability
+                    if "CHAT" in existing_caps:
+                        continue
+
+                    # If new model has CHAT but existing doesn't, we'll replace it
+                    if "CHAT" in capabilities and "CHAT" not in existing_caps:
+                        # Remove the old model from discovered_models
+                        discovered_models = [m for m in discovered_models if m.id != model_id]
+                    else:
+                        # Otherwise skip this duplicate
+                        continue
 
                 # Map provider-specific capabilities
                 supports_functions = (
@@ -173,7 +196,7 @@ class OCIGenAIProvider(BaseProvider):
                         "version": getattr(model_summary, "version", None),
                         "type": getattr(model_summary, "type", None),
                         "lifecycle_state": getattr(model_summary, "lifecycle_state", None),
-                        "capabilities": getattr(model_summary, "capabilities", []),
+                        "capabilities": capabilities,
                         "is_long_term_supported": getattr(
                             model_summary, "is_long_term_supported", None
                         ),
@@ -184,7 +207,15 @@ class OCIGenAIProvider(BaseProvider):
                 # Store mapping from friendly name to OCI model ID
                 self._model_id_map[model_id] = model_summary.id
 
+                # Track that we've seen this model ID
+                seen_model_ids[model_id] = model
                 discovered_models.append(model)
+
+            # Apply known working mappings to fix problematic models
+            for alias, working_id in known_working_mappings.items():
+                if alias in self._model_id_map and working_id in self._model_id_map:
+                    # Override the mapping with the known working ID
+                    self._model_id_map[alias] = self._model_id_map[working_id]
 
             return discovered_models
 
@@ -581,3 +612,111 @@ class OCIGenAIProvider(BaseProvider):
         self._model_cache = None
         self._cache_timestamp = None
         return self.list_models()
+
+    def verify_model(self, model_id: str) -> dict[str, any]:
+        """Verify if a model is actually usable by making a minimal test request.
+
+        Args:
+            model_id: The model ID to verify
+
+        Returns:
+            Dict with verification results including success status and any error message
+        """
+        try:
+            # First check if model is in our list
+            if not self.validate_model(model_id):
+                return {
+                    "success": False,
+                    "model_id": model_id,
+                    "error": "Model not found in available models list",
+                    "oci_model_id": None,
+                }
+
+            # Get the OCI model ID
+            oci_model_id = self._model_id_map.get(model_id)
+            if not oci_model_id:
+                return {
+                    "success": False,
+                    "model_id": model_id,
+                    "error": "No OCI model ID mapping found",
+                    "oci_model_id": None,
+                }
+
+            # Try a minimal chat request
+            test_messages = [Message(role=Role.USER, content="Hi")]
+
+            try:
+                response = self.chat(
+                    messages=test_messages,
+                    model=model_id,
+                    temperature=0.1,
+                    max_tokens=10,
+                )
+
+                return {
+                    "success": True,
+                    "model_id": model_id,
+                    "oci_model_id": oci_model_id,
+                    "response": response.content[:50] if response.content else None,
+                    "error": None,
+                }
+
+            except Exception as e:
+                return {
+                    "success": False,
+                    "model_id": model_id,
+                    "oci_model_id": oci_model_id,
+                    "error": str(e),
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "model_id": model_id,
+                "error": f"Verification failed: {str(e)}",
+                "oci_model_id": None,
+            }
+
+    def verify_all_models(self, verbose: bool = True) -> list[dict[str, any]]:
+        """Verify all available models to see which ones are actually usable.
+
+        Args:
+            verbose: Whether to print progress
+
+        Returns:
+            List of verification results for each model
+        """
+        models = self.list_models()
+        results = []
+
+        if verbose:
+            print(f"Verifying {len(models)} models...")
+            print("-" * 60)
+
+        for i, model in enumerate(models):
+            if verbose:
+                print(f"[{i+1}/{len(models)}] Verifying {model.id}...", end=" ", flush=True)
+
+            result = self.verify_model(model.id)
+            results.append(result)
+
+            if verbose:
+                if result["success"]:
+                    print("✓ OK")
+                else:
+                    print(f"✗ FAILED: {result['error']}")
+
+        if verbose:
+            # Summary
+            successful = sum(1 for r in results if r["success"])
+            print("-" * 60)
+            print(f"Summary: {successful}/{len(models)} models verified successfully")
+
+            # Show failed models
+            failed = [r for r in results if not r["success"]]
+            if failed:
+                print(f"\nFailed models ({len(failed)}):")
+                for r in failed:
+                    print(f"  - {r['model_id']}: {r['error']}")
+
+        return results
