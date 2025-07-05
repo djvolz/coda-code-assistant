@@ -222,18 +222,18 @@ None currently - all bugs have been resolved!
 - [x] Session workflow end-to-end tests
 - [x] Edge case and error handling tests
 
-### 4.5 Automatic Session Saving (Enhancement)
+### 4.5 Automatic Session Saving (Enhancement) 🚧 DEFERRED
 - [x] **Auto-Save by Default** ✅ COMPLETED
   - [x] Automatic session creation on first message
   - [x] Anonymous sessions with timestamp names (e.g., `auto-20250105-143022`)
   - [x] Zero configuration required - just start chatting
-  - [ ] Async saves to avoid blocking chat flow
+  - [🔄] Async saves to avoid blocking chat flow (DEFERRED)
   
-- [ ] **Rolling Window Management** (Option 1 - Recommended)
-  - [ ] Keep last 1000 messages per session
-  - [ ] Archive older messages to linked archive sessions
-  - [ ] Maintain parent-child relationships for full history
-  - [ ] Transparent access to archived content via search
+- [🔄] **Rolling Window Management** (DEFERRED)
+  - [🔄] Keep last 1000 messages per session
+  - [🔄] Archive older messages to linked archive sessions
+  - [🔄] Maintain parent-child relationships for full history
+  - [🔄] Transparent access to archived content via search
   
 - [x] **User Control Options** ✅ COMPLETED
   - [x] `/session rename` - Rename auto-created sessions
@@ -246,16 +246,16 @@ None currently - all bugs have been resolved!
   - [x] `--resume` CLI flag - Auto-load last session on startup
   
 - [x] **Performance Optimizations** ✅ PARTIALLY COMPLETED
-  - [ ] Batch message inserts for efficiency
-  - [ ] Background save queue to prevent UI blocking
+  - [🔄] Batch message inserts for efficiency (DEFERRED)
+  - [🔄] Background save queue to prevent UI blocking (DEFERRED)
   - [x] Index on created_at for fast queries
   - [x] Additional indexes for name, accessed_at, parent_id, and tags
-  - [ ] Lazy loading of historical messages
+  - [🔄] Lazy loading of historical messages (DEFERRED)
   
 - [x] **Privacy & Disclosure** ✅ MOSTLY COMPLETED
   - [x] Clear notification about auto-save on first run
   - [x] Easy bulk delete commands (`/session delete-all`)
-  - [ ] Optional encryption for stored sessions
+  - [🔄] Optional encryption for stored sessions (DEFERRED)
   - [x] Respect XDG data directories (already implemented)
 
 - [x] **Command System Refactoring** ✅ MOSTLY COMPLETED
