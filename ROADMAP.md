@@ -258,6 +258,13 @@ None currently - all bugs have been resolved!
   - [ ] Optional encryption for stored sessions
   - [x] Respect XDG data directories (already implemented)
 
+- [x] **Command System Refactoring** ✅ MOSTLY COMPLETED
+  - [x] Centralized CommandRegistry for single source of truth
+  - [x] Consistent autocomplete from registry definitions
+  - [x] Dynamic help text generation from registry
+  - [x] Updated help display to show implemented commands
+  - [ ] Full command initialization from registry (lower priority)
+
 ## Phase 5: Tool Integration (MCP)
 
 **⚠️ PARALLEL DEVELOPMENT NOTE**: Being developed in parallel with Phase 4. Key considerations:
