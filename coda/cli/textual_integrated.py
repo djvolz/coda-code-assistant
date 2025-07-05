@@ -392,6 +392,9 @@ class IntegratedTextualCLI(App):
                     chat_container = self.query_one("#chat-container")
                     self.call_after_refresh(chat_container.scroll_end)
                     
+                    # Small delay to allow UI updates and create visible streaming effect
+                    await asyncio.sleep(0.05)  # 50ms delay
+                    
             # Update final message in history
             if self._messages and self._messages[-1]["content"] == "*Thinking...*":
                 self._messages[-1]["content"] = response_text

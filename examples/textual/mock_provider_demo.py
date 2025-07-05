@@ -15,19 +15,21 @@ class MockProvider:
                 self.id = id
         return [MockModel("mock-model-1"), MockModel("mock-model-2")]
     
-    async def chat(self, messages, model, stream=True):
-        """Mock chat method."""
+    def chat_stream(self, messages, model, temperature=0.7, max_tokens=2000):
+        """Mock chat_stream method that returns an iterator."""
         # Simulate streaming response
-        response = "Hello! This is a mock response from the AI. I received your message and I'm responding in a simulated streaming fashion."
+        response = "Hello! This is a mock response from the AI. I received your message and I'm responding in a simulated streaming fashion. Each word appears progressively to demonstrate the streaming capability of the Textual interface. You can see how the text builds up character by character, creating a smooth streaming experience similar to real AI responses."
         
         class MockChunk:
             def __init__(self, content):
                 self.content = content
         
-        # Stream the response word by word
+        import time
+        
+        # Stream the response word by word with realistic timing
         words = response.split()
         for i, word in enumerate(words):
-            await asyncio.sleep(0.1)  # Simulate delay
+            time.sleep(0.2)  # Simulate network delay
             if i == 0:
                 yield MockChunk(word)
             else:

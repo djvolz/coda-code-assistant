@@ -7,6 +7,7 @@ This directory contains examples and tests for the Textual-based CLI interface.
 - `mock_provider_demo.py` - Demo the Textual interface with a mock AI provider that simulates streaming responses
 - `connection_test.py` - Test script to verify the Textual interface connects properly to real providers
 - `basic_interface_test.py` - Basic test of interface creation without provider integration
+- `scroll_test.py` - Test scrolling functionality with many messages
 
 ## Usage
 
