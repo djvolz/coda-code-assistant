@@ -26,24 +26,32 @@ class BasicCommandProcessor(CommandHandler):
         cmd = parts[0].lower()
         args = parts[1] if len(parts) > 1 else ""
 
-        # Map commands to handlers
-        commands = {
+        # Build command map from registry
+        from coda.cli.command_registry import CommandRegistry
+        
+        # Map command names to their handlers
+        handler_map = {
             "help": lambda: self.show_help(),
-            "h": lambda: self.show_help(),
-            "?": lambda: self.show_help(),
             "model": lambda: self.switch_model(args),
-            "m": lambda: self.switch_model(args),
             "provider": lambda: self.show_provider_info(args),
-            "p": lambda: self.show_provider_info(args),
             "mode": lambda: self.switch_mode(args),
             "tools": lambda: self.handle_tools_command(args),
             "t": lambda: self.handle_tools_command(args),
             "clear": lambda: self.clear_conversation(),
-            "cls": lambda: self.clear_conversation(),
             "exit": lambda: self.exit_application(),
-            "quit": lambda: self.exit_application(),
-            "q": lambda: self.exit_application(),
+            # Note: session, export, theme, tools not supported in basic mode
+            # They are interactive-only features
         }
+        
+        # Build commands dict from registry
+        commands = {}
+        for cmd_def in CommandRegistry.COMMANDS:
+            if cmd_def.name in handler_map:
+                # Add main command
+                commands[cmd_def.name] = handler_map[cmd_def.name]
+                # Add aliases
+                for alias in cmd_def.aliases:
+                    commands[alias] = handler_map[cmd_def.name]
 
         if cmd in commands:
             result = commands[cmd]()

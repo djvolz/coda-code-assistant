@@ -6,6 +6,7 @@ from coda.providers.base import BaseProvider
 from coda.providers.litellm_provider import LiteLLMProvider
 from coda.providers.oci_genai import OCIGenAIProvider
 from coda.providers.ollama_provider import OllamaProvider
+from coda.providers.mock_provider import MockProvider
 
 
 class ProviderRegistry:
@@ -116,6 +117,7 @@ class ProviderRegistry:
 ProviderRegistry.register("oci_genai", OCIGenAIProvider)
 ProviderRegistry.register("litellm", LiteLLMProvider)
 ProviderRegistry.register("ollama", OllamaProvider)
+ProviderRegistry.register("mock", MockProvider)
 
 
 class ProviderFactory:

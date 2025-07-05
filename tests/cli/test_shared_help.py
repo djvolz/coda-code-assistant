@@ -107,9 +107,8 @@ class TestSharedHelp:
         """Test that help content is not duplicated."""
         print_command_help(mock_console)
 
-        # Count occurrences of unique strings
+        # Count occurrences of unique strings in registry format
         calls_str = str(mock_console.print.call_args_list)
-        assert calls_str.count("AI Settings:") == 1
-        assert calls_str.count("System:") == 1
+        assert calls_str.count("Available Commands:") == 1
         assert calls_str.count("/model") == 1
         assert calls_str.count("/help") == 1
