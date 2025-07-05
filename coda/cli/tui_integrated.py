@@ -117,10 +117,23 @@ class TabCompletableInput(Input):
         if event.key == "tab":
             self._handle_tab_completion()
             event.prevent_default()
-        elif event.key in ("escape", "ctrl+c"):
+        elif event.key == "ctrl+d":
+            # Handle EOF - quit the application
+            self.app.exit()
+            event.prevent_default()
+        elif event.key == "escape":
             # Cancel completion
             self._cancel_completion()
-            # Let the parent handle escape/ctrl+c normally
+            # Let the parent handle escape normally
+        elif event.key == "ctrl+c":
+            # Check if there's an active streaming response
+            if hasattr(self.app, 'is_streaming') and self.app.is_streaming:
+                # Cancel the streaming response
+                self.app.cancel_streaming()
+                event.prevent_default()
+            else:
+                # Otherwise, cancel completion
+                self._cancel_completion()
         elif self.completion_index >= 0:
             # If we're in completion mode and user types something else, cancel
             if event.key not in ("tab", "shift+tab"):
@@ -323,6 +336,7 @@ class IntegratedTUICLI(App):
     
     BINDINGS = [
         ("ctrl+c", "quit", "Quit"),
+        ("ctrl+d", "quit", "Quit (EOF)"),
         ("ctrl+l", "clear", "Clear"),
         ("ctrl+p", "command_palette", "Commands"),
         ("f1", "help", "Help"),
@@ -347,6 +361,8 @@ class IntegratedTUICLI(App):
         self._developer_mode = DeveloperMode.GENERAL
         self._messages = []
         self._available_models = []
+        self.is_streaming = False
+        self.current_worker = None
 
     def compose(self) -> ComposeResult:
         """Compose the UI."""
@@ -491,6 +507,12 @@ class IntegratedTUICLI(App):
         if not self._provider:
             self.add_message("System", "No provider connected. Please connect to a provider first.")
             return
+        
+        # Track the worker and streaming state
+        from textual.worker import get_current_worker
+        worker = get_current_worker()
+        self.current_worker = worker
+        self.is_streaming = True
             
         # Build messages for API
         messages = []
@@ -528,6 +550,12 @@ class IntegratedTUICLI(App):
             )
             
             for chunk in stream:
+                # Check if cancelled
+                if worker.is_cancelled:
+                    response_text += "\n\n*[Response cancelled by user]*"
+                    msg_widget.update(Markdown(response_text))
+                    break
+                    
                 if chunk.content:
                     response_text += chunk.content
                     # Update the message widget
@@ -547,6 +575,12 @@ class IntegratedTUICLI(App):
             if self._messages and self._messages[-1]["content"] == "*Thinking...*":
                 self._messages[-1]["content"] = response_text
                 
+        except asyncio.CancelledError:
+            # Handle cancellation
+            if self._messages and self._messages[-1]["content"] == "*Thinking...*":
+                self._messages[-1]["content"] = "*[Response cancelled]*"
+            self.add_message("System", "Response interrupted by user")
+            raise  # Re-raise to properly cancel the worker
         except Exception as e:
             # Update error message
             if self._messages and self._messages[-1]["content"] == "*Thinking...*":
@@ -558,6 +592,9 @@ class IntegratedTUICLI(App):
                     msg_widgets[-1].update(f"Error: {str(e)}")
             except Exception:
                 self.add_message("System", f"Error: {str(e)}")
+        finally:
+            # Always clean up streaming state
+            self.is_streaming = False
 
     def switch_mode(self, mode_name: str):
         """Switch developer mode."""
@@ -611,7 +648,8 @@ class IntegratedTUICLI(App):
 - **Ctrl+P** - Open command palette
 - **Ctrl+L** - Clear chat
 - **F1** - Show help
-- **Ctrl+C** - Quit
+- **Ctrl+C** - Interrupt streaming response / Quit (when not streaming)
+- **Ctrl+D** - Quit (EOF)
 - **Page Up/Down** - Scroll chat
 - **Home/End** - Scroll to top/bottom
 
@@ -686,6 +724,16 @@ class IntegratedTUICLI(App):
         """Scroll to bottom of chat."""
         chat_container = self.query_one("#chat-container")
         chat_container.scroll_end()
+
+    def action_quit(self):
+        """Quit the application."""
+        self.exit()
+
+    def cancel_streaming(self):
+        """Cancel the current streaming response."""
+        if self.current_worker and not self.current_worker.is_finished:
+            self.current_worker.cancel()
+            self.is_streaming = False
 
 
 

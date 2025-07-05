@@ -12,7 +12,7 @@ from textual import events, on, work
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.widgets import Button, Footer, Header, Input, Label, RichLog, Static
-from textual.worker import Worker, WorkerState
+from textual.worker import Worker, WorkerState, get_current_worker
 
 from .shared import DeveloperMode, get_system_prompt
 
@@ -59,6 +59,19 @@ class CommandPalette(Input):
             placeholder="Type your message or / for commands...",
             id="command-input"
         )
+
+    def on_key(self, event: events.Key) -> None:
+        """Handle key events."""
+        if event.key == "ctrl+d":
+            # Handle EOF - quit the application
+            self.app.exit()
+            event.prevent_default()
+        elif event.key == "ctrl+c":
+            # Check if there's an active streaming response
+            if hasattr(self.app, 'is_streaming') and self.app.is_streaming:
+                # Cancel the streaming response
+                self.app.cancel_streaming()
+                event.prevent_default()
 
     async def action_submit(self):
         """Handle input submission."""
@@ -127,6 +140,7 @@ class TextualInteractiveCLI(App):
 
     BINDINGS = [
         ("ctrl+c", "quit", "Quit"),
+        ("ctrl+d", "quit", "Quit (EOF)"),
         ("ctrl+l", "clear", "Clear chat"),
         ("ctrl+p", "command_palette", "Command palette"),
         ("f1", "help", "Help"),
@@ -136,6 +150,7 @@ class TextualInteractiveCLI(App):
         super().__init__()
         self.current_mode = DeveloperMode.GENERAL
         self.conversation_history = []
+        self.is_streaming = False
         self.current_worker: Optional[Worker] = None
 
     def compose(self) -> ComposeResult:
@@ -328,6 +343,12 @@ class TextualInteractiveCLI(App):
     async def action_quit(self):
         """Quit the application."""
         self.exit()
+
+    def cancel_streaming(self):
+        """Cancel the current streaming response."""
+        if self.current_worker and not self.current_worker.is_finished:
+            self.current_worker.cancel()
+            self.is_streaming = False
 
 
 def run_textual_cli():
