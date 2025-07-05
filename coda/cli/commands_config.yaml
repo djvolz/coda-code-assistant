@@ -39,12 +39,22 @@ commands:
         description: "Save current conversation"
       - name: load
         description: "Load a saved conversation"
+      - name: last
+        description: "Load the most recent session"
       - name: list
         description: "List all saved sessions"
       - name: branch
         description: "Create a branch from current conversation"
       - name: delete
         description: "Delete a saved session"
+      - name: delete-all
+        description: "Delete all sessions (use --auto-only for just auto-saved)"
+      - name: rename
+        description: "Rename a session"
+      - name: info
+        description: "Show session details"
+      - name: search
+        description: "Search sessions"
 
   theme:
     description: "Change UI theme"

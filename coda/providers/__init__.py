@@ -11,6 +11,7 @@ from coda.providers.base import (
 from coda.providers.litellm_provider import LiteLLMProvider
 from coda.providers.oci_genai import OCIGenAIProvider
 from coda.providers.ollama_provider import OllamaProvider
+from coda.providers.mock_provider import MockProvider
 from coda.providers.registry import ProviderFactory, ProviderRegistry
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "OCIGenAIProvider",
     "LiteLLMProvider",
     "OllamaProvider",
+    "MockProvider",
     "ProviderRegistry",
     "ProviderFactory",
 ]

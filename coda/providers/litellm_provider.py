@@ -55,14 +55,8 @@ class LiteLLMProvider(BaseProvider):
 
     def _convert_messages(self, messages: list[Message]) -> list[dict]:
         """Convert our Message objects to LiteLLM format."""
-        return [
-            {
-                "role": msg.role.value,
-                "content": msg.content,
-                **({"name": msg.name} if msg.name else {}),
-            }
-            for msg in messages
-        ]
+        from .utils import convert_messages_with_name
+        return convert_messages_with_name(messages)
 
     def chat(
         self,

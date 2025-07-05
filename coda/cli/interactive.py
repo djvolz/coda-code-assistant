@@ -18,6 +18,59 @@ except ImportError:
 console = Console()
 
 
+async def _check_first_run(console: Console, auto_save_enabled: bool):
+    """Check if this is the first run and show auto-save notification."""
+    import os
+    from pathlib import Path
+    
+    # Check for first-run marker in XDG data directory
+    data_dir = Path(os.path.expanduser("~/.local/share/coda"))
+    first_run_marker = data_dir / ".first_run_complete"
+    
+    if not first_run_marker.exists():
+        # This is the first run
+        data_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Show notification
+        from rich.panel import Panel
+        
+        if auto_save_enabled:
+            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+
+[yellow]Auto-Save is ENABLED[/yellow] 💾
+
+Your conversations will be automatically saved when you start chatting.
+This helps you resume conversations and search through history.
+
+[dim]To disable auto-save:[/dim]
+• Use [cyan]--no-save[/cyan] flag when starting Coda
+• Set [cyan]autosave = false[/cyan] in ~/.config/coda/config.toml
+• Delete sessions with [cyan]/session delete-all[/cyan]
+
+[dim]Your privacy matters - sessions are stored locally only.[/dim]"""
+        else:
+            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+
+[yellow]Auto-Save is DISABLED[/yellow] 🔒
+
+Your conversations will NOT be saved automatically.
+
+[dim]To enable auto-save for future sessions:[/dim]
+• Remove [cyan]--no-save[/cyan] flag when starting Coda
+• Set [cyan]autosave = true[/cyan] in ~/.config/coda/config.toml"""
+        
+        console.print("\n")
+        console.print(Panel(notification, title="First Run", border_style="blue"))
+        console.print("\n")
+        
+        # Create marker file
+        try:
+            first_run_marker.touch()
+        except Exception:
+            # Don't fail if we can't create the marker
+            pass
+
+
 async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
     """Initialize and connect to the provider."""
     console.print(f"\n[green]Provider:[/green] {provider}")
@@ -104,6 +157,19 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     if user_input.startswith("/"):
         try:
             if await cli.process_slash_command(user_input):
+                # Check if session was loaded and restore conversation history
+                loaded_messages = cli.session_commands.get_loaded_messages_for_cli()
+                if loaded_messages:
+                    # Replace current messages with loaded session messages
+                    messages.clear()
+                    messages.extend(loaded_messages)
+                    console.print(f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]")
+                
+                # Check if conversation was cleared
+                if cli.session_commands.was_conversation_cleared():
+                    messages.clear()
+                    console.print(f"[dim]Cleared conversation history[/dim]")
+                
                 return True
         except (ValueError, AttributeError) as e:
             console.print(f"[red]Invalid command: {e}[/red]")
@@ -126,6 +192,17 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
 
     # Add user message
     messages.append(Message(role=Role.USER, content=user_input))
+    
+    # Track message in session manager
+    cli.session_commands.add_message(
+        role="user",
+        content=user_input,
+        metadata={
+            "mode": cli.current_mode.value,
+            "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
+            "model": cli.current_model
+        }
+    )
 
     # Choose thinking message based on mode
     thinking_messages = {
@@ -212,21 +289,54 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     # Add assistant message to history (even if interrupted)
     if full_response or interrupted:
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
+        
+        # Track assistant message in session manager
+        cli.session_commands.add_message(
+            role="assistant",
+            content=full_response,
+            metadata={
+                "mode": cli.current_mode.value,
+                "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
+                "model": cli.current_model,
+                "interrupted": interrupted
+            }
+        )
     console.print("\n")  # Add spacing after response
 
     return True  # Continue loop
 
 
-async def run_interactive_session(provider: str, model: str, debug: bool):
+async def run_interactive_session(provider: str, model: str, debug: bool, no_save: bool, resume: bool):
     """Run the enhanced interactive session."""
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
-
+    
     # Load configuration
     from coda.configuration import get_config
     from coda.providers import ProviderFactory
 
     config = get_config()
+    
+    # Set auto-save based on config and CLI flag
+    # CLI flag takes precedence over config
+    if no_save:
+        cli.session_commands.auto_save_enabled = False
+    else:
+        # Use config value, defaulting to True if not specified
+        cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
+    
+    # Check for first run and show auto-save notification
+    await _check_first_run(console, cli.session_commands.auto_save_enabled)
+    
+    # Load last session if requested
+    if resume:
+        console.print("\n[cyan]Resuming last session...[/cyan]")
+        result = cli.session_commands._load_last_session()
+        if result:  # Error message
+            console.print(f"[yellow]{result}[/yellow]")
+        else:
+            # Successfully loaded, show a separator
+            console.print("\n[dim]─" * 50 + "[/dim]\n")
 
     # Apply debug override
     if debug:
@@ -256,7 +366,22 @@ async def run_interactive_session(provider: str, model: str, debug: bool):
         cli.available_models = unique_models
 
         # Interactive chat loop
-        messages = []
+        # Initialize messages - use loaded messages if available
+        if resume and hasattr(cli.session_commands, '_messages_loaded') and cli.session_commands._messages_loaded:
+            # Import Message and Role for conversion
+            from coda.providers import Message, Role
+            
+            # Convert loaded messages to Message objects
+            messages = []
+            for msg in cli.session_commands.current_messages:
+                messages.append(Message(
+                    role=Role.USER if msg['role'] == 'user' else Role.ASSISTANT,
+                    content=msg['content']
+                ))
+            # Reset the flag
+            cli.session_commands._messages_loaded = False
+        else:
+            messages = []
 
         while True:
             continue_chat = await _handle_chat_interaction(
@@ -317,8 +442,10 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
     default=DeveloperMode.GENERAL.value,
     help="Initial developer mode",
 )
+@click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
+@click.option("--resume", is_flag=True, help="Resume the most recent session")
 @click.version_option(version=__version__, prog_name="coda")
-def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str):
+def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool):
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
@@ -335,7 +462,7 @@ def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode
         console.print(f"Would execute: {one_shot}")
     else:
         # Run interactive session
-        asyncio.run(run_interactive_session(provider, model, debug))
+        asyncio.run(run_interactive_session(provider, model, debug, no_save, resume))
 
 
 if __name__ == "__main__":

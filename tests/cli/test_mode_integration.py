@@ -175,20 +175,24 @@ class TestInteractiveModeIntegration:
         assert any("Already using oci_genai" in str(call) for call in calls)
 
     def test_interactive_coming_soon_commands(self, cli):
-        """Test coming soon commands show proper messages."""
-        # Session command
+        """Test that implemented and coming soon commands work correctly."""
+        # Mock session commands to avoid console output issues
+        cli.session_commands.handle_session_command = Mock(return_value="Session help")
+        
+        # Session command - now implemented
         cli._cmd_session("")
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Session Management" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
+        # Session commands are now implemented, should show help
+        assert any("Session help" in str(call) for call in calls)
 
-        # Theme command
+        # Theme command - still coming soon
         cli.console.reset_mock()
         cli._cmd_theme("")
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Theme Settings" in str(call) for call in calls)
+        assert any("Coming soon" in str(call) for call in calls)
 
-        # Tools command
+        # Tools command - still coming soon
         cli.console.reset_mock()
         cli._cmd_tools("")
         calls = [str(call) for call in cli.console.print.call_args_list]

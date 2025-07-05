@@ -126,14 +126,14 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Available Commands" in str(call) for call in calls)
 
-        # Check that categories are shown
-        assert any("AI Settings" in str(call) for call in calls)
-        assert any("Session" in str(call) for call in calls)
-        assert any("System" in str(call) for call in calls)
-
-        # Check that all commands are mentioned
+        # Check that all commands are mentioned (registry format)
         for cmd_name in cli.commands:
             assert any(f"/{cmd_name}" in str(call) for call in calls)
+        
+        # Check specific commands are present
+        assert any("/help" in str(call) for call in calls)
+        assert any("/session" in str(call) for call in calls)
+        assert any("/export" in str(call) for call in calls)
 
     def test_exit_command(self, cli):
         """Test exit command."""
@@ -247,20 +247,27 @@ class TestInteractiveCLI:
         assert any("not supported in current mode" in str(call) for call in calls)
 
     def test_session_command(self, cli):
-        """Test session command (coming soon)."""
-        # Test without args
-        cli._cmd_session("")
+        """Test session command."""
+        # Mock the session commands to avoid console output issues
+        cli.session_commands.handle_session_command = Mock(return_value="Session help shown")
+        
+        # Test without args - should call session command handler
+        result = cli._cmd_session("")
 
+        # Verify the session command handler was called with empty args
+        cli.session_commands.handle_session_command.assert_called_with([])
+        
+        # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Session Management" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
+        assert any("Session help shown" in str(call) for call in calls)
 
-        # Test with args
+        # Test with args - should pass to session command handler
         cli.console.reset_mock()
-        cli._cmd_session("save")
+        cli.session_commands.handle_session_command.reset_mock()
+        cli._cmd_session("save test")
 
-        calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("not implemented yet" in str(call) for call in calls)
+        # Verify the session command handler was called with the right args
+        cli.session_commands.handle_session_command.assert_called_with(["save", "test"])
 
     def test_theme_command(self, cli):
         """Test theme command (coming soon)."""
@@ -279,20 +286,27 @@ class TestInteractiveCLI:
         assert any("not implemented yet" in str(call) for call in calls)
 
     def test_export_command(self, cli):
-        """Test export command (coming soon)."""
-        # Test without args
-        cli._cmd_export("")
+        """Test export command."""
+        # Mock the export commands to avoid console output issues
+        cli.session_commands.handle_export_command = Mock(return_value="Export help shown")
+        
+        # Test without args - should call export command handler
+        result = cli._cmd_export("")
 
+        # Verify the export command handler was called with empty args
+        cli.session_commands.handle_export_command.assert_called_with([])
+        
+        # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Export Options" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
+        assert any("Export help shown" in str(call) for call in calls)
 
-        # Test with args
+        # Test with args - should pass to export command handler
         cli.console.reset_mock()
+        cli.session_commands.handle_export_command.reset_mock()
         cli._cmd_export("markdown")
 
-        calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("not implemented yet" in str(call) for call in calls)
+        # Verify the export command handler was called with the right args
+        cli.session_commands.handle_export_command.assert_called_with(["markdown"])
 
     def test_tools_command(self, cli):
         """Test tools command implementation."""
