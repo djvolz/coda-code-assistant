@@ -56,6 +56,8 @@ class SessionCommands:
             return self._branch_session(args[1:])
         elif subcommand in ['delete', 'd', 'rm']:
             return self._delete_session(args[1:])
+        elif subcommand in ['delete-all']:
+            return self._delete_all_sessions(args[1:])
         elif subcommand in ['info', 'i']:
             return self._session_info(args[1:])
         elif subcommand in ['search']:
@@ -76,6 +78,7 @@ class SessionCommands:
 [cyan]/session list[/cyan] - List all saved sessions
 [cyan]/session branch [name][/cyan] - Create a branch from current session
 [cyan]/session delete <id|name>[/cyan] - Delete a session
+[cyan]/session delete-all [--auto-only][/cyan] - Delete all/auto sessions
 [cyan]/session info [id][/cyan] - Show session details
 [cyan]/session search <query>[/cyan] - Search sessions
 [cyan]/session rename [id] <new_name>[/cyan] - Rename a session
@@ -442,6 +445,65 @@ class SessionCommands:
             return f"Session renamed to: {new_name}"
         except Exception as e:
             return f"Failed to rename session: {str(e)}"
+    
+    def _delete_all_sessions(self, args: List[str]) -> str:
+        """Delete all sessions or only auto-saved sessions."""
+        # Check for --auto-only flag
+        auto_only = "--auto-only" in args
+        
+        # Get all sessions
+        sessions = self.manager.get_active_sessions(limit=1000)
+        
+        if not sessions:
+            return "No sessions found to delete."
+        
+        # Filter for auto-saved sessions if requested
+        if auto_only:
+            sessions = [s for s in sessions if s.name.startswith("auto-")]
+            if not sessions:
+                return "No auto-saved sessions found to delete."
+        
+        # Show what will be deleted
+        session_count = len(sessions)
+        session_type = "auto-saved" if auto_only else "all"
+        
+        self.console.print(f"\n[yellow]Warning:[/yellow] This will delete {session_count} {session_type} session(s):")
+        
+        # Show first 10 sessions
+        for i, session in enumerate(sessions[:10]):
+            self.console.print(f"  • {session.name} ({session.id[:8]}...)")
+        
+        if len(sessions) > 10:
+            self.console.print(f"  ... and {len(sessions) - 10} more")
+        
+        # Confirm deletion
+        if not Confirm.ask(f"\n[red]Delete {session_count} {session_type} session(s)?[/red]", default=False):
+            return "Deletion cancelled."
+        
+        # Delete sessions
+        deleted_count = 0
+        failed_count = 0
+        
+        # Clear current session if it's being deleted
+        current_ids = [s.id for s in sessions]
+        if self.current_session_id in current_ids:
+            self.current_session_id = None
+            self.current_messages = []
+            self._has_user_message = False
+        
+        with self.console.status(f"[cyan]Deleting {session_count} sessions...[/cyan]", spinner="dots"):
+            for session in sessions:
+                try:
+                    self.manager.delete_session(session.id)
+                    deleted_count += 1
+                except Exception as e:
+                    self.console.print(f"[red]Failed to delete {session.name}: {str(e)}[/red]")
+                    failed_count += 1
+        
+        if failed_count > 0:
+            return f"Deleted {deleted_count} session(s), {failed_count} failed."
+        else:
+            return f"Successfully deleted {deleted_count} {session_type} session(s)."
     
     def _find_session(self, session_ref: str) -> Optional[Session]:
         """Find session by ID or name."""
