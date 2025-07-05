@@ -104,6 +104,19 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     if user_input.startswith("/"):
         try:
             if await cli.process_slash_command(user_input):
+                # Check if session was loaded and restore conversation history
+                loaded_messages = cli.session_commands.get_loaded_messages_for_cli()
+                if loaded_messages:
+                    # Replace current messages with loaded session messages
+                    messages.clear()
+                    messages.extend(loaded_messages)
+                    console.print(f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]")
+                
+                # Check if conversation was cleared
+                if cli.session_commands.was_conversation_cleared():
+                    messages.clear()
+                    console.print(f"[dim]Cleared conversation history[/dim]")
+                
                 return True
         except (ValueError, AttributeError) as e:
             console.print(f"[red]Invalid command: {e}[/red]")
@@ -126,6 +139,17 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
 
     # Add user message
     messages.append(Message(role=Role.USER, content=user_input))
+    
+    # Track message in session manager
+    cli.session_commands.add_message(
+        role="user",
+        content=user_input,
+        metadata={
+            "mode": cli.current_mode.value,
+            "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
+            "model": cli.current_model
+        }
+    )
 
     # Choose thinking message based on mode
     thinking_messages = {
@@ -212,6 +236,18 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     # Add assistant message to history (even if interrupted)
     if full_response or interrupted:
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
+        
+        # Track assistant message in session manager
+        cli.session_commands.add_message(
+            role="assistant",
+            content=full_response,
+            metadata={
+                "mode": cli.current_mode.value,
+                "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
+                "model": cli.current_model,
+                "interrupted": interrupted
+            }
+        )
     console.print("\n")  # Add spacing after response
 
     return True  # Continue loop
