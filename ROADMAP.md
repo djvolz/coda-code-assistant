@@ -235,25 +235,26 @@ None currently - all bugs have been resolved!
   - [ ] Maintain parent-child relationships for full history
   - [ ] Transparent access to archived content via search
   
-- [x] **User Control Options** ✅ MOSTLY COMPLETED
+- [x] **User Control Options** ✅ COMPLETED
   - [x] `/session rename` - Rename auto-created sessions
   - [x] `--no-save` CLI flag - Opt out for sensitive conversations
   - [x] Config option: `auto_save_enabled = true/false` (uses existing `autosave`)
-  - [ ] Bulk delete options for privacy
+  - [x] Bulk delete options for privacy (`/session delete-all [--auto-only]`)
   
 - [x] **Additional Features** ✅ COMPLETED
   - [x] `/session last` - Load most recent session
   - [x] `--resume` CLI flag - Auto-load last session on startup
   
-- [ ] **Performance Optimizations**
+- [x] **Performance Optimizations** ✅ PARTIALLY COMPLETED
   - [ ] Batch message inserts for efficiency
   - [ ] Background save queue to prevent UI blocking
-  - [ ] Index on created_at for fast queries
+  - [x] Index on created_at for fast queries
+  - [x] Additional indexes for name, accessed_at, parent_id, and tags
   - [ ] Lazy loading of historical messages
   
-- [ ] **Privacy & Disclosure**
-  - [ ] Clear notification about auto-save on first run
-  - [ ] Easy bulk delete commands
+- [x] **Privacy & Disclosure** ✅ MOSTLY COMPLETED
+  - [x] Clear notification about auto-save on first run
+  - [x] Easy bulk delete commands (`/session delete-all`)
   - [ ] Optional encryption for stored sessions
   - [x] Respect XDG data directories (already implemented)
 
