@@ -177,18 +177,18 @@ None currently - all bugs have been resolved!
 
 ## Phase 4: Session Management
 
-**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 are being developed in parallel on separate branches. To minimize merge conflicts:
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 were developed in parallel. Phase 5 is now complete and merged.
 - Phase 4 branch: `feature/session-management` (focuses on persistence layer)
-- Phase 5 branch: `feature/mcp-tools` (focuses on tool execution)
-- Integration points: Session schema will need `tool_invocations` table from Phase 5
-- Merge strategy: Phase 4 merges first, then Phase 5 rebases and adds tool logging
+- Phase 5 branch: `feature/mcp-tools` ✅ MERGED
+- **Critical Integration**: Phase 4 must implement AI-to-tool integration for Phase 5 tools to work in conversation
+- Session schema needs `tool_invocations` table for storing tool execution history
 
 ### 4.1 Persistence Layer
 - [ ] SQLite database for sessions (stored in `~/.cache/coda/sessions.db`)
 - [ ] Message storage with metadata
 - [ ] Full-text search across sessions
 - [ ] Session branching and merging
-- [ ] **API Design**: Create clear interfaces that Phase 5 can mock
+- [ ] **Tool Integration**: Store tool invocations and results in session history
 
 ### 4.2 Session Commands
 - [ ] `/session` (`/s`) - Save/load/branch conversations
@@ -208,6 +208,14 @@ None currently - all bugs have been resolved!
 - [ ] File reference tracking (@mentions)
 - [ ] Context summarization for long sessions
 - [ ] Project-aware context
+
+### 4.4 AI-to-Tool Integration (Critical for Phase 5 tools)
+- [ ] Function calling protocol for OCI provider (Cohere models support this)
+- [ ] Parse AI responses for tool requests
+- [ ] Execute tools based on AI instructions
+- [ ] Include tool results in conversation context
+- [ ] Store tool invocations in session database
+- [ ] Handle tool errors gracefully in conversation flow
 
 ## Phase 5: Tool Integration (MCP)
 
@@ -429,6 +437,12 @@ None currently - all bugs have been resolved!
 - ⏸️ External MCP server implementation (deferred)
 - ⏸️ Advanced permission system (deferred)
 
+**Integration Note**: Tools are currently "read-only" - viewable via `/tools` commands but not executable through AI conversation. Full AI-to-tool integration requires Phase 4 session management for:
+- Function calling protocol implementation
+- Tool result storage in conversation history
+- AI request parsing and tool execution
+- OCI provider supports function calling (Cohere models) but integration pending
+
 ### 2025.7.15 - Advanced Features (Target: July 15)
 - Multi-modal support (image understanding)
 - Document support (PDF, Word, PowerPoint, Excel)
@@ -440,12 +454,13 @@ None currently - all bugs have been resolved!
 
 **Current Status**: Phases 1, 2, 3, and 5 are complete. Phase 4 in progress on parallel branch.
 
-1. **Immediate Priority - Phase 4**: Session Management (Target: July 10)
+1. **Immediate Priority - Phase 4**: Session Management with AI-Tool Integration (Target: July 10)
    - SQLite database for sessions
    - Message persistence with metadata
    - Session branching and search
    - Full-text search across sessions
    - Implementation of `/session` command with all subcommands
+   - **CRITICAL**: AI-to-tool integration to enable Phase 5 tools in conversation
    
 2. **Completed - Phase 5**: Tool Integration (MCP) ✅ COMPLETED (July 5)
    - ✅ 12 core tools across 4 categories (filesystem, system, web, git)
@@ -453,6 +468,7 @@ None currently - all bugs have been resolved!
    - ✅ `/tools` command with full CLI integration
    - ✅ Safety controls and permission management
    - ✅ Extensive test coverage
+   - ⚠️ Tools are "read-only" until Phase 4 integration completes
    
 3. **Next - Phase 6**: Advanced Features (Target: July 15)
    - Multi-modal support (image understanding)

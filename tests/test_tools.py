@@ -357,19 +357,18 @@ class TestWebTools:
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.headers = {"content-type": "text/html"}
-        mock_response.read = AsyncMock(return_value=b"<html><body><h1>Test Page</h1></body></html>")
+        mock_response.read.return_value = b"<html><body><h1>Test Page</h1></body></html>"
         mock_response.url = "http://example.com"
         
-        mock_get = AsyncMock()
-        mock_get.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_get.__aexit__ = AsyncMock(return_value=False)
+        # Mock session get context manager
+        mock_session = MagicMock()
+        mock_session.get.return_value.__aenter__.return_value = mock_response
+        mock_session.get.return_value.__aexit__.return_value = False
         
-        mock_session = AsyncMock()
-        mock_session.get.return_value = mock_get
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=False)
-        
-        with patch("aiohttp.ClientSession", return_value=mock_session):
+        with patch("aiohttp.ClientSession") as MockClientSession:
+            MockClientSession.return_value.__aenter__.return_value = mock_session
+            MockClientSession.return_value.__aexit__.return_value = False
+            
             tool = FetchUrlTool()
             result = await tool.execute({
                 "url": "http://example.com",
@@ -387,25 +386,24 @@ class TestWebTools:
         # Mock search response
         mock_response = AsyncMock()
         mock_response.status = 200
-        mock_response.json = AsyncMock(return_value={
+        mock_response.json.return_value = {
             "Answer": "Test answer",
             "AbstractText": "Test abstract",
             "RelatedTopics": [
                 {"Text": "Related topic 1", "FirstURL": "http://example.com/1"},
                 {"Text": "Related topic 2", "FirstURL": "http://example.com/2"}
             ]
-        })
+        }
         
-        mock_get = AsyncMock()
-        mock_get.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_get.__aexit__ = AsyncMock(return_value=False)
+        # Mock session get context manager
+        mock_session = MagicMock()
+        mock_session.get.return_value.__aenter__.return_value = mock_response
+        mock_session.get.return_value.__aexit__.return_value = False
         
-        mock_session = AsyncMock()
-        mock_session.get.return_value = mock_get
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=False)
-        
-        with patch("aiohttp.ClientSession", return_value=mock_session):
+        with patch("aiohttp.ClientSession") as MockClientSession:
+            MockClientSession.return_value.__aenter__.return_value = mock_session
+            MockClientSession.return_value.__aexit__.return_value = False
+            
             tool = SearchWebTool()
             result = await tool.execute({
                 "query": "test query",

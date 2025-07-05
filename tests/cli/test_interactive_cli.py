@@ -295,20 +295,20 @@ class TestInteractiveCLI:
         assert any("not implemented yet" in str(call) for call in calls)
 
     def test_tools_command(self, cli):
-        """Test tools command (coming soon)."""
-        # Test without args
+        """Test tools command implementation."""
+        # Test without args (should show main help)
         cli._cmd_tools("")
 
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("MCP Tools Management" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
+        assert any("🔧 Coda Tools System" in str(call) for call in calls)
 
         # Test with args
         cli.console.reset_mock()
         cli._cmd_tools("list")
 
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("not implemented yet" in str(call) for call in calls)
+        # Should show tools list, not "not implemented yet" since it's fully implemented
+        assert len(calls) > 0  # Should have some output from tools list
 
     @pytest.mark.asyncio
     async def test_slash_command_aliases(self, cli):
