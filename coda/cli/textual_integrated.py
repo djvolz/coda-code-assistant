@@ -24,13 +24,11 @@ class ProviderCommands(CommandProvider):
         """Search for provider commands."""
         matcher = self.matcher(query)
         
-        app = self.app
-        if not hasattr(app, '_provider_factory'):
-            return
-            
-        # Get available providers
-        providers = app._provider_factory.list_providers()
+        # Get available providers from registry
+        from coda.providers.registry import ProviderRegistry
+        providers = ProviderRegistry.list_providers()
         
+        app = self.app
         for provider_name in providers:
             if matcher.match(f"provider:{provider_name}"):
                 yield Hit(
