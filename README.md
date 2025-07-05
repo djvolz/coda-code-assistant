@@ -32,13 +32,12 @@ uv run coda
 
 ## 📖 Documentation
 
-For comprehensive documentation, visit our **[Wiki](https://github.com/dannyl1u/coda-code-assistant/wiki)**:
+For comprehensive documentation, visit our **[Wiki](https://github.com/djvolz/coda-code-assistant/wiki)**:
 
-- **[Getting Started Guide](https://github.com/dannyl1u/coda-code-assistant/wiki/Getting-Started)** - Installation and setup
-- **[User Guide](https://github.com/dannyl1u/coda-code-assistant/wiki/User-Guide)** - How to use Coda effectively
-- **[AI Modes](https://github.com/dannyl1u/coda-code-assistant/wiki/AI-Modes)** - Specialized AI personalities
-- **[Configuration](https://github.com/dannyl1u/coda-code-assistant/wiki/Configuration)** - Provider setup and customization
-- **[Troubleshooting](https://github.com/dannyl1u/coda-code-assistant/wiki/Troubleshooting)** - Common issues and solutions
+- **[Getting Started Guide](https://github.com/djvolz/coda-code-assistant/wiki/Getting-Started)** - Installation and setup
+- **[AI Modes](https://github.com/djvolz/coda-code-assistant/wiki/AI-Modes)** - Specialized AI personalities
+- **[Development Guide](https://github.com/djvolz/coda-code-assistant/wiki/Development-Guide)** - Contributing and development workflow
+- **[Troubleshooting](https://github.com/djvolz/coda-code-assistant/wiki/Troubleshooting)** - Common issues and solutions
 
 ## 🎯 Key Features
 
@@ -59,10 +58,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- [Full Documentation](https://github.com/dannyl1u/coda-code-assistant/wiki)
-- [Issue Tracker](https://github.com/dannyl1u/coda-code-assistant/issues)
-- [Discussions](https://github.com/dannyl1u/coda-code-assistant/discussions)
-- [Roadmap](https://github.com/dannyl1u/coda-code-assistant/wiki/Roadmap)
+- [Full Documentation](https://github.com/djvolz/coda-code-assistant/wiki)
+- [Issue Tracker](https://github.com/djvolz/coda-code-assistant/issues)
+- [Discussions](https://github.com/djvolz/coda-code-assistant/discussions)
+- [Roadmap](https://github.com/djvolz/coda-code-assistant/blob/main/ROADMAP.md)
 
 ---
 
