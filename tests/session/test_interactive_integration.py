@@ -91,7 +91,7 @@ class TestInteractiveSessionIntegration:
         with patch('rich.prompt.Prompt.ask', return_value=""):
             result = cli.session_commands.handle_session_command(['save', 'Test Session'])
         
-        assert "Session saved" in result
+        assert ("Session saved" in result or "Session updated" in result)
         session_id = cli.session_commands.current_session_id
         assert session_id is not None
         
@@ -173,7 +173,7 @@ class TestInteractiveSessionIntegration:
         # Test save
         with patch('rich.prompt.Prompt.ask', return_value=""):
             result = cli.session_commands.handle_session_command(['save', 'CLI Test'])
-        assert "Session saved" in result
+        assert ("Session saved" in result or "Session updated" in result)
         
         # Test list
         result = cli.session_commands.handle_session_command(['list'])

@@ -230,6 +230,11 @@ class TestSessionDatabase:
             db.add(session)
             db.commit()
         
+        # Force WAL checkpoint to ensure data is written to main database
+        with temp_db.engine.connect() as conn:
+            conn.execute(text("PRAGMA wal_checkpoint(TRUNCATE)"))
+            conn.commit()
+        
         # Create backup
         with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
             backup_path = Path(f.name)

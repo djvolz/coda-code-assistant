@@ -42,6 +42,7 @@ class ContextManager:
             "gpt-4": 8192,
             "gpt-4-32k": 32768,
             "gpt-4-turbo": 128000,
+            "gpt-4-turbo-preview": 128000,
             "gpt-3.5-turbo": 4096,
             "gpt-3.5-turbo-16k": 16384,
             
@@ -187,7 +188,10 @@ class ContextManager:
         # Sort by original order (assuming messages have indices or timestamps)
         # For now, we'll maintain relative order
         
-        return optimized, True
+        # Check if any truncation occurred
+        was_truncated = len(optimized) < len(messages)
+        
+        return optimized, was_truncated
     
     def create_summary_message(
         self,

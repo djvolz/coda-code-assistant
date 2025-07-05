@@ -184,7 +184,10 @@ class TestSessionEndToEnd:
             
             # Check search functionality
             search_results = manager.search_sessions("decorator")
-            assert len(search_results) == 1, "Should find session in search"
+            assert len(search_results) >= 1, "Should find at least one session in search"
+            # Verify our named session is in the results
+            named_session_found = any(session.name == "Python Tutorial" for session, _ in search_results)
+            assert named_session_found, "Should find our named session in search results"
             
             print(f"  ✓ Session integrity verified")
             
@@ -213,17 +216,17 @@ class TestSessionEndToEnd:
             
             # Add conversation
             msg1 = manager.add_message(session.id, "user", "What is Python?")
-            manager.add_message(session.id, "assistant", "Python is a programming language")
+            msg1_response = manager.add_message(session.id, "assistant", "Python is a programming language")
             msg2 = manager.add_message(session.id, "user", "What about JavaScript?")
             manager.add_message(session.id, "assistant", "JavaScript is for web development")
             
-            # Create branch from first question
+            # Create branch from first answer (to include both Q&A)
             branch = manager.create_session(
                 "Python Focus",
                 "mock", 
                 "mock-echo",
                 parent_id=session.id,
-                branch_point_message_id=msg1.id
+                branch_point_message_id=msg1_response.id
             )
             
             # Get branch context

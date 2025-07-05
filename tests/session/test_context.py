@@ -57,7 +57,7 @@ class TestContextManager:
         for i in range(20):
             messages.append({
                 'role': 'user' if i % 2 == 0 else 'assistant',
-                'content': f'Message {i}: ' + 'x' * 100
+                'content': f'Message {i}: ' + 'x' * 200  # Increased from 100 to 200
             })
         
         # Add system message

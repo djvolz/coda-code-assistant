@@ -39,13 +39,8 @@ class OllamaProvider(BaseProvider):
 
     def _convert_messages(self, messages: list[Message]) -> list[dict]:
         """Convert our Message objects to Ollama format."""
-        return [
-            {
-                "role": msg.role.value,
-                "content": msg.content,
-            }
-            for msg in messages
-        ]
+        from .utils import convert_messages_basic
+        return convert_messages_basic(messages)
 
     def _extract_model_info(self, model_data: dict) -> Model:
         """Extract model information from Ollama model data."""
