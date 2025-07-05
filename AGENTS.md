@@ -58,6 +58,26 @@ ALWAYS run tests before committing:
 - Mock external services (OCI, APIs)
 - Aim for >80% coverage on new code
 
+### Mock Provider for Testing
+
+**IMPORTANT**: Use `MockProvider` for all tests requiring AI responses. Never use real providers in tests.
+
+```python
+from coda.providers import MockProvider, Message, Role
+
+# Use MockProvider for predictable, offline testing
+provider = MockProvider()
+response = provider.chat(messages, "mock-echo")
+```
+
+**Key Benefits**:
+- ✅ No API keys or network required
+- ✅ Predictable, deterministic responses
+- ✅ Context-aware conversation memory
+- ✅ Perfect for session management testing
+
+**Reference**: See [docs/mock_provider_reference.md](docs/mock_provider_reference.md) for complete behavior patterns and testing examples.
+
 ## Provider Implementation
 
 When adding new providers:
