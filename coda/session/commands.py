@@ -69,7 +69,14 @@ class SessionCommands:
     
     def _show_session_help(self) -> str:
         """Show session command help."""
-        help_text = """
+        from coda.cli.command_registry import CommandRegistry
+        
+        session_cmd = CommandRegistry.get_command("session")
+        if session_cmd:
+            help_text = CommandRegistry.get_command_help("session")
+        else:
+            # Fallback if registry not available
+            help_text = """
 [bold]Session Management Commands[/bold]
 
 [cyan]/session save [name][/cyan] - Save current conversation
@@ -85,6 +92,7 @@ class SessionCommands:
 
 [dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r[/dim]
 """
+        
         self.console.print(Panel(help_text, title="Session Help", border_style="blue"))
         return None
     
