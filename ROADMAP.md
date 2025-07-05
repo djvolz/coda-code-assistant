@@ -187,11 +187,11 @@ None currently - all bugs have been resolved!
 - Merge strategy: Phase 4 merges first, then Phase 5 rebases and adds tool logging
 
 ### 4.1 Persistence Layer ✅ COMPLETED
-- [x] SQLite database for sessions (stored in `~/.local/share/coda/sessions/sessions.db`)
+- [x] SQLite database for sessions (stored in `~/.cache/coda/sessions.db`)
 - [x] Message storage with metadata and provider/model tracking
 - [x] Full-text search across sessions with FTS5
 - [x] Session branching with parent-child relationships
-- [x] Automatic database migrations and backups
+- [x] Database initialization with schema creation
 - [x] Tags and session metadata support
 
 ### 4.2 Session Commands ✅ COMPLETED
@@ -501,7 +501,7 @@ None currently - all bugs have been resolved!
 **Current Status**: Phases 1, 2, 3, and 4 are complete. Phase 4.5 (Auto-Save Enhancement) pending. Ready to begin Phase 5.
 
 1. **Completed - Phase 4**: Session Management ✅
-   - SQLite database with automatic migrations
+   - SQLite database stored in `~/.cache/coda/sessions.db`
    - Message persistence with provider/model metadata
    - Session branching with parent-child relationships
    - Full-text search using SQLite FTS5

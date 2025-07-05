@@ -253,7 +253,7 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     return True  # Continue loop
 
 
-async def run_interactive_session(provider: str, model: str, debug: bool, no_save: bool):
+async def run_interactive_session(provider: str, model: str, debug: bool, no_save: bool, resume: bool):
     """Run the enhanced interactive session."""
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
@@ -271,6 +271,16 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
     else:
         # Use config value, defaulting to True if not specified
         cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
+    
+    # Load last session if requested
+    if resume:
+        console.print("\n[cyan]Resuming last session...[/cyan]")
+        result = cli.session_commands._load_last_session()
+        if result:  # Error message
+            console.print(f"[yellow]{result}[/yellow]")
+        else:
+            # Successfully loaded, show a separator
+            console.print("\n[dim]─" * 50 + "[/dim]\n")
 
     # Apply debug override
     if debug:
@@ -300,7 +310,22 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
         cli.available_models = unique_models
 
         # Interactive chat loop
-        messages = []
+        # Initialize messages - use loaded messages if available
+        if resume and hasattr(cli.session_commands, '_messages_loaded') and cli.session_commands._messages_loaded:
+            # Import Message and Role for conversion
+            from coda.providers import Message, Role
+            
+            # Convert loaded messages to Message objects
+            messages = []
+            for msg in cli.session_commands.current_messages:
+                messages.append(Message(
+                    role=Role.USER if msg['role'] == 'user' else Role.ASSISTANT,
+                    content=msg['content']
+                ))
+            # Reset the flag
+            cli.session_commands._messages_loaded = False
+        else:
+            messages = []
 
         while True:
             continue_chat = await _handle_chat_interaction(
@@ -362,8 +387,9 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
     help="Initial developer mode",
 )
 @click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
+@click.option("--resume", is_flag=True, help="Resume the most recent session")
 @click.version_option(version=__version__, prog_name="coda")
-def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool):
+def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool):
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
@@ -380,7 +406,7 @@ def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode
         console.print(f"Would execute: {one_shot}")
     else:
         # Run interactive session
-        asyncio.run(run_interactive_session(provider, model, debug, no_save))
+        asyncio.run(run_interactive_session(provider, model, debug, no_save, resume))
 
 
 if __name__ == "__main__":
