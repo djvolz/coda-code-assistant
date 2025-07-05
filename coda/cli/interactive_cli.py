@@ -38,6 +38,37 @@ class SlashCommandCompleter(Completer):
     def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
         """Load command options from configuration file."""
         config_path = Path(__file__).parent / "commands_config.yaml"
+        
+        # First try to use the command registry
+        try:
+            from coda.cli.command_registry import CommandRegistry
+            registry_options = CommandRegistry.get_autocomplete_options()
+            # Add any additional options not in registry
+            registry_options.update({
+                "provider": [
+                    ("oci_genai", "Oracle Cloud Infrastructure GenAI"),
+                    ("ollama", "Local models via Ollama"),
+                    ("openai", "OpenAI GPT models (coming soon)"),
+                    ("litellm", "100+ providers via LiteLLM"),
+                ],
+                "theme": [
+                    ("default", "Default color scheme"),
+                    ("dark", "Dark mode optimized"),
+                    ("light", "Light terminal theme"),
+                    ("minimal", "Minimal colors"),
+                    ("vibrant", "High contrast colors"),
+                ],
+                "tools": [
+                    ("list", "List available MCP tools"),
+                    ("enable", "Enable specific tools"),
+                    ("disable", "Disable specific tools"),
+                    ("config", "Configure tool settings"),
+                    ("status", "Show tool status"),
+                ],
+            })
+            return registry_options
+        except ImportError:
+            pass
 
         # Fallback to hardcoded options if config file not found
         default_options = {
