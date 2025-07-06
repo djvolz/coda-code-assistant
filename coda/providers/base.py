@@ -12,6 +12,34 @@ class Role(str, Enum):
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
+    TOOL = "tool"  # For tool response messages
+
+
+@dataclass
+class Tool:
+    """Tool definition for function calling."""
+    
+    name: str
+    description: str
+    parameters: dict  # JSON Schema format
+    
+
+@dataclass
+class ToolCall:
+    """Tool call request from the model."""
+    
+    id: str
+    name: str
+    arguments: dict
+    
+
+@dataclass
+class ToolResult:
+    """Result from executing a tool."""
+    
+    tool_call_id: str
+    content: str
+    is_error: bool = False
 
 
 @dataclass
@@ -21,6 +49,8 @@ class Message:
     role: Role
     content: str
     name: str | None = None
+    tool_calls: list[ToolCall] | None = None
+    tool_call_id: str | None = None  # For tool response messages
     metadata: dict = field(default_factory=dict)
 
 
@@ -31,6 +61,7 @@ class ChatCompletion:
     content: str
     model: str
     finish_reason: str | None = None
+    tool_calls: list[ToolCall] | None = None
     usage: dict | None = None
     metadata: dict = field(default_factory=dict)
 
@@ -82,6 +113,7 @@ class BaseProvider(ABC):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> ChatCompletion:
         """
@@ -110,6 +142,7 @@ class BaseProvider(ABC):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> Iterator[ChatCompletionChunk]:
         """
