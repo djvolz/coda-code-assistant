@@ -9,6 +9,7 @@ from coda.providers import BaseProvider, Message, Model, Role
 
 from .basic_commands import BasicCommandProcessor
 from .shared import DeveloperMode
+from .shared.modes import get_system_prompt
 
 
 class ChatSession:
@@ -68,7 +69,7 @@ class ChatSession:
         self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
 
         # Get system prompt based on mode
-        system_prompt = self.cmd_processor.get_system_prompt()
+        system_prompt = get_system_prompt(self.cmd_processor.current_mode)
 
         messages = []
         if system_prompt:
@@ -116,7 +117,7 @@ class ChatSession:
                 continue
 
             # Get system prompt based on mode
-            system_prompt = self.cmd_processor.get_system_prompt()
+            system_prompt = get_system_prompt(self.cmd_processor.current_mode)
 
             # Prepare messages with system prompt
             chat_messages = []

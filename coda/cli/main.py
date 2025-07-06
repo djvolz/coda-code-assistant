@@ -12,6 +12,14 @@ except ImportError:
     __version__ = "dev"
 
 from coda.configuration import get_config
+from coda.constants import (
+    CONSOLE_STYLE_SUCCESS,
+    CONSOLE_STYLE_WARNING,
+    CONSOLE_STYLE_INFO,
+    CONSOLE_STYLE_DIM,
+    CONSOLE_STYLE_BOLD,
+    PANEL_BORDER_STYLE,
+)
 
 from .chat_session import ChatSession
 from .error_handler import CLIErrorHandler
@@ -69,7 +77,7 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
             return
         except ImportError:
             # Fall back to basic mode if prompt-toolkit is not available
-            console.print("[yellow]Note: Interactive mode not available, using basic mode[/yellow]")
+            console.print(f"{CONSOLE_STYLE_WARNING}Note: Interactive mode not available, using basic mode[/]")
 
     # Basic mode
     run_basic_mode(provider, model, config, one_shot, mode, error_handler)
@@ -94,7 +102,7 @@ def run_basic_mode(
 
         # Select model
         selected_model = provider_manager.select_model(unique_models, model, bool(one_shot))
-        console.print(f"[green]Model:[/green] {selected_model}")
+        console.print(f"{CONSOLE_STYLE_SUCCESS}Model:[/] {selected_model}")
 
         # Create chat session
         session = ChatSession(
@@ -131,12 +139,12 @@ def show_welcome_banner(one_shot: str):
         mode_text = "Basic mode (TTY not detected)"
 
     welcome_text = Text.from_markup(
-        "[bold cyan]Coda[/bold cyan] - Code Assistant\n"
-        f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
-        f"[dim]{mode_text}[/dim]"
+        f"{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Coda[/] - Code Assistant\n"
+        f"{CONSOLE_STYLE_DIM}Multi-provider AI coding companion v{__version__}[/]\n"
+        f"{CONSOLE_STYLE_DIM}{mode_text}[/]"
     )
 
-    console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
+    console.print(Panel(welcome_text, title="Welcome", border_style=PANEL_BORDER_STYLE))
 
 
 if __name__ == "__main__":

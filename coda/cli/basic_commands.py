@@ -84,6 +84,3 @@ class BasicCommandProcessor(CommandHandler):
 
         return CommandResult.HANDLED
 
-    def get_system_prompt(self) -> str:
-        """Get system prompt based on current mode."""
-        return get_system_prompt(self.current_mode)
