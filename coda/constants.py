@@ -59,7 +59,7 @@ FIRST_RUN_MARKER_PATH = get_data_dir() / FIRST_RUN_MARKER
 
 # Project-specific paths
 PROJECT_CONFIG_DIR = ".coda"
-PROJECT_CONFIG_FILE = PROJECT_CONFIG_DIR + "/" + CONFIG_FILE_NAME
+PROJECT_CONFIG_FILE = str(Path(PROJECT_CONFIG_DIR) / CONFIG_FILE_NAME)
 
 # System config path (rarely used)
 SYSTEM_CONFIG_PATH = Path("/etc") / CONFIG_DIR_NAME / CONFIG_FILE_NAME
@@ -199,7 +199,11 @@ HELP_COMPARTMENT_ID = """Please set it via one of these methods:
 1. Environment variable: export OCI_COMPARTMENT_ID='your-compartment-id'
 2. Coda config file: ~/.config/coda/config.toml"""
 
-# Prompt toolkit styles - will be moved to theme config later
+# Style constants
+# NOTE: These logically belong in themes.py but are kept here to avoid circular imports
+# since themes.py imports theme names from constants.py
+
+# Prompt toolkit styles
 PROMPT_STYLE_SELECTED = "bg:#00aa00 #ffffff bold"
 PROMPT_STYLE_SEARCH = "bg:#444444 #ffffff"
 PROMPT_STYLE_TITLE = "#00aa00 bold"
