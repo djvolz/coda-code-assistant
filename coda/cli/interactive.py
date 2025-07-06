@@ -70,7 +70,7 @@ Your conversations will NOT be saved automatically.
 • Set {CONSOLE_STYLE_INFO}autosave = true[/] in ~/.config/coda/config.toml"""
         
         console.print("\n")
-        console.print(Panel(notification, title="First Run", border_style="blue"))
+        console.print(Panel(notification, title="First Run", border_style=PANEL_BORDER_STYLE))
         console.print("\n")
         
         # Create marker file
@@ -83,12 +83,12 @@ Your conversations will NOT be saved automatically.
 
 async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
     """Initialize and connect to the provider."""
-    console.print(f"\n[green]Provider:[/green] {provider}")
-    console.print(f"[yellow]Initializing {provider}...[/yellow]")
+    console.print(f"\n{CONSOLE_STYLE_SUCCESS}Provider:[/] {provider}")
+    console.print(f"{CONSOLE_STYLE_WARNING}Initializing {provider}...[/]")
 
     # Create provider instance
     provider_instance = factory.create(provider)
-    console.print(f"[green]✓ Connected to {provider}[/green]")
+    console.print(f"{CONSOLE_STYLE_SUCCESS}✓ Connected to {provider}[/]")
 
     return provider_instance
 
@@ -97,7 +97,7 @@ async def _get_chat_models(provider_instance, console: Console):
     """Get and filter available chat models from the provider."""
     # List models
     models = provider_instance.list_models()
-    console.print(f"[green]✓ Found {len(models)} available models[/green]")
+    console.print(f"{CONSOLE_STYLE_SUCCESS}✓ Found {len(models)} available models[/]")
 
     # Filter for chat models - different providers use different indicators
     chat_models = [
@@ -133,14 +133,14 @@ async def _select_model(unique_models, model: str, console: Console):
         model = await selector.select_model_interactive()
 
         if not model:
-            console.print("\n[yellow]No model selected. Exiting.[/yellow]")
+            console.print(f"\n{CONSOLE_STYLE_WARNING}No model selected. Exiting.[/]")
             return None
 
-    console.print(f"[green]Model:[/green] {model}")
-    console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
-    console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
-    console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
-    console.print("[dim]Press Ctrl+R to search command history[/dim]\n")
+    console.print(f"{CONSOLE_STYLE_SUCCESS}Model:[/] {model}")
+    console.print(f"{CONSOLE_STYLE_DIM}Found {len(unique_models)} unique models available[/]")
+    console.print(f"\n{CONSOLE_STYLE_DIM}Type /help for commands, /exit or Ctrl+D to quit[/]")
+    console.print(f"{CONSOLE_STYLE_DIM}Press Ctrl+C to clear input or interrupt AI response[/]")
+    console.print(f"{CONSOLE_STYLE_DIM}Press Ctrl+R to search command history[/]\n")
 
     return model
 
@@ -153,10 +153,10 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     try:
         user_input = await cli.get_input()
     except (KeyboardInterrupt, EOFError) as e:
-        console.print(f"[red]Input interrupted: {e}[/red]")
+        console.print(f"{CONSOLE_STYLE_ERROR}Input interrupted: {e}[/]")
         return True  # Continue loop
     except Exception as e:
-        console.print(f"[red]Unexpected error getting input: {e}[/red]")
+        console.print(f"{CONSOLE_STYLE_ERROR}Unexpected error getting input: {e}[/]")
         return True  # Continue loop
 
     # Skip empty input (from Ctrl+C)
@@ -173,19 +173,19 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Replace current messages with loaded session messages
                     messages.clear()
                     messages.extend(loaded_messages)
-                    console.print(f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]")
+                    console.print(f"{CONSOLE_STYLE_DIM}Restored {len(loaded_messages)} messages to conversation history[/]")
                 
                 # Check if conversation was cleared
                 if cli.session_commands.was_conversation_cleared():
                     messages.clear()
-                    console.print(f"[dim]Cleared conversation history[/dim]")
+                    console.print(f"{CONSOLE_STYLE_DIM}Cleared conversation history[/]")
                 
                 return True
         except (ValueError, AttributeError) as e:
-            console.print(f"[red]Invalid command: {e}[/red]")
+            console.print(f"{CONSOLE_STYLE_ERROR}Invalid command: {e}[/]")
             return True
         except Exception as e:
-            console.print(f"[red]Error processing command: {e}[/red]")
+            console.print(f"{CONSOLE_STYLE_ERROR}Error processing command: {e}[/]")
             return True
 
     # Check for multiline indicator
@@ -245,7 +245,7 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     try:
         # Create a status spinner for thinking animation
         # Using "dots" spinner style - other options: "line", "star", "bouncingBar", "arrow3"
-        with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
+        with console.status(f"{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}{thinking_msg}...[/]", spinner="dots") as status:
             # Get generation parameters from config or defaults
             if not config:
                 from coda.configuration import get_config
@@ -267,13 +267,13 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Stop the spinner when we get the first chunk
                     status.stop()
                     # Just print the assistant label
-                    console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                    console.print(f"\n{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Assistant:[/] ", end="")
                     first_chunk = False
 
                 # Check for interrupt
                 if cli.interrupt_event.is_set():
                     interrupted = True
-                    console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                    console.print(f"\n\n{CONSOLE_STYLE_WARNING}Response interrupted by user[/]")
                     break
 
                 # Stream the response as plain text
@@ -284,12 +284,12 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         if full_response:
             console.print()  # Ensure we end on a new line
     except (ConnectionError, TimeoutError) as e:
-        console.print(f"\n\n[red]Network error during streaming: {e}[/red]")
+        console.print(f"\n\n{CONSOLE_STYLE_ERROR}Network error during streaming: {e}[/]")
         return True  # Continue loop
     except Exception:
         if cli.interrupt_event.is_set():
             interrupted = True
-            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+            console.print(f"\n\n{CONSOLE_STYLE_WARNING}Response interrupted by user[/]")
         else:
             raise
     finally:
@@ -340,13 +340,13 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
     
     # Load last session if requested
     if resume:
-        console.print("\n[cyan]Resuming last session...[/cyan]")
+        console.print(f"\n{CONSOLE_STYLE_INFO}Resuming last session...[/]")
         result = cli.session_commands._load_last_session()
         if result:  # Error message
-            console.print(f"[yellow]{result}[/yellow]")
+            console.print(f"{CONSOLE_STYLE_WARNING}{result}[/]")
         else:
             # Successfully loaded, show a separator
-            console.print("\n[dim]─" * 50 + "[/dim]\n")
+            console.print(f"\n{CONSOLE_STYLE_DIM}{'─' * 50}[/]\n")
 
     # Apply debug override
     if debug:
@@ -402,17 +402,17 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
 
     except ValueError as e:
         if "compartment_id is required" in str(e):
-            console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+            console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] OCI compartment ID not configured")
             console.print("\nPlease set it via one of these methods:")
             console.print(
-                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+                f"1. Environment variable: {CONSOLE_STYLE_INFO}export OCI_COMPARTMENT_ID='your-compartment-id'[/]"
             )
-            console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+            console.print(f"2. Coda config file: {CONSOLE_STYLE_INFO}~/.config/coda/config.toml[/]")
         elif "Unknown provider" in str(e):
-            console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
+            console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] Provider '{provider}' not found")
             console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
         else:
-            console.print(f"\n[red]Error:[/red] {e}")
+            console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {e}")
         if debug:
             import traceback
 
@@ -423,10 +423,10 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
         pass
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully - just exit cleanly
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n{CONSOLE_STYLE_DIM}Interrupted. Goodbye![/]")
         sys.exit(0)
     except Exception as e:
-        console.print(f"\n[red]Error:[/red] {e}")
+        console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {e}")
         if debug:
             import traceback
 
@@ -454,16 +454,16 @@ def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
-        "[bold cyan]Coda[/bold cyan] - Code Assistant\n"
-        f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
-        "[dim]Interactive mode with prompt-toolkit[/dim]"
+        f"{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Coda[/] - Code Assistant\n"
+        f"{CONSOLE_STYLE_DIM}Multi-provider AI coding companion v{__version__}[/]\n"
+        f"{CONSOLE_STYLE_DIM}Interactive mode with prompt-toolkit[/]"
     )
 
-    console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
+    console.print(Panel(welcome_text, title="Welcome", border_style=PANEL_BORDER_STYLE))
 
     if one_shot:
         # Handle one-shot mode (simplified for now)
-        console.print("[yellow]One-shot mode not yet updated for enhanced CLI[/yellow]")
+        console.print(f"{CONSOLE_STYLE_WARNING}One-shot mode not yet updated for enhanced CLI[/]")
         console.print(f"Would execute: {one_shot}")
     else:
         # Run interactive session
@@ -475,5 +475,5 @@ if __name__ == "__main__":
         interactive_main()
     except KeyboardInterrupt:
         # Handle Ctrl+C at the top level
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n{CONSOLE_STYLE_DIM}Interrupted. Goodbye![/]")
         sys.exit(0)

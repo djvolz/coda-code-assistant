@@ -28,6 +28,7 @@ from ..constants import (
     ERROR_SESSION_NOT_FOUND,
     ERROR_INVALID_EXPORT_FORMAT,
     CONSOLE_STYLE_SUCCESS,
+    PANEL_BORDER_STYLE,
     CONSOLE_STYLE_ERROR,
     CONSOLE_STYLE_WARNING,
     CONSOLE_STYLE_INFO,
@@ -116,7 +117,7 @@ class SessionCommands:
 [dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r[/dim]
 """
         
-        self.console.print(Panel(help_text, title="Session Help", border_style="blue"))
+        self.console.print(Panel(help_text, title="Session Help", border_style=PANEL_BORDER_STYLE))
         return None
     
     def _save_session(self, args: List[str]) -> str:
@@ -352,7 +353,7 @@ class SessionCommands:
             if parent:
                 info_lines.append(f"\n[bold]Branched from:[/bold] {parent.name}")
         
-        self.console.print(Panel("\n".join(info_lines), title="Session Information", border_style="blue"))
+        self.console.print(Panel("\n".join(info_lines), title="Session Information", border_style=PANEL_BORDER_STYLE))
         return None
     
     def _search_sessions(self, args: List[str]) -> str:
@@ -632,7 +633,7 @@ class SessionCommands:
 [dim]If no session specified, exports current session[/dim]
 [dim]Files saved to: ~/Documents/coda_exports/[/dim]
 """
-        self.console.print(Panel(help_text, title="Export Help", border_style="blue"))
+        self.console.print(Panel(help_text, title="Export Help", border_style=PANEL_BORDER_STYLE))
         return None
     
     def add_message(
