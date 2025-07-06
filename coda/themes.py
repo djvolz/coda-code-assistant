@@ -18,6 +18,69 @@ from .constants import (
 )
 
 
+def is_valid_color(color: str) -> bool:
+    """Validate if a color string is valid for Rich/prompt-toolkit.
+    
+    Args:
+        color: Color string to validate
+        
+    Returns:
+        bool: True if valid color
+    """
+    if not color:
+        return True  # Empty string is valid (no styling)
+    
+    # Basic color names that Rich supports
+    valid_colors = {
+        "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+        "bright_black", "bright_red", "bright_green", "bright_yellow", 
+        "bright_blue", "bright_magenta", "bright_cyan", "bright_white",
+        "dim", "bold", "italic", "underline", "reverse", "strike", "blink",
+    }
+    
+    # Check for hex colors
+    if color.startswith("#") and len(color) in (4, 7):
+        try:
+            int(color[1:], 16)
+            return True
+        except ValueError:
+            return False
+    
+    # Check for basic colors (possibly with styles)
+    parts = color.lower().split()
+    return all(part in valid_colors for part in parts)
+
+
+def validate_theme_colors(theme: "Theme") -> list[str]:
+    """Validate all colors in a theme.
+    
+    Args:
+        theme: Theme to validate
+        
+    Returns:
+        List of validation errors (empty if valid)
+    """
+    errors = []
+    
+    # Validate console theme colors
+    console_attrs = [
+        "success", "error", "warning", "info", "dim", "bold",
+        "panel_border", "panel_title", "user_message", "assistant_message",
+        "system_message", "table_header", "table_row_odd", "table_row_even",
+        "command", "command_description"
+    ]
+    
+    for attr in console_attrs:
+        color = getattr(theme.console, attr, "")
+        if not is_valid_color(color):
+            errors.append(f"Invalid console color for {attr}: {color}")
+    
+    # Note: Prompt toolkit styles are more complex and validated by prompt_toolkit itself
+    # We don't validate them here to avoid duplicating prompt_toolkit's logic
+    
+    return errors
+
+
 @dataclass
 class ConsoleTheme:
     """Theme configuration for Rich console output."""
@@ -93,6 +156,8 @@ class PromptTheme:
     model_selected: str = "bg:#00aa00 #ffffff bold"
     model_search: str = "bg:#444444 #ffffff"
     model_title: str = "#00aa00 bold"
+    model_provider: str = "#888888"
+    model_info: str = "#888888 italic"
     
     def to_prompt_toolkit_style(self) -> Style:
         """Convert theme to prompt-toolkit Style object."""
@@ -121,8 +186,8 @@ class PromptTheme:
             
             # Model selector
             "selected": self.model_selected,
-            "provider": "#888888",
-            "info": "#888888 italic",
+            "provider": self.model_provider,
+            "info": self.model_info,
             "title": self.model_title,
         })
 
@@ -273,13 +338,22 @@ class ThemeManager:
             theme_name: Name of theme to use
             
         Raises:
-            ValueError: If theme name is not recognized
+            ValueError: If theme name is not recognized or theme has invalid colors
         """
         if theme_name not in THEMES:
             raise ValueError(
                 f"Unknown theme: {theme_name}. "
                 f"Available themes: {', '.join(THEMES.keys())}"
             )
+        
+        # Validate theme colors
+        theme = THEMES[theme_name]
+        errors = validate_theme_colors(theme)
+        if errors:
+            raise ValueError(
+                f"Theme '{theme_name}' has invalid colors:\n" + "\n".join(errors)
+            )
+        
         self.current_theme_name = theme_name
         self._current_theme = None
     
@@ -333,6 +407,13 @@ class ThemeManager:
                 setattr(new_theme.prompt, key, value)
             elif hasattr(new_theme, key):
                 setattr(new_theme, key, value)
+        
+        # Validate the new theme
+        errors = validate_theme_colors(new_theme)
+        if errors:
+            raise ValueError(
+                f"Custom theme '{name}' has invalid colors:\n" + "\n".join(errors)
+            )
         
         return new_theme
 
