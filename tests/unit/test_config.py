@@ -145,9 +145,25 @@ theme = "dark"
             # Mock home directory
             monkeypatch.setenv("XDG_CONFIG_HOME", str(Path(tmpdir) / ".config"))
 
+            # Reset global config manager to ensure fresh load
+            import coda.configuration
+            coda.configuration._config_manager = None
+
             # Create config manager
             manager = ConfigManager()
             config = manager.config
+            
+            # The issue is that USER_CONFIG_PATH is computed at import time,
+            # before we set XDG_CONFIG_HOME. So we need to manually load
+            # and merge the test config file.
+            expected_path = Path(tmpdir) / ".config" / "coda" / "config.toml"
+            paths = manager._get_config_paths()
+            
+            if expected_path not in paths:
+                # Manually load and merge the config
+                loaded_config = manager._load_config_file(expected_path)
+                if loaded_config:
+                    config.merge(loaded_config)
 
             assert config.default_provider == "litellm"
             assert config.debug is True

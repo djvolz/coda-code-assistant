@@ -87,7 +87,7 @@ class PromptTheme:
     
     # Messages and prompts
     prompt: str = "bold"
-    continuation: str = "dim"
+    continuation: str = "#888888"
     
     # Model selector specific
     model_selected: str = "bg:#00aa00 #ffffff bold"
@@ -121,8 +121,8 @@ class PromptTheme:
             
             # Model selector
             "selected": self.model_selected,
-            "provider": "dim",
-            "info": "dim italic",
+            "provider": "#888888",
+            "info": "#888888 italic",
             "title": self.model_title,
         })
 

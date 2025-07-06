@@ -79,7 +79,7 @@ class TestSystemPromptIntegration:
         assert processor.current_mode == DeveloperMode.DEBUG
         
         # Get system prompt that would be used
-        system_prompt = processor.get_system_prompt()
+        system_prompt = get_system_prompt(processor.current_mode)
         assert "debugging expert" in system_prompt
 
     def test_all_modes_have_unique_prompts(self):

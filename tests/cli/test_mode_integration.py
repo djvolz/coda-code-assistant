@@ -47,6 +47,8 @@ class TestBasicModeIntegration:
 
     def test_basic_mode_switching(self, processor):
         """Test mode switching in basic mode."""
+        from coda.cli.shared.modes import get_system_prompt
+        
         # Switch to code mode
         result = processor.process_command("/mode code")
 
@@ -54,7 +56,7 @@ class TestBasicModeIntegration:
         assert processor.current_mode == DeveloperMode.CODE
 
         # Get system prompt
-        prompt = processor.get_system_prompt()
+        prompt = get_system_prompt(processor.current_mode)
         assert "coding assistant" in prompt
 
     def test_basic_model_switching(self, processor):

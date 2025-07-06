@@ -150,31 +150,19 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Conversation cleared" in str(call) for call in calls)
 
-    @patch("coda.cli.interactive_cli.Path")
-    def test_session_initialization(self, mock_path_class):
+    @patch("coda.cli.interactive_cli.HISTORY_FILE_PATH")
+    def test_session_initialization(self, mock_history_path):
         """Test session initialization creates proper directories."""
-        # Setup mock path chain
-        mock_home = Mock()
-        mock_local = Mock()
-        mock_share = Mock()
-        mock_coda = Mock()
-        mock_history_file = Mock()
-
-        # Chain the path operations
-        mock_path_class.home.return_value = mock_home
-        mock_home.__truediv__ = Mock(return_value=mock_local)
-        mock_local.__truediv__ = Mock(return_value=mock_share)
-        mock_share.__truediv__ = Mock(return_value=mock_coda)
-        mock_coda.__truediv__ = Mock(return_value=mock_history_file)
-
-        # Set string representation
-        mock_history_file.__str__ = Mock(return_value="/mock/history/path")
+        # Setup mock history file path
+        mock_parent = Mock()
+        mock_history_path.parent = mock_parent
+        mock_history_path.__str__ = Mock(return_value="/mock/history/path")
 
         console = Mock()
         cli = InteractiveCLI(console)
 
         # Check that history directory is created
-        mock_coda.mkdir.assert_called_with(parents=True, exist_ok=True)
+        mock_parent.mkdir.assert_called_with(parents=True, exist_ok=True)
 
         # Check session is initialized
         assert cli.session is not None
