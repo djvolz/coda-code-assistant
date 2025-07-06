@@ -207,8 +207,20 @@ class InteractiveCLI(CommandHandler):
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
         # Get theme-based style and extend it with additional styles
-        base_style = get_prompt_style()
-        custom_additions = Style.from_dict({
+        from coda.themes import get_theme_manager
+        
+        theme_manager = get_theme_manager()
+        theme_style = theme_manager.current_theme.prompt.to_prompt_toolkit_style()
+        
+        # Get the base style dictionary and add custom styles
+        combined_styles = {}
+        
+        # Add theme styles (if they have a style_dict attribute)
+        if hasattr(theme_style, 'style_dict'):
+            combined_styles.update(theme_style.style_dict)
+        
+        # Add custom additions
+        combined_styles.update({
             # Additional prompt-specific styles
             "prompt.mode": "#888888",
             # Completion menu enhancements
@@ -221,7 +233,8 @@ class InteractiveCLI(CommandHandler):
             "scrollbar.background": "bg:#2c2c2c",
             "scrollbar.button": "bg:#888888",
         })
-        return base_style.merge(custom_additions)
+        
+        return Style.from_dict(combined_styles)
 
     def _init_session(self):
         """Initialize the prompt session with all features."""
