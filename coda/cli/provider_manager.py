@@ -5,6 +5,11 @@ from rich.console import Console
 
 from coda.configuration import CodaConfig
 from coda.providers import BaseProvider, Model, ProviderFactory
+from coda.constants import (
+    CONSOLE_STYLE_SUCCESS,
+    CONSOLE_STYLE_WARNING,
+    CONSOLE_STYLE_INFO,
+)
 
 
 class ProviderManager:
@@ -20,12 +25,12 @@ class ProviderManager:
         # Use default provider if not specified
         provider_name = provider_name or self.config.default_provider
 
-        self.console.print(f"\n[green]Provider:[/green] {provider_name}")
-        self.console.print(f"[yellow]Initializing {provider_name}...[/yellow]")
+        self.console.print(f"\n{CONSOLE_STYLE_SUCCESS}Provider:[/] {provider_name}")
+        self.console.print(f"{CONSOLE_STYLE_WARNING}Initializing {provider_name}...[/]")
 
         # Create provider instance
         provider_instance = self.factory.create(provider_name)
-        self.console.print(f"[green]✓ Connected to {provider_name}[/green]")
+        self.console.print(f"{CONSOLE_STYLE_SUCCESS}✓ Connected to {provider_name}[/]")
 
         return provider_instance
 
@@ -37,7 +42,7 @@ class ProviderManager:
         """
         # List all models
         models = provider.list_models()
-        self.console.print(f"[green]✓ Found {len(models)} available models[/green]")
+        self.console.print(f"{CONSOLE_STYLE_SUCCESS}✓ Found {len(models)} available models[/]")
 
         # Filter for chat models - different providers use different indicators
         chat_models = [
@@ -80,7 +85,7 @@ class ProviderManager:
         if one_shot:
             # For one-shot, use the first available chat model
             selected = unique_models[0].id
-            self.console.print(f"[green]Auto-selected model:[/green] {selected}")
+            self.console.print(f"{CONSOLE_STYLE_SUCCESS}Auto-selected model:[/] {selected}")
             return selected
 
         # Use basic model selector for interactive selection

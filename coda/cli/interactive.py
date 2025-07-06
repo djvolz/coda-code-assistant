@@ -9,6 +9,16 @@ from rich.panel import Panel
 from rich.text import Text
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
+from .shared.modes import get_system_prompt
+from ..constants import (
+    CONSOLE_STYLE_SUCCESS,
+    CONSOLE_STYLE_WARNING,
+    CONSOLE_STYLE_ERROR,
+    CONSOLE_STYLE_INFO,
+    CONSOLE_STYLE_DIM,
+    CONSOLE_STYLE_BOLD,
+    PANEL_BORDER_STYLE,
+)
 
 try:
     from ..__version__ import __version__
@@ -35,29 +45,29 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
         from rich.panel import Panel
         
         if auto_save_enabled:
-            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+            notification = f"""{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Welcome to Coda![/]
 
-[yellow]Auto-Save is ENABLED[/yellow] 💾
+{CONSOLE_STYLE_WARNING}Auto-Save is ENABLED[/] 💾
 
 Your conversations will be automatically saved when you start chatting.
 This helps you resume conversations and search through history.
 
-[dim]To disable auto-save:[/dim]
-• Use [cyan]--no-save[/cyan] flag when starting Coda
-• Set [cyan]autosave = false[/cyan] in ~/.config/coda/config.toml
-• Delete sessions with [cyan]/session delete-all[/cyan]
+{CONSOLE_STYLE_DIM}To disable auto-save:[/]
+• Use {CONSOLE_STYLE_INFO}--no-save[/] flag when starting Coda
+• Set {CONSOLE_STYLE_INFO}autosave = false[/] in ~/.config/coda/config.toml
+• Delete sessions with {CONSOLE_STYLE_INFO}/session delete-all[/]
 
-[dim]Your privacy matters - sessions are stored locally only.[/dim]"""
+{CONSOLE_STYLE_DIM}Your privacy matters - sessions are stored locally only.[/]"""
         else:
-            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+            notification = f"""{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Welcome to Coda![/]
 
-[yellow]Auto-Save is DISABLED[/yellow] 🔒
+{CONSOLE_STYLE_WARNING}Auto-Save is DISABLED[/] 🔒
 
 Your conversations will NOT be saved automatically.
 
-[dim]To enable auto-save for future sessions:[/dim]
-• Remove [cyan]--no-save[/cyan] flag when starting Coda
-• Set [cyan]autosave = true[/cyan] in ~/.config/coda/config.toml"""
+{CONSOLE_STYLE_DIM}To enable auto-save for future sessions:[/]
+• Remove {CONSOLE_STYLE_INFO}--no-save[/] flag when starting Coda
+• Set {CONSOLE_STYLE_INFO}autosave = true[/] in ~/.config/coda/config.toml"""
         
         console.print("\n")
         console.print(Panel(notification, title="First Run", border_style="blue"))
@@ -188,7 +198,7 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         return True
 
     # Add system prompt based on mode
-    system_prompt = _get_system_prompt_for_mode(cli.current_mode)
+    system_prompt = get_system_prompt(cli.current_mode)
 
     # Add user message
     messages.append(Message(role=Role.USER, content=user_input))
@@ -424,11 +434,6 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
         sys.exit(1)
 
 
-def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
-    """Get system prompt based on developer mode."""
-    from coda.cli.shared import get_system_prompt
-
-    return get_system_prompt(mode)
 
 
 @click.command()

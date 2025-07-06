@@ -5,6 +5,13 @@ import traceback
 
 from rich.console import Console
 
+from coda.constants import (
+    CONSOLE_STYLE_ERROR,
+    CONSOLE_STYLE_INFO,
+    ERROR_COMPARTMENT_ID_MISSING,
+    HELP_COMPARTMENT_ID,
+)
+
 
 class CLIErrorHandler:
     """Handles errors in a user-friendly way for CLI operations."""
@@ -18,24 +25,21 @@ class CLIErrorHandler:
         error_str = str(error)
 
         if "compartment_id is required" in error_str:
-            self.console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+            self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {ERROR_COMPARTMENT_ID_MISSING}")
             self.console.print("\nPlease set it via one of these methods:")
-            self.console.print(
-                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
-            )
-            self.console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+            self.console.print(HELP_COMPARTMENT_ID)
         elif "Unknown provider" in error_str and factory:
-            self.console.print(f"\n[red]Error:[/red] Provider '{provider_name}' not found")
+            self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] Provider '{provider_name}' not found")
             self.console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
         else:
-            self.console.print(f"\n[red]Error:[/red] {error}")
+            self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {error}")
 
         self._show_debug_info(error)
         sys.exit(1)
 
     def handle_general_error(self, error: Exception):
         """Handle general errors."""
-        self.console.print(f"\n[red]Error:[/red] {error}")
+        self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {error}")
         self._show_debug_info(error)
         sys.exit(1)
 
