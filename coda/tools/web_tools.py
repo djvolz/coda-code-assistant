@@ -338,8 +338,14 @@ class SearchWebTool(BaseTool):
             
             start_time = time.time()
             
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.9"
+            }
+            
             async with aiohttp.ClientSession() as session:
-                async with session.get(search_url, params=params) as response:
+                async with session.get(search_url, params=params, headers=headers) as response:
                     if response.status != 200:
                         return ToolResult(
                             success=False,
@@ -348,7 +354,74 @@ class SearchWebTool(BaseTool):
                             metadata={"query": query}
                         )
                     
-                    data = await response.json()
+                    # Check content type
+                    content_type = response.headers.get('content-type', '').lower()
+                    if 'javascript' in content_type or 'html' in content_type:
+                        # DuckDuckGo is returning HTML/JS instead of JSON
+                        # Fall back to scraping
+                        results = await self._scrape_search_results(query, max_results)
+                        if results:
+                            # Format results
+                            output = f"Search results for: {query}\n\n"
+                            for i, result in enumerate(results[:max_results], 1):
+                                output += f"{i}. **{result['title']}**\n"
+                                output += f"   {result['snippet'][:200]}{'...' if len(result['snippet']) > 200 else ''}\n"
+                                if result['url']:
+                                    output += f"   URL: {result['url']}\n"
+                                output += f"   Source: {result['source']}\n\n"
+                            
+                            return ToolResult(
+                                success=True,
+                                result=output,
+                                tool="search_web",
+                                metadata={
+                                    "query": query,
+                                    "results_count": len(results),
+                                    "search_time": time.time() - start_time,
+                                    "results": results[:max_results]
+                                }
+                            )
+                        else:
+                            return ToolResult(
+                                success=False,
+                                error="Search service is currently unavailable. Please try again later.",
+                                tool="search_web",
+                                metadata={"query": query}
+                            )
+                    
+                    try:
+                        data = await response.json()
+                    except Exception as e:
+                        # Try fallback scraping
+                        results = await self._scrape_search_results(query, max_results)
+                        if results:
+                            # Format results
+                            output = f"Search results for: {query}\n\n"
+                            for i, result in enumerate(results[:max_results], 1):
+                                output += f"{i}. **{result['title']}**\n"
+                                output += f"   {result['snippet'][:200]}{'...' if len(result['snippet']) > 200 else ''}\n"
+                                if result['url']:
+                                    output += f"   URL: {result['url']}\n"
+                                output += f"   Source: {result['source']}\n\n"
+                            
+                            return ToolResult(
+                                success=True,
+                                result=output,
+                                tool="search_web",
+                                metadata={
+                                    "query": query,
+                                    "results_count": len(results),
+                                    "search_time": time.time() - start_time,
+                                    "results": results[:max_results]
+                                }
+                            )
+                        else:
+                            return ToolResult(
+                                success=False,
+                                error=f"Failed to parse search results: {str(e)}",
+                                tool="search_web",
+                                metadata={"query": query}
+                            )
                     
                     # Extract results
                     results = []
@@ -434,9 +507,14 @@ class SearchWebTool(BaseTool):
         try:
             search_url = f"https://html.duckduckgo.com/html/"
             params = {"q": query}
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9"
+            }
             
             async with aiohttp.ClientSession() as session:
-                async with session.get(search_url, params=params) as response:
+                async with session.get(search_url, params=params, headers=headers) as response:
                     if response.status != 200:
                         return []
                     
@@ -445,27 +523,59 @@ class SearchWebTool(BaseTool):
                     # Simple regex-based extraction
                     results = []
                     
-                    # Extract search result links and snippets
-                    link_pattern = r'<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>(.*?)</a>'
-                    snippet_pattern = r'<a[^>]*class="result__snippet"[^>]*>(.*?)</a>'
+                    # Look for result blocks
+                    result_blocks = re.findall(r'<div[^>]*class="result[^"]*"[^>]*>(.*?)</div>\s*</div>', html, re.DOTALL)
                     
-                    links = re.findall(link_pattern, html, re.DOTALL)
-                    snippets = re.findall(snippet_pattern, html, re.DOTALL)
-                    
-                    for i, (url, title) in enumerate(links[:max_results]):
-                        snippet = snippets[i] if i < len(snippets) else ""
+                    for block in result_blocks[:max_results]:
+                        # Extract URL and title
+                        url_match = re.search(r'<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>(.*?)</a>', block, re.DOTALL)
+                        if not url_match:
+                            continue
+                        
+                        url, title = url_match.groups()
+                        
+                        # Extract snippet
+                        snippet_match = re.search(r'<a[^>]*class="result__snippet"[^>]*>(.*?)</a>', block, re.DOTALL)
+                        snippet = snippet_match.group(1) if snippet_match else ""
                         
                         # Clean up HTML
                         title = re.sub(r'<[^>]+>', '', title).strip()
+                        title = re.sub(r'\s+', ' ', title)
                         snippet = re.sub(r'<[^>]+>', '', snippet).strip()
+                        snippet = re.sub(r'\s+', ' ', snippet)
                         
-                        results.append({
-                            "type": "web_result",
-                            "title": title,
-                            "snippet": snippet,
-                            "url": url,
-                            "source": "DuckDuckGo"
-                        })
+                        if title and url:
+                            results.append({
+                                "type": "web_result",
+                                "title": title,
+                                "snippet": snippet,
+                                "url": url,
+                                "source": "DuckDuckGo"
+                            })
+                    
+                    # If no results found with the new pattern, try the old pattern
+                    if not results:
+                        link_pattern = r'<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>(.*?)</a>'
+                        snippet_pattern = r'<a[^>]*class="result__snippet"[^>]*>(.*?)</a>'
+                        
+                        links = re.findall(link_pattern, html, re.DOTALL)
+                        snippets = re.findall(snippet_pattern, html, re.DOTALL)
+                        
+                        for i, (url, title) in enumerate(links[:max_results]):
+                            snippet = snippets[i] if i < len(snippets) else ""
+                            
+                            # Clean up HTML
+                            title = re.sub(r'<[^>]+>', '', title).strip()
+                            snippet = re.sub(r'<[^>]+>', '', snippet).strip()
+                            
+                            if title:
+                                results.append({
+                                    "type": "web_result",
+                                    "title": title,
+                                    "snippet": snippet,
+                                    "url": url,
+                                    "source": "DuckDuckGo"
+                                })
                     
                     return results
                     

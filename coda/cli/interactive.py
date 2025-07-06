@@ -9,6 +9,8 @@ from rich.panel import Panel
 from rich.text import Text
 
 from .interactive_cli import DeveloperMode, InteractiveCLI
+from .tool_chat import ToolChatHandler
+from .agent_chat import AgentChatHandler
 
 try:
     from ..__version__ import __version__
@@ -135,7 +137,7 @@ async def _select_model(unique_models, model: str, console: Console):
     return model
 
 
-async def _handle_chat_interaction(provider_instance, cli, messages, console: Console, config=None):
+async def _handle_chat_interaction(provider_instance, cli, messages, console: Console, config=None, use_tools=True):
     """Handle a single chat interaction including streaming response."""
     from coda.providers import Message, Role
 
@@ -233,46 +235,71 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     first_chunk = True
 
     try:
-        # Create a status spinner for thinking animation
-        # Using "dots" spinner style - other options: "line", "star", "bouncingBar", "arrow3"
-        with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
-            # Get generation parameters from config or defaults
-            if not config:
-                from coda.configuration import get_config
+        # Get generation parameters from config or defaults
+        if not config:
+            from coda.configuration import get_config
+            config = get_config()
+        temperature = config.to_dict().get("temperature", 0.7)
+        max_tokens = config.to_dict().get("max_tokens", 2000)
 
-                config = get_config()
-            temperature = config.to_dict().get("temperature", 0.7)
-            max_tokens = config.to_dict().get("max_tokens", 2000)
+        # Check if we should use tools (only for Cohere models and when enabled)
+        model_supports_tools = cli.current_model.startswith("cohere.")
+        
+        if use_tools and model_supports_tools:
+            # Use agent-based chat
+            with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
+                agent_handler = AgentChatHandler(provider_instance, cli, console)
+                
+                # Get system prompt from mode
+                system_prompt_for_agent = cli.get_system_prompt()
+                
+                # Stop status before agent execution (agents handle their own output)
+                status.stop()
+                
+                # Execute with agent
+                full_response, updated_messages = await agent_handler.chat_with_agent(
+                    messages.copy(),  # Pass a copy to avoid modifying original
+                    cli.current_model,
+                    temperature,
+                    max_tokens,
+                    system_prompt_for_agent
+                )
+                
+                # Update messages to match what happened
+                messages.clear()
+                messages.extend(updated_messages)
+        else:
+            # Use regular streaming
+            with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
+                stream = provider_instance.chat_stream(
+                    messages=chat_messages,
+                    model=cli.current_model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
 
-            stream = provider_instance.chat_stream(
-                messages=chat_messages,
-                model=cli.current_model,  # Use current model from CLI
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
+                # Get first chunk to stop spinner
+                for chunk in stream:
+                    if first_chunk:
+                        # Stop the spinner when we get the first chunk
+                        status.stop()
+                        # Just print the assistant label
+                        console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                        first_chunk = False
 
-            # Get first chunk to stop spinner
-            for chunk in stream:
-                if first_chunk:
-                    # Stop the spinner when we get the first chunk
-                    status.stop()
-                    # Just print the assistant label
-                    console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
-                    first_chunk = False
+                    # Check for interrupt
+                    if cli.interrupt_event.is_set():
+                        interrupted = True
+                        console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                        break
 
-                # Check for interrupt
-                if cli.interrupt_event.is_set():
-                    interrupted = True
-                    console.print("\n\n[yellow]Response interrupted by user[/yellow]")
-                    break
+                    # Stream the response as plain text
+                    console.print(chunk.content, end="")
+                    full_response += chunk.content
 
-                # Stream the response as plain text
-                console.print(chunk.content, end="")
-                full_response += chunk.content
-
-        # Add newline after streaming
-        if full_response:
-            console.print()  # Ensure we end on a new line
+            # Add newline after streaming
+            if full_response:
+                console.print()  # Ensure we end on a new line
     except (ConnectionError, TimeoutError) as e:
         console.print(f"\n\n[red]Network error during streaming: {e}[/red]")
         return True  # Continue loop
@@ -286,8 +313,8 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         # Stop the interrupt listener
         cli.stop_interrupt_listener()
 
-    # Add assistant message to history (even if interrupted)
-    if full_response or interrupted:
+    # Add assistant message to history (even if interrupted) - only for non-tool path
+    if (full_response or interrupted) and not (use_tools and model_supports_tools):
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
         
         # Track assistant message in session manager

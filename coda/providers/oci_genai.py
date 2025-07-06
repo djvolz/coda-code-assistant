@@ -15,7 +15,10 @@ from oci.generative_ai_inference.models import (
     ChatDetails,
     CohereChatBotMessage,
     CohereChatRequest,
+    CohereParameterDefinition,
     CohereSystemMessage,
+    CohereTool,
+    CohereToolCall,
     CohereUserMessage,
     GenericChatRequest,
     OnDemandServingMode,
@@ -39,6 +42,8 @@ from coda.providers.base import (
     Message,
     Model,
     Role,
+    Tool,
+    ToolCall,
 )
 
 
@@ -317,6 +322,7 @@ class OCIGenAIProvider(BaseProvider):
         max_tokens: int | None,
         top_p: float | None,
         stream: bool,
+        tools: list[Tool] | None = None,
         **kwargs,
     ):
         """Create appropriate chat request based on provider."""
@@ -324,28 +330,76 @@ class OCIGenAIProvider(BaseProvider):
 
         if provider == "cohere":
             # Cohere uses a different format
-            # Extract the last user message as the main message
-            # and convert previous messages to chat history
+            # We need to properly structure the conversation with tool results
             chat_history = []
             current_message = ""
-
-            for msg in messages:
-                if msg.role == Role.USER:
-                    current_message = msg.content
-                elif msg.role == Role.ASSISTANT:
-                    # Add previous user message and this assistant response to history
-                    if chat_history and isinstance(chat_history[-1], CohereUserMessage):
-                        # We have a user message, now add the assistant response
-                        chat_history.append(
-                            CohereChatBotMessage(role="CHATBOT", message=msg.content)
-                        )
-                elif msg.role == Role.SYSTEM:
+            
+            # Process messages to build chat history
+            i = 0
+            while i < len(messages):
+                msg = messages[i]
+                
+                if msg.role == Role.SYSTEM:
                     chat_history.append(CohereSystemMessage(role="SYSTEM", message=msg.content))
-
-            # Add remaining user messages to history if current_message is not the last
-            for i, msg in enumerate(messages[:-1]):
-                if msg.role == Role.USER and messages[i + 1].role != Role.ASSISTANT:
-                    chat_history.append(CohereUserMessage(role="USER", message=msg.content))
+                    
+                elif msg.role == Role.USER:
+                    # Keep the last user message as current_message
+                    if i == len(messages) - 1:
+                        current_message = msg.content
+                    else:
+                        # Check if next message is assistant or tool
+                        if i + 1 < len(messages) and messages[i + 1].role == Role.ASSISTANT:
+                            # This user message will be paired with assistant response
+                            chat_history.append(CohereUserMessage(role="USER", message=msg.content))
+                        else:
+                            # Standalone user message
+                            chat_history.append(CohereUserMessage(role="USER", message=msg.content))
+                            
+                elif msg.role == Role.ASSISTANT:
+                    # Check if there are tool responses following this assistant message
+                    assistant_content = msg.content
+                    j = i + 1
+                    
+                    # Collect any tool responses that follow
+                    while j < len(messages) and messages[j].role == Role.TOOL:
+                        tool_msg = messages[j]
+                        assistant_content += f"\n\nTool '{tool_msg.name if hasattr(tool_msg, 'name') else 'result'}': {tool_msg.content}"
+                        j += 1
+                    
+                    # Add the combined assistant + tool results message
+                    chat_history.append(CohereChatBotMessage(role="CHATBOT", message=assistant_content))
+                    
+                    # Skip the tool messages we've already processed
+                    i = j - 1
+                    
+                elif msg.role == Role.TOOL:
+                    # This shouldn't happen as we process tool messages with their assistant message
+                    # But if it does, add it as a system message
+                    chat_history.append(CohereSystemMessage(role="SYSTEM", message=f"Tool result: {msg.content}"))
+                
+                i += 1
+            
+            # If we don't have a current message, check if we need to prompt for final answer
+            if not current_message:
+                # Check if the last message in history contains tool results
+                if chat_history and isinstance(chat_history[-1], CohereChatBotMessage):
+                    last_msg = chat_history[-1].message
+                    if "Tool '" in last_msg and ":" in last_msg:
+                        # We have tool results, prompt for final answer
+                        current_message = "Based on the tool results, please provide a complete answer to the user's original question."
+                
+                # Otherwise look for last user message
+                if not current_message and chat_history:
+                    for msg in reversed(chat_history):
+                        if isinstance(msg, CohereUserMessage):
+                            current_message = msg.message
+                            # Remove this message from history to avoid duplication
+                            chat_history.remove(msg)
+                            break
+                
+                # If still no current message, create a default one
+                if not current_message:
+                    current_message = "Continue the conversation"
 
             # Create Cohere request
             params = {
@@ -358,12 +412,28 @@ class OCIGenAIProvider(BaseProvider):
                 params["chat_history"] = chat_history
             if max_tokens:
                 params["max_tokens"] = max_tokens
+            elif tools:
+                # Set a default max_tokens for tool calls to prevent early truncation
+                params["max_tokens"] = 1000
             if top_p is not None:
                 params["top_p"] = top_p
             if kwargs.get("frequency_penalty"):
                 params["frequency_penalty"] = kwargs["frequency_penalty"]
             if kwargs.get("presence_penalty"):
                 params["presence_penalty"] = kwargs["presence_penalty"]
+                
+            # Add tools if provided
+            if tools:
+                cohere_tools = self._convert_tools_to_cohere(tools)
+                params["tools"] = cohere_tools
+                # Lower temperature for better tool accuracy
+                params["temperature"] = min(temperature, 0.3)
+                # Add preamble to encourage tool use and provide final answer
+                params["preamble_override"] = """You are a helpful assistant with access to tools. When the user asks questions that require external information or actions, use the appropriate tools to help them.
+
+IMPORTANT: After receiving tool results, you MUST provide a final answer to the user that incorporates the tool results. Do not call the same tool again if you already have the result. Simply explain the answer using the tool's output."""
+                # Don't force single step - allow model to provide final answer
+                # params["is_force_single_step"] = True
 
             return CohereChatRequest(**params)
 
@@ -399,6 +469,41 @@ class OCIGenAIProvider(BaseProvider):
                 params["top_p"] = top_p
 
             return GenericChatRequest(**params)
+    
+    def _convert_tools_to_cohere(self, tools: list[Tool]) -> list[CohereTool]:
+        """Convert standard tools to Cohere format."""
+        cohere_tools = []
+        
+        for tool in tools:
+            # Convert parameters from JSON Schema to Cohere format
+            param_definitions = {}
+            
+            if "properties" in tool.parameters:
+                for param_name, param_schema in tool.parameters["properties"].items():
+                    # Convert type to uppercase as required by Cohere
+                    param_type = param_schema.get("type", "string").upper()
+                    if param_type == "INTEGER":
+                        param_type = "FLOAT"  # Cohere uses FLOAT for numbers
+                    elif param_type == "ARRAY":
+                        param_type = "LIST"
+                    elif param_type == "OBJECT":
+                        param_type = "DICT"
+                        
+                    param_def = CohereParameterDefinition(
+                        description=param_schema.get("description", ""),
+                        type=param_type,
+                        is_required=param_name in tool.parameters.get("required", [])
+                    )
+                    param_definitions[param_name] = param_def
+            
+            cohere_tool = CohereTool(
+                name=tool.name,
+                description=tool.description,
+                parameter_definitions=param_definitions
+            )
+            cohere_tools.append(cohere_tool)
+            
+        return cohere_tools
 
     def chat(
         self,
@@ -408,6 +513,7 @@ class OCIGenAIProvider(BaseProvider):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> ChatCompletion:
         """Send chat completion request using OCI SDK."""
@@ -416,7 +522,7 @@ class OCIGenAIProvider(BaseProvider):
 
         # Create chat request
         chat_request = self._create_chat_request(
-            messages, model, temperature, max_tokens, top_p, stream=False, **kwargs
+            messages, model, temperature, max_tokens, top_p, stream=False, tools=tools, **kwargs
         )
 
         # Create serving mode - use the actual OCI model ID
@@ -437,11 +543,27 @@ class OCIGenAIProvider(BaseProvider):
 
         if provider == "cohere":
             # Cohere response format
-            if not hasattr(chat_response, "text") or not chat_response.text:
-                raise ValueError("No response from model")
-
-            content = chat_response.text
+            content = ""
+            tool_calls = None
             finish_reason = getattr(chat_response, "finish_reason", None)
+            
+            
+            # Check for tool calls
+            if hasattr(chat_response, "tool_calls") and chat_response.tool_calls:
+                # Convert Cohere tool calls to our format
+                tool_calls = []
+                for tc in chat_response.tool_calls:
+                    tool_call = ToolCall(
+                        id=tc.name,  # Cohere doesn't provide IDs, use name
+                        name=tc.name,
+                        arguments=tc.parameters if hasattr(tc, "parameters") else {}
+                    )
+                    tool_calls.append(tool_call)
+                finish_reason = "tool_calls"
+            
+            # Get text content if available
+            if hasattr(chat_response, "text") and chat_response.text:
+                content = chat_response.text
 
             # Cohere provides token usage differently
             usage = None
@@ -458,6 +580,7 @@ class OCIGenAIProvider(BaseProvider):
 
         else:
             # Generic response format (Meta, etc.)
+            tool_calls = None  # Generic format doesn't support tools
             choices = chat_response.choices
 
             if not choices:
@@ -491,6 +614,7 @@ class OCIGenAIProvider(BaseProvider):
             content=content,
             model=model,
             finish_reason=finish_reason,
+            tool_calls=tool_calls if provider == "cohere" else None,
             usage=usage,
             metadata={
                 "model_version": getattr(chat_response, "model_version", None),
@@ -506,6 +630,7 @@ class OCIGenAIProvider(BaseProvider):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response using OCI SDK."""
@@ -514,7 +639,7 @@ class OCIGenAIProvider(BaseProvider):
 
         # Create chat request with streaming enabled
         chat_request = self._create_chat_request(
-            messages, model, temperature, max_tokens, top_p, stream=True, **kwargs
+            messages, model, temperature, max_tokens, top_p, stream=True, tools=tools, **kwargs
         )
 
         # Create serving mode - use the actual OCI model ID

@@ -11,6 +11,7 @@ from coda.providers.base import (
     ChatCompletionChunk,
     Message,
     Model,
+    Tool,
 )
 
 
@@ -66,6 +67,7 @@ class LiteLLMProvider(BaseProvider):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> ChatCompletion:
         """Send chat completion request via LiteLLM."""
@@ -131,6 +133,7 @@ class LiteLLMProvider(BaseProvider):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response via LiteLLM."""
@@ -193,6 +196,7 @@ class LiteLLMProvider(BaseProvider):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> ChatCompletion:
         """Async chat completion via LiteLLM."""
@@ -257,6 +261,7 @@ class LiteLLMProvider(BaseProvider):
         max_tokens: int | None = None,
         top_p: float | None = None,
         stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs,
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Async stream chat completion via LiteLLM."""

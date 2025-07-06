@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Iterator
 import time
 from datetime import datetime
 
-from .base import BaseProvider, Model, Message, Role
+from .base import BaseProvider, Model, Message, Role, Tool
 
 
 class MockProvider(BaseProvider):
@@ -48,6 +48,11 @@ class MockProvider(BaseProvider):
         self,
         messages: List[Message],
         model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs
     ) -> str:
         """Generate a mock response based on the conversation."""
@@ -128,10 +133,15 @@ class MockProvider(BaseProvider):
         self,
         messages: List[Message],
         model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs
     ) -> Iterator[Message]:
         """Stream a mock response word by word."""
-        response = self.chat(messages, model, **kwargs)
+        response = self.chat(messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs)
         
         # Simulate streaming by yielding words
         words = response.split()
@@ -167,19 +177,29 @@ class MockProvider(BaseProvider):
         self,
         messages: List[Message],
         model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs
     ) -> str:
         """Async version of chat (delegates to sync)."""
-        return self.chat(messages, model, **kwargs)
+        return self.chat(messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs)
     
     async def achat_stream(
         self,
         messages: List[Message],
         model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
         **kwargs
     ) -> Iterator[Message]:
         """Async version of chat_stream (delegates to sync)."""
-        for chunk in self.chat_stream(messages, model, **kwargs):
+        for chunk in self.chat_stream(messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs):
             yield chunk
     
     def is_available(self) -> bool:
