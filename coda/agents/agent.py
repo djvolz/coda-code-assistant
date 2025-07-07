@@ -140,6 +140,11 @@ class Agent:
         step_count = 0
         final_response = None
         
+        # Loop detection state
+        recent_tool_calls = []  # Track recent tool calls for loop detection
+        loop_detection_window = 3  # Number of recent calls to check
+        max_same_tool_calls = 2  # Max times same tool can be called consecutively
+        
         while step_count < max_steps:
             try:
                 # Make request to provider
@@ -166,6 +171,51 @@ class Agent:
                 
                 # Check for tool calls
                 if response.tool_calls:
+                    # Check for tool call loops before proceeding
+                    loop_detected = self._detect_tool_call_loops(response.tool_calls, recent_tool_calls, 
+                                                               loop_detection_window, max_same_tool_calls)
+                    
+                    if loop_detected:
+                        # Break out of loop with a directive to provide final answer
+                        self.console.print("[yellow]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/yellow]")
+                        
+                        # Force a final response by disabling tool support temporarily
+                        # and asking for a summary of existing tool results
+                        final_prompt = "Based on the tool execution results above, provide a complete final answer to the user's original question. Do not call any more tools."
+                        
+                        # Get final response without tools
+                        try:
+                            final_response_obj = await asyncio.to_thread(
+                                self.provider.chat,
+                                messages=messages + [Message(role=Role.USER, content=final_prompt)],
+                                model=self.model,
+                                temperature=self.temperature,
+                                max_tokens=self.max_tokens,
+                                tools=None,  # No tools allowed
+                                **self.kwargs
+                            )
+                            
+                            if final_response_obj.content:
+                                self._print_response(final_response_obj.content)
+                                final_response = final_response_obj
+                                break
+                            else:
+                                # If still no content, use a fallback
+                                self.console.print("[red]Unable to get final response. Providing fallback.[/red]")
+                                final_response = type('obj', (object,), {
+                                    'content': "I have executed the requested tools but encountered an issue providing a final response.",
+                                    'model': self.model
+                                })
+                                break
+                                
+                        except Exception as e:
+                            self.console.print(f"[red]Error getting final response: {e}[/red]")
+                            final_response = type('obj', (object,), {
+                                'content': "I executed the requested tools but encountered an error providing the final response.",
+                                'model': self.model
+                            })
+                            break
+                    
                     # Display response if any
                     if response.content:
                         self._print_response(response.content)
@@ -175,6 +225,12 @@ class Agent:
                         content=response.content or "",
                         tool_calls=response.tool_calls
                     ))
+                    
+                    # Track tool calls for loop detection
+                    for tool_call in response.tool_calls:
+                        recent_tool_calls.append(tool_call.name)
+                        if len(recent_tool_calls) > loop_detection_window:
+                            recent_tool_calls.pop(0)
                     
                     # Handle tool calls
                     performed_actions = await self._handle_tool_calls(
@@ -224,6 +280,46 @@ class Agent:
                 "messages": messages
             }
         )
+    
+    def _detect_tool_call_loops(
+        self, 
+        new_tool_calls: List[ToolCall], 
+        recent_tool_calls: List[str], 
+        window_size: int, 
+        max_same_calls: int
+    ) -> bool:
+        """
+        Detect if the agent is stuck in a tool call loop.
+        
+        Args:
+            new_tool_calls: Tool calls from current response
+            recent_tool_calls: List of recent tool call names
+            window_size: Size of the sliding window for detection
+            max_same_calls: Maximum allowed consecutive calls to same tool
+            
+        Returns:
+            True if a loop is detected, False otherwise
+        """
+        # Check if any of the new tool calls would create a loop
+        for tool_call in new_tool_calls:
+            tool_name = tool_call.name
+            
+            # Count how many times this tool appears in recent calls
+            recent_count = recent_tool_calls.count(tool_name)
+            
+            # If this tool has been called too many times recently, it's a loop
+            if recent_count >= max_same_calls:
+                return True
+                
+            # Also check for alternating patterns (A-B-A-B...)
+            if len(recent_tool_calls) >= 4:
+                last_four = recent_tool_calls[-4:]
+                if (last_four[0] == last_four[2] and 
+                    last_four[1] == last_four[3] and 
+                    tool_name in last_four):
+                    return True
+        
+        return False
     
     def run(self, input: str, **kwargs) -> RunResponse:
         """Synchronous wrapper for run_async."""
