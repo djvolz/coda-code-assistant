@@ -122,9 +122,13 @@ class Agent:
         # Initialize messages if not provided
         if messages is None:
             messages = []
-            # Add system message with instructions
-            if self.instructions:
-                messages.append(Message(role=Role.SYSTEM, content=self.instructions))
+        
+        # Always ensure system instructions are at the beginning
+        if self.instructions:
+            # Check if system message already exists
+            has_system_msg = any(msg.role == Role.SYSTEM for msg in messages)
+            if not has_system_msg:
+                messages.insert(0, Message(role=Role.SYSTEM, content=self.instructions))
         
         # Add user message
         messages.append(Message(role=Role.USER, content=input))
@@ -280,6 +284,216 @@ class Agent:
                 "messages": messages
             }
         )
+    
+    async def run_async_streaming(
+        self,
+        input: str,
+        messages: Optional[List[Message]] = None,
+        max_steps: int = 10,
+        on_fulfilled_action: Optional[Callable[[RequiredAction, PerformedAction], None]] = None,
+        **kwargs,
+    ) -> tuple[str, List[Message]]:
+        """
+        Run the agent asynchronously with streaming support.
+        
+        Args:
+            input: User input message
+            messages: Optional message history
+            max_steps: Maximum tool execution steps
+            on_fulfilled_action: Callback for completed actions
+            **kwargs: Additional parameters
+            
+        Returns:
+            Tuple of (final_response_content, updated_messages)
+        """
+        # Initialize messages if not provided
+        if messages is None:
+            messages = []
+        
+        # Always ensure system instructions are at the beginning
+        if self.instructions:
+            # Check if system message already exists
+            has_system_msg = any(msg.role == Role.SYSTEM for msg in messages)
+            if not has_system_msg:
+                messages.insert(0, Message(role=Role.SYSTEM, content=self.instructions))
+        
+        # Add user message
+        messages.append(Message(role=Role.USER, content=input))
+        
+        # Get provider tools
+        provider_tools = self._get_provider_tools()
+        
+        # Check if model supports tools
+        model_info = next((m for m in self.provider.list_models() if m.id == self.model), None)
+        supports_tools = model_info and model_info.supports_functions and provider_tools
+        
+        # Main execution loop
+        step_count = 0
+        final_response_content = ""
+        
+        # Loop detection state
+        recent_tool_calls = []  # Track recent tool calls for loop detection
+        loop_detection_window = 3  # Number of recent calls to check
+        max_same_tool_calls = 2  # Max times same tool can be called consecutively
+        first_chunk = True
+        
+        while step_count < max_steps:
+            try:
+                # Make request to provider
+                if supports_tools:
+                    response = await asyncio.to_thread(
+                        self.provider.chat,
+                        messages=messages,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                        tools=provider_tools,
+                        **self.kwargs
+                    )
+                else:
+                    # Use streaming for final response when no tools
+                    stream = self.provider.chat_stream(
+                        messages=messages,
+                        model=self.model,
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens,
+                        **self.kwargs
+                    )
+                    
+                    # Stream the response
+                    response_content = ""
+                    for chunk in stream:
+                        if first_chunk:
+                            self.console.print(f"\n[bold cyan]{self.name}:[/bold cyan] ", end="")
+                            first_chunk = False
+                        
+                        self.console.print(chunk.content, end="")
+                        response_content += chunk.content
+                    
+                    if response_content:
+                        self.console.print()  # Add newline after streaming
+                        messages.append(Message(
+                            role=Role.ASSISTANT,
+                            content=response_content
+                        ))
+                    
+                    return response_content, messages
+                
+                # Check for tool calls
+                if response.tool_calls:
+                    # Check for tool call loops before proceeding
+                    loop_detected = self._detect_tool_call_loops(response.tool_calls, recent_tool_calls, 
+                                                               loop_detection_window, max_same_tool_calls)
+                    
+                    if loop_detected:
+                        # Break out of loop with a directive to provide final answer
+                        self.console.print("[yellow]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/yellow]")
+                        
+                        # Force a final response using streaming
+                        final_prompt = "Based on the tool execution results above, provide a complete final answer to the user's original question. Do not call any more tools."
+                        
+                        # Get final response with streaming
+                        try:
+                            stream = self.provider.chat_stream(
+                                messages=messages + [Message(role=Role.USER, content=final_prompt)],
+                                model=self.model,
+                                temperature=self.temperature,
+                                max_tokens=self.max_tokens,
+                                **self.kwargs
+                            )
+                            
+                            # Stream the final response
+                            response_content = ""
+                            for chunk in stream:
+                                if first_chunk:
+                                    self.console.print(f"\n[bold cyan]{self.name}:[/bold cyan] ", end="")
+                                    first_chunk = False
+                                
+                                self.console.print(chunk.content, end="")
+                                response_content += chunk.content
+                            
+                            if response_content:
+                                self.console.print()  # Add newline after streaming
+                                messages.append(Message(
+                                    role=Role.ASSISTANT,
+                                    content=response_content
+                                ))
+                                return response_content, messages
+                            else:
+                                # Fallback
+                                fallback_content = "I have executed the requested tools but encountered an issue providing a final response."
+                                self.console.print(f"[red]{fallback_content}[/red]")
+                                return fallback_content, messages
+                                
+                        except Exception as e:
+                            error_content = f"I executed the requested tools but encountered an error providing the final response: {e}"
+                            self.console.print(f"[red]{error_content}[/red]")
+                            return error_content, messages
+                    
+                    # Display response if any
+                    if response.content:
+                        self._print_response(response.content)
+                    # Add assistant message with tool calls
+                    messages.append(Message(
+                        role=Role.ASSISTANT,
+                        content=response.content or "",
+                        tool_calls=response.tool_calls
+                    ))
+                    
+                    # Track tool calls for loop detection
+                    for tool_call in response.tool_calls:
+                        recent_tool_calls.append(tool_call.name)
+                        if len(recent_tool_calls) > loop_detection_window:
+                            recent_tool_calls.pop(0)
+                    
+                    # Handle tool calls
+                    performed_actions = await self._handle_tool_calls(
+                        response.tool_calls, 
+                        on_fulfilled_action
+                    )
+                    
+                    # Add tool results to messages
+                    for action in performed_actions:
+                        messages.append(Message(
+                            role=Role.TOOL,
+                            content=action.function_call_output,
+                            tool_call_id=action.action_id
+                        ))
+                    
+                    step_count += 1
+                    # Continue loop to get final response
+                else:
+                    # No tool calls, we have the final response
+                    if response.content:
+                        # We already have the full response from the non-streaming call
+                        # For better UX, we should stream it character by character
+                        self.console.print(f"\n[bold cyan]{self.name}:[/bold cyan] ", end="")
+                        
+                        # Simulate streaming by printing character by character
+                        import time
+                        for char in response.content:
+                            self.console.print(char, end="")
+                            time.sleep(0.001)  # Small delay for streaming effect
+                        
+                        self.console.print()  # Add newline after response
+                        messages.append(Message(
+                            role=Role.ASSISTANT,
+                            content=response.content
+                        ))
+                        return response.content, messages
+                    else:
+                        # This shouldn't happen, but handle it
+                        return "", messages
+                    
+            except Exception as e:
+                error_msg = f"Error during agent execution: {str(e)}"
+                self.console.print(f"[red]{error_msg}[/red]")
+                return error_msg, messages
+        
+        if step_count >= max_steps:
+            self.console.print(f"[yellow]Reached maximum steps ({max_steps})[/yellow]")
+        
+        return final_response_content, messages
     
     def _detect_tool_call_loops(
         self, 

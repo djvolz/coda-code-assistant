@@ -73,10 +73,10 @@ Be concise but informative in your responses.""",
             if user_input.lower() in ['exit', 'quit', 'q']:
                 break
             
-            # Run agent
-            response = await agent.run_async(user_input)
+            # Run agent with streaming
+            response_content, messages = await agent.run_async_streaming(user_input)
             
-            # Response is already printed by agent
+            # Response is already printed by agent during streaming
             
         except KeyboardInterrupt:
             console.print("\n[yellow]Interrupted[/yellow]")
