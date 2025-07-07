@@ -674,3 +674,25 @@ def get_console_theme() -> ConsoleTheme:
 def get_prompt_style() -> Style:
     """Get current prompt-toolkit style."""
     return get_theme_manager().get_prompt_style()
+
+
+def get_themed_console() -> "Console":
+    """Get a Rich Console instance with the current theme applied.
+    
+    Returns:
+        Console instance with theme styles
+    """
+    from rich.console import Console
+    from rich.theme import Theme as RichTheme
+    
+    console_theme = get_console_theme()
+    theme_dict = console_theme.to_style_dict()
+    
+    # Add additional Rich-compatible styles
+    theme_dict.update({
+        "panel.border": console_theme.panel_border,
+        "panel.title": console_theme.panel_title,
+    })
+    
+    rich_theme = RichTheme(theme_dict)
+    return Console(theme=rich_theme)

@@ -145,7 +145,11 @@ class InteractiveCLI(CommandHandler):
     """Interactive CLI with advanced prompt features using prompt-toolkit."""
 
     def __init__(self, console: Console = None):
-        super().__init__(console or Console())
+        if console:
+            super().__init__(console)
+        else:
+            from ..themes import get_themed_console
+            super().__init__(get_themed_console())
         self.session = None
         self.commands = self._init_commands()
         self.style = self._create_style()

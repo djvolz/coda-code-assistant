@@ -20,7 +20,11 @@ class ModelSelector:
 
     def __init__(self, models: list, console: Console = None):
         self.models = models
-        self.console = console or Console()
+        if console:
+            self.console = console
+        else:
+            from ..themes import get_themed_console
+            self.console = get_themed_console()
         self.filtered_models = models
         self.selected_index = 0
         self.search_text = ""

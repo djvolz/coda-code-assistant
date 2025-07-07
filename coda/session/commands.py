@@ -33,7 +33,8 @@ class SessionCommands:
             session_manager: SessionManager instance. If None, creates a new one.
         """
         self.manager = session_manager or SessionManager()
-        self.console = Console()
+        from ..themes import get_themed_console
+        self.console = get_themed_console()
         self.current_session_id: str | None = None
         self.current_messages: list[dict[str, Any]] = []
         self.auto_save_enabled: bool = True  # Auto-save by default
