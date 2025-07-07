@@ -219,6 +219,34 @@ class CommandRegistry:
         ),
     ]
 
+    # Search subcommands
+    SEARCH_SUBCOMMANDS = [
+        CommandDefinition(
+            name="semantic",
+            description="Semantic search through indexed content",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search semantic 'web development'", "/search semantic 'error handling'"],
+        ),
+        CommandDefinition(
+            name="code",
+            description="Semantic search through code files",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search code 'async function'", "/search code 'database query'"],
+        ),
+        CommandDefinition(
+            name="index",
+            description="Index files for semantic search",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search index", "/search index src/"],
+        ),
+        CommandDefinition(
+            name="status",
+            description="Show semantic search index status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search status"],
+        ),
+    ]
+
     # Main commands
     COMMANDS = [
         CommandDefinition(
@@ -284,6 +312,12 @@ class CommandRegistry:
             aliases=["t"],
             subcommands=TOOLS_SUBCOMMANDS,
             examples=["/tools", "/tools list"],
+        ),
+        CommandDefinition(
+            name="search",
+            description="Semantic search commands",
+            subcommands=SEARCH_SUBCOMMANDS,
+            examples=["/search semantic 'query'", "/search code 'function'", "/search status"],
         ),
     ]
 
