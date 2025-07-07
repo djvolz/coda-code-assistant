@@ -9,12 +9,6 @@ from rich.panel import Panel
 from rich.text import Text
 
 from ..constants import (
-    CONSOLE_STYLE_BOLD,
-    CONSOLE_STYLE_DIM,
-    CONSOLE_STYLE_ERROR,
-    CONSOLE_STYLE_INFO,
-    CONSOLE_STYLE_SUCCESS,
-    CONSOLE_STYLE_WARNING,
     PANEL_BORDER_STYLE,
 )
 from .interactive_cli import DeveloperMode, InteractiveCLI
@@ -25,7 +19,9 @@ try:
 except ImportError:
     __version__ = "dev"
 
-console = Console()
+# Create themed console that respects user's theme configuration
+from ..themes import get_themed_console
+console = get_themed_console()
 
 
 async def _check_first_run(console: Console, auto_save_enabled: bool):
@@ -45,29 +41,29 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
         from rich.panel import Panel
 
         if auto_save_enabled:
-            notification = f"""{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Welcome to Coda![/]
+            notification = f"""[info][bold]Welcome to Coda![/]
 
-{CONSOLE_STYLE_WARNING}Auto-Save is ENABLED[/] 💾
+[warning]Auto-Save is ENABLED[/] 💾
 
 Your conversations will be automatically saved when you start chatting.
 This helps you resume conversations and search through history.
 
-{CONSOLE_STYLE_DIM}To disable auto-save:[/]
-• Use {CONSOLE_STYLE_INFO}--no-save[/] flag when starting Coda
-• Set {CONSOLE_STYLE_INFO}autosave = false[/] in ~/.config/coda/config.toml
-• Delete sessions with {CONSOLE_STYLE_INFO}/session delete-all[/]
+[dim]To disable auto-save:[/]
+• Use [info]--no-save[/] flag when starting Coda
+• Set [info]autosave = false[/] in ~/.config/coda/config.toml
+• Delete sessions with [info]/session delete-all[/]
 
-{CONSOLE_STYLE_DIM}Your privacy matters - sessions are stored locally only.[/]"""
+[dim]Your privacy matters - sessions are stored locally only.[/]"""
         else:
-            notification = f"""{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Welcome to Coda![/]
+            notification = f"""[info][bold]Welcome to Coda![/]
 
-{CONSOLE_STYLE_WARNING}Auto-Save is DISABLED[/] 🔒
+[warning]Auto-Save is DISABLED[/] 🔒
 
 Your conversations will NOT be saved automatically.
 
-{CONSOLE_STYLE_DIM}To enable auto-save for future sessions:[/]
-• Remove {CONSOLE_STYLE_INFO}--no-save[/] flag when starting Coda
-• Set {CONSOLE_STYLE_INFO}autosave = true[/] in ~/.config/coda/config.toml"""
+[dim]To enable auto-save for future sessions:[/]
+• Remove [info]--no-save[/] flag when starting Coda
+• Set [info]autosave = true[/] in ~/.config/coda/config.toml"""
 
         console.print("\n")
         console.print(Panel(notification, title="First Run", border_style=PANEL_BORDER_STYLE))
@@ -83,12 +79,12 @@ Your conversations will NOT be saved automatically.
 
 async def _initialize_provider(factory, provider: str, console: Console):
     """Initialize and connect to the provider."""
-    console.print(f"\n{CONSOLE_STYLE_SUCCESS}Provider:[/] {provider}")
-    console.print(f"{CONSOLE_STYLE_WARNING}Initializing {provider}...[/]")
+    console.print(f"\n[success]Provider:[/] {provider}")
+    console.print(f"[warning]Initializing {provider}...[/]")
 
     # Create provider instance
     provider_instance = factory.create(provider)
-    console.print(f"{CONSOLE_STYLE_SUCCESS}✓ Connected to {provider}[/]")
+    console.print(f"[success]✓ Connected to {provider}[/]")
 
     return provider_instance
 
@@ -97,7 +93,7 @@ async def _get_chat_models(provider_instance, console: Console):
     """Get and filter available chat models from the provider."""
     # List models
     models = provider_instance.list_models()
-    console.print(f"{CONSOLE_STYLE_SUCCESS}✓ Found {len(models)} available models[/]")
+    console.print(f"[success]✓ Found {len(models)} available models[/]")
 
     # Filter for chat models - different providers use different indicators
     chat_models = [
@@ -267,13 +263,13 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Stop the spinner when we get the first chunk
                     status.stop()
                     # Just print the assistant label
-                    console.print(f"\n{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Assistant:[/] ", end="")
+                    console.print(f"\n[info][bold]Assistant:[/] ", end="")
                     first_chunk = False
 
                 # Check for interrupt
                 if cli.interrupt_event.is_set():
                     interrupted = True
-                    console.print(f"\n\n{CONSOLE_STYLE_WARNING}Response interrupted by user[/]")
+                    console.print(f"\n\n[warning]Response interrupted by user[/]")
                     break
 
                 # Stream the response as plain text

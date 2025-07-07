@@ -25,7 +25,9 @@ from .chat_session import ChatSession
 from .error_handler import CLIErrorHandler
 from .provider_manager import ProviderManager
 
-console = Console()
+# Create themed console that respects user's theme configuration
+from ..themes import get_themed_console
+console = get_themed_console()
 
 
 @click.command()
