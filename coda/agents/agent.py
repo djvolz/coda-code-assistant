@@ -107,6 +107,7 @@ class Agent:
         messages: list[Message] | None = None,
         max_steps: int = 10,
         on_fulfilled_action: Callable[[RequiredAction, PerformedAction], None] | None = None,
+        status=None,  # Optional status indicator
         **kwargs,
     ) -> RunResponse:
         """
@@ -373,7 +374,7 @@ class Agent:
                     # Use streaming for final response when no tools
                     if status:
                         status.update("[bold cyan]Generating response...[/bold cyan]")
-                    
+
                     stream = self.provider.chat_stream(
                         messages=messages,
                         model=self.model,
@@ -424,7 +425,7 @@ class Agent:
                         try:
                             if status:
                                 status.update("[bold cyan]Getting final response...[/bold cyan]")
-                            
+
                             stream = self.provider.chat_stream(
                                 messages=messages + [Message(role=Role.USER, content=final_prompt)],
                                 model=self.model,
@@ -581,7 +582,7 @@ class Agent:
     def run(self, input: str, **kwargs) -> RunResponse:
         """Synchronous wrapper for run_async."""
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # We're already in an event loop, can't use run_until_complete
             # This shouldn't happen in normal usage
             raise RuntimeError(
@@ -695,7 +696,7 @@ class Agent:
                         expand=False,
                     )
                 )
-            except:
+            except Exception:
                 self.console.print(Panel(action.function_call_output, expand=False))
 
     def as_tool(
