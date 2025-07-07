@@ -219,6 +219,31 @@ class CommandRegistry:
         ),
     ]
 
+    # Intelligence subcommands
+    INTELLIGENCE_SUBCOMMANDS = [
+        CommandDefinition(
+            name="analyze", description="Analyze a single file", type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="map", description="Map repository structure", type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="scan", description="Scan directory for code files", type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="stats", description="Show language statistics", type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="find", description="Find definitions by name", type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="deps", description="Show file dependencies", type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="graph", description="Generate dependency graph", type=CommandType.SUBCOMMAND
+        ),
+    ]
+
     # Main commands
     COMMANDS = [
         CommandDefinition(
@@ -284,6 +309,13 @@ class CommandRegistry:
             aliases=["t"],
             subcommands=TOOLS_SUBCOMMANDS,
             examples=["/tools", "/tools list"],
+        ),
+        CommandDefinition(
+            name="intel",
+            description="Codebase intelligence and analysis",
+            aliases=["intelligence", "code"],
+            subcommands=INTELLIGENCE_SUBCOMMANDS,
+            examples=["/intel analyze file.py", "/intel map", "/intel scan src/"],
         ),
     ]
 
