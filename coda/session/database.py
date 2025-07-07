@@ -32,10 +32,10 @@ class SessionDatabase:
 
         # Create engine with connection pooling disabled for SQLite
         self.engine = create_engine(
-            f'sqlite:///{self.db_path}',
-            connect_args={'check_same_thread': False},
+            f"sqlite:///{self.db_path}",
+            connect_args={"check_same_thread": False},
             poolclass=StaticPool,
-            echo=False
+            echo=False,
         )
 
         # Enable foreign key support and WAL mode for better concurrency
@@ -52,7 +52,7 @@ class SessionDatabase:
             autocommit=False,
             autoflush=False,
             bind=self.engine,
-            expire_on_commit=False  # Prevent objects from being expired after commit
+            expire_on_commit=False,  # Prevent objects from being expired after commit
         )
 
         # Initialize database
@@ -65,11 +65,15 @@ class SessionDatabase:
         # Create FTS5 virtual table for full-text search
         with self.engine.connect() as conn:
             # Check if FTS table exists
-            result = conn.execute(text(
-                f"SELECT name FROM sqlite_master WHERE type='table' AND name='{FTS_TABLE_NAME}'"
-            ))
+            result = conn.execute(
+                text(
+                    f"SELECT name FROM sqlite_master WHERE type='table' AND name='{FTS_TABLE_NAME}'"
+                )
+            )
             if not result.fetchone():
-                conn.execute(text(f"""
+                conn.execute(
+                    text(
+                        f"""
                     CREATE VIRTUAL TABLE {FTS_TABLE_NAME} USING fts5(
                         message_id UNINDEXED,
                         session_id UNINDEXED,
@@ -77,7 +81,9 @@ class SessionDatabase:
                         role UNINDEXED,
                         tokenize='porter unicode61'
                     )
-                """))
+                """
+                    )
+                )
                 conn.commit()
 
     @contextmanager
@@ -120,6 +126,7 @@ class SessionDatabase:
             backup_path: Path to save the backup.
         """
         import shutil
+
         if self.db_path.exists():
             backup_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(self.db_path, backup_path)

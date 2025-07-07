@@ -67,7 +67,9 @@ class TestMockProviderConversations:
         messages.append(Message(role=Role.USER, content="Can you show me an example?"))
         response3 = provider.chat(messages, "mock-echo")
 
-        assert "@" in response3 or "decorator" in response3.lower(), "Should provide decorator example"
+        assert (
+            "@" in response3 or "decorator" in response3.lower()
+        ), "Should provide decorator example"
 
     def test_conversation_context_switching(self):
         """Test switching between different conversation topics."""
@@ -103,7 +105,7 @@ class TestMockProviderConversations:
 
         messages = [
             Message(role=Role.SYSTEM, content="You are a helpful Python tutor."),
-            Message(role=Role.USER, content="Tell me about Python")
+            Message(role=Role.USER, content="Tell me about Python"),
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -122,7 +124,7 @@ class TestMockProviderConversations:
             "Tell me about Python",
             "What about Python decorators?",
             "And Python functions?",
-            "What were we discussing?"
+            "What were we discussing?",
         ]
 
         for i, user_msg in enumerate(topics):
@@ -170,8 +172,9 @@ class TestMockProviderConversations:
             response = provider.chat(messages, "mock-echo")
 
             # Should mention the expected keyword
-            assert expected_keyword in response.lower(), \
-                f"Response to '{question}' should mention '{expected_keyword}'"
+            assert (
+                expected_keyword in response.lower()
+            ), f"Response to '{question}' should mention '{expected_keyword}'"
 
     def test_code_generation_requests(self):
         """Test handling of code generation requests."""
@@ -191,7 +194,7 @@ class TestMockProviderConversations:
         # Base conversation about Python
         base_messages = [
             Message(role=Role.USER, content="Tell me about Python"),
-            Message(role=Role.ASSISTANT, content="Python is a high-level programming language...")
+            Message(role=Role.ASSISTANT, content="Python is a high-level programming language..."),
         ]
 
         # Branch 1: Ask about decorators

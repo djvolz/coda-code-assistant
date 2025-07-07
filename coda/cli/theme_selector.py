@@ -7,7 +7,7 @@ from prompt_toolkit.layout import FormattedTextControl, HSplit, Layout, Window
 from prompt_toolkit.widgets import TextArea
 from rich.console import Console
 
-from ..themes import get_prompt_style, THEMES
+from ..themes import THEMES, get_prompt_style
 
 
 class ThemeSelector:
@@ -18,8 +18,9 @@ class ThemeSelector:
             self.console = console
         else:
             from ..themes import get_themed_console
+
             self.console = get_themed_console()
-        
+
         # Get all available themes
         self.themes = list(THEMES.items())  # List of (name, theme) tuples
         self.filtered_themes = self.themes
@@ -56,11 +57,12 @@ class ThemeSelector:
             self.filtered_themes = self.themes
         else:
             self.filtered_themes = [
-                (name, theme) for name, theme in self.themes
-                if search_text.lower() in name.lower() or 
-                   search_text.lower() in theme.description.lower()
+                (name, theme)
+                for name, theme in self.themes
+                if search_text.lower() in name.lower()
+                or search_text.lower() in theme.description.lower()
             ]
-        
+
         # Reset selection if out of bounds
         if self.selected_index >= len(self.filtered_themes):
             self.selected_index = max(0, len(self.filtered_themes) - 1)
@@ -91,10 +93,12 @@ class ThemeSelector:
         )
 
         layout = Layout(
-            HSplit([
-                search_field,
-                theme_list_window,
-            ])
+            HSplit(
+                [
+                    search_field,
+                    theme_list_window,
+                ]
+            )
         )
 
         # Key bindings

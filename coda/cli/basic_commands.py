@@ -1,6 +1,5 @@
 """Basic mode slash command handling."""
 
-
 from coda.cli.shared import CommandHandler, CommandResult
 
 
@@ -83,4 +82,3 @@ class BasicCommandProcessor(CommandHandler):
         self.console.print("[dim]Type any command without arguments to see its options[/dim]")
 
         return CommandResult.HANDLED
-

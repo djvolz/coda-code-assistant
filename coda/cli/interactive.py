@@ -9,12 +9,6 @@ from rich.panel import Panel
 from rich.text import Text
 
 from ..constants import (
-    CONSOLE_STYLE_BOLD,
-    CONSOLE_STYLE_DIM,
-    CONSOLE_STYLE_ERROR,
-    CONSOLE_STYLE_INFO,
-    CONSOLE_STYLE_SUCCESS,
-    CONSOLE_STYLE_WARNING,
     PANEL_BORDER_STYLE,
 )
 from .interactive_cli import DeveloperMode, InteractiveCLI
@@ -26,8 +20,10 @@ except ImportError:
     __version__ = "dev"
 
 # Create themed console that respects user's theme configuration
-from ..themes import get_themed_console
+from ..themes import get_console_theme, get_themed_console
+
 console = get_themed_console()
+theme = get_console_theme()
 
 
 async def _check_first_run(console: Console, auto_save_enabled: bool):
@@ -47,7 +43,7 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
         from rich.panel import Panel
 
         if auto_save_enabled:
-            notification = f"""[info][bold]Welcome to Coda![/]
+            notification = """[info][bold]Welcome to Coda![/]
 
 [warning]Auto-Save is ENABLED[/] 💾
 
@@ -61,7 +57,7 @@ This helps you resume conversations and search through history.
 
 [dim]Your privacy matters - sessions are stored locally only.[/]"""
         else:
-            notification = f"""[info][bold]Welcome to Coda![/]
+            notification = """[info][bold]Welcome to Coda![/]
 
 [warning]Auto-Save is DISABLED[/] 🔒
 
@@ -135,14 +131,16 @@ async def _select_model(unique_models, model: str, console: Console):
         model = await selector.select_model_interactive()
 
         if not model:
-            console.print(f"\n{CONSOLE_STYLE_WARNING}No model selected. Exiting.[/]")
+            console.print(f"\n[{theme.warning}]No model selected. Exiting.[/{theme.warning}]")
             return None
 
-    console.print(f"{CONSOLE_STYLE_SUCCESS}Model:[/] {model}")
-    console.print(f"{CONSOLE_STYLE_DIM}Found {len(unique_models)} unique models available[/]")
-    console.print(f"\n{CONSOLE_STYLE_DIM}Type /help for commands, /exit or Ctrl+D to quit[/]")
-    console.print(f"{CONSOLE_STYLE_DIM}Press Ctrl+C to clear input or interrupt AI response[/]")
-    console.print(f"{CONSOLE_STYLE_DIM}Press Ctrl+R to search command history[/]\n")
+    console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
+    console.print(f"[{theme.dim}]Found {len(unique_models)} unique models available[/{theme.dim}]")
+    console.print(f"\n[{theme.dim}]Type /help for commands, /exit or Ctrl+D to quit[/{theme.dim}]")
+    console.print(
+        f"[{theme.dim}]Press Ctrl+C to clear input or interrupt AI response[/{theme.dim}]"
+    )
+    console.print(f"[{theme.dim}]Press Ctrl+R to search command history[/{theme.dim}]\n")
 
     return model
 
@@ -155,10 +153,11 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     try:
         user_input = await cli.get_input()
     except (KeyboardInterrupt, EOFError) as e:
-        console.print(f"{CONSOLE_STYLE_ERROR}Input interrupted: {e}[/]")
+        theme = get_console_theme()
+        console.print(f"[{theme.error}]Input interrupted: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception as e:
-        console.print(f"{CONSOLE_STYLE_ERROR}Unexpected error getting input: {e}[/]")
+        console.print(f"[{theme.error}]Unexpected error getting input: {e}[/{theme.error}]")
         return True  # Continue loop
 
     # Skip empty input (from Ctrl+C)
@@ -175,19 +174,21 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Replace current messages with loaded session messages
                     messages.clear()
                     messages.extend(loaded_messages)
-                    console.print(f"{CONSOLE_STYLE_DIM}Restored {len(loaded_messages)} messages to conversation history[/]")
+                    console.print(
+                        f"[{theme.dim}]Restored {len(loaded_messages)} messages to conversation history[/{theme.dim}]"
+                    )
 
                 # Check if conversation was cleared
                 if cli.session_commands.was_conversation_cleared():
                     messages.clear()
-                    console.print(f"{CONSOLE_STYLE_DIM}Cleared conversation history[/]")
+                    console.print(f"[{theme.dim}]Cleared conversation history[/{theme.dim}]")
 
                 return True
         except (ValueError, AttributeError) as e:
-            console.print(f"{CONSOLE_STYLE_ERROR}Invalid command: {e}[/]")
+            console.print(f"[{theme.error}]Invalid command: {e}[/{theme.error}]")
             return True
         except Exception as e:
-            console.print(f"{CONSOLE_STYLE_ERROR}Error processing command: {e}[/]")
+            console.print(f"[{theme.error}]Error processing command: {e}[/{theme.error}]")
             return True
 
     # Check for multiline indicator
@@ -211,9 +212,9 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         content=user_input,
         metadata={
             "mode": cli.current_mode.value,
-            "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
-            "model": cli.current_model
-        }
+            "provider": provider_instance.name if hasattr(provider_instance, "name") else "unknown",
+            "model": cli.current_model,
+        },
     )
 
     # Choose thinking message based on mode
@@ -247,9 +248,10 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     try:
         # Create a status spinner for thinking animation
         # Using "dots" spinner style - other options: "line", "star", "bouncingBar", "arrow3"
-        from ..themes import get_console_theme
         theme = get_console_theme()
-        with console.status(f"[{theme.info}]{thinking_msg}...[/{theme.info}]", spinner="dots") as status:
+        with console.status(
+            f"[{theme.info}]{thinking_msg}...[/{theme.info}]", spinner="dots"
+        ) as status:
             # Get generation parameters from config or defaults
             if not config:
                 from coda.configuration import get_config
@@ -271,15 +273,16 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Stop the spinner when we get the first chunk
                     status.stop()
                     # Just print the assistant label
-                    from ..themes import get_console_theme
-                    theme = get_console_theme()
-                    console.print(f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ", end="")
+                    console.print(
+                        f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ",
+                        end="",
+                    )
                     first_chunk = False
 
                 # Check for interrupt
                 if cli.interrupt_event.is_set():
                     interrupted = True
-                    console.print(f"\n\n[warning]Response interrupted by user[/]")
+                    console.print("\n\n[warning]Response interrupted by user[/]")
                     break
 
                 # Stream the response as plain text
@@ -290,12 +293,12 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         if full_response:
             console.print()  # Ensure we end on a new line
     except (ConnectionError, TimeoutError) as e:
-        console.print(f"\n\n{CONSOLE_STYLE_ERROR}Network error during streaming: {e}[/]")
+        console.print(f"\n\n[{theme.error}]Network error during streaming: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception:
         if cli.interrupt_event.is_set():
             interrupted = True
-            console.print(f"\n\n{CONSOLE_STYLE_WARNING}Response interrupted by user[/]")
+            console.print(f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]")
         else:
             raise
     finally:
@@ -312,17 +315,21 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
             content=full_response,
             metadata={
                 "mode": cli.current_mode.value,
-                "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
+                "provider": (
+                    provider_instance.name if hasattr(provider_instance, "name") else "unknown"
+                ),
                 "model": cli.current_model,
-                "interrupted": interrupted
-            }
+                "interrupted": interrupted,
+            },
         )
     console.print("\n")  # Add spacing after response
 
     return True  # Continue loop
 
 
-async def run_interactive_session(provider: str, model: str, debug: bool, no_save: bool, resume: bool):
+async def run_interactive_session(
+    provider: str, model: str, debug: bool, no_save: bool, resume: bool
+):
     """Run the enhanced interactive session."""
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
@@ -340,20 +347,20 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
         cli.session_commands.auto_save_enabled = False
     else:
         # Use config value, defaulting to True if not specified
-        cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
+        cli.session_commands.auto_save_enabled = config.session.get("autosave", True)
 
     # Check for first run and show auto-save notification
     await _check_first_run(console, cli.session_commands.auto_save_enabled)
 
     # Load last session if requested
     if resume:
-        console.print(f"\n{CONSOLE_STYLE_INFO}Resuming last session...[/]")
+        console.print(f"\n[{theme.info}]Resuming last session...[/{theme.info}]")
         result = cli.session_commands._load_last_session()
         if result:  # Error message
-            console.print(f"{CONSOLE_STYLE_WARNING}{result}[/]")
+            console.print(f"[{theme.warning}]{result}[/{theme.warning}]")
         else:
             # Successfully loaded, show a separator
-            console.print(f"\n{CONSOLE_STYLE_DIM}{'─' * 50}[/]\n")
+            console.print(f"\n[{theme.dim}]{'─' * 50}[/{theme.dim}]\n")
 
     # Apply debug override
     if debug:
@@ -384,17 +391,23 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
 
         # Interactive chat loop
         # Initialize messages - use loaded messages if available
-        if resume and hasattr(cli.session_commands, '_messages_loaded') and cli.session_commands._messages_loaded:
+        if (
+            resume
+            and hasattr(cli.session_commands, "_messages_loaded")
+            and cli.session_commands._messages_loaded
+        ):
             # Import Message and Role for conversion
             from coda.providers import Message, Role
 
             # Convert loaded messages to Message objects
             messages = []
             for msg in cli.session_commands.current_messages:
-                messages.append(Message(
-                    role=Role.USER if msg['role'] == 'user' else Role.ASSISTANT,
-                    content=msg['content']
-                ))
+                messages.append(
+                    Message(
+                        role=Role.USER if msg["role"] == "user" else Role.ASSISTANT,
+                        content=msg["content"],
+                    )
+                )
             # Reset the flag
             cli.session_commands._messages_loaded = False
         else:
@@ -409,17 +422,23 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
 
     except ValueError as e:
         if "compartment_id is required" in str(e):
-            console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] OCI compartment ID not configured")
+            console.print(
+                f"\n[{theme.error}]Error:[/{theme.error}] OCI compartment ID not configured"
+            )
             console.print("\nPlease set it via one of these methods:")
             console.print(
-                f"1. Environment variable: {CONSOLE_STYLE_INFO}export OCI_COMPARTMENT_ID='your-compartment-id'[/]"
+                f"1. Environment variable: [{theme.info}]export OCI_COMPARTMENT_ID='your-compartment-id'[/{theme.info}]"
             )
-            console.print(f"2. Coda config file: {CONSOLE_STYLE_INFO}~/.config/coda/config.toml[/]")
+            console.print(
+                f"2. Coda config file: [{theme.info}]~/.config/coda/config.toml[/{theme.info}]"
+            )
         elif "Unknown provider" in str(e):
-            console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] Provider '{provider}' not found")
+            console.print(
+                f"\n[{theme.error}]Error:[/{theme.error}] Provider '{provider}' not found"
+            )
             console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
         else:
-            console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {e}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
         if debug:
             import traceback
 
@@ -430,17 +449,15 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
         pass
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully - just exit cleanly
-        console.print(f"\n\n{CONSOLE_STYLE_DIM}Interrupted. Goodbye![/]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)
     except Exception as e:
-        console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {e}")
+        console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
         if debug:
             import traceback
 
             traceback.print_exc()
         sys.exit(1)
-
-
 
 
 @click.command()
@@ -457,20 +474,24 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
 @click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.option("--resume", is_flag=True, help="Resume the most recent session")
 @click.version_option(version=__version__, prog_name="coda")
-def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool):
+def interactive_main(
+    provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool
+):
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
-        f"{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Coda[/] - Code Assistant\n"
-        f"{CONSOLE_STYLE_DIM}Multi-provider AI coding companion v{__version__}[/]\n"
-        f"{CONSOLE_STYLE_DIM}Interactive mode with prompt-toolkit[/]"
+        f"[{theme.info}][{theme.bold}]Coda[/{theme.bold}][/{theme.info}] - Code Assistant\n"
+        f"[{theme.dim}]Multi-provider AI coding companion v{__version__}[/{theme.dim}]\n"
+        f"[{theme.dim}]Interactive mode with prompt-toolkit[/{theme.dim}]"
     )
 
     console.print(Panel(welcome_text, title="Welcome", border_style=PANEL_BORDER_STYLE))
 
     if one_shot:
         # Handle one-shot mode (simplified for now)
-        console.print(f"{CONSOLE_STYLE_WARNING}One-shot mode not yet updated for enhanced CLI[/]")
+        console.print(
+            f"[{theme.warning}]One-shot mode not yet updated for enhanced CLI[/{theme.warning}]"
+        )
         console.print(f"Would execute: {one_shot}")
     else:
         # Run interactive session
@@ -482,5 +503,5 @@ if __name__ == "__main__":
         interactive_main()
     except KeyboardInterrupt:
         # Handle Ctrl+C at the top level
-        console.print(f"\n\n{CONSOLE_STYLE_DIM}Interrupted. Goodbye![/]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)

@@ -72,7 +72,7 @@ def build_request_params(
     top_p: float | None = None,
     stop: list[str] | None = None,
     stream: bool = False,
-    **kwargs
+    **kwargs,
 ) -> dict[str, Any]:
     """Build common request parameters for provider API calls.
 

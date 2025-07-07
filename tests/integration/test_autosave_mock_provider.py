@@ -15,7 +15,7 @@ class TestAutoSaveWithMockProvider:
     @pytest.fixture
     def temp_db_path(self):
         """Create temporary database path."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
         yield db_path
         if db_path.exists():
@@ -45,11 +45,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="user",
             content="What is Python?",
-            metadata={
-                "mode": "general",
-                "provider": "mock",
-                "model": "mock-echo"
-            }
+            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"},
         )
 
         # Get MockProvider response
@@ -60,11 +56,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="assistant",
             content=response,
-            metadata={
-                "provider": "mock",
-                "model": "mock-echo",
-                "mode": "general"
-            }
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Verify auto-save triggered
@@ -98,11 +90,7 @@ class TestAutoSaveWithMockProvider:
                 session_commands.add_message(
                     role="user",
                     content=content,
-                    metadata={
-                        "mode": "general",
-                        "provider": "mock",
-                        "model": "mock-echo"
-                    }
+                    metadata={"mode": "general", "provider": "mock", "model": "mock-echo"},
                 )
                 mock_messages.append(Message(role=Role.USER, content=content))
             else:
@@ -113,11 +101,7 @@ class TestAutoSaveWithMockProvider:
                 session_commands.add_message(
                     role="assistant",
                     content=response,
-                    metadata={
-                        "provider": "mock",
-                        "model": "mock-echo",
-                        "mode": "general"
-                    }
+                    metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
                 )
                 mock_messages.append(Message(role=Role.ASSISTANT, content=response))
 
@@ -146,11 +130,7 @@ class TestAutoSaveWithMockProvider:
             session_commands.add_message(
                 role="user",
                 content="Hello",
-                metadata={
-                    "mode": mode,
-                    "provider": "mock",
-                    "model": "mock-echo"
-                }
+                metadata={"mode": mode, "provider": "mock", "model": "mock-echo"},
             )
 
             # Get MockProvider response
@@ -160,11 +140,7 @@ class TestAutoSaveWithMockProvider:
             session_commands.add_message(
                 role="assistant",
                 content=response,
-                metadata={
-                    "provider": "mock",
-                    "model": "mock-echo",
-                    "mode": mode
-                }
+                metadata={"provider": "mock", "model": "mock-echo", "mode": mode},
             )
 
             # Verify auto-save triggered
@@ -180,11 +156,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="user",
             content="What is Python?",
-            metadata={
-                "mode": "general",
-                "provider": "mock",
-                "model": "mock-echo"
-            }
+            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"},
         )
 
         # No auto-save should occur
@@ -194,11 +166,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="user",
             content="Tell me more",
-            metadata={
-                "mode": "general",
-                "provider": "mock",
-                "model": "mock-echo"
-            }
+            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"},
         )
 
         # Still no auto-save
@@ -210,7 +178,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="user",
             content="What is Python?",
-            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"}
+            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"},
         )
 
         messages = [Message(role=Role.USER, content="What is Python?")]
@@ -219,7 +187,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="assistant",
             content=response1,
-            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"}
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Capture session ID
@@ -230,21 +198,21 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="user",
             content="What were we discussing?",
-            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"}
+            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"},
         )
 
         # Build full message history for MockProvider
         messages = [
             Message(role=Role.USER, content="What is Python?"),
             Message(role=Role.ASSISTANT, content=response1),
-            Message(role=Role.USER, content="What were we discussing?")
+            Message(role=Role.USER, content="What were we discussing?"),
         ]
         response2 = mock_provider.chat(messages, "mock-echo")
 
         session_commands.add_message(
             role="assistant",
             content=response2,
-            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"}
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Verify same session is used
@@ -264,7 +232,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="user",
             content="Hello",
-            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"}
+            metadata={"mode": "general", "provider": "mock", "model": "mock-echo"},
         )
 
         # Simulate streaming response collection
@@ -279,7 +247,7 @@ class TestAutoSaveWithMockProvider:
         session_commands.add_message(
             role="assistant",
             content=full_response,
-            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"}
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Verify auto-save

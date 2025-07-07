@@ -16,7 +16,7 @@ class TestSessionManager:
     @pytest.fixture
     def manager(self):
         """Create a session manager with temporary database."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
 
         db = SessionDatabase(db_path)
@@ -34,7 +34,7 @@ class TestSessionManager:
             provider="oci_genai",
             model="cohere.command-r-plus",
             mode="code",
-            description="Test session for unit tests"
+            description="Test session for unit tests",
         )
 
         assert session.name == "Test Session"
@@ -47,18 +47,14 @@ class TestSessionManager:
     def test_add_message(self, manager):
         """Test adding messages to a session."""
         # Create session
-        session = manager.create_session(
-            name="Message Test",
-            provider="test",
-            model="test-model"
-        )
+        session = manager.create_session(name="Message Test", provider="test", model="test-model")
 
         # Add messages
         msg1 = manager.add_message(
             session_id=session.id,
             role="user",
             content="What is Python?",
-            metadata={"timestamp": "2024-01-01T10:00:00"}
+            metadata={"timestamp": "2024-01-01T10:00:00"},
         )
 
         msg2 = manager.add_message(
@@ -68,7 +64,7 @@ class TestSessionManager:
             model="test-model",
             provider="test",
             token_usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
-            cost=0.001
+            cost=0.001,
         )
 
         # Verify messages
@@ -86,17 +82,13 @@ class TestSessionManager:
     def test_get_messages(self, manager):
         """Test retrieving messages from a session."""
         # Create session with messages
-        session = manager.create_session(
-            name="Retrieval Test",
-            provider="test",
-            model="test-model"
-        )
+        session = manager.create_session(name="Retrieval Test", provider="test", model="test-model")
 
         for i in range(5):
             manager.add_message(
                 session_id=session.id,
                 role="user" if i % 2 == 0 else "assistant",
-                content=f"Message {i}"
+                content=f"Message {i}",
             )
 
         # Get all messages
@@ -117,26 +109,14 @@ class TestSessionManager:
     def test_search_sessions(self, manager):
         """Test full-text search across sessions."""
         # Create sessions with searchable content
-        session1 = manager.create_session(
-            name="Python Tutorial",
-            provider="test",
-            model="test"
-        )
+        session1 = manager.create_session(name="Python Tutorial", provider="test", model="test")
         manager.add_message(
-            session_id=session1.id,
-            role="user",
-            content="How do I use decorators in Python?"
+            session_id=session1.id, role="user", content="How do I use decorators in Python?"
         )
 
-        session2 = manager.create_session(
-            name="JavaScript Guide",
-            provider="test",
-            model="test"
-        )
+        session2 = manager.create_session(name="JavaScript Guide", provider="test", model="test")
         manager.add_message(
-            session_id=session2.id,
-            role="user",
-            content="What are arrow functions in JavaScript?"
+            session_id=session2.id, role="user", content="What are arrow functions in JavaScript?"
         )
 
         # Search for Python
@@ -152,27 +132,11 @@ class TestSessionManager:
     def test_session_branching(self, manager):
         """Test creating session branches."""
         # Create parent session with messages
-        parent = manager.create_session(
-            name="Parent Session",
-            provider="test",
-            model="test"
-        )
+        parent = manager.create_session(name="Parent Session", provider="test", model="test")
 
-        manager.add_message(
-            session_id=parent.id,
-            role="user",
-            content="First message"
-        )
-        msg2 = manager.add_message(
-            session_id=parent.id,
-            role="assistant",
-            content="First response"
-        )
-        manager.add_message(
-            session_id=parent.id,
-            role="user",
-            content="Second message"
-        )
+        manager.add_message(session_id=parent.id, role="user", content="First message")
+        msg2 = manager.add_message(session_id=parent.id, role="assistant", content="First response")
+        manager.add_message(session_id=parent.id, role="user", content="Second message")
 
         # Create branch from second message
         branch = manager.create_session(
@@ -180,7 +144,7 @@ class TestSessionManager:
             provider="test",
             model="test",
             parent_id=parent.id,
-            branch_point_message_id=msg2.id
+            branch_point_message_id=msg2.id,
         )
 
         # Verify branch has messages up to branch point
@@ -192,11 +156,7 @@ class TestSessionManager:
     def test_delete_session(self, manager):
         """Test session deletion."""
         # Create session
-        session = manager.create_session(
-            name="Delete Test",
-            provider="test",
-            model="test"
-        )
+        session = manager.create_session(name="Delete Test", provider="test", model="test")
         session_id = session.id
 
         # Soft delete
@@ -210,11 +170,7 @@ class TestSessionManager:
 
     def test_archive_session(self, manager):
         """Test session archival."""
-        session = manager.create_session(
-            name="Archive Test",
-            provider="test",
-            model="test"
-        )
+        session = manager.create_session(name="Archive Test", provider="test", model="test")
 
         manager.archive_session(session.id)
         archived = manager.get_session(session.id)
@@ -222,11 +178,7 @@ class TestSessionManager:
 
     def test_update_session(self, manager):
         """Test updating session metadata."""
-        session = manager.create_session(
-            name="Update Test",
-            provider="test",
-            model="test"
-        )
+        session = manager.create_session(name="Update Test", provider="test", model="test")
 
         # Update with tags
         manager.update_session(
@@ -234,7 +186,7 @@ class TestSessionManager:
             name="Updated Name",
             description="New description",
             tags=["python", "testing"],
-            config={"theme": "dark"}
+            config={"theme": "dark"},
         )
 
         updated = manager.get_session(session.id)
@@ -247,9 +199,7 @@ class TestSessionManager:
     def test_get_session_context(self, manager):
         """Test getting session context with windowing."""
         session = manager.create_session(
-            name="Context Test",
-            provider="test",
-            model="gpt-3.5-turbo"
+            name="Context Test", provider="test", model="gpt-3.5-turbo"
         )
 
         # Add many messages
@@ -257,58 +207,46 @@ class TestSessionManager:
             manager.add_message(
                 session_id=session.id,
                 role="user" if i % 2 == 0 else "assistant",
-                content=f"Message {i} " * 50  # Make messages longer
+                content=f"Message {i} " * 50,  # Make messages longer
             )
 
         # Get context with token limit
         context, was_truncated = manager.get_session_context(
-            session.id,
-            max_tokens=1000,
-            model="gpt-3.5-turbo"
+            session.id, max_tokens=1000, model="gpt-3.5-turbo"
         )
 
         assert was_truncated
         assert len(context) < 20  # Should be truncated
         # Should have summary message
-        assert any(msg['role'] == 'system' and 'summary' in msg['content'].lower()
-                  for msg in context)
+        assert any(
+            msg["role"] == "system" and "summary" in msg["content"].lower() for msg in context
+        )
 
     def test_export_json(self, manager):
         """Test exporting session as JSON."""
-        session = manager.create_session(
-            name="Export Test",
-            provider="test",
-            model="test"
-        )
+        session = manager.create_session(name="Export Test", provider="test", model="test")
 
-        manager.add_message(
-            session_id=session.id,
-            role="user",
-            content="Test message"
-        )
+        manager.add_message(session_id=session.id, role="user", content="Test message")
 
         # Export as JSON
-        json_export = manager.export_session(session.id, format='json')
+        json_export = manager.export_session(session.id, format="json")
         data = json.loads(json_export)
 
-        assert data['session']['name'] == "Export Test"
-        assert len(data['messages']) == 1
-        assert data['messages'][0]['content'] == "Test message"
+        assert data["session"]["name"] == "Export Test"
+        assert len(data["messages"]) == 1
+        assert data["messages"][0]["content"] == "Test message"
 
     def test_export_markdown(self, manager):
         """Test exporting session as Markdown."""
         session = manager.create_session(
-            name="Markdown Export",
-            provider="test",
-            model="test",
-            description="Test description"
+            name="Markdown Export", provider="test", model="test", description="Test description"
         )
 
         manager.add_message(session_id=session.id, role="user", content="Hello")
         manager.add_message(session_id=session.id, role="assistant", content="Hi there!")
 
         # Export as Markdown
-        md_export = manager.export_session(session.id, format='markdown')
+        md_export = manager.export_session(session.id, format="markdown")
 
         assert "# Markdown Export" in md_export
         assert "Test description" in md_export
@@ -319,16 +257,12 @@ class TestSessionManager:
 
     def test_export_html(self, manager):
         """Test exporting session as HTML."""
-        session = manager.create_session(
-            name="HTML Export",
-            provider="test",
-            model="test"
-        )
+        session = manager.create_session(name="HTML Export", provider="test", model="test")
 
         manager.add_message(session_id=session.id, role="user", content="Test")
 
         # Export as HTML
-        html_export = manager.export_session(session.id, format='html')
+        html_export = manager.export_session(session.id, format="html")
 
         assert "<!DOCTYPE html>" in html_export
         assert "<title>HTML Export</title>" in html_export

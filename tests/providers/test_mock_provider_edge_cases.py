@@ -22,9 +22,7 @@ class TestMockProviderEdgeCases:
         """Test conversation with only system message."""
         provider = MockProvider()
 
-        messages = [
-            Message(role=Role.SYSTEM, content="You are a code reviewer.")
-        ]
+        messages = [Message(role=Role.SYSTEM, content="You are a code reviewer.")]
 
         response = provider.chat(messages, "mock-echo")
         assert response  # Should handle gracefully
@@ -37,7 +35,7 @@ class TestMockProviderEdgeCases:
         messages = [
             Message(role=Role.USER, content="First question"),
             Message(role=Role.USER, content="Second question"),
-            Message(role=Role.USER, content="Third question")
+            Message(role=Role.USER, content="Third question"),
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -47,7 +45,7 @@ class TestMockProviderEdgeCases:
         messages2 = [
             Message(role=Role.ASSISTANT, content="Previous response 1"),
             Message(role=Role.ASSISTANT, content="Previous response 2"),
-            Message(role=Role.USER, content="New question")
+            Message(role=Role.USER, content="New question"),
         ]
 
         response2 = provider.chat(messages2, "mock-echo")
@@ -74,7 +72,7 @@ class TestMockProviderEdgeCases:
             "What about unicode? 你好 🎉 café",
             "Markdown **bold** and *italic* and `code`",
             "Special chars: <>&\"'",
-            "Math expressions: x^2 + y^2 = z^2"
+            "Math expressions: x^2 + y^2 = z^2",
         ]
 
         for input_text in special_inputs:
@@ -118,7 +116,7 @@ class TestMockProviderEdgeCases:
         messages = [
             Message(role=Role.USER, content="ajsdkfj aslkdfj alskdjf"),  # Gibberish
             Message(role=Role.ASSISTANT, content="I'm not sure I understand..."),
-            Message(role=Role.USER, content="Sorry, I meant to ask about Python lists")
+            Message(role=Role.USER, content="Sorry, I meant to ask about Python lists"),
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -134,7 +132,7 @@ class TestMockProviderEdgeCases:
         conv1 = [
             Message(role=Role.USER, content="Let's talk about Python"),
             Message(role=Role.ASSISTANT, content="Python is a great language..."),
-            Message(role=Role.USER, content="What makes it special?")
+            Message(role=Role.USER, content="What makes it special?"),
         ]
         response1 = provider.chat(conv1, "mock-echo")
 
@@ -142,7 +140,7 @@ class TestMockProviderEdgeCases:
         conv2 = [
             Message(role=Role.USER, content="Tell me about Java"),
             Message(role=Role.ASSISTANT, content="Java is an object-oriented language..."),
-            Message(role=Role.USER, content="What makes it special?")
+            Message(role=Role.USER, content="What makes it special?"),
         ]
         response2 = provider.chat(conv2, "mock-echo")
 
@@ -175,7 +173,7 @@ class TestMockProviderEdgeCases:
         messages = [
             Message(role=Role.USER, content="Hello, comment allez-vous?"),
             Message(role=Role.ASSISTANT, content="Hello! I'm doing well."),
-            Message(role=Role.USER, content="Can you explain Python's list comprehensions?")
+            Message(role=Role.USER, content="Can you explain Python's list comprehensions?"),
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -189,7 +187,7 @@ class TestMockProviderEdgeCases:
         messages = [
             Message(role=Role.USER, content="Here's my code: def add(a, b): return a + b"),
             Message(role=Role.ASSISTANT, content="That's a simple addition function..."),
-            Message(role=Role.USER, content="How can I make it handle strings too?")
+            Message(role=Role.USER, content="How can I make it handle strings too?"),
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -205,7 +203,7 @@ class TestMockProviderEdgeCases:
         numerical_questions = [
             "What's 123 + 456?",
             "How many bytes in a kilobyte?",
-            "What's the factorial of 5?"
+            "What's the factorial of 5?",
         ]
 
         for question in numerical_questions:
@@ -225,10 +223,12 @@ class TestMockProviderEdgeCases:
             Message(role=Role.ASSISTANT, content="A TODO app is a great project..."),
             Message(role=Role.USER, content="I want to use SQLite for storage"),
             Message(role=Role.ASSISTANT, content="SQLite is perfect for TODO apps..."),
-            Message(role=Role.USER, content="What columns should my tasks table have?")
+            Message(role=Role.USER, content="What columns should my tasks table have?"),
         ]
 
         response = provider.chat(messages, "mock-echo")
 
         # Should remember we're talking about TODO app with SQLite
-        assert any(word in response.lower() for word in ["todo", "task", "sqlite", "column", "table"])
+        assert any(
+            word in response.lower() for word in ["todo", "task", "sqlite", "column", "table"]
+        )

@@ -9,8 +9,8 @@ from coda.cli.chat_session import ChatSession
 from coda.cli.interactive import _handle_chat_interaction
 from coda.cli.shared import DeveloperMode
 from coda.configuration import CodaConfig
-from coda.providers import MockProvider, Model, Role
-from coda.themes import ConsoleTheme, Theme, get_console_theme
+from coda.providers import MockProvider, Model
+from coda.themes import ConsoleTheme, Theme
 
 
 @pytest.mark.integration
@@ -65,7 +65,7 @@ class TestThemeIntegration:
         )
 
         # Mock the theme system to return our custom theme
-        with patch('coda.themes.get_console_theme', return_value=custom_theme.console):
+        with patch("coda.themes.get_console_theme", return_value=custom_theme.console):
             # Run one-shot
             session.run_one_shot("Hello world")
 
@@ -85,11 +85,12 @@ class TestThemeIntegration:
 
         # Mock provider that returns streaming chunks properly
         from unittest.mock import Mock as MockChunk
+
         chunk = MockChunk()
         chunk.content = "Test response"
         provider = Mock()
         provider.chat_stream = Mock(return_value=iter([chunk]))
-        
+
         models = [Model(id="mock-echo", name="Mock Echo", provider="mock", metadata={})]
 
         # Create chat session
@@ -104,15 +105,16 @@ class TestThemeIntegration:
         )
 
         # Mock the theme system to return our custom theme
-        with patch('coda.themes.get_console_theme', return_value=custom_theme.console):
+        with patch("coda.themes.get_console_theme", return_value=custom_theme.console):
             # Mock Prompt.ask to return test message then /exit
-            with patch('coda.cli.chat_session.Prompt.ask', side_effect=["Test message", "/exit"]):
+            with patch("coda.cli.chat_session.Prompt.ask", side_effect=["Test message", "/exit"]):
                 session.run_interactive()
 
         # Find the assistant message print call
-        assistant_calls = [call for call in console.print.call_args_list 
-                          if "Assistant:" in str(call)]
-        
+        assistant_calls = [
+            call for call in console.print.call_args_list if "Assistant:" in str(call)
+        ]
+
         # Verify assistant message uses theme color
         assert any("[yellow]Assistant:[/yellow]" in str(call) for call in assistant_calls)
 
@@ -122,7 +124,7 @@ class TestThemeIntegration:
         # Mock console to capture output
         console = Mock(spec=Console)
         console.status = Mock()
-        
+
         # Create a mock status context manager
         mock_status = Mock()
         mock_status.__enter__ = Mock(return_value=mock_status)
@@ -146,6 +148,7 @@ class TestThemeIntegration:
 
         # Mock provider with streaming response - use proper chunk objects
         from unittest.mock import Mock as MockChunk
+
         chunk = MockChunk()
         chunk.content = "Test response"
         provider = Mock()
@@ -155,9 +158,9 @@ class TestThemeIntegration:
         messages = []
 
         # Mock the theme system to return our custom theme
-        with patch('coda.themes.get_console_theme', return_value=custom_theme.console):
+        with patch("coda.themes.get_console_theme", return_value=custom_theme.console):
             # Call the chat interaction handler
-            continue_chat = await _handle_chat_interaction(
+            await _handle_chat_interaction(
                 provider, cli, messages, console, mock_config
             )
 
@@ -171,12 +174,12 @@ class TestThemeIntegration:
     def test_session_deletion_uses_theme_colors(self, custom_theme):
         """Test that session deletion status uses theme colors."""
         from coda.session.commands import SessionCommands
-        
+
         # Mock console to capture output
         console = Mock(spec=Console)
         console.status = Mock()
         console.print = Mock()
-        
+
         # Create a mock status context manager
         mock_status = Mock()
         mock_status.__enter__ = Mock(return_value=mock_status)
@@ -188,9 +191,10 @@ class TestThemeIntegration:
         session_commands.console = console
 
         # Mock the session manager
-        with patch.object(session_commands, 'manager') as mock_manager:
+        with patch.object(session_commands, "manager") as mock_manager:
             # Mock finding auto-saved sessions with correct prefix
             from coda.constants import AUTO_SESSION_PREFIX
+
             mock_session1 = Mock()
             mock_session1.id = "1"
             mock_session1.name = f"{AUTO_SESSION_PREFIX}20241205-143022"
@@ -201,9 +205,9 @@ class TestThemeIntegration:
             mock_manager.delete_session.return_value = None
 
             # Mock the theme system to return our custom theme
-            with patch('coda.themes.get_console_theme', return_value=custom_theme.console):
+            with patch("coda.themes.get_console_theme", return_value=custom_theme.console):
                 # Mock Confirm.ask to return True (yes to deletion)
-                with patch('coda.session.commands.Confirm.ask', return_value=True):
+                with patch("coda.session.commands.Confirm.ask", return_value=True):
                     # Delete all sessions using the actual method
                     session_commands._delete_all_sessions(["--auto-only"])
 
@@ -245,8 +249,8 @@ class TestThemeIntegration:
 
         for theme in themes:
             console.print.reset_mock()  # Clear previous calls
-            
-            with patch('coda.themes.get_console_theme', return_value=theme):
+
+            with patch("coda.themes.get_console_theme", return_value=theme):
                 session.run_one_shot("Test")
 
             # Verify colors match current theme
@@ -254,7 +258,9 @@ class TestThemeIntegration:
             assert f"[{theme.user_message}]User:[/{theme.user_message}]" in str(user_call)
 
             assistant_call = console.print.call_args_list[1]
-            assert f"[{theme.assistant_message}]Assistant:[/{theme.assistant_message}]" in str(assistant_call)
+            assert f"[{theme.assistant_message}]Assistant:[/{theme.assistant_message}]" in str(
+                assistant_call
+            )
 
     @pytest.mark.asyncio
     async def test_different_modes_use_theme_thinking_messages(self, mock_config, custom_theme):
@@ -273,7 +279,7 @@ class TestThemeIntegration:
             console = Mock(spec=Console)
             console.status = Mock()
             console.print = Mock()
-            
+
             # Create a mock status context manager
             mock_status = Mock()
             mock_status.__enter__ = Mock(return_value=mock_status)
@@ -297,6 +303,7 @@ class TestThemeIntegration:
 
             # Mock provider with streaming response
             from unittest.mock import Mock as MockChunk
+
             chunk = MockChunk()
             chunk.content = "Test response"
             provider = Mock()
@@ -304,11 +311,9 @@ class TestThemeIntegration:
             messages = []
 
             # Mock the theme system
-            with patch('coda.themes.get_console_theme', return_value=custom_theme.console):
+            with patch("coda.themes.get_console_theme", return_value=custom_theme.console):
                 # Call the chat interaction handler
-                await _handle_chat_interaction(
-                    provider, cli, messages, console, mock_config
-                )
+                await _handle_chat_interaction(provider, cli, messages, console, mock_config)
 
             # Verify correct thinking message with theme color
             console.status.assert_called_once()
