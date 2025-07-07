@@ -12,7 +12,7 @@ Build a multi-provider, CLI-focused code assistant that provides a unified inter
 - **Phase 2**: Core Provider Architecture (LiteLLM, Ollama, provider registry)
 - **Phase 3**: Enhanced CLI Experience (interactive shell, slash commands, developer modes)
 
-✅ **Phase 4**: Session Management - COMPLETED (July 5, 2025) | 🚧 Enhancements 4.5 & 4.6 Pending
+✅ **Phase 4**: Session Management - COMPLETED (July 7, 2025)
 
 - SQLite persistence layer (stored in ~/.cache/coda/sessions.db)
 - Session commands (/session save/load/list/branch/delete/info/search)
@@ -20,16 +20,17 @@ Build a multi-provider, CLI-focused code assistant that provides a unified inter
 - Full-text search across sessions
 - Context optimization for token limits
 - MockProvider for deterministic testing
+- **Phase 4.6**: Code Quality Refactoring with centralized constants and comprehensive theme system
 
-✅ **Completed**: Phase 4.6 - Code Quality Refactoring
+🚧 **Current**: Phase 5 - Tool Integration (MCP) - Target: July 12 (In Progress by Other Developer)
 
-📅 **Next**: Phase 5 - Tool Integration (MCP) - Target: July 12
+📅 **Next**: Phase 6 - Advanced Features - Starting Now
 
 📅 **Upcoming**:
 
-- Phase 6: Advanced Features - July 15
 - Phase 7: Web UI (Streamlit)
-- Phase 8: Additional features
+- Phase 8: Vector Embedding & Semantic Search
+- Phase 9: Codebase Intelligence
 
 ## Reference Directories
 
@@ -371,17 +372,13 @@ None currently - all bugs have been resolved!
   - [x] Added `tomli-w` dependency for TOML config file writing
   - [x] Fixed configuration save functionality for theme persistence
 
-**Timeline**: Complete before merging Phase 5
+**Status**: ✅ COMPLETED (July 7, 2025) - Successfully merged to main
 
-## Phase 5: Tool Integration (MCP)
+## Phase 5: Tool Integration (MCP) 🚧 IN PROGRESS
 
-**⚠️ PARALLEL DEVELOPMENT NOTE**: Being developed in parallel with Phase 4. Key considerations:
+**⚠️ DEVELOPMENT NOTE**: Currently being handled by another developer on branch `feature/mcp-tools`.
 
-- Work on branch: `feature/mcp-tools`
-- Mock the session storage API during development
-- Plan for adding `tool_invocations` to session schema after merge
-- Avoid modifying core files that Phase 4 is likely to change (cli/main.py, config.py)
-- Focus on creating new files: `tools/`, `mcp/` directories
+**Status**: In progress, targeting July 12 completion.
 
 ### 5.1 Core Tools
 
@@ -407,9 +404,40 @@ None currently - all bugs have been resolved!
 - [ ] Permission management
 - [ ] Custom tool development SDK
 
-## Phase 6: Advanced Features
+## Phase 6: Advanced Features 📅 CURRENT PHASE
 
-### 6.1 Multi-Modal Support
+**Status**: Ready to begin - Phase 5 is being handled by another developer.
+
+**Priority Organization for Phase 6**:
+1. **Immediate Priority**: Add Rich Panel around input prompt (simple visual improvement)
+2. **High Priority**: Enhanced Response Rendering (immediate user experience improvement)
+3. **Medium Priority**: Multi-Modal Support (image understanding, document support) 
+4. **Lower Priority**: Project Intelligence (longer-term features)
+
+### 6.0 Input Prompt Panel Enhancement ✅ COMPLETED (July 7, 2025)
+
+- [x] **Add mode title display** - Clean mode title without separator lines
+- [x] **Keep existing prompt-toolkit functionality** - Preserved all current features (multiline, history, autocomplete, shortcuts)
+- [x] **Mode-specific styling integration** - Mode titles with colors and emojis matching theme system
+- [x] **Clean visual hierarchy** - Minimal 30-char separator after input for subtle visual break
+- [x] **Maintain performance** - No impact on input responsiveness or async behavior
+
+**Implementation Details**:
+- Removed decorative separator lines for cleaner interface
+- Mode title displays with mode-specific colors and emojis
+- Left-aligned minimal separator after user input
+- Maximum width of 60 chars to prevent stretching
+- Professional, uncluttered appearance that focuses on content
+
+### 6.1 Enhanced Response Rendering (🔥 HIGH PRIORITY)
+
+- [ ] **Live markdown rendering during streaming** - Real-time formatting as AI responds
+- [ ] **Syntax highlighting for code blocks** - Better code readability in terminal
+- [ ] **Proper handling of tables and lists** - Structured data display
+- [ ] **Toggle between raw and formatted view** - User preference for output style
+- [ ] **Preserve terminal scrollback while rendering** - Maintain terminal history
+
+### 6.2 Multi-Modal Support
 
 - [ ] Image understanding (for providers that support it)
 - [ ] Code screenshot analysis
@@ -421,7 +449,7 @@ None currently - all bugs have been resolved!
 - [ ] Diagram generation
 - [ ] Use [diagram-renderer](https://github.com/djvolz/diagram-renderer)
 
-### 6.2 Project Intelligence
+### 6.3 Project Intelligence (🔄 LOWER PRIORITY)
 
 - [ ] Automatic project type detection
 - [ ] Specifically handle multiple version control systems beyond just git. Very important.
@@ -431,22 +459,17 @@ None currently - all bugs have been resolved!
 - [ ] Support for external projects (work on codebases outside current directory)
 - [ ] Multi-project management (handle multiple projects simultaneously)
 
-### 6.3 UI Customization
+### 6.4 UI Customization ✅ MOSTLY COMPLETED
 
-- [ ] `/theme` - Change UI theme
-  - [ ] `default` - Default color scheme
-  - [ ] `dark` - Dark mode optimized
-  - [ ] `light` - Light terminal theme
-  - [ ] `minimal` - Minimal colors
-  - [ ] `vibrant` - High contrast colors
-- [ ] **Enhanced Response Rendering**
-  - [ ] Live markdown rendering during streaming
-  - [ ] Syntax highlighting for code blocks
-  - [ ] Proper handling of tables and lists
-  - [ ] Toggle between raw and formatted view
-  - [ ] Preserve terminal scrollback while rendering
+- [x] `/theme` - Change UI theme ✅ COMPLETED in Phase 4.6
+  - [x] `default` - Default color scheme
+  - [x] `dark` - Dark mode optimized  
+  - [x] `light` - Light terminal theme
+  - [x] `minimal` - Minimal colors
+  - [x] `vibrant` - High contrast colors
+  - [x] Additional themes: `monokai_dark/light`, `dracula_dark/light`, `gruvbox_dark/light`
 
-### 6.4 Collaboration Features (DEFERRED)
+### 6.5 Collaboration Features (DEFERRED)
 
 - [ ] Session sharing via URLs
 - [ ] Team knowledge base
@@ -778,7 +801,17 @@ None currently - all bugs have been resolved!
 - ✅ Seamless integration with existing interactive shell
 - ✅ Conversation continuity across save/load cycles
 
-### 2025.7.12 - Tool Integration / MCP (Target: July 12)
+### 2025.7.7 - Code Quality & Theme System ✅ COMPLETED
+
+**Phase 4.6 Achievements**:
+- ✅ Centralized constants system (`coda/constants.py`)
+- ✅ Comprehensive theme system with 11 pre-defined themes
+- ✅ Complete `/theme` command implementation
+- ✅ Code quality refactoring across 57 files
+- ✅ Enhanced test coverage (25 new theme-related tests)
+- ✅ Backward compatibility maintained
+
+### 2025.7.12 - Tool Integration / MCP (Target: July 12) 🚧 IN PROGRESS
 
 - MCP server implementation
 - Core tools (file ops, shell, web search, git)
@@ -786,19 +819,28 @@ None currently - all bugs have been resolved!
 - Permission management
 - Custom tool SDK
 
-### 2025.7.15 - Advanced Features (Target: July 15)
+### 2025.7.7 (Part 2) - Input Prompt Enhancement ✅ COMPLETED
 
-- Multi-modal support (image understanding)
+**Phase 6.0 Achievement**:
+- ✅ Clean mode title display without decorative lines
+- ✅ Minimal separator after input (30 chars, left-aligned)
+- ✅ Mode-specific colors and emojis
+- ✅ Preserved all prompt-toolkit functionality
+- ✅ Professional, uncluttered interface
+
+### 2025.7.15 - Advanced Features (Target: July 15) 📅 CURRENT PHASE
+
+- Enhanced response rendering (live markdown) - Phase 6.1
+- Multi-modal support (image understanding) - Phase 6.2
 - Document support (PDF, Word, PowerPoint, Excel)
-- Enhanced response rendering (live markdown)
 - Project intelligence (VCS support, language optimizations)
-- UI customization (/theme command)
+- Additional UI improvements
 
 ## Next Steps
 
-**Current Status**: Phases 1, 2, 3, and 4 are complete. Phase 4.5 (Auto-Save Enhancement) pending. Ready to begin Phase 5.
+**Current Status**: Phases 1, 2, 3, 4 (including 4.6), and 6.0 are complete. Phase 5 in progress by other developer. Ready to continue with Phase 6.1.
 
-1. **Completed - Phase 4**: Session Management ✅
+1. **Completed - Phase 4**: Session Management ✅ (Including Phase 4.6 Code Quality Refactoring)
    - SQLite database stored in `~/.cache/coda/sessions.db`
    - Message persistence with provider/model metadata
    - Session branching with parent-child relationships
@@ -806,20 +848,24 @@ None currently - all bugs have been resolved!
    - Complete implementation of `/session` and `/export` commands
    - MockProvider for deterministic testing
    - 100+ tests covering all session functionality
-2. **Next - Phase 5**: Tool Integration (MCP) (Target: July 12)
+   - **Phase 4.6**: Centralized constants, comprehensive theme system (11 themes), complete `/theme` command
+2. **In Progress - Phase 5**: Tool Integration (MCP) 🚧 (Target: July 12) - Being handled by another developer
    - Core tools for file operations
    - Shell command execution
    - Web search and fetch capabilities
    - Git operations
    - Implementation of `/tools` command
-3. **Following - Phase 6**: Advanced Features (Target: July 15)
-   - Multi-modal support (image understanding)
-   - Code screenshot analysis
-   - Document support (PDF, Word, PowerPoint, Excel)
-   - Enhanced response rendering with live markdown
+3. **Current - Phase 6**: Advanced Features 📅 (In Progress)
+   - ✅ Phase 6.0: Input prompt enhancement (clean mode titles, minimal separators)
+   - Phase 6.1: Enhanced response rendering with live markdown (Next Priority)
+   - Phase 6.2: Multi-modal support (image understanding)
+   - Phase 6.3: Document support (PDF, Word, PowerPoint, Excel)
+   - Phase 6.4: Project intelligence features
 4. **Future Phases**:
    - Phase 7: Web UI with Streamlit
-   - Phase 8: Additional features (containerization, repo mapping, telemetry)
+   - Phase 8: Vector Embedding & Semantic Search
+   - Phase 9: Codebase Intelligence
+   - Phase 10: Help Mode Integration
 
 ## Notes
 
