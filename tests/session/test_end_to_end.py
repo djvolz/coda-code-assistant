@@ -107,16 +107,20 @@ class TestSessionEndToEnd:
             test_msg = Message(role=Role.USER, content="What were we discussing about decorators?")
             no_memory_response = provider.chat([test_msg], "mock-echo")
 
-            has_memory = any(word in no_memory_response.lower() for word in ["python", "decorator"])
-            assert not has_memory, f"AI should have no memory after clear: {no_memory_response}"
+            has_memory = any(
+                word in no_memory_response.content.lower() for word in ["python", "decorator"]
+            )
+            assert (
+                not has_memory
+            ), f"AI should have no memory after clear: {no_memory_response.content}"
 
-            print(f"  ✓ AI has no memory: '{no_memory_response[:50]}...'")
+            print(f"  ✓ AI has no memory: '{no_memory_response.content[:50]}...'")
 
             # === STEP 4: Load session (restore memory) ===
             print("\n📂 STEP 4: Loading session (AI regains memory)")
 
             # Load session (simulating the CLI integration)
-            session_loaded = manager.get_session(session.id)
+            manager.get_session(session.id)
             messages_from_db = manager.get_messages(session.id)
 
             # Convert to CLI format and restore
@@ -153,18 +157,19 @@ class TestSessionEndToEnd:
             memory_response = provider.chat(cli_messages, "mock-echo")
 
             has_context = any(
-                word in memory_response.lower() for word in ["python", "decorator", "function"]
+                word in memory_response.content.lower()
+                for word in ["python", "decorator", "function"]
             )
-            assert has_context, f"AI should remember context after load: {memory_response}"
+            assert has_context, f"AI should remember context after load: {memory_response.content}"
 
-            print(f"  ✓ AI remembers context: '{memory_response[:50]}...'")
+            print(f"  ✓ AI remembers context: '{memory_response.content[:50]}...'")
 
             # === STEP 6: Continue conversation naturally ===
             print("\n💬 STEP 6: Continuing conversation naturally")
 
             # Remove test message, add AI response
             cli_messages.pop()
-            cli_messages.append(Message(role=Role.ASSISTANT, content=memory_response))
+            cli_messages.append(Message(role=Role.ASSISTANT, content=memory_response.content))
 
             # Ask follow-up question
             followup = Message(role=Role.USER, content="Can you show me a decorator example?")
@@ -174,11 +179,11 @@ class TestSessionEndToEnd:
 
             # Should continue conversation about decorators
             continues_topic = any(
-                word in followup_response.lower() for word in ["decorator", "python", "@"]
+                word in followup_response.content.lower() for word in ["decorator", "python", "@"]
             )
-            assert continues_topic, f"Should continue decorator topic: {followup_response}"
+            assert continues_topic, f"Should continue decorator topic: {followup_response.content}"
 
-            print(f"  ✓ Conversation continues: '{followup_response[:50]}...'")
+            print(f"  ✓ Conversation continues: '{followup_response.content[:50]}...'")
 
             # === STEP 7: Verify session integrity ===
             print("\n🔍 STEP 7: Verifying session integrity")
@@ -226,11 +231,11 @@ class TestSessionEndToEnd:
             session = manager.create_session("Original", "mock", "mock-echo")
 
             # Add conversation
-            msg1 = manager.add_message(session.id, "user", "What is Python?")
+            manager.add_message(session.id, "user", "What is Python?")
             msg1_response = manager.add_message(
                 session.id, "assistant", "Python is a programming language"
             )
-            msg2 = manager.add_message(session.id, "user", "What about JavaScript?")
+            manager.add_message(session.id, "user", "What about JavaScript?")
             manager.add_message(session.id, "assistant", "JavaScript is for web development")
 
             # Create branch from first answer (to include both Q&A)
@@ -253,8 +258,8 @@ class TestSessionEndToEnd:
             response = provider.chat(messages, "mock-echo")
 
             # Should focus on Python (not JavaScript)
-            assert "python" in response.lower()
-            assert "javascript" not in response.lower()
+            assert "python" in response.content.lower()
+            assert "javascript" not in response.content.lower()
 
         finally:
             db.close()
