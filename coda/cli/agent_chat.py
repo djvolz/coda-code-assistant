@@ -61,7 +61,22 @@ class AgentChatHandler:
             self.agent = Agent(
                 provider=self.provider,
                 model=model,
-                instructions=system_prompt or "You are a helpful AI assistant with access to various tools. Use tools when appropriate to help answer questions or complete tasks.",
+                instructions=system_prompt or """You are a helpful AI assistant with access to various tools. 
+
+IMPORTANT: Only use tools when they are necessary to complete the user's request. Many requests can be answered directly without tools:
+- Writing (poems, stories, jokes, explanations)
+- General knowledge questions
+- Math calculations you can do mentally
+- Coding questions and explanations
+- Casual conversation
+
+Use tools ONLY when you need to:
+- Access files or directories
+- Execute commands
+- Fetch real-time information
+- Perform operations you cannot do directly
+
+Each user request should be evaluated independently. Previous tool usage does not mean future requests require tools.""",
                 tools=tools,
                 name="Coda Assistant",
                 temperature=temperature,
@@ -72,21 +87,15 @@ class AgentChatHandler:
         # Extract user input from last message
         user_input = messages[-1].content if messages and messages[-1].role == "user" else ""
         
-        # Run agent
+        # Run agent with streaming
         try:
-            response = await self.agent.run_async(
+            response_content, updated_messages = await self.agent.run_async_streaming(
                 input=user_input,
                 messages=messages[:-1] if messages else None,  # Exclude last user message
                 max_steps=5
             )
             
-            # Update messages with the conversation
-            if "messages" in response.data:
-                return response.content, response.data["messages"]
-            else:
-                # Fallback
-                messages.append(Message(role="assistant", content=response.content))
-                return response.content, messages
+            return response_content, updated_messages
                 
         except Exception as e:
             error_msg = f"Error during agent chat: {str(e)}"
