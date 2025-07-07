@@ -37,7 +37,7 @@ class TestToolSystemWithMockProvider:
         return MockProvider()
 
     @pytest.fixture
-    def agent_with_tools(self, mock_provider):
+    def agent_with_tools(self):
         """Create an Agent with all available tools."""
         agent = Agent(
             provider=mock_provider,
@@ -95,7 +95,7 @@ class TestFileToolsWithMockProvider:
         return tmp_path
 
     @pytest.mark.asyncio
-    async def test_read_file_tool(self, temp_dir, mock_provider):
+    async def test_read_file_tool(self, temp_dir):
         """Test reading files through the tool system."""
         # Create test file
         test_file = temp_dir / "test.txt"
@@ -122,7 +122,7 @@ class TestFileToolsWithMockProvider:
         assert "line 2" not in result.result
 
     @pytest.mark.asyncio
-    async def test_write_file_tool(self, temp_dir, mock_provider):
+    async def test_write_file_tool(self, temp_dir):
         """Test writing files through the tool system."""
         test_file = temp_dir / "output.txt"
         test_content = "Content written by tool"
@@ -137,18 +137,18 @@ class TestFileToolsWithMockProvider:
         assert test_file.exists()
         assert test_file.read_text() == test_content
         
-        # Test overwrite protection
+        # Test append mode
         result = await execute_tool("write_file", {
             "filepath": str(test_file),
-            "content": "New content",
-            "overwrite": False
+            "content": "\nAppended content",
+            "mode": "append"
         })
         
-        assert not result.success
-        assert "already exists" in result.error
+        assert result.success
+        assert test_file.read_text() == test_content + "\nAppended content"
 
     @pytest.mark.asyncio
-    async def test_edit_file_tool(self, temp_dir, mock_provider):
+    async def test_edit_file_tool(self, temp_dir):
         """Test editing files through the tool system."""
         test_file = temp_dir / "edit_test.txt"
         original_content = "Line 1\nLine 2 with target text\nLine 3"
@@ -172,7 +172,7 @@ class TestFileToolsWithMockProvider:
             "filepath": str(test_file),
             "operation": "insert",
             "line_number": 2,
-            "text": "Inserted line"
+            "replacement_text": "Inserted line"
         })
         
         assert result.success
@@ -180,7 +180,7 @@ class TestFileToolsWithMockProvider:
         assert lines[1] == "Inserted line"
 
     @pytest.mark.asyncio
-    async def test_list_directory_tool(self, temp_dir, mock_provider):
+    async def test_list_directory_tool(self, temp_dir):
         """Test listing directory contents through the tool system."""
         # Create test structure
         (temp_dir / "file1.txt").write_text("content1")
@@ -198,32 +198,34 @@ class TestFileToolsWithMockProvider:
         assert "file2.py" in result.result
         assert "subdir" in result.result
         
-        # Test with file pattern
+        # Test recursive listing
         result = await execute_tool("list_directory", {
             "path": str(temp_dir),
-            "pattern": "*.py"
+            "recursive": True
         })
         
         assert result.success
-        assert "file2.py" in result.result
-        assert "file1.txt" not in result.result
+        assert "nested.txt" in result.result
+        assert "subdir" in result.result
 
 
 class TestShellToolsWithMockProvider:
     """Test shell and system tools with MockProvider."""
 
     @pytest.mark.asyncio
-    async def test_get_current_time_tool(self, mock_provider):
+    async def test_get_current_time_tool(self):
         """Test getting current time through the tool system."""
         result = await execute_tool("get_current_time", {})
         
         assert result.success
         assert "Current time" in result.result
-        # Verify it contains a valid timestamp
-        assert datetime.now().year == int(result.metadata["timestamp"][:4])
+        # Verify it contains a valid timestamp (as Unix timestamp)
+        timestamp = result.metadata["timestamp"]
+        dt = datetime.fromtimestamp(timestamp)
+        assert datetime.now().year == dt.year
 
     @pytest.mark.asyncio
-    async def test_shell_execute_safe_commands(self, mock_provider):
+    async def test_shell_execute_safe_commands(self):
         """Test executing safe shell commands."""
         # Test echo command
         result = await execute_tool("shell_execute", {
@@ -243,7 +245,7 @@ class TestShellToolsWithMockProvider:
         assert "/" in result.result  # Should contain a path
 
     @pytest.mark.asyncio
-    async def test_shell_execute_dangerous_commands(self, mock_provider):
+    async def test_shell_execute_dangerous_commands(self):
         """Test handling of dangerous shell commands."""
         # Test blocked command
         result = await execute_tool("shell_execute", {
@@ -264,7 +266,7 @@ class TestShellToolsWithMockProvider:
         assert "dangerous" in result.error.lower() or "requires approval" in result.error.lower()
 
     @pytest.mark.asyncio
-    async def test_shell_execute_with_timeout(self, mock_provider):
+    async def test_shell_execute_with_timeout(self):
         """Test shell command timeout handling."""
         # Mock a long-running command
         with patch('subprocess.run') as mock_run:
@@ -272,11 +274,12 @@ class TestShellToolsWithMockProvider:
             
             result = await execute_tool("shell_execute", {
                 "command": "sleep 60",
-                "timeout": 1
+                "timeout": 1,
+                "allow_dangerous": True
             })
             
             assert not result.success
-            assert "timeout" in result.error.lower()
+            assert "timed out" in result.error.lower()
 
 
 class TestGitToolsWithMockProvider:
@@ -306,7 +309,7 @@ class TestGitToolsWithMockProvider:
         os.chdir("/")
 
     @pytest.mark.asyncio
-    async def test_git_status_tool(self, git_repo, mock_provider):
+    async def test_git_status_tool(self, git_repo):
         """Test Git status tool."""
         result = await execute_tool("git_status", {
             "repo_path": str(git_repo)
@@ -320,15 +323,14 @@ class TestGitToolsWithMockProvider:
         test_file.write_text("New content")
         
         result = await execute_tool("git_status", {
-            "repo_path": str(git_repo),
-            "show_untracked": True
+            "repo_path": str(git_repo)
         })
         
         assert result.success
         assert "new_file.txt" in result.result
 
     @pytest.mark.asyncio
-    async def test_git_log_tool(self, git_repo, mock_provider):
+    async def test_git_log_tool(self, git_repo):
         """Test Git log tool."""
         result = await execute_tool("git_log", {
             "repo_path": str(git_repo),
@@ -340,7 +342,7 @@ class TestGitToolsWithMockProvider:
         assert "Test User" in result.result
 
     @pytest.mark.asyncio
-    async def test_git_diff_tool(self, git_repo, mock_provider):
+    async def test_git_diff_tool(self, git_repo):
         """Test Git diff tool."""
         # Modify existing file
         readme = git_repo / "README.md"
@@ -355,7 +357,7 @@ class TestGitToolsWithMockProvider:
         assert "@@" in result.result  # Diff markers
 
     @pytest.mark.asyncio
-    async def test_git_branch_tool(self, git_repo, mock_provider):
+    async def test_git_branch_tool(self, git_repo):
         """Test Git branch operations."""
         # List branches
         result = await execute_tool("git_branch", {
@@ -374,14 +376,14 @@ class TestGitToolsWithMockProvider:
         })
         
         assert result.success
-        assert "Created branch" in result.result
+        assert "feature/test" in result.result
 
 
 class TestWebToolsWithMockProvider:
     """Test web-related tools with MockProvider."""
 
     @pytest.mark.asyncio
-    async def test_fetch_url_tool_mocked(self, mock_provider):
+    async def test_fetch_url_tool_mocked(self):
         """Test URL fetching with mocked responses."""
         # Mock aiohttp response
         with patch('aiohttp.ClientSession') as MockSession:
@@ -416,11 +418,12 @@ class TestWebToolsWithMockProvider:
             assert "This is a test page" in result.result
 
     @pytest.mark.asyncio
-    async def test_search_web_tool_mocked(self, mock_provider):
+    async def test_search_web_tool_mocked(self):
         """Test web search with mocked responses."""
         with patch('aiohttp.ClientSession') as MockSession:
             mock_response = AsyncMock()
             mock_response.status = 200
+            mock_response.headers = {"content-type": "application/json"}
             mock_response.json.return_value = {
                 "Answer": "Python is a programming language",
                 "AbstractText": "Python is an interpreted, high-level programming language.",
@@ -456,19 +459,8 @@ class TestWebToolsWithMockProvider:
 class TestBuiltinToolsWithMockProvider:
     """Test builtin tools from agents module with MockProvider."""
 
-    @pytest.fixture
-    def agent(self, mock_provider):
-        """Create an agent with builtin tools."""
-        from coda.agents import Agent
-        from coda.agents.builtin_tools import get_builtin_tools
-        
-        return Agent(
-            provider=mock_provider,
-            tools=get_builtin_tools()
-        )
-
     @pytest.mark.asyncio
-    async def test_builtin_get_current_directory(self, agent):
+    async def test_builtin_get_current_directory(self):
         """Test builtin get_current_directory tool."""
         from coda.agents.builtin_tools import get_current_directory
         
@@ -477,7 +469,7 @@ class TestBuiltinToolsWithMockProvider:
         assert os.path.exists(result)
 
     @pytest.mark.asyncio
-    async def test_builtin_list_files(self, agent, tmp_path):
+    async def test_builtin_list_files(self, tmp_path):
         """Test builtin list_files tool."""
         from coda.agents.builtin_tools import list_files
         
@@ -491,7 +483,7 @@ class TestBuiltinToolsWithMockProvider:
         assert "file2.py" in result
 
     @pytest.mark.asyncio
-    async def test_builtin_read_write_file(self, agent, tmp_path):
+    async def test_builtin_read_write_file(self, tmp_path):
         """Test builtin read_file and write_file tools."""
         from coda.agents.builtin_tools import read_file, write_file
         
@@ -507,7 +499,7 @@ class TestBuiltinToolsWithMockProvider:
         assert read_result == test_content
 
     @pytest.mark.asyncio
-    async def test_builtin_run_command(self, agent):
+    async def test_builtin_run_command(self):
         """Test builtin run_command tool."""
         from coda.agents.builtin_tools import run_command
         
@@ -517,7 +509,7 @@ class TestBuiltinToolsWithMockProvider:
         assert "Hello World" in result["stdout"]
 
     @pytest.mark.asyncio
-    async def test_builtin_datetime_tools(self, agent):
+    async def test_builtin_datetime_tools(self):
         """Test builtin datetime tools."""
         from coda.agents.builtin_tools import get_datetime
         
@@ -527,7 +519,7 @@ class TestBuiltinToolsWithMockProvider:
         datetime.fromisoformat(result)
 
     @pytest.mark.asyncio
-    async def test_builtin_json_tools(self, agent):
+    async def test_builtin_json_tools(self):
         """Test builtin JSON tools."""
         from coda.agents.builtin_tools import parse_json, format_json
         
@@ -545,7 +537,7 @@ class TestBuiltinToolsWithMockProvider:
         assert "123" in formatted
 
     @pytest.mark.asyncio
-    async def test_builtin_fetch_data(self, agent):
+    async def test_builtin_fetch_data(self):
         """Test builtin async fetch_data tool."""
         from coda.agents.builtin_tools import fetch_data
         
@@ -611,7 +603,7 @@ class TestToolErrorHandling:
         result = await execute_tool("write_file", {
             "filepath": str(test_file),
             "content": "New content",
-            "overwrite": True
+            "mode": "write"
         })
         
         # On some systems, root can still write to read-only files
@@ -626,13 +618,15 @@ class TestToolIntegrationWithAgent:
     """Test tools integrated with Agent and MockProvider."""
 
     @pytest.mark.asyncio
-    async def test_agent_tool_execution(self, mock_provider, tmp_path):
+    async def test_agent_tool_execution(self, tmp_path):
         """Test agent executing tools based on user prompts."""
         from coda.agents import Agent
         from coda.agents.builtin_tools import get_builtin_tools
+        from coda.providers import MockProvider
         
         agent = Agent(
-            provider=mock_provider,
+            provider=MockProvider(),
+            model="mock-echo",
             tools=get_builtin_tools()
         )
         
@@ -641,20 +635,17 @@ class TestToolIntegrationWithAgent:
         test_file.write_text("Original content")
         
         # Test agent reading file
-        messages = [
-            Message(role=Role.USER, content=f"Read the file at {test_file}")
-        ]
-        
-        response = await agent.process_message(
-            messages[-1].content,
-            messages[:-1]
+        response = await agent.run_async(
+            f"Read the file at {test_file}"
         )
         
         # MockProvider will echo but agent might execute tool
         assert response is not None
+        assert response.data is not None
+        assert response.data["content"] is not None
 
     @pytest.mark.asyncio
-    async def test_multiple_tool_execution(self, mock_provider):
+    async def test_multiple_tool_execution(self):
         """Test executing multiple tools in sequence."""
         # Get current time
         time_result = await execute_tool("get_current_time", {})

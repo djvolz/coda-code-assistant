@@ -4,7 +4,6 @@
 import os
 import sys
 
-from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
@@ -12,8 +11,9 @@ from rich.prompt import Prompt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from coda.providers import Message, OCIGenAIProvider, Role
+from coda.themes import get_themed_console
 
-console = Console()
+console = get_themed_console()
 
 
 def main():

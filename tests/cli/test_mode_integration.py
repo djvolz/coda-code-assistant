@@ -54,7 +54,9 @@ class TestBasicModeIntegration:
         assert processor.current_mode == DeveloperMode.CODE
 
         # Get system prompt
-        prompt = processor.get_system_prompt()
+        from coda.cli.shared.modes import get_system_prompt
+
+        prompt = get_system_prompt(processor.current_mode)
         assert "coding assistant" in prompt
 
     def test_basic_model_switching(self, processor):
@@ -174,23 +176,24 @@ class TestInteractiveModeIntegration:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Already using oci_genai" in str(call) for call in calls)
 
-    def test_interactive_coming_soon_commands(self, cli):
-        """Test that implemented and coming soon commands work correctly."""
+    def test_interactive_implemented_commands(self, cli):
+        """Test that implemented commands work correctly."""
         # Mock session commands to avoid console output issues
         cli.session_commands.handle_session_command = Mock(return_value="Session help")
-        
+
         # Session command - now implemented
         cli._cmd_session("")
         calls = [str(call) for call in cli.console.print.call_args_list]
         # Session commands are now implemented, should show help
         assert any("Session help" in str(call) for call in calls)
 
-        # Theme command - still coming soon
+        # Theme command - now implemented (shows current theme)
         cli.console.reset_mock()
-        cli._cmd_theme("")
+        import asyncio
+
+        asyncio.run(cli._cmd_theme("current"))  # Use async call properly
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Theme Settings" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
+        assert any("Current theme:" in str(call) for call in calls)
 
         # Tools command - still coming soon
         cli.console.reset_mock()
