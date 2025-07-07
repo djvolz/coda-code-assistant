@@ -117,7 +117,7 @@ class TestInteractiveSessionIntegration:
         no_memory_response = mock_provider.chat(cli_messages, "mock-echo")
         
         # Should not remember previous conversation
-        has_memory = any(word in no_memory_response.lower() for word in ['python', 'decorator'])
+        has_memory = any(word in no_memory_response.content.lower() for word in ['python', 'decorator'])
         assert not has_memory, f"AI should not remember previous conversation: {no_memory_response}"
         
         # Remove test message
@@ -145,7 +145,7 @@ class TestInteractiveSessionIntegration:
         memory_response = mock_provider.chat(cli_messages, "mock-echo")
         
         # Should remember previous conversation
-        has_context = any(word in memory_response.lower() for word in ['python', 'decorator', 'function', 'modify'])
+        has_context = any(word in memory_response.content.lower() for word in ['python', 'decorator', 'function', 'modify'])
         assert has_context, f"AI should remember context after loading: {memory_response}"
         
         # === Phase 8: Continue conversation ===
@@ -160,7 +160,7 @@ class TestInteractiveSessionIntegration:
         followup_response = mock_provider.chat(cli_messages, "mock-echo")
         
         # Should continue conversation naturally
-        assert "decorator" in followup_response.lower() or "python" in followup_response.lower()
+        assert "decorator" in followup_response.content.lower() or "python" in followup_response.content.lower()
     
     def test_session_commands_integration(self, setup_interactive_cli):
         """Test session commands work correctly with CLI."""
@@ -206,7 +206,7 @@ class TestInteractiveSessionIntegration:
         
         # Should reference previous conversation
         context_indicators = ['decorator', 'python', 'function', 'modify', 'syntax']
-        has_context = any(indicator in response.lower() for indicator in context_indicators)
+        has_context = any(indicator in response.content.lower() for indicator in context_indicators)
         assert has_context, f"Mock provider should show context awareness: {response}"
         
         # Test without context
@@ -214,7 +214,7 @@ class TestInteractiveSessionIntegration:
         no_context_response = mock_provider.chat(no_context_messages, "mock-echo")
         
         # Should not reference specific topics
-        has_specific_context = any(word in no_context_response.lower() for word in ['python', 'decorator'])
+        has_specific_context = any(word in no_context_response.content.lower() for word in ['python', 'decorator'])
         assert not has_specific_context, f"Without context, should not reference specific topics: {no_context_response}"
     
     def test_session_export_with_interactive_data(self, setup_interactive_cli):

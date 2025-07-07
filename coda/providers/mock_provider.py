@@ -77,7 +77,13 @@ class MockProvider(BaseProvider):
         # Get the last user message
         user_messages = [msg for msg in messages if msg.role == Role.USER]
         if not user_messages:
-            return "I don't see any user messages to respond to."
+            return ChatCompletion(
+                content="I don't see any user messages to respond to.",
+                model=model,
+                finish_reason="stop",
+                tool_calls=None,
+                metadata={"provider": "mock", "timestamp": datetime.now().isoformat()}
+            )
         
         last_message = user_messages[-1].content.lower()
         
@@ -89,47 +95,47 @@ class MockProvider(BaseProvider):
             previous_messages = messages[:-1]  # Exclude the current "what were we discussing" message
             
             if not previous_messages:
-                return "I don't see any previous conversation to reference."
-            
-            for msg in previous_messages:
-                content = msg.content.lower()
-                if "python" in content:
-                    topics.append("Python programming")
-                if "decorator" in content:
-                    topics.append("Python decorators")
-                if "javascript" in content:
-                    topics.append("JavaScript")
-            
-            if topics:
-                return f"We were discussing: {', '.join(set(topics))}. What would you like to know more about?"
+                content = "I don't see any previous conversation to reference."
             else:
-                return "I don't see any specific topics we were discussing previously."
+                for msg in previous_messages:
+                    msg_content = msg.content.lower()
+                    if "python" in msg_content:
+                        topics.append("Python programming")
+                    if "decorator" in msg_content:
+                        topics.append("Python decorators")
+                    if "javascript" in msg_content:
+                        topics.append("JavaScript")
+                
+                if topics:
+                    content = f"We were discussing: {', '.join(set(topics))}. What would you like to know more about?"
+                else:
+                    content = "I don't see any specific topics we were discussing previously."
         
         elif "python" in last_message:
             if any("decorator" in msg.content.lower() for msg in messages):
-                return "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
+                content = "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
             else:
-                return "Python is a high-level programming language known for its simplicity and readability."
+                content = "Python is a high-level programming language known for its simplicity and readability."
         
         elif "javascript" in last_message:
-            return "JavaScript is a dynamic programming language primarily used for web development."
+            content = "JavaScript is a dynamic programming language primarily used for web development."
         
         elif "decorator" in last_message and len(messages) == 1:
             # If this is the only message, provide general info
-            return "Decorators in Python are a way to modify functions using the @ syntax. For example: @property or @staticmethod."
+            content = "Decorators in Python are a way to modify functions using the @ syntax. For example: @property or @staticmethod."
         
         elif "decorator" in last_message and len(messages) > 1:
             # If part of a conversation, check for context
             if any("decorator" in msg.content.lower() for msg in messages[:-1]):
-                return "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
+                content = "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
             else:
-                return "Decorators in Python are a way to modify functions using the @ syntax. For example: @property or @staticmethod."
+                content = "Decorators in Python are a way to modify functions using the @ syntax. For example: @property or @staticmethod."
         
         elif "hello" in last_message or "hi" in last_message:
-            return "Hello! How can I help you today?"
+            content = "Hello! How can I help you today?"
         
         elif "help" in last_message:
-            return "I'm a mock AI assistant. I can help you test session management features."
+            content = "I'm a mock AI assistant. I can help you test session management features."
         
         else:
             # Echo back with conversation context

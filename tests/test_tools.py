@@ -386,6 +386,7 @@ class TestWebTools:
         # Mock search response
         mock_response = AsyncMock()
         mock_response.status = 200
+        mock_response.headers = {"content-type": "application/json"}
         mock_response.json.return_value = {
             "Answer": "Test answer",
             "AbstractText": "Test abstract",
