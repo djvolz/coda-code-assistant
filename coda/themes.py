@@ -60,7 +60,6 @@ from .constants import (
     THEME_DRACULA_LIGHT,
     THEME_GRUVBOX_DARK,
     THEME_GRUVBOX_LIGHT,
-    AVAILABLE_THEMES,
 )
 
 
@@ -649,7 +648,11 @@ def get_theme_manager() -> ThemeManager:
     """Get the global theme manager instance."""
     global _theme_manager
     if _theme_manager is None:
-        _theme_manager = ThemeManager()
+        # Get theme from configuration
+        from .configuration import get_config
+        config = get_config()
+        theme_name = config.ui.get("theme", THEME_DEFAULT)
+        _theme_manager = ThemeManager(theme_name)
     return _theme_manager
 
 
