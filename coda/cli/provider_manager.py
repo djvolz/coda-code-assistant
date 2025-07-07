@@ -1,10 +1,10 @@
 """Provider management and initialization for CLI."""
 
-
 from rich.console import Console
 
 from coda.configuration import CodaConfig
 from coda.providers import BaseProvider, Model, ProviderFactory
+from coda.themes import get_console_theme
 
 
 class ProviderManager:
@@ -14,18 +14,25 @@ class ProviderManager:
         self.config = config
         self.console = console
         self.factory = ProviderFactory(config.to_dict())
+        self.theme = get_console_theme()
 
     def initialize_provider(self, provider_name: str | None = None) -> BaseProvider:
         """Initialize and connect to a provider."""
         # Use default provider if not specified
         provider_name = provider_name or self.config.default_provider
 
-        self.console.print(f"\n[green]Provider:[/green] {provider_name}")
-        self.console.print(f"[yellow]Initializing {provider_name}...[/yellow]")
+        self.console.print(
+            f"\n[{self.theme.success}]Provider:[/{self.theme.success}] {provider_name}"
+        )
+        self.console.print(
+            f"[{self.theme.warning}]Initializing {provider_name}...[/{self.theme.warning}]"
+        )
 
         # Create provider instance
         provider_instance = self.factory.create(provider_name)
-        self.console.print(f"[green]✓ Connected to {provider_name}[/green]")
+        self.console.print(
+            f"[{self.theme.success}]✓ Connected to {provider_name}[/{self.theme.success}]"
+        )
 
         return provider_instance
 
@@ -37,7 +44,9 @@ class ProviderManager:
         """
         # List all models
         models = provider.list_models()
-        self.console.print(f"[green]✓ Found {len(models)} available models[/green]")
+        self.console.print(
+            f"[{self.theme.success}]✓ Found {len(models)} available models[/{self.theme.success}]"
+        )
 
         # Filter for chat models - different providers use different indicators
         chat_models = [
@@ -80,7 +89,9 @@ class ProviderManager:
         if one_shot:
             # For one-shot, use the first available chat model
             selected = unique_models[0].id
-            self.console.print(f"[green]Auto-selected model:[/green] {selected}")
+            self.console.print(
+                f"[{self.theme.success}]Auto-selected model:[/{self.theme.success}] {selected}"
+            )
             return selected
 
         # Use basic model selector for interactive selection
@@ -111,4 +122,3 @@ class ProviderManager:
             return (f"Provider '{provider_name}' not found", f"Available providers: {available}")
         else:
             return (str(error), None)
-

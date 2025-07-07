@@ -12,6 +12,7 @@ from .shared import DeveloperMode
 # Optional agent imports for tool support
 try:
     from .agent_chat import AgentChatHandler
+
     AGENT_SUPPORT = True
 except ImportError:
     AGENT_SUPPORT = False
@@ -71,14 +72,18 @@ class ChatSession:
                     asyncio.get_running_loop()
                     # If we're in an async context, we need to handle this differently
                     # For now, fall back to regular streaming to avoid complications
-                    self.console.print("[yellow]Tool support requires async context, falling back to regular mode[/yellow]\n")
+                    self.console.print(
+                        "[yellow]Tool support requires async context, falling back to regular mode[/yellow]\n"
+                    )
                 except RuntimeError:
-                    # No event loop running, we can create one                    
-                    response_content, _ = asyncio.run(agent_handler.chat_with_agent(
-                        messages=messages,  # Pass all messages, let agent handler extract user input
-                        model=current_model,
-                        **params
-                    ))
+                    # No event loop running, we can create one
+                    response_content, _ = asyncio.run(
+                        agent_handler.chat_with_agent(
+                            messages=messages,  # Pass all messages, let agent handler extract user input
+                            model=current_model,
+                            **params,
+                        )
+                    )
 
                     # Print the response (agent handler doesn't auto-print in some cases)
                     if response_content:
@@ -89,7 +94,9 @@ class ChatSession:
 
             except Exception as e:
                 # Fall back to regular streaming if agent fails
-                self.console.print(f"\n[yellow]Tool support failed ({e}), falling back to regular mode[/yellow]\n")
+                self.console.print(
+                    f"\n[yellow]Tool support failed ({e}), falling back to regular mode[/yellow]\n"
+                )
 
         # Regular streaming without tools
         try:
@@ -112,7 +119,11 @@ class ChatSession:
 
     def run_one_shot(self, prompt: str):
         """Execute a single prompt and exit."""
-        self.console.print(f"\n[bold cyan]User:[/bold cyan] {prompt}")
+        from coda.themes import get_console_theme
+
+        theme = get_console_theme()
+
+        self.console.print(f"\n[{theme.user_message}]User:[/{theme.user_message}] {prompt}")
 
         # Check if this is a slash command
         if prompt.startswith("/"):
@@ -124,10 +135,12 @@ class ChatSession:
             # If command was handled, don't send to AI
             return
 
-        self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+        self.console.print(
+            f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ", end=""
+        )
 
         # Get system prompt based on mode
-        system_prompt = self.cmd_processor.get_system_prompt()
+        system_prompt = get_system_prompt(self.cmd_processor.current_mode)
 
         messages = []
         if system_prompt:
@@ -175,7 +188,7 @@ class ChatSession:
                 continue
 
             # Get system prompt based on mode
-            system_prompt = self.cmd_processor.get_system_prompt()
+            system_prompt = get_system_prompt(self.cmd_processor.current_mode)
 
             # Prepare messages with system prompt
             chat_messages = []
@@ -187,7 +200,12 @@ class ChatSession:
             chat_messages.append(Message(role=Role.USER, content=user_input))
 
             # Get AI response
-            self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+            from coda.themes import get_console_theme
+
+            theme = get_console_theme()
+            self.console.print(
+                f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ", end=""
+            )
 
             # Use current model from command processor (may have been changed via /model)
             current_model = self.cmd_processor.current_model or self.model

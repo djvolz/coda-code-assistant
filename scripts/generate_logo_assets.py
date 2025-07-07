@@ -149,7 +149,7 @@ def main():
 
     # Check that all SVG source files exist
     missing_files = []
-    for variant_name, variant_info in LOGO_VARIANTS.items():
+    for _variant_name, variant_info in LOGO_VARIANTS.items():
         svg_file = ASSETS_DIR / variant_info["file"]
         if not svg_file.exists():
             missing_files.append(svg_file)

@@ -16,7 +16,11 @@ try:
 except ImportError:
     __version__ = "dev"
 
-console = Console()
+# Create themed console that respects user's theme configuration
+from ..themes import get_console_theme, get_themed_console
+
+console = get_themed_console()
+theme = get_console_theme()
 
 
 async def _check_first_run(console: Console, auto_save_enabled: bool):
@@ -36,32 +40,32 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
         from rich.panel import Panel
 
         if auto_save_enabled:
-            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+            notification = """[info][bold]Welcome to Coda![/]
 
-[yellow]Auto-Save is ENABLED[/yellow] 💾
+[warning]Auto-Save is ENABLED[/] 💾
 
 Your conversations will be automatically saved when you start chatting.
 This helps you resume conversations and search through history.
 
-[dim]To disable auto-save:[/dim]
-• Use [cyan]--no-save[/cyan] flag when starting Coda
-• Set [cyan]autosave = false[/cyan] in ~/.config/coda/config.toml
-• Delete sessions with [cyan]/session delete-all[/cyan]
+[dim]To disable auto-save:[/]
+• Use [info]--no-save[/] flag when starting Coda
+• Set [info]autosave = false[/] in ~/.config/coda/config.toml
+• Delete sessions with [info]/session delete-all[/]
 
-[dim]Your privacy matters - sessions are stored locally only.[/dim]"""
+[dim]Your privacy matters - sessions are stored locally only.[/]"""
         else:
-            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+            notification = """[info][bold]Welcome to Coda![/]
 
-[yellow]Auto-Save is DISABLED[/yellow] 🔒
+[warning]Auto-Save is DISABLED[/] 🔒
 
 Your conversations will NOT be saved automatically.
 
-[dim]To enable auto-save for future sessions:[/dim]
-• Remove [cyan]--no-save[/cyan] flag when starting Coda
-• Set [cyan]autosave = true[/cyan] in ~/.config/coda/config.toml"""
+[dim]To enable auto-save for future sessions:[/]
+• Remove [info]--no-save[/] flag when starting Coda
+• Set [info]autosave = true[/] in ~/.config/coda/config.toml"""
 
         console.print("\n")
-        console.print(Panel(notification, title="First Run", border_style="blue"))
+        console.print(Panel(notification, title="First Run", border_style=theme.panel_border))
         console.print("\n")
 
         # Create marker file

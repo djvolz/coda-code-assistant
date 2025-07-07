@@ -5,15 +5,16 @@ import asyncio
 import os
 import sys
 
-from rich.console import Console
 from rich.panel import Panel
+
+from coda.themes import get_themed_console
 
 # Add project to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from coda.providers import Message, OCIGenAIProvider, Role
 
-console = Console()
+console = get_themed_console()
 
 
 def test_basic_chat():

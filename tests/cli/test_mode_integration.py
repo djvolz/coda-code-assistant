@@ -178,7 +178,7 @@ class TestInteractiveModeIntegration:
         """Test that implemented and coming soon commands work correctly."""
         # Mock session commands to avoid console output issues
         cli.session_commands.handle_session_command = Mock(return_value="Session help")
-        
+
         # Session command - now implemented
         cli._cmd_session("")
         calls = [str(call) for call in cli.console.print.call_args_list]
