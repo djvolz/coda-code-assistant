@@ -14,13 +14,9 @@ class TestOCIEmbeddingProvider:
     """Tests for OCI embedding provider."""
     
     @pytest.fixture
-    def mock_config(self):
-        """Create mock configuration."""
-        config = Mock()
-        config.oci_compartment_id = "test-compartment-id"
-        config.oci_config_file = "~/.oci/config"
-        config.oci_profile = "DEFAULT"
-        return config
+    def compartment_id(self):
+        """Test compartment ID."""
+        return "test-compartment-id"
         
     @pytest.fixture
     def mock_oci_client(self):
@@ -37,35 +33,39 @@ class TestOCIEmbeddingProvider:
         
         return client
         
-    def test_init_with_short_name(self, mock_config):
+    def test_init_with_short_name(self, compartment_id):
         """Test initialization with short model name."""
-        provider = OCIEmbeddingProvider("multilingual-e5", config=mock_config)
-        assert provider.model_id == "multilingual-e5-base"
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
+            assert provider.model_id == "multilingual-e5-base"
         
-    def test_init_with_full_name(self, mock_config):
+    def test_init_with_full_name(self, compartment_id):
         """Test initialization with full model name."""
-        provider = OCIEmbeddingProvider("cohere.embed-multilingual-v3.0", config=mock_config)
-        assert provider.model_id == "cohere.embed-multilingual-v3.0"
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id, "cohere.embed-multilingual-v3.0")
+            assert provider.model_id == "cohere.embed-multilingual-v3.0"
         
     @pytest.mark.asyncio
-    async def test_embed_text(self, mock_config, mock_oci_client):
+    async def test_embed_text(self, compartment_id, mock_oci_client):
         """Test embedding a single text."""
-        provider = OCIEmbeddingProvider("multilingual-e5", config=mock_config)
-        provider._client = mock_oci_client
-        
-        result = await provider.embed_text("Hello world")
-        
-        assert isinstance(result, EmbeddingResult)
-        assert result.text == "Hello world"
-        assert isinstance(result.embedding, np.ndarray)
-        assert result.model == "multilingual-e5-base"
-        assert result.metadata["provider"] == "oci"
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
+            provider._client = mock_oci_client
+            
+            result = await provider.embed_text("Hello world")
+            
+            assert isinstance(result, EmbeddingResult)
+            assert result.text == "Hello world"
+            assert isinstance(result.embedding, np.ndarray)
+            assert result.model == "multilingual-e5-base"
+            assert result.metadata["provider"] == "oci"
         
     @pytest.mark.asyncio
-    async def test_embed_batch(self, mock_config, mock_oci_client):
+    async def test_embed_batch(self, compartment_id, mock_oci_client):
         """Test embedding a batch of texts."""
-        provider = OCIEmbeddingProvider("multilingual-e5", config=mock_config)
-        provider._client = mock_oci_client
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
+            provider._client = mock_oci_client
         
         texts = ["Hello world", "How are you?"]
         results = await provider.embed_batch(texts)
@@ -76,9 +76,10 @@ class TestOCIEmbeddingProvider:
         assert results[1].text == "How are you?"
         
     @pytest.mark.asyncio
-    async def test_list_models(self, mock_config):
+    async def test_list_models(self, compartment_id):
         """Test listing available models."""
-        provider = OCIEmbeddingProvider(config=mock_config)
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id)
         
         models = await provider.list_models()
         
@@ -91,9 +92,10 @@ class TestOCIEmbeddingProvider:
         assert e5_model["dimension"] == 768
         assert e5_model["multilingual"] is True
         
-    def test_get_model_info(self, mock_config):
+    def test_get_model_info(self, compartment_id):
         """Test getting current model info."""
-        provider = OCIEmbeddingProvider("multilingual-e5", config=mock_config)
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
         
         info = provider.get_model_info()
         
@@ -103,9 +105,10 @@ class TestOCIEmbeddingProvider:
         assert info["max_tokens"] == 512
         assert info["multilingual"] is True
         
-    def test_similarity_calculation(self, mock_config):
+    def test_similarity_calculation(self, compartment_id):
         """Test cosine similarity calculation."""
-        provider = OCIEmbeddingProvider(config=mock_config)
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id)
         
         # Test with identical vectors
         vec1 = np.array([1.0, 0.0, 0.0])
@@ -126,9 +129,10 @@ class TestOCIEmbeddingProvider:
         assert pytest.approx(sim) == -1.0
         
     @pytest.mark.asyncio
-    async def test_error_handling(self, mock_config):
+    async def test_error_handling(self, compartment_id):
         """Test error handling in embed operations."""
-        provider = OCIEmbeddingProvider("multilingual-e5", config=mock_config)
+        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+            provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
         
         # Mock client that raises an error
         mock_client = Mock()

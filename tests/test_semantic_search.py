@@ -302,27 +302,21 @@ class TestSemanticSearchManager:
         vector_count = await search_manager.vector_store.get_vector_count()
         assert vector_count == 100
         
-    def test_init_without_provider(self):
-        """Test initialization without embedding provider."""
-        # Without OCI config, should raise error
-        with pytest.raises(ValueError) as exc_info:
+    def test_init_requires_provider(self):
+        """Test that initialization requires an embedding provider."""
+        # Cannot create without a provider
+        with pytest.raises(TypeError):
             SemanticSearchManager()
-            
-        assert "No embedding provider available" in str(exc_info.value)
         
-    @patch('coda.semantic_search.OCIEmbeddingProvider')
-    def test_init_with_oci_config(self, mock_oci_provider_class):
-        """Test initialization with OCI configuration."""
-        config = Mock()
-        config.oci_compartment_id = "test-compartment"
-        
-        # Mock the provider instance
+    def test_init_with_provider(self):
+        """Test initialization with embedding provider."""
+        # Mock provider
         mock_provider = Mock()
         mock_provider.get_model_info.return_value = {"dimension": 768}
-        mock_oci_provider_class.return_value = mock_provider
         
-        manager = SemanticSearchManager(config=config)
+        # Create manager with provider
+        manager = SemanticSearchManager(embedding_provider=mock_provider)
         
-        # Should have created OCI provider
-        mock_oci_provider_class.assert_called_once_with(config=config)
         assert manager.embedding_provider == mock_provider
+        assert manager.vector_store is not None
+        assert manager.index_dir.exists()

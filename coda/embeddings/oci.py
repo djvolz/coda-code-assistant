@@ -1,22 +1,25 @@
 """
 OCI GenAI embedding provider implementation.
+
+This module is designed to be self-contained and usable as a library
+by external projects without Coda dependencies.
 """
 
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 import numpy as np
 from datetime import datetime, timedelta
 import logging
+from pathlib import Path
 
 from oci.generative_ai_inference import GenerativeAiInferenceClient
 from oci.generative_ai_inference.models import (
     EmbedTextDetails,
     OnDemandServingMode,
 )
+import oci
 
 from .base import BaseEmbeddingProvider, EmbeddingResult
-from ..configuration import CodaConfig
-from ..constants import MODEL_CACHE_DURATION
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +56,26 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
         },
     }
     
-    def __init__(self, model_id: str = "multilingual-e5", config: Optional[CodaConfig] = None):
+    def __init__(
+        self,
+        compartment_id: str,
+        model_id: str = "multilingual-e5",
+        oci_config: Optional[Dict[str, Any]] = None,
+        oci_config_file: Optional[Union[str, Path]] = None,
+        oci_profile: str = "DEFAULT",
+        region: Optional[str] = None,
+        cache_duration_hours: int = 24
+    ):
         """Initialize OCI embedding provider.
         
         Args:
+            compartment_id: OCI compartment ID (required)
             model_id: Short model name or full OCI model ID
-            config: Configuration object
+            oci_config: OCI configuration dictionary (if not provided, uses config_file)
+            oci_config_file: Path to OCI config file (default: ~/.oci/config)
+            oci_profile: Profile to use from config file
+            region: OCI region (if not provided, uses config file)
+            cache_duration_hours: How long to cache model lists (default: 24)
         """
         # Map short names to full model IDs
         if model_id in self.MODEL_MAPPING:
@@ -66,19 +83,32 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
             
         super().__init__(model_id)
         
-        self.config = config or CodaConfig()
+        self.compartment_id = compartment_id
+        self.cache_duration = timedelta(hours=cache_duration_hours)
         self._client = None
         self._models_cache = None
         self._cache_timestamp = None
+        
+        # Store OCI config for client initialization
+        if oci_config is None:
+            if oci_config_file:
+                self._oci_config = oci.config.from_file(
+                    file_location=str(oci_config_file),
+                    profile_name=oci_profile
+                )
+            else:
+                self._oci_config = oci.config.from_file(profile_name=oci_profile)
+        else:
+            self._oci_config = oci_config
+            
+        if region:
+            self._oci_config["region"] = region
         
     @property
     def client(self) -> GenerativeAiInferenceClient:
         """Get or create OCI client."""
         if self._client is None:
-            from ..providers.oci_genai import get_oci_client
-            self._client = GenerativeAiInferenceClient(
-                **get_oci_client(self.config)._client_init_kwargs
-            )
+            self._client = GenerativeAiInferenceClient(self._oci_config)
         return self._client
         
     async def embed_text(self, text: str) -> EmbeddingResult:
@@ -109,7 +139,7 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
                 serving_mode=OnDemandServingMode(
                     model_id=f"ocid1.generativeaimodel.oc1.us-chicago-1.{self.model_id}"
                 ),
-                compartment_id=self.config.providers.get("oci_genai", {}).get("compartment_id"),
+                compartment_id=self.compartment_id,
                 # Add truncate parameter to handle long texts
                 truncate="END",
             )
@@ -148,7 +178,7 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
         """
         # Check cache
         if self._models_cache and self._cache_timestamp:
-            if datetime.now() - self._cache_timestamp < timedelta(seconds=MODEL_CACHE_DURATION):
+            if datetime.now() - self._cache_timestamp < self.cache_duration:
                 return self._models_cache
                 
         # For now, return static list
