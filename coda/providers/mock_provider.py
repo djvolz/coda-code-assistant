@@ -101,13 +101,15 @@ class MockProvider(BaseProvider):
                 content = "I don't see any previous conversation to reference."
             else:
                 for msg in previous_messages:
-                    msg_content = msg.content.lower()
-                    if "python" in msg_content:
-                        topics.append("Python programming")
-                    if "decorator" in msg_content:
-                        topics.append("Python decorators")
-                    if "javascript" in msg_content:
-                        topics.append("JavaScript")
+                    # Handle different message types safely
+                    if hasattr(msg, "content") and isinstance(msg.content, str):
+                        msg_content = msg.content.lower()
+                        if "python" in msg_content:
+                            topics.append("Python programming")
+                        if "decorator" in msg_content:
+                            topics.append("Python decorators")
+                        if "javascript" in msg_content:
+                            topics.append("JavaScript")
 
                 if topics:
                     content = f"We were discussing: {', '.join(set(topics))}. What would you like to know more about?"
@@ -115,7 +117,11 @@ class MockProvider(BaseProvider):
                     content = "I don't see any specific topics we were discussing previously."
 
         elif "python" in last_message:
-            if any("decorator" in msg.content.lower() for msg in messages):
+            if any(
+                "decorator" in msg.content.lower()
+                for msg in messages
+                if hasattr(msg, "content") and isinstance(msg.content, str)
+            ):
                 content = "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
             else:
                 content = "Python is a high-level programming language known for its simplicity and readability."
@@ -131,7 +137,11 @@ class MockProvider(BaseProvider):
 
         elif "decorator" in last_message and len(messages) > 1:
             # If part of a conversation, check for context
-            if any("decorator" in msg.content.lower() for msg in messages[:-1]):
+            if any(
+                "decorator" in msg.content.lower()
+                for msg in messages[:-1]
+                if hasattr(msg, "content") and isinstance(msg.content, str)
+            ):
                 content = "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
             else:
                 content = "Decorators in Python are a way to modify functions using the @ syntax. For example: @property or @staticmethod."

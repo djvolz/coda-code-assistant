@@ -61,7 +61,7 @@ class TestInteractiveSessionIntegration:
 
         # Get AI response
         ai_response = mock_provider.chat(cli_messages, "mock-echo")
-        assistant_msg = Message(role=Role.ASSISTANT, content=ai_response)
+        assistant_msg = Message(role=Role.ASSISTANT, content=ai_response.content)
         cli_messages.append(assistant_msg)
 
         # Track response
@@ -70,7 +70,7 @@ class TestInteractiveSessionIntegration:
         )
 
         assert len(cli_messages) == 2
-        assert "Python" in ai_response
+        assert "Python" in ai_response.content
 
         # === Phase 2: Continue conversation ===
         user_msg2 = Message(role=Role.USER, content="Tell me about decorators")
@@ -78,12 +78,12 @@ class TestInteractiveSessionIntegration:
         cli.session_commands.add_message("user", "Tell me about decorators", {"provider": "mock"})
 
         ai_response2 = mock_provider.chat(cli_messages, "mock-echo")
-        assistant_msg2 = Message(role=Role.ASSISTANT, content=ai_response2)
+        assistant_msg2 = Message(role=Role.ASSISTANT, content=ai_response2.content)
         cli_messages.append(assistant_msg2)
         cli.session_commands.add_message("assistant", ai_response2, {"provider": "mock"})
 
         assert len(cli_messages) == 4
-        assert "decorator" in ai_response2.lower()
+        assert "decorator" in ai_response2.content.lower()
 
         # === Phase 3: Save session ===
         with patch("rich.prompt.Prompt.ask", return_value=""):

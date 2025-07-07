@@ -8,6 +8,7 @@ from coda.providers import BaseProvider, Message, Model, Role
 
 from .basic_commands import BasicCommandProcessor
 from .shared import DeveloperMode
+from .shared.modes import get_system_prompt
 
 # Optional agent imports for tool support
 try:
