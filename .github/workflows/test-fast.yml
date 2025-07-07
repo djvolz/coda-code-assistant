@@ -40,4 +40,4 @@ jobs:
     - name: Test CLI basic functionality
       run: |
         # Test with mock provider (no external dependencies)
-        echo "Hello" | uv run coda --provider mock --model mock-smart --one-shot
+        echo "Hello" | uv run coda --provider mock --model mock-smart
