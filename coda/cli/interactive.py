@@ -8,17 +8,17 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from .interactive_cli import DeveloperMode, InteractiveCLI
-from .shared.modes import get_system_prompt
 from ..constants import (
-    CONSOLE_STYLE_SUCCESS,
-    CONSOLE_STYLE_WARNING,
+    CONSOLE_STYLE_BOLD,
+    CONSOLE_STYLE_DIM,
     CONSOLE_STYLE_ERROR,
     CONSOLE_STYLE_INFO,
-    CONSOLE_STYLE_DIM,
-    CONSOLE_STYLE_BOLD,
+    CONSOLE_STYLE_SUCCESS,
+    CONSOLE_STYLE_WARNING,
     PANEL_BORDER_STYLE,
 )
+from .interactive_cli import DeveloperMode, InteractiveCLI
+from .shared.modes import get_system_prompt
 
 try:
     from ..__version__ import __version__
@@ -32,18 +32,18 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
     """Check if this is the first run and show auto-save notification."""
     import os
     from pathlib import Path
-    
+
     # Check for first-run marker in XDG data directory
     data_dir = Path(os.path.expanduser("~/.local/share/coda"))
     first_run_marker = data_dir / ".first_run_complete"
-    
+
     if not first_run_marker.exists():
         # This is the first run
         data_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Show notification
         from rich.panel import Panel
-        
+
         if auto_save_enabled:
             notification = f"""{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Welcome to Coda![/]
 
@@ -68,11 +68,11 @@ Your conversations will NOT be saved automatically.
 {CONSOLE_STYLE_DIM}To enable auto-save for future sessions:[/]
 • Remove {CONSOLE_STYLE_INFO}--no-save[/] flag when starting Coda
 • Set {CONSOLE_STYLE_INFO}autosave = true[/] in ~/.config/coda/config.toml"""
-        
+
         console.print("\n")
         console.print(Panel(notification, title="First Run", border_style=PANEL_BORDER_STYLE))
         console.print("\n")
-        
+
         # Create marker file
         try:
             first_run_marker.touch()
@@ -81,7 +81,7 @@ Your conversations will NOT be saved automatically.
             pass
 
 
-async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
+async def _initialize_provider(factory, provider: str, console: Console):
     """Initialize and connect to the provider."""
     console.print(f"\n{CONSOLE_STYLE_SUCCESS}Provider:[/] {provider}")
     console.print(f"{CONSOLE_STYLE_WARNING}Initializing {provider}...[/]")
@@ -174,12 +174,12 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     messages.clear()
                     messages.extend(loaded_messages)
                     console.print(f"{CONSOLE_STYLE_DIM}Restored {len(loaded_messages)} messages to conversation history[/]")
-                
+
                 # Check if conversation was cleared
                 if cli.session_commands.was_conversation_cleared():
                     messages.clear()
                     console.print(f"{CONSOLE_STYLE_DIM}Cleared conversation history[/]")
-                
+
                 return True
         except (ValueError, AttributeError) as e:
             console.print(f"{CONSOLE_STYLE_ERROR}Invalid command: {e}[/]")
@@ -202,7 +202,7 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
 
     # Add user message
     messages.append(Message(role=Role.USER, content=user_input))
-    
+
     # Track message in session manager
     cli.session_commands.add_message(
         role="user",
@@ -299,7 +299,7 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     # Add assistant message to history (even if interrupted)
     if full_response or interrupted:
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
-        
+
         # Track assistant message in session manager
         cli.session_commands.add_message(
             role="assistant",
@@ -320,13 +320,13 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
     """Run the enhanced interactive session."""
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
-    
+
     # Load configuration
     from coda.configuration import get_config
     from coda.providers import ProviderFactory
 
     config = get_config()
-    
+
     # Set auto-save based on config and CLI flag
     # CLI flag takes precedence over config
     if no_save:
@@ -334,10 +334,10 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
     else:
         # Use config value, defaulting to True if not specified
         cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
-    
+
     # Check for first run and show auto-save notification
     await _check_first_run(console, cli.session_commands.auto_save_enabled)
-    
+
     # Load last session if requested
     if resume:
         console.print(f"\n{CONSOLE_STYLE_INFO}Resuming last session...[/]")
@@ -380,7 +380,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
         if resume and hasattr(cli.session_commands, '_messages_loaded') and cli.session_commands._messages_loaded:
             # Import Message and Role for conversion
             from coda.providers import Message, Role
-            
+
             # Convert loaded messages to Message objects
             messages = []
             for msg in cli.session_commands.current_messages:

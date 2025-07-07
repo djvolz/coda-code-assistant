@@ -15,7 +15,7 @@ def print_command_help(console: Console, mode: str = ""):
         return
     except ImportError:
         pass
-    
+
     # Fallback to hardcoded help
     mode_suffix = f" ({mode})" if mode else ""
     console.print(f"\n[bold]Available Commands{mode_suffix}[/bold]\n")

@@ -1,37 +1,35 @@
 """SQLite database connection and initialization for session management."""
 
-import os
-from pathlib import Path
-from typing import Optional
 from contextlib import contextmanager
+from pathlib import Path
 
 from sqlalchemy import create_engine, event, text
-from sqlalchemy.orm import sessionmaker, Session as DBSession
+from sqlalchemy.orm import Session as DBSession
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from .models import Base
 from ..constants import (
-    SESSION_DB_PATH,
     FTS_TABLE_NAME,
-    FTS_CONTENT_TABLE,
+    SESSION_DB_PATH,
 )
+from .models import Base
 
 
 class SessionDatabase:
     """Manages SQLite database connections for session storage."""
-    
-    def __init__(self, db_path: Optional[Path] = None):
+
+    def __init__(self, db_path: Path | None = None):
         """Initialize database connection.
-        
+
         Args:
             db_path: Path to SQLite database file. If None, uses default location.
         """
         if db_path is None:
             db_path = SESSION_DB_PATH
-        
+
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Create engine with connection pooling disabled for SQLite
         self.engine = create_engine(
             f'sqlite:///{self.db_path}',
@@ -39,7 +37,7 @@ class SessionDatabase:
             poolclass=StaticPool,
             echo=False
         )
-        
+
         # Enable foreign key support and WAL mode for better concurrency
         @event.listens_for(self.engine, "connect")
         def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -48,7 +46,7 @@ class SessionDatabase:
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA synchronous=NORMAL")
             cursor.close()
-        
+
         # Create session factory
         self.SessionLocal = sessionmaker(
             autocommit=False,
@@ -56,14 +54,14 @@ class SessionDatabase:
             bind=self.engine,
             expire_on_commit=False  # Prevent objects from being expired after commit
         )
-        
+
         # Initialize database
         self.init_db()
-    
+
     def init_db(self):
         """Create all tables if they don't exist."""
         Base.metadata.create_all(bind=self.engine)
-        
+
         # Create FTS5 virtual table for full-text search
         with self.engine.connect() as conn:
             # Check if FTS table exists
@@ -81,11 +79,11 @@ class SessionDatabase:
                     )
                 """))
                 conn.commit()
-    
+
     @contextmanager
     def get_session(self) -> DBSession:
         """Get a database session context manager.
-        
+
         Yields:
             SQLAlchemy session object.
         """
@@ -98,26 +96,26 @@ class SessionDatabase:
             raise
         finally:
             session.close()
-    
+
     def close(self):
         """Close database connections."""
         self.engine.dispose()
-    
+
     def vacuum(self):
         """Optimize database by running VACUUM."""
         with self.engine.connect() as conn:
             conn.execute(text("VACUUM"))
             conn.commit()
-    
+
     def get_db_size(self) -> int:
         """Get database file size in bytes."""
         if self.db_path.exists():
             return self.db_path.stat().st_size
         return 0
-    
+
     def backup(self, backup_path: Path):
         """Create a backup of the database.
-        
+
         Args:
             backup_path: Path to save the backup.
         """
@@ -125,7 +123,7 @@ class SessionDatabase:
         if self.db_path.exists():
             backup_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(self.db_path, backup_path)
-    
+
     def clear_all(self):
         """Clear all data from the database (use with caution)."""
         Base.metadata.drop_all(bind=self.engine)

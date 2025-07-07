@@ -4,8 +4,8 @@ This module centralizes all hardcoded values that were previously scattered
 throughout the codebase, making them easier to maintain and modify.
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 # Version and metadata
 APP_NAME = "coda"

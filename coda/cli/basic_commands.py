@@ -1,7 +1,7 @@
 """Basic mode slash command handling."""
 
 
-from coda.cli.shared import CommandHandler, CommandResult, get_system_prompt
+from coda.cli.shared import CommandHandler, CommandResult
 
 
 class BasicCommandProcessor(CommandHandler):
@@ -28,7 +28,7 @@ class BasicCommandProcessor(CommandHandler):
 
         # Build command map from registry
         from coda.cli.command_registry import CommandRegistry
-        
+
         # Map command names to their handlers
         handler_map = {
             "help": lambda: self.show_help(),
@@ -40,7 +40,7 @@ class BasicCommandProcessor(CommandHandler):
             # Note: session, export, theme, tools not supported in basic mode
             # They are interactive-only features
         }
-        
+
         # Build commands dict from registry
         commands = {}
         for cmd_def in CommandRegistry.COMMANDS:
