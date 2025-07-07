@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .semantic_search import SemanticSearchManager
 from .embeddings.oci_coda import create_oci_embedding_provider
-from .configuration import CodaConfig
+from .configuration import CodaConfig, get_config
 from .constants import get_cache_dir
 
 
@@ -30,7 +30,7 @@ def create_semantic_search_manager(
     Raises:
         ValueError: If no embedding provider is configured
     """
-    config = config or CodaConfig()
+    config = config or get_config()
     
     # Try to create embedding provider
     embedding_provider = None

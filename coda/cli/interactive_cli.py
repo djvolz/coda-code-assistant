@@ -192,6 +192,7 @@ class InteractiveCLI(CommandHandler):
         # Add handlers for commands not yet implemented
         placeholder_handlers = {
             "tools": self._cmd_tools,
+            "search": self._cmd_search,
         }
         handler_map.update(placeholder_handlers)
 
@@ -617,6 +618,114 @@ class InteractiveCLI(CommandHandler):
         # Use the shared command handler
         result = self.handle_tools_command(args)
         return result
+    
+    def _cmd_search(self, args: str):
+        """Semantic search commands."""
+        parts = args.split(maxsplit=1)
+        subcommand = parts[0] if parts else ""
+        query = parts[1] if len(parts) > 1 else ""
+        
+        if not subcommand:
+            options = self.session.completer.slash_completer.command_options.get("search", [])
+            self.console.print("[cyan]Semantic Search Commands:[/cyan]")
+            self.console.print("  [white]/search semantic <query>[/white] - Search indexed content")
+            self.console.print("  [white]/search code <query>[/white] - Search code files")
+            self.console.print("  [white]/search index [path][/white] - Index files for search")
+            self.console.print("  [white]/search status[/white] - Show index status")
+            return
+        
+        # Import semantic search components
+        try:
+            from coda.semantic_search_coda import create_semantic_search_manager
+            from coda.embeddings.mock import MockEmbeddingProvider
+            from coda.semantic_search import SemanticSearchManager
+        except ImportError as e:
+            self.console.print(f"[red]Error loading semantic search: {e}[/red]")
+            self.console.print("[yellow]Make sure to install: uv sync --extra embeddings[/yellow]")
+            return
+        
+        # Use mock provider for now (until we have proper embedding config)
+        try:
+            # Try to use configured provider first
+            manager = create_semantic_search_manager()
+        except Exception:
+            # Fall back to mock provider
+            self.console.print("[yellow]Using mock embeddings (OCI not configured)[/yellow]")
+            provider = MockEmbeddingProvider(dimension=768)
+            manager = SemanticSearchManager(embedding_provider=provider)
+        
+        if subcommand == "semantic":
+            if not query:
+                self.console.print("[red]Please provide a search query[/red]")
+                return
+            
+            self.console.print(f"[cyan]Searching for: '{query}'[/cyan]")
+            try:
+                import asyncio
+                results = asyncio.run(manager.search(query, k=5))
+                if results:
+                    self.console.print("\n[green]Search Results:[/green]")
+                    for i, result in enumerate(results, 1):
+                        self.console.print(f"{i}. [white]Score: {result.score:.3f}[/white]")
+                        self.console.print(f"   {result.text[:200]}...")
+                        if result.metadata:
+                            self.console.print(f"   [dim]Metadata: {result.metadata}[/dim]")
+                        self.console.print()
+                else:
+                    self.console.print("[yellow]No results found[/yellow]")
+            except Exception as e:
+                self.console.print(f"[red]Search error: {e}[/red]")
+        
+        elif subcommand == "code":
+            if not query:
+                self.console.print("[red]Please provide a search query[/red]")
+                return
+            
+            self.console.print(f"[cyan]Searching code for: '{query}'[/cyan]")
+            self.console.print("[yellow]Code search not yet implemented[/yellow]")
+        
+        elif subcommand == "index":
+            if query == "demo":
+                # Index some demo content
+                self.console.print("[cyan]Indexing demo content...[/cyan]")
+                demo_docs = [
+                    "Python is great for data science and machine learning",
+                    "JavaScript is the language of the web and runs in browsers",
+                    "Rust provides memory safety without garbage collection",
+                    "Go is designed for concurrent programming and microservices",
+                    "TypeScript adds static typing to JavaScript",
+                    "Docker containers help with application deployment",
+                    "Kubernetes orchestrates containerized applications",
+                    "Git is essential for version control",
+                    "React is a popular frontend framework",
+                    "FastAPI is great for building Python APIs"
+                ]
+                try:
+                    import asyncio
+                    doc_ids = asyncio.run(manager.index_content(demo_docs))
+                    self.console.print(f"[green]Indexed {len(doc_ids)} demo documents[/green]")
+                except Exception as e:
+                    self.console.print(f"[red]Indexing error: {e}[/red]")
+            else:
+                path = query or "."
+                self.console.print(f"[cyan]Indexing files in: {path}[/cyan]")
+                self.console.print("[yellow]File indexing not yet implemented[/yellow]")
+                self.console.print("[dim]Try: /search index demo[/dim]")
+        
+        elif subcommand == "status":
+            try:
+                import asyncio
+                stats = asyncio.run(manager.get_stats())
+                self.console.print("\n[cyan]Semantic Search Index Status:[/cyan]")
+                self.console.print(f"  Vector count: {stats['vector_count']}")
+                self.console.print(f"  Embedding model: {stats['embedding_model']}")
+                self.console.print(f"  Embedding dimension: {stats['embedding_dimension']}")
+                self.console.print(f"  Vector store: {stats['vector_store_type']}")
+            except Exception as e:
+                self.console.print(f"[red]Error getting status: {e}[/red]")
+        
+        else:
+            self.console.print(f"[red]Unknown search subcommand: {subcommand}[/red]")
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
