@@ -24,14 +24,14 @@ class TestMockProviderCommands:
         # Ask about previous conversation
         messages.append(Message(role=Role.USER, content="What were we discussing?"))
         response = provider.chat(messages, "mock-echo")
-        assert "python" in response.lower() and "decorator" in response.lower()
+        assert "python" in response.content.lower() and "decorator" in response.content.lower()
 
         # Simulate /clear - start fresh conversation
         new_messages = [Message(role=Role.USER, content="What were we discussing?")]
         response_after_clear = provider.chat(new_messages, "mock-echo")
 
         # Should not remember previous conversation
-        assert "don't see any previous conversation" in response_after_clear.lower()
+        assert "don't see any previous conversation" in response_after_clear.content.lower()
 
     def test_model_switching_scenario(self):
         """Test conversation continuity when switching models."""
@@ -48,12 +48,15 @@ class TestMockProviderCommands:
         response_echo = provider.chat(messages, "mock-echo")
 
         # Switch to mock-smart (same conversation)
-        messages.append(Message(role=Role.ASSISTANT, content=response_echo))
+        messages.append(Message(role=Role.ASSISTANT, content=response_echo.content))
         messages.append(Message(role=Role.USER, content="What were we discussing?"))
         response_smart = provider.chat(messages, "mock-smart")
 
         # Both models should maintain context
-        assert "python" in response_smart.lower() and "decorator" in response_smart.lower()
+        assert (
+            "python" in response_smart.content.lower()
+            and "decorator" in response_smart.content.lower()
+        )
 
     def test_mode_command_scenarios(self):
         """Test conversations with mode switching."""
@@ -80,9 +83,9 @@ class TestMockProviderCommands:
 
             # Should handle all modes
             assert response
-            assert len(response) > 10
+            assert len(response.content) > 10
             if "python" in messages[1].content.lower():
-                assert "python" in response.lower()
+                assert "python" in response.content.lower()
 
     def test_session_command_scenarios(self):
         """Test conversation patterns for session management."""
@@ -104,7 +107,7 @@ class TestMockProviderCommands:
 
         # Should be able to summarize the conversation
         assert response
-        assert "python" in response.lower()  # Should recognize Python was discussed
+        assert "python" in response.content.lower()  # Should recognize Python was discussed
 
         # Simulate loading a session - asking about context
         loaded_messages = messages.copy()
@@ -113,7 +116,8 @@ class TestMockProviderCommands:
 
         # Should remember the context
         assert any(
-            word in response_loaded.lower() for word in ["python", "flask", "django", "framework"]
+            word in response_loaded.content.lower()
+            for word in ["python", "flask", "django", "framework"]
         )
 
     def test_export_command_scenarios(self):
@@ -133,7 +137,7 @@ class TestMockProviderCommands:
 
         # Should handle export-worthy conversations
         assert response
-        assert "decorator" in response.lower() or "python" in response.lower()
+        assert "decorator" in response.content.lower() or "python" in response.content.lower()
 
     def test_help_command_context(self):
         """Test asking for help in various contexts."""
@@ -149,7 +153,7 @@ class TestMockProviderCommands:
         response = provider.chat(messages, "mock-echo")
 
         # Should provide some help response
-        assert "help" in response.lower()
+        assert "help" in response.content.lower()
 
     def test_provider_command_scenario(self):
         """Test provider-related conversations."""
@@ -164,7 +168,7 @@ class TestMockProviderCommands:
 
         # Should handle provider questions
         assert response
-        assert len(response) > 10
+        assert len(response.content) > 10
 
     def test_command_error_scenarios(self):
         """Test error scenarios with commands."""
@@ -184,7 +188,7 @@ class TestMockProviderCommands:
 
             # Should still provide a response
             assert response
-            assert len(response) > 5
+            assert len(response.content) > 5
 
     def test_interactive_only_commands(self):
         """Test scenarios with interactive-only commands."""
@@ -204,7 +208,7 @@ class TestMockProviderCommands:
 
             # Should handle questions about commands
             assert response
-            assert len(response) > 10
+            assert len(response.content) > 10
 
     def test_command_combination_scenarios(self):
         """Test complex scenarios with multiple commands."""
@@ -223,7 +227,7 @@ class TestMockProviderCommands:
         response = provider.chat(messages, "mock-smart")
 
         # Should handle the Python request
-        assert "python" in response.lower() or "class" in response.lower()
+        assert "python" in response.content.lower() or "class" in response.content.lower()
 
     def test_coming_soon_commands(self):
         """Test conversations about coming soon features."""
@@ -241,7 +245,7 @@ class TestMockProviderCommands:
 
             # Should handle gracefully
             assert response
-            assert len(response) > 5
+            assert len(response.content) > 5
 
 
 @pytest.mark.unit
@@ -255,17 +259,17 @@ class TestMockProviderCommandIntegration:
         # 1. Start conversation
         messages = [Message(role=Role.USER, content="I need help with Python async programming")]
         response1 = provider.chat(messages, "mock-echo")
-        messages.append(Message(role=Role.ASSISTANT, content=response1))
+        messages.append(Message(role=Role.ASSISTANT, content=response1.content))
 
         # 2. Ask specific question
         messages.append(Message(role=Role.USER, content="How do I use async/await?"))
         response2 = provider.chat(messages, "mock-echo")
-        messages.append(Message(role=Role.ASSISTANT, content=response2))
+        messages.append(Message(role=Role.ASSISTANT, content=response2.content))
 
         # 3. User wants to save session
         messages.append(Message(role=Role.USER, content="This is helpful, I should save this"))
         response3 = provider.chat(messages, "mock-echo")
-        messages.append(Message(role=Role.ASSISTANT, content=response3))
+        messages.append(Message(role=Role.ASSISTANT, content=response3.content))
 
         # 4. Continue conversation
         messages.append(Message(role=Role.USER, content="What about asyncio?"))
@@ -275,12 +279,12 @@ class TestMockProviderCommandIntegration:
         assert response4
 
         # 5. Check context is maintained
-        messages.append(Message(role=Role.ASSISTANT, content=response4))
+        messages.append(Message(role=Role.ASSISTANT, content=response4.content))
         messages.append(Message(role=Role.USER, content="What have we covered so far?"))
         summary = provider.chat(messages, "mock-echo")
 
         # Should remember the async/Python discussion
-        assert "python" in summary.lower() or "async" in summary.lower()
+        assert "python" in summary.content.lower() or "async" in summary.content.lower()
 
     def test_mode_switching_workflow(self):
         """Test workflow with multiple mode switches."""
@@ -335,4 +339,7 @@ class TestMockProviderCommandIntegration:
 
             # Should maintain context through mode switches
             if workflow["final_check"] in messages[-1].content.lower():
-                assert workflow["final_check"] in response.lower() or len(response) > 10
+                assert (
+                    workflow["final_check"] in response.content.lower()
+                    or len(response.content) > 10
+                )
