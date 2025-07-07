@@ -1,6 +1,5 @@
 """Integration tests for Ollama provider."""
 
-
 import pytest
 
 from coda.providers import Message, OllamaProvider, Role

@@ -6,7 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
@@ -17,7 +16,12 @@ except ImportError:
     print("Error: tomlkit not installed. Run: uv sync")
     sys.exit(1)
 
-console = Console()
+# Add parent dir to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from coda.themes import get_themed_console
+
+console = get_themed_console()
 
 
 def get_compartments():

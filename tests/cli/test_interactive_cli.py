@@ -1,6 +1,6 @@
 """Tests for the interactive CLI features."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -129,7 +129,7 @@ class TestInteractiveCLI:
         # Check that all commands are mentioned (registry format)
         for cmd_name in cli.commands:
             assert any(f"/{cmd_name}" in str(call) for call in calls)
-        
+
         # Check specific commands are present
         assert any("/help" in str(call) for call in calls)
         assert any("/session" in str(call) for call in calls)
@@ -150,31 +150,19 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Conversation cleared" in str(call) for call in calls)
 
-    @patch("coda.cli.interactive_cli.Path")
-    def test_session_initialization(self, mock_path_class):
+    @patch("coda.cli.interactive_cli.HISTORY_FILE_PATH")
+    def test_session_initialization(self, mock_history_path):
         """Test session initialization creates proper directories."""
-        # Setup mock path chain
-        mock_home = Mock()
-        mock_local = Mock()
-        mock_share = Mock()
-        mock_coda = Mock()
-        mock_history_file = Mock()
-
-        # Chain the path operations
-        mock_path_class.home.return_value = mock_home
-        mock_home.__truediv__ = Mock(return_value=mock_local)
-        mock_local.__truediv__ = Mock(return_value=mock_share)
-        mock_share.__truediv__ = Mock(return_value=mock_coda)
-        mock_coda.__truediv__ = Mock(return_value=mock_history_file)
-
-        # Set string representation
-        mock_history_file.__str__ = Mock(return_value="/mock/history/path")
+        # Setup mock history file path
+        mock_parent = Mock()
+        mock_history_path.parent = mock_parent
+        mock_history_path.__str__ = Mock(return_value="/mock/history/path")
 
         console = Mock()
         cli = InteractiveCLI(console)
 
         # Check that history directory is created
-        mock_coda.mkdir.assert_called_with(parents=True, exist_ok=True)
+        mock_parent.mkdir.assert_called_with(parents=True, exist_ok=True)
 
         # Check session is initialized
         assert cli.session is not None
@@ -250,13 +238,13 @@ class TestInteractiveCLI:
         """Test session command."""
         # Mock the session commands to avoid console output issues
         cli.session_commands.handle_session_command = Mock(return_value="Session help shown")
-        
+
         # Test without args - should call session command handler
-        result = cli._cmd_session("")
+        cli._cmd_session("")
 
         # Verify the session command handler was called with empty args
         cli.session_commands.handle_session_command.assert_called_with([])
-        
+
         # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Session help shown" in str(call) for call in calls)
@@ -269,33 +257,51 @@ class TestInteractiveCLI:
         # Verify the session command handler was called with the right args
         cli.session_commands.handle_session_command.assert_called_with(["save", "test"])
 
-    def test_theme_command(self, cli):
-        """Test theme command (coming soon)."""
-        # Test without args
-        cli._cmd_theme("")
+    @patch("coda.cli.theme_selector.ThemeSelector")
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command(
+        self, mock_get_console, mock_save_config, mock_theme_manager, mock_theme_selector, cli
+    ):
+        """Test theme command uses interactive selector when no args."""
+        # Mock theme manager
+        mock_manager = Mock()
+        mock_manager.current_theme_name = "default"
+        mock_manager.current_theme.description = "Default Coda theme"
+        mock_theme_manager.return_value = mock_manager
 
+        # Mock theme selector
+        mock_selector_instance = Mock()
+        # Mock async method
+        mock_selector_instance.select_theme_interactive = AsyncMock(
+            return_value=None
+        )  # User cancelled
+        mock_theme_selector.return_value = mock_selector_instance
+
+        # Test without args - should use interactive selector
+        await cli._cmd_theme("")
+
+        # Check that ThemeSelector was created and used
+        mock_theme_selector.assert_called_once()  # Don't check exact console object
+        mock_selector_instance.select_theme_interactive.assert_called_once()
+
+        # Check that current theme was shown when no selection made
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Theme Settings" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
-
-        # Test with args
-        cli.console.reset_mock()
-        cli._cmd_theme("dark")
-
-        calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("not implemented yet" in str(call) for call in calls)
+        assert any("Current theme:" in str(call) for call in calls)
 
     def test_export_command(self, cli):
         """Test export command."""
         # Mock the export commands to avoid console output issues
         cli.session_commands.handle_export_command = Mock(return_value="Export help shown")
-        
+
         # Test without args - should call export command handler
-        result = cli._cmd_export("")
+        cli._cmd_export("")
 
         # Verify the export command handler was called with empty args
         cli.session_commands.handle_export_command.assert_called_with([])
-        
+
         # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Export help shown" in str(call) for call in calls)
@@ -367,3 +373,234 @@ class TestInteractiveCLI:
         assert "general" in mode_names
         assert "code" in mode_names
         assert "debug" in mode_names
+
+    @patch("coda.cli.theme_selector.ThemeSelector")
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command_interactive_selection(
+        self, mock_get_console, mock_save_config, mock_theme_manager, mock_theme_selector, cli
+    ):
+        """Test theme command with interactive selection that selects a theme."""
+        # Mock theme manager
+        mock_manager = Mock()
+        mock_manager.current_theme_name = "default"
+        mock_theme_manager.return_value = mock_manager
+
+        # Mock the current_theme.prompt.to_prompt_toolkit_style() method
+        mock_style = Mock()
+        mock_style.style_dict = {}  # Empty dict to avoid TypeError
+        mock_manager.current_theme.prompt.to_prompt_toolkit_style.return_value = mock_style
+
+        # Mock theme selector
+        mock_selector_instance = Mock()
+        mock_selector_instance.select_theme_interactive = AsyncMock(
+            return_value="dark"
+        )  # User selected dark
+        mock_theme_selector.return_value = mock_selector_instance
+
+        # Mock config
+        cli.config = Mock()
+        cli.config.ui = {"theme": "default"}
+
+        # Mock session
+        cli.session = Mock()
+
+        # Test without args - should use interactive selector and set theme
+        await cli._cmd_theme("")
+
+        # Check that ThemeSelector was created and used
+        mock_theme_selector.assert_called_once()  # Don't check exact console object
+        mock_selector_instance.select_theme_interactive.assert_called_once()
+
+        # Check theme was set
+        mock_manager.set_theme.assert_called_once_with("dark")
+
+        # Check config was updated and saved
+        assert cli.config.ui["theme"] == "dark"
+        mock_save_config.assert_called_once()
+
+        # Check success message was printed
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Theme changed to" in str(call) for call in calls)
+        assert any("dark" in str(call) for call in calls)
+
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command_list(
+        self, mock_get_console, mock_save_config, mock_theme_manager, cli
+    ):
+        """Test theme list subcommand."""
+        # Mock theme manager
+        mock_manager = Mock()
+        mock_manager.current_theme_name = "default"
+        mock_theme_manager.return_value = mock_manager
+
+        # Mock THEMES
+        with patch(
+            "coda.themes.THEMES",
+            {
+                "default": Mock(description="Default Coda theme"),
+                "dark": Mock(description="Dark theme with high contrast"),
+            },
+        ):
+            await cli._cmd_theme("list")
+
+        # Check output shows available themes
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Available themes:" in str(call) for call in calls)
+        assert any("default" in str(call) for call in calls)
+        assert any("dark" in str(call) for call in calls)
+
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command_current(
+        self, mock_get_console, mock_save_config, mock_theme_manager, cli
+    ):
+        """Test theme current subcommand."""
+        # Mock theme manager
+        mock_manager = Mock()
+        mock_manager.current_theme_name = "dark"
+        mock_manager.current_theme.description = "Dark theme with high contrast"
+        mock_theme_manager.return_value = mock_manager
+
+        await cli._cmd_theme("current")
+
+        # Check output shows current theme
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Current theme:" in str(call) for call in calls)
+        assert any("dark" in str(call) for call in calls)
+        assert any("Dark theme with high contrast" in str(call) for call in calls)
+
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command_set_valid_theme(
+        self, mock_get_console, mock_save_config, mock_theme_manager, cli
+    ):
+        """Test setting a valid theme."""
+        # Mock theme manager
+        mock_manager = Mock()
+        mock_theme_manager.return_value = mock_manager
+
+        # Mock the current_theme.prompt.to_prompt_toolkit_style() method
+        mock_style = Mock()
+        mock_style.style_dict = {}  # Empty dict to avoid TypeError
+        mock_manager.current_theme.prompt.to_prompt_toolkit_style.return_value = mock_style
+
+        # Mock config
+        cli.config = Mock()
+        cli.config.ui = {"theme": "default"}
+
+        # Mock session
+        cli.session = Mock()
+
+        await cli._cmd_theme("dark")
+
+        # Check theme manager was called
+        mock_manager.set_theme.assert_called_once_with("dark")
+
+        # Check config was updated and saved
+        assert cli.config.ui["theme"] == "dark"
+        mock_save_config.assert_called_once()
+
+        # Check success message was printed
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Theme changed to" in str(call) for call in calls)
+        assert any("dark" in str(call) for call in calls)
+
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command_reset(
+        self, mock_get_console, mock_save_config, mock_theme_manager, cli
+    ):
+        """Test theme reset subcommand."""
+        # Mock theme manager
+        mock_manager = Mock()
+        mock_theme_manager.return_value = mock_manager
+
+        # Mock the current_theme.prompt.to_prompt_toolkit_style() method
+        mock_style = Mock()
+        mock_style.style_dict = {}  # Empty dict to avoid TypeError
+        mock_manager.current_theme.prompt.to_prompt_toolkit_style.return_value = mock_style
+
+        # Mock config
+        cli.config = Mock()
+        cli.config.ui = {"theme": "dark"}
+
+        # Mock session
+        cli.session = Mock()
+
+        with patch("coda.constants.THEME_DEFAULT", "default"):
+            await cli._cmd_theme("reset")
+
+        # Check theme manager was called with default theme
+        mock_manager.set_theme.assert_called_once_with("default")
+
+        # Check config was updated
+        assert cli.config.ui["theme"] == "default"
+        mock_save_config.assert_called_once()
+
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command_invalid_theme(
+        self, mock_get_console, mock_save_config, mock_theme_manager, cli
+    ):
+        """Test setting an invalid theme."""
+        # Mock theme manager to raise ValueError
+        mock_manager = Mock()
+        mock_manager.set_theme.side_effect = ValueError("Unknown theme: invalid_theme")
+        mock_theme_manager.return_value = mock_manager
+
+        await cli._cmd_theme("invalid_theme")
+
+        # Check error message was printed
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Error:" in str(call) for call in calls)
+        assert any("Unknown theme" in str(call) for call in calls)
+
+        # Check config was not saved
+        mock_save_config.assert_not_called()
+
+    @patch("coda.themes.get_theme_manager")
+    @patch("coda.configuration.save_config")
+    @patch("coda.themes.get_themed_console")
+    @pytest.mark.asyncio
+    async def test_theme_command_no_config(
+        self, mock_get_console, mock_save_config, mock_theme_manager, cli
+    ):
+        """Test theme command when config is not available."""
+        # Mock theme manager
+        mock_manager = Mock()
+        mock_theme_manager.return_value = mock_manager
+
+        # Mock the current_theme.prompt.to_prompt_toolkit_style() method
+        mock_style = Mock()
+        mock_style.style_dict = {}  # Empty dict to avoid TypeError
+        mock_manager.current_theme.prompt.to_prompt_toolkit_style.return_value = mock_style
+
+        # Set config to None
+        cli.config = None
+
+        await cli._cmd_theme("dark")
+
+        # Check theme manager was still called
+        mock_manager.set_theme.assert_called_once_with("dark")
+
+        # Check config was not saved
+        mock_save_config.assert_not_called()
+
+        # Check success message was printed but no save message
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Theme changed to" in str(call) for call in calls)
+        assert not any("preference saved" in str(call) for call in calls)

@@ -47,6 +47,8 @@ class TestBasicModeIntegration:
 
     def test_basic_mode_switching(self, processor):
         """Test mode switching in basic mode."""
+        from coda.cli.shared.modes import get_system_prompt
+
         # Switch to code mode
         result = processor.process_command("/mode code")
 
@@ -54,7 +56,7 @@ class TestBasicModeIntegration:
         assert processor.current_mode == DeveloperMode.CODE
 
         # Get system prompt
-        prompt = processor.get_system_prompt()
+        prompt = get_system_prompt(processor.current_mode)
         assert "coding assistant" in prompt
 
     def test_basic_model_switching(self, processor):
@@ -178,25 +180,19 @@ class TestInteractiveModeIntegration:
         """Test that implemented and coming soon commands work correctly."""
         # Mock session commands to avoid console output issues
         cli.session_commands.handle_session_command = Mock(return_value="Session help")
-        
+
         # Session command - now implemented
         cli._cmd_session("")
         calls = [str(call) for call in cli.console.print.call_args_list]
         # Session commands are now implemented, should show help
         assert any("Session help" in str(call) for call in calls)
 
-        # Theme command - still coming soon
-        cli.console.reset_mock()
-        cli._cmd_theme("")
-        calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Theme Settings" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
-
         # Tools command - still coming soon
         cli.console.reset_mock()
         cli._cmd_tools("")
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("MCP Tools Management" in str(call) for call in calls)
+        assert any("Coming soon" in str(call) for call in calls)
 
     def test_interactive_exit_command(self, cli):
         """Test exit command in interactive mode."""

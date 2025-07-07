@@ -1,6 +1,5 @@
 """Chat session management for CLI."""
 
-
 from rich.console import Console
 from rich.prompt import Prompt
 
@@ -9,6 +8,7 @@ from coda.providers import BaseProvider, Message, Model, Role
 
 from .basic_commands import BasicCommandProcessor
 from .shared import DeveloperMode
+from .shared.modes import get_system_prompt
 
 
 class ChatSession:
@@ -64,11 +64,17 @@ class ChatSession:
 
     def run_one_shot(self, prompt: str):
         """Execute a single prompt and exit."""
-        self.console.print(f"\n[bold cyan]User:[/bold cyan] {prompt}")
-        self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+        from coda.themes import get_console_theme
+
+        theme = get_console_theme()
+
+        self.console.print(f"\n[{theme.user_message}]User:[/{theme.user_message}] {prompt}")
+        self.console.print(
+            f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ", end=""
+        )
 
         # Get system prompt based on mode
-        system_prompt = self.cmd_processor.get_system_prompt()
+        system_prompt = get_system_prompt(self.cmd_processor.current_mode)
 
         messages = []
         if system_prompt:
@@ -116,7 +122,7 @@ class ChatSession:
                 continue
 
             # Get system prompt based on mode
-            system_prompt = self.cmd_processor.get_system_prompt()
+            system_prompt = get_system_prompt(self.cmd_processor.current_mode)
 
             # Prepare messages with system prompt
             chat_messages = []
@@ -128,7 +134,12 @@ class ChatSession:
             chat_messages.append(Message(role=Role.USER, content=user_input))
 
             # Get AI response
-            self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+            from coda.themes import get_console_theme
+
+            theme = get_console_theme()
+            self.console.print(
+                f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ", end=""
+            )
 
             # Use current model from command processor (may have been changed via /model)
             current_model = self.cmd_processor.current_model or self.model
@@ -138,4 +149,3 @@ class ChatSession:
             self.messages.append(Message(role=Role.USER, content=user_input))
             self.messages.append(Message(role=Role.ASSISTANT, content=full_response))
             self.console.print("\n")
-

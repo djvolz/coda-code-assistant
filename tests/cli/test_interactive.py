@@ -321,7 +321,7 @@ class TestInteractiveSession:
         # Create a streaming response that can be interrupted
         async def mock_chat_stream(*args, **kwargs):
             chunks = ["Hello", " from", " the", " assistant", " with", " more", " text"]
-            for i, chunk in enumerate(chunks):
+            for _i, chunk in enumerate(chunks):
                 if mock_interactive_cli.interrupt_event.is_set():
                     break
                 yield Mock(content=chunk)

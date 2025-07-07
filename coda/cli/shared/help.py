@@ -10,12 +10,13 @@ def print_command_help(console: Console, mode: str = ""):
     # Try to use command registry
     try:
         from coda.cli.command_registry import CommandRegistry
+
         help_text = CommandRegistry.get_command_help(mode=mode)
         console.print(help_text)
         return
     except ImportError:
         pass
-    
+
     # Fallback to hardcoded help
     mode_suffix = f" ({mode})" if mode else ""
     console.print(f"\n[bold]Available Commands{mode_suffix}[/bold]\n")
@@ -84,5 +85,5 @@ def print_interactive_only_commands(console: Console):
 
     console.print("[bold]Advanced:[/bold] [dim](Interactive mode only)[/dim]")
     console.print("  [cyan]/tools[/cyan] (/t) - Manage MCP tools [yellow](Coming soon)[/yellow]")
-    console.print("  [cyan]/theme[/cyan] - Change UI theme [yellow](Coming soon)[/yellow]")
+    console.print("  [cyan]/theme[/cyan] - Change UI theme")
     console.print()
