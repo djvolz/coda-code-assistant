@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  coda-oci:
+    build:
+      context: ..
+      dockerfile: Dockerfile.oci
+    image: coda-code-assistant:oci
+    container_name: coda-oci
+    volumes:
+      # Mount OCI configuration (read-only)
+      - ~/.oci:/home/coda/.oci:ro
+      # Mount Coda configuration
+      - coda-oci-config:/home/coda/.config/coda
+      # Mount cache and data
+      - coda-oci-cache:/home/coda/.cache/coda
+      - coda-oci-data:/home/coda/.local/share/coda
+      # Mount custom OCI config
+      - ../config/oci-config.toml:/home/coda/.config/coda/config.toml:ro
+    environment:
+      # OCI environment variables
+      - OCI_CLI_COMPARTMENT_ID=${OCI_CLI_COMPARTMENT_ID}
+      - OCI_CLI_REGION=${OCI_CLI_REGION:-us-ashburn-1}
+      - OCI_CLI_TENANCY=${OCI_CLI_TENANCY}
+      - OCI_CLI_USER=${OCI_CLI_USER}
+      - OCI_CLI_FINGERPRINT=${OCI_CLI_FINGERPRINT}
+      - OCI_CLI_KEY_FILE=${OCI_CLI_KEY_FILE}
+      # Coda configuration
+      - CODA_LOG_LEVEL=INFO
+      - CODA_ENV=production
+    networks:
+      - coda-oci-network
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # Optional: Database for session persistence
+  postgres-oci:
+    image: postgres:15-alpine
+    container_name: coda-oci-postgres
+    profiles:
+      - database
+    environment:
+      - POSTGRES_DB=coda_oci
+      - POSTGRES_USER=coda
+      - POSTGRES_PASSWORD=coda_oci_password
+    volumes:
+      - postgres-oci-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - coda-oci-network
+    restart: unless-stopped
+
+volumes:
+  coda-oci-config:
+    driver: local
+  coda-oci-cache:
+    driver: local
+  coda-oci-data:
+    driver: local
+  postgres-oci-data:
+    driver: local
+
+networks:
+  coda-oci-network:
+    driver: bridge
