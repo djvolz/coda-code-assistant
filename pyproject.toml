@@ -93,5 +93,7 @@ target-version = ['py311', 'py312', 'py313']
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "B", "UP"]
 ignore = ["E501"]  # Line too long handled by black

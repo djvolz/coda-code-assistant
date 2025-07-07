@@ -6,19 +6,18 @@ from pathlib import Path
 from typing import Any
 
 from .constants import (
-    DEFAULT_PROVIDER,
     DEFAULT_MAX_HISTORY,
-    ENV_DEFAULT_PROVIDER,
+    DEFAULT_PROVIDER,
     ENV_DEBUG,
+    ENV_DEFAULT_PROVIDER,
     ENV_OCI_COMPARTMENT_ID,
-    ENV_XDG_CONFIG_HOME,
-    USER_CONFIG_PATH,
-    PROJECT_CONFIG_FILE,
-    SYSTEM_CONFIG_PATH,
-    get_data_dir,
     HISTORY_FILE_NAME,
-    THEME_DEFAULT,
+    PROJECT_CONFIG_FILE,
     PROVIDER_OCI_GENAI,
+    SYSTEM_CONFIG_PATH,
+    THEME_DEFAULT,
+    USER_CONFIG_PATH,
+    get_data_dir,
 )
 
 try:

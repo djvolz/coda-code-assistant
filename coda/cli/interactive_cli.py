@@ -2,10 +2,8 @@
 
 import asyncio
 from collections.abc import Callable
-from pathlib import Path
 from threading import Event
 
-import yaml
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -14,16 +12,12 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-from .shared import CommandHandler, CommandResult, DeveloperMode
 from coda.session import SessionCommands
-from ..themes import get_prompt_style
+
 from ..constants import (
     HISTORY_FILE_PATH,
-    CONSOLE_STYLE_SUCCESS,
-    CONSOLE_STYLE_ERROR,
-    CONSOLE_STYLE_INFO,
-    CONSOLE_STYLE_WARNING,
 )
+from .shared import CommandHandler, CommandResult, DeveloperMode
 
 
 class SlashCommand:
@@ -46,7 +40,7 @@ class SlashCommandCompleter(Completer):
     def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
         """Load command options from the command registry."""
         from coda.cli.command_registry import CommandRegistry
-        
+
         # Get autocomplete options from the registry
         # This currently only includes commands with subcommands
         return CommandRegistry.get_autocomplete_options()
@@ -162,7 +156,7 @@ class InteractiveCLI(CommandHandler):
         self.escape_count = 0
         self.last_ctrl_c_time = 0
         self.ctrl_c_count = 0
-        
+
         # Initialize session management
         self.session_commands = SessionCommands()
 
@@ -172,7 +166,7 @@ class InteractiveCLI(CommandHandler):
     def _init_commands(self) -> dict[str, SlashCommand]:
         """Initialize slash commands from the command registry."""
         from coda.cli.command_registry import CommandRegistry
-        
+
         # Map command names to their handlers
         handler_map = {
             "help": self._cmd_help,
@@ -184,14 +178,14 @@ class InteractiveCLI(CommandHandler):
             "clear": self._cmd_clear,
             "exit": self._cmd_exit,
         }
-        
+
         # Add handlers for commands not yet implemented
         placeholder_handlers = {
             "theme": self._cmd_theme,
             "tools": self._cmd_tools,
         }
         handler_map.update(placeholder_handlers)
-        
+
         commands = {}
         for cmd_def in CommandRegistry.COMMANDS:
             if cmd_def.name in handler_map:
@@ -201,24 +195,24 @@ class InteractiveCLI(CommandHandler):
                     help_text=cmd_def.description,
                     aliases=cmd_def.aliases
                 )
-        
+
         return commands
 
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
         # Get theme-based style and extend it with additional styles
         from coda.themes import get_theme_manager
-        
+
         theme_manager = get_theme_manager()
         theme_style = theme_manager.current_theme.prompt.to_prompt_toolkit_style()
-        
+
         # Get the base style dictionary and add custom styles
         combined_styles = {}
-        
+
         # Add theme styles (if they have a style_dict attribute)
         if hasattr(theme_style, 'style_dict'):
             combined_styles.update(theme_style.style_dict)
-        
+
         # Add custom additions
         combined_styles.update({
             # Additional prompt-specific styles
@@ -233,7 +227,7 @@ class InteractiveCLI(CommandHandler):
             "scrollbar.background": "bg:#2c2c2c",
             "scrollbar.button": "bg:#888888",
         })
-        
+
         return Style.from_dict(combined_styles)
 
     def _init_session(self):

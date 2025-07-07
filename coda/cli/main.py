@@ -13,11 +13,11 @@ except ImportError:
 
 from coda.configuration import get_config
 from coda.constants import (
+    CONSOLE_STYLE_BOLD,
+    CONSOLE_STYLE_DIM,
+    CONSOLE_STYLE_INFO,
     CONSOLE_STYLE_SUCCESS,
     CONSOLE_STYLE_WARNING,
-    CONSOLE_STYLE_INFO,
-    CONSOLE_STYLE_DIM,
-    CONSOLE_STYLE_BOLD,
     PANEL_BORDER_STYLE,
 )
 

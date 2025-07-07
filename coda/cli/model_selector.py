@@ -4,16 +4,15 @@ from prompt_toolkit import Application
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import FormattedTextControl, HSplit, Layout, Window
-from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import TextArea
 from rich.console import Console
 
-from ..themes import get_prompt_style
 from ..constants import (
-    MAX_MODELS_DISPLAY,
-    MAX_MODELS_BASIC_DISPLAY,
     CONSOLE_STYLE_ERROR,
+    MAX_MODELS_BASIC_DISPLAY,
+    MAX_MODELS_DISPLAY,
 )
+from ..themes import get_prompt_style
 
 
 class ModelSelector:
@@ -168,4 +167,4 @@ class ModelSelector:
             except ValueError:
                 self.console.print(f"{CONSOLE_STYLE_ERROR}Please enter a number.[/]")
             except KeyboardInterrupt:
-                raise SystemExit(0)
+                raise SystemExit(0) from None

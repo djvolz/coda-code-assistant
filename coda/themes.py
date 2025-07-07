@@ -45,44 +45,45 @@ Last evaluated: 2025-07-06 (11 themes, ~500 lines)
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
+from typing import Any
+
 from prompt_toolkit.styles import Style
 
 from .constants import (
-    THEME_DEFAULT,
     THEME_DARK,
-    THEME_LIGHT,
-    THEME_MINIMAL,
-    THEME_VIBRANT,
-    THEME_MONOKAI_DARK,
-    THEME_MONOKAI_LIGHT,
+    THEME_DEFAULT,
     THEME_DRACULA_DARK,
     THEME_DRACULA_LIGHT,
     THEME_GRUVBOX_DARK,
     THEME_GRUVBOX_LIGHT,
+    THEME_LIGHT,
+    THEME_MINIMAL,
+    THEME_MONOKAI_DARK,
+    THEME_MONOKAI_LIGHT,
+    THEME_VIBRANT,
 )
 
 
 def is_valid_color(color: str) -> bool:
     """Validate if a color string is valid for Rich/prompt-toolkit.
-    
+
     Args:
         color: Color string to validate
-        
+
     Returns:
         bool: True if valid color
     """
     if not color:
         return True  # Empty string is valid (no styling)
-    
+
     # Basic color names that Rich supports
     valid_colors = {
         "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
-        "bright_black", "bright_red", "bright_green", "bright_yellow", 
+        "bright_black", "bright_red", "bright_green", "bright_yellow",
         "bright_blue", "bright_magenta", "bright_cyan", "bright_white",
         "dim", "bold", "italic", "underline", "reverse", "strike", "blink",
     }
-    
+
     # Check for hex colors
     if color.startswith("#") and len(color) in (4, 7):
         try:
@@ -90,7 +91,7 @@ def is_valid_color(color: str) -> bool:
             return True
         except ValueError:
             return False
-    
+
     # Check for basic colors (possibly with styles)
     parts = color.lower().split()
     return all(part in valid_colors for part in parts)
@@ -98,15 +99,15 @@ def is_valid_color(color: str) -> bool:
 
 def validate_theme_colors(theme: "Theme") -> list[str]:
     """Validate all colors in a theme.
-    
+
     Args:
         theme: Theme to validate
-        
+
     Returns:
         List of validation errors (empty if valid)
     """
     errors = []
-    
+
     # Validate console theme colors
     console_attrs = [
         "success", "error", "warning", "info", "dim", "bold",
@@ -114,22 +115,22 @@ def validate_theme_colors(theme: "Theme") -> list[str]:
         "system_message", "table_header", "table_row_odd", "table_row_even",
         "command", "command_description"
     ]
-    
+
     for attr in console_attrs:
         color = getattr(theme.console, attr, "")
         if not is_valid_color(color):
             errors.append(f"Invalid console color for {attr}: {color}")
-    
+
     # Note: Prompt toolkit styles are more complex and validated by prompt_toolkit itself
     # We don't validate them here to avoid duplicating prompt_toolkit's logic
-    
+
     return errors
 
 
 @dataclass
 class ConsoleTheme:
     """Theme configuration for Rich console output."""
-    
+
     # Basic styles
     success: str = "green"
     error: str = "red"
@@ -137,29 +138,29 @@ class ConsoleTheme:
     info: str = "cyan"
     dim: str = "dim"
     bold: str = "bold"
-    
+
     # Panel and borders
     panel_border: str = "cyan"
     panel_title: str = "bold cyan"
-    
+
     # Message roles
     user_message: str = "bright_blue"
     assistant_message: str = "bright_green"
     system_message: str = "yellow"
-    
+
     # Code and syntax
     code_theme: str = "monokai"
-    
+
     # Tables
     table_header: str = "bold cyan"
     table_row_odd: str = ""
     table_row_even: str = "dim"
-    
+
     # Commands and help
     command: str = "cyan"
     command_description: str = ""
-    
-    def to_style_dict(self) -> Dict[str, str]:
+
+    def to_style_dict(self) -> dict[str, str]:
         """Convert theme to Rich style dictionary."""
         return {
             "success": self.success,
@@ -174,36 +175,36 @@ class ConsoleTheme:
 @dataclass
 class PromptTheme:
     """Theme configuration for prompt-toolkit UI."""
-    
+
     # Editor and input
     input_field: str = ""
     cursor: str = "reverse"
     selection: str = "bg:#444444 #ffffff"
-    
+
     # Completions and menus
     completion: str = "bg:#008888 #ffffff"
     completion_selected: str = "bg:#00aaaa #000000"
     completion_meta: str = "bg:#444444 #aaaaaa"
-    
+
     # Search
     search: str = "bg:#444444 #ffffff"
     search_match: str = "bg:#00aaaa #000000"
-    
+
     # Status and toolbar
     toolbar: str = "bg:#444444 #ffffff"
     status: str = "reverse"
-    
+
     # Messages and prompts
     prompt: str = "bold"
     continuation: str = "#888888"
-    
+
     # Model selector specific
     model_selected: str = "bg:#00aa00 #ffffff bold"
     model_search: str = "bg:#444444 #ffffff"
     model_title: str = "#00aa00 bold"
     model_provider: str = "#888888"
     model_info: str = "#888888 italic"
-    
+
     def to_prompt_toolkit_style(self) -> Style:
         """Convert theme to prompt-toolkit Style object."""
         return Style.from_dict({
@@ -211,24 +212,24 @@ class PromptTheme:
             "": self.input_field,
             "cursor": self.cursor,
             "selected-text": self.selection,
-            
+
             # Completions
             "completion": self.completion,
             "completion.current": self.completion_selected,
             "completion.meta": self.completion_meta,
-            
+
             # Search
             "search": self.search,
             "search.current": self.search_match,
-            
+
             # Toolbar and status
             "bottom-toolbar": self.toolbar,
             "status": self.status,
-            
+
             # Prompts
             "prompt": self.prompt,
             "continuation": self.continuation,
-            
+
             # Model selector
             "selected": self.model_selected,
             "provider": self.model_provider,
@@ -240,19 +241,19 @@ class PromptTheme:
 @dataclass
 class Theme:
     """Complete theme configuration."""
-    
+
     name: str
     description: str
     console: ConsoleTheme = field(default_factory=ConsoleTheme)
     prompt: PromptTheme = field(default_factory=PromptTheme)
-    
+
     # Additional theme metadata
     is_dark: bool = True
     high_contrast: bool = False
 
 
 # Pre-defined themes
-THEMES: Dict[str, Theme] = {
+THEMES: dict[str, Theme] = {
     THEME_DEFAULT: Theme(
         name=THEME_DEFAULT,
         description="Default balanced theme",
@@ -260,7 +261,7 @@ THEMES: Dict[str, Theme] = {
         prompt=PromptTheme(),
         is_dark=True,
     ),
-    
+
     THEME_DARK: Theme(
         name=THEME_DARK,
         description="Dark mode optimized for low light",
@@ -283,7 +284,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-    
+
     THEME_LIGHT: Theme(
         name=THEME_LIGHT,
         description="Light theme for bright environments",
@@ -308,7 +309,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=False,
     ),
-    
+
     THEME_MINIMAL: Theme(
         name=THEME_MINIMAL,
         description="Minimal colors for focused work",
@@ -331,7 +332,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-    
+
     THEME_VIBRANT: Theme(
         name=THEME_VIBRANT,
         description="High contrast with vibrant colors",
@@ -354,7 +355,7 @@ THEMES: Dict[str, Theme] = {
         is_dark=True,
         high_contrast=True,
     ),
-    
+
     # Monokai themes
     THEME_MONOKAI_DARK: Theme(
         name=THEME_MONOKAI_DARK,
@@ -384,7 +385,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-    
+
     THEME_MONOKAI_LIGHT: Theme(
         name=THEME_MONOKAI_LIGHT,
         description="Monokai color scheme - light variant",
@@ -413,7 +414,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=False,
     ),
-    
+
     # Dracula themes
     THEME_DRACULA_DARK: Theme(
         name=THEME_DRACULA_DARK,
@@ -443,7 +444,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-    
+
     THEME_DRACULA_LIGHT: Theme(
         name=THEME_DRACULA_LIGHT,
         description="Dracula color scheme - light variant",
@@ -472,7 +473,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=False,
     ),
-    
+
     # Gruvbox themes
     THEME_GRUVBOX_DARK: Theme(
         name=THEME_GRUVBOX_DARK,
@@ -502,7 +503,7 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-    
+
     THEME_GRUVBOX_LIGHT: Theme(
         name=THEME_GRUVBOX_LIGHT,
         description="Gruvbox color scheme - light variant",
@@ -536,29 +537,29 @@ THEMES: Dict[str, Theme] = {
 
 class ThemeManager:
     """Manages theme selection and application."""
-    
-    def __init__(self, theme_name: Optional[str] = None):
+
+    def __init__(self, theme_name: str | None = None):
         """Initialize theme manager.
-        
+
         Args:
             theme_name: Name of theme to use. Defaults to THEME_DEFAULT.
         """
         self.current_theme_name = theme_name or THEME_DEFAULT
-        self._current_theme: Optional[Theme] = None
-    
+        self._current_theme: Theme | None = None
+
     @property
     def current_theme(self) -> Theme:
         """Get current theme object."""
         if self._current_theme is None:
             self._current_theme = THEMES.get(self.current_theme_name, THEMES[THEME_DEFAULT])
         return self._current_theme
-    
+
     def set_theme(self, theme_name: str) -> None:
         """Set the current theme.
-        
+
         Args:
             theme_name: Name of theme to use
-            
+
         Raises:
             ValueError: If theme name is not recognized or theme has invalid colors
         """
@@ -567,7 +568,7 @@ class ThemeManager:
                 f"Unknown theme: {theme_name}. "
                 f"Available themes: {', '.join(THEMES.keys())}"
             )
-        
+
         # Validate theme colors
         theme = THEMES[theme_name]
         errors = validate_theme_colors(theme)
@@ -575,22 +576,22 @@ class ThemeManager:
             raise ValueError(
                 f"Theme '{theme_name}' has invalid colors:\n" + "\n".join(errors)
             )
-        
+
         self.current_theme_name = theme_name
         self._current_theme = None
-    
+
     def get_console_theme(self) -> ConsoleTheme:
         """Get console theme configuration."""
         return self.current_theme.console
-    
+
     def get_prompt_style(self) -> Style:
         """Get prompt-toolkit style object."""
         return self.current_theme.prompt.to_prompt_toolkit_style()
-    
-    def list_themes(self) -> Dict[str, str]:
+
+    def list_themes(self) -> dict[str, str]:
         """List available themes with descriptions."""
         return {name: theme.description for name, theme in THEMES.items()}
-    
+
     @staticmethod
     def create_custom_theme(
         name: str,
@@ -599,18 +600,18 @@ class ThemeManager:
         **overrides: Any
     ) -> Theme:
         """Create a custom theme based on an existing theme.
-        
+
         Args:
             name: Name for the custom theme
             description: Description of the theme
             base_theme: Name of theme to base this on
             **overrides: Keyword arguments to override theme values
-            
+
         Returns:
             New Theme object
         """
         base = THEMES.get(base_theme, THEMES[THEME_DEFAULT])
-        
+
         # Create new theme with base values
         new_theme = Theme(
             name=name,
@@ -620,7 +621,7 @@ class ThemeManager:
             is_dark=base.is_dark,
             high_contrast=base.high_contrast,
         )
-        
+
         # Apply overrides
         for key, value in overrides.items():
             if hasattr(new_theme.console, key):
@@ -629,19 +630,19 @@ class ThemeManager:
                 setattr(new_theme.prompt, key, value)
             elif hasattr(new_theme, key):
                 setattr(new_theme, key, value)
-        
+
         # Validate the new theme
         errors = validate_theme_colors(new_theme)
         if errors:
             raise ValueError(
                 f"Custom theme '{name}' has invalid colors:\n" + "\n".join(errors)
             )
-        
+
         return new_theme
 
 
 # Global theme manager instance
-_theme_manager: Optional[ThemeManager] = None
+_theme_manager: ThemeManager | None = None
 
 
 def get_theme_manager() -> ThemeManager:
@@ -658,7 +659,7 @@ def get_theme_manager() -> ThemeManager:
 
 def set_theme(theme_name: str) -> None:
     """Set the global theme.
-    
+
     Args:
         theme_name: Name of theme to use
     """

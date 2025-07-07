@@ -7,7 +7,6 @@ from rich.console import Console
 
 from coda.constants import (
     CONSOLE_STYLE_ERROR,
-    CONSOLE_STYLE_INFO,
     ERROR_COMPARTMENT_ID_MISSING,
     HELP_COMPARTMENT_ID,
 )

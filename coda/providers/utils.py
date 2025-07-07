@@ -1,20 +1,20 @@
 """Shared utilities for provider implementations."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
 
-from .base import Message
 from ..constants import (
     DEFAULT_CONTEXT_LENGTH,
     DEFAULT_TEMPERATURE,
 )
+from .base import Message
 
 
-def convert_messages_basic(messages: List[Message]) -> List[Dict[str, Any]]:
+def convert_messages_basic(messages: list[Message]) -> list[dict[str, Any]]:
     """Convert Message objects to basic format for most providers.
-    
+
     Args:
         messages: List of Message objects
-        
+
     Returns:
         List of message dictionaries with role and content
     """
@@ -27,12 +27,12 @@ def convert_messages_basic(messages: List[Message]) -> List[Dict[str, Any]]:
     ]
 
 
-def convert_messages_with_name(messages: List[Message]) -> List[Dict[str, Any]]:
+def convert_messages_with_name(messages: list[Message]) -> list[dict[str, Any]]:
     """Convert Message objects to format supporting name field (e.g., OpenAI/LiteLLM).
-    
+
     Args:
         messages: List of Message objects
-        
+
     Returns:
         List of message dictionaries with role, content, and optional name
     """
@@ -46,13 +46,13 @@ def convert_messages_with_name(messages: List[Message]) -> List[Dict[str, Any]]:
     ]
 
 
-def extract_basic_model_info(model_data: Dict[str, Any], name_key: str = "name") -> Dict[str, Any]:
+def extract_basic_model_info(model_data: dict[str, Any], name_key: str = "name") -> dict[str, Any]:
     """Extract basic model information from provider model data.
-    
+
     Args:
         model_data: Raw model data from provider
         name_key: Key to use for model name
-        
+
     Returns:
         Standardized model info dictionary
     """
@@ -68,14 +68,14 @@ def extract_basic_model_info(model_data: Dict[str, Any], name_key: str = "name")
 def build_request_params(
     model: str,
     temperature: float = DEFAULT_TEMPERATURE,
-    max_tokens: Optional[int] = None,
-    top_p: Optional[float] = None,
-    stop: Optional[List[str]] = None,
+    max_tokens: int | None = None,
+    top_p: float | None = None,
+    stop: list[str] | None = None,
     stream: bool = False,
     **kwargs
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build common request parameters for provider API calls.
-    
+
     Args:
         model: Model name
         temperature: Sampling temperature
@@ -84,7 +84,7 @@ def build_request_params(
         stop: Stop sequences
         stream: Whether to stream responses
         **kwargs: Additional parameters
-        
+
     Returns:
         Parameters dictionary
     """
@@ -93,15 +93,15 @@ def build_request_params(
         "temperature": temperature,
         "stream": stream,
     }
-    
+
     if max_tokens is not None:
         params["max_tokens"] = max_tokens
     if top_p is not None:
         params["top_p"] = top_p
     if stop:
         params["stop"] = stop if isinstance(stop, list) else [stop]
-    
+
     # Add any additional parameters
     params.update(kwargs)
-    
+
     return params

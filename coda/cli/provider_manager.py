@@ -4,12 +4,11 @@
 from rich.console import Console
 
 from coda.configuration import CodaConfig
-from coda.providers import BaseProvider, Model, ProviderFactory
 from coda.constants import (
     CONSOLE_STYLE_SUCCESS,
     CONSOLE_STYLE_WARNING,
-    CONSOLE_STYLE_INFO,
 )
+from coda.providers import BaseProvider, Model, ProviderFactory
 
 
 class ProviderManager:

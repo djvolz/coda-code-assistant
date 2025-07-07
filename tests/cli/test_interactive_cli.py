@@ -129,7 +129,7 @@ class TestInteractiveCLI:
         # Check that all commands are mentioned (registry format)
         for cmd_name in cli.commands:
             assert any(f"/{cmd_name}" in str(call) for call in calls)
-        
+
         # Check specific commands are present
         assert any("/help" in str(call) for call in calls)
         assert any("/session" in str(call) for call in calls)
@@ -238,13 +238,13 @@ class TestInteractiveCLI:
         """Test session command."""
         # Mock the session commands to avoid console output issues
         cli.session_commands.handle_session_command = Mock(return_value="Session help shown")
-        
+
         # Test without args - should call session command handler
-        result = cli._cmd_session("")
+        cli._cmd_session("")
 
         # Verify the session command handler was called with empty args
         cli.session_commands.handle_session_command.assert_called_with([])
-        
+
         # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Session help shown" in str(call) for call in calls)
@@ -277,13 +277,13 @@ class TestInteractiveCLI:
         """Test export command."""
         # Mock the export commands to avoid console output issues
         cli.session_commands.handle_export_command = Mock(return_value="Export help shown")
-        
+
         # Test without args - should call export command handler
-        result = cli._cmd_export("")
+        cli._cmd_export("")
 
         # Verify the export command handler was called with empty args
         cli.session_commands.handle_export_command.assert_called_with([])
-        
+
         # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Export help shown" in str(call) for call in calls)

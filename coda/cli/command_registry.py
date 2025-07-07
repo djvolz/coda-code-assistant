@@ -1,8 +1,8 @@
 """Centralized command registry for CLI commands and subcommands."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
 from enum import Enum
+from typing import Optional
 
 
 class CommandType(Enum):
@@ -17,22 +17,22 @@ class CommandDefinition:
     """Definition of a command or subcommand."""
     name: str
     description: str
-    aliases: List[str] = field(default_factory=list)
-    subcommands: List['CommandDefinition'] = field(default_factory=list)
-    examples: List[str] = field(default_factory=list)
+    aliases: list[str] = field(default_factory=list)
+    subcommands: list['CommandDefinition'] = field(default_factory=list)
+    examples: list[str] = field(default_factory=list)
     type: CommandType = CommandType.MAIN
-    
-    def get_all_names(self) -> List[str]:
+
+    def get_all_names(self) -> list[str]:
         """Get all names including aliases."""
         return [self.name] + self.aliases
-    
+
     def get_subcommand(self, name: str) -> Optional['CommandDefinition']:
         """Get subcommand by name or alias."""
         for sub in self.subcommands:
             if name in sub.get_all_names():
                 return sub
         return None
-    
+
     def to_autocomplete_tuple(self) -> tuple[str, str]:
         """Convert to tuple format for autocomplete."""
         return (self.name, self.description)
@@ -40,7 +40,7 @@ class CommandDefinition:
 
 class CommandRegistry:
     """Registry of all CLI commands."""
-    
+
     # Session subcommands
     SESSION_SUBCOMMANDS = [
         CommandDefinition(
@@ -111,7 +111,7 @@ class CommandRegistry:
             examples=["/session search python", "/session search 'error handling'"]
         ),
     ]
-    
+
     # Export subcommands
     EXPORT_SUBCOMMANDS = [
         CommandDefinition(
@@ -141,7 +141,7 @@ class CommandRegistry:
             examples=["/export html", "/export html my_session"]
         ),
     ]
-    
+
     # Mode options
     MODE_OPTIONS = [
         CommandDefinition(
@@ -180,7 +180,7 @@ class CommandRegistry:
             type=CommandType.OPTION
         ),
     ]
-    
+
     # Provider options
     PROVIDER_OPTIONS = [
         CommandDefinition(
@@ -204,7 +204,7 @@ class CommandRegistry:
             type=CommandType.OPTION
         ),
     ]
-    
+
     # Theme options
     THEME_OPTIONS = [
         CommandDefinition(
@@ -233,7 +233,7 @@ class CommandRegistry:
             type=CommandType.OPTION
         ),
     ]
-    
+
     # Tools subcommands
     TOOLS_SUBCOMMANDS = [
         CommandDefinition(
@@ -262,7 +262,7 @@ class CommandRegistry:
             type=CommandType.SUBCOMMAND
         ),
     ]
-    
+
     # Main commands
     COMMANDS = [
         CommandDefinition(
@@ -330,39 +330,39 @@ class CommandRegistry:
             examples=["/tools", "/tools list"]
         ),
     ]
-    
+
     @classmethod
-    def get_command(cls, name: str) -> Optional[CommandDefinition]:
+    def get_command(cls, name: str) -> CommandDefinition | None:
         """Get command by name or alias."""
         for cmd in cls.COMMANDS:
             if name in cmd.get_all_names():
                 return cmd
         return None
-    
+
     @classmethod
-    def get_autocomplete_options(cls) -> Dict[str, List[tuple[str, str]]]:
+    def get_autocomplete_options(cls) -> dict[str, list[tuple[str, str]]]:
         """Get autocomplete options in the format expected by SlashCommandCompleter."""
         options = {}
-        
+
         for cmd in cls.COMMANDS:
             if cmd.subcommands:
                 options[cmd.name] = [sub.to_autocomplete_tuple() for sub in cmd.subcommands]
-        
+
         return options
-    
+
     @classmethod
-    def get_command_help(cls, command_name: Optional[str] = None, mode: str = "") -> str:
+    def get_command_help(cls, command_name: str | None = None, mode: str = "") -> str:
         """Get formatted help text for a command or all commands."""
         if command_name:
             cmd = cls.get_command(command_name)
             if not cmd:
                 return f"Unknown command: {command_name}"
-            
+
             help_text = f"[bold]{cmd.name}[/bold]"
             if cmd.aliases:
                 help_text += f" (aliases: {', '.join(cmd.aliases)})"
             help_text += f"\n{cmd.description}\n"
-            
+
             if cmd.subcommands:
                 help_text += "\n[bold]Subcommands:[/bold]\n"
                 for sub in cmd.subcommands:
@@ -370,12 +370,12 @@ class CommandRegistry:
                     if sub.aliases:
                         help_text += f" ({', '.join(sub.aliases)})"
                     help_text += f" - {sub.description}\n"
-            
+
             if cmd.examples:
                 help_text += "\n[bold]Examples:[/bold]\n"
                 for example in cmd.examples:
                     help_text += f"  {example}\n"
-            
+
             return help_text
         else:
             # Return help for all commands
