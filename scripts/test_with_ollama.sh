@@ -1,7 +1,38 @@
 #!/bin/bash
 set -e
 
+# Function to check dependencies
+check_dependencies() {
+    for cmd in curl grep; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "❌ Required command not found: $cmd"
+            exit 1
+        fi
+    done
+}
+
+# Function to wait for condition with timeout
+wait_for_condition() {
+    local condition_fn=$1
+    local message=$2
+    local timeout=$3
+    
+    local counter=0
+    while ! $condition_fn; do
+        if [ $counter -ge $timeout ]; then
+            return 1
+        fi
+        echo "  $message"
+        sleep 2
+        counter=$((counter + 2))
+    done
+    return 0
+}
+
 echo "🚀 Setting up Ollama for LLM testing..."
+
+# Check dependencies first
+check_dependencies
 
 # Configuration
 OLLAMA_HOST=${OLLAMA_HOST:-"http://localhost:11434"}
@@ -18,14 +49,18 @@ check_model() {
     curl -s "${OLLAMA_HOST}/api/tags" | grep -q "$TEST_MODEL"
 }
 
+# Validate OLLAMA_HOST URL format
+if ! echo "$OLLAMA_HOST" | grep -qE '^https?://'; then
+    echo "❌ Invalid OLLAMA_HOST format: $OLLAMA_HOST (must start with http:// or https://)"
+    exit 1
+fi
+
 # Wait for Ollama to be ready
 echo "⏳ Waiting for Ollama at ${OLLAMA_HOST}..."
-timeout $TIMEOUT bash -c "
-    while ! check_ollama; do 
-        echo '  Waiting for Ollama service...'
-        sleep 2
-    done
-"
+if ! wait_for_condition check_ollama "Waiting for Ollama service..." $TIMEOUT; then
+    echo "❌ Timeout waiting for Ollama service at ${OLLAMA_HOST}"
+    exit 1
+fi
 
 if ! check_ollama; then
     echo "❌ Ollama service not available at ${OLLAMA_HOST}"
@@ -45,12 +80,11 @@ if ! check_model; then
     PULL_PID=$!
     
     # Wait for model to be available
-    timeout $TIMEOUT bash -c "
-        while ! check_model; do 
-            echo '  Downloading model...'
-            sleep 5
-        done
-    "
+    if ! wait_for_condition check_model "Downloading model..." $TIMEOUT; then
+        echo "❌ Timeout waiting for model ${TEST_MODEL}"
+        kill $PULL_PID 2>/dev/null || true
+        exit 1
+    fi
     
     wait $PULL_PID || true
     

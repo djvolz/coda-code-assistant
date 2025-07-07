@@ -12,8 +12,11 @@ RUN apt-get update && apt-get install -y \
 # Install uv for fast Python package management
 RUN pip install uv
 
-# Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Install Ollama with verification
+RUN curl -fsSL https://ollama.com/install.sh -o /tmp/install-ollama.sh \
+    && chmod +x /tmp/install-ollama.sh \
+    && /tmp/install-ollama.sh \
+    && rm -f /tmp/install-ollama.sh
 
 # Create non-root user
 RUN useradd -m -s /bin/bash coda

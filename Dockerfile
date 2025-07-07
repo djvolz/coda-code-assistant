@@ -1,6 +1,14 @@
 # Multi-stage Dockerfile for Coda with Ollama (Optimized)
 FROM python:3.11-slim-bullseye as builder
 
+# OCI image labels
+LABEL org.opencontainers.image.title="Coda Code Assistant" \
+      org.opencontainers.image.description="AI-powered code assistant with local and cloud LLM support" \
+      org.opencontainers.image.url="https://github.com/djvolz/coda-devops-automation" \
+      org.opencontainers.image.documentation="https://github.com/djvolz/coda-devops-automation/blob/main/README.md" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="Coda Project"
+
 # Install system dependencies needed for building
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -51,8 +59,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /tmp/* /var/tmp/*
 
-# Install Ollama with optimized script
-RUN curl -fsSL https://ollama.com/install.sh | sh \
+# Install Ollama with verification
+RUN curl -fsSL https://ollama.com/install.sh -o /tmp/install-ollama.sh \
+    && chmod +x /tmp/install-ollama.sh \
+    && /tmp/install-ollama.sh \
     && rm -rf /tmp/* /var/tmp/*
 
 # Create non-root user with minimal permissions

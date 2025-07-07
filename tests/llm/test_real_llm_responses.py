@@ -13,6 +13,16 @@ from coda.providers import Message, Role
 from coda.providers.registry import ProviderRegistry
 
 
+def create_user_message(content: str) -> Message:
+    """Create a user message for testing."""
+    return Message(role=Role.USER, content=content)
+
+
+def create_system_message(content: str) -> Message:
+    """Create a system message for testing."""
+    return Message(role=Role.SYSTEM, content=content)
+
+
 @pytest.mark.llm
 @pytest.mark.ollama
 @pytest.mark.skipif(
@@ -23,7 +33,7 @@ class TestRealLLMResponses:
     """Test with real LLM responses using Ollama."""
 
     @pytest.fixture
-    def provider_config(self):
+    def provider_config(self) -> dict[str, str]:
         """Get provider configuration for testing."""
         return {
             "provider": os.getenv("CODA_TEST_PROVIDER", "ollama"),
@@ -32,7 +42,7 @@ class TestRealLLMResponses:
         }
 
     @pytest.fixture
-    async def ollama_provider(self, provider_config):
+    async def ollama_provider(self, provider_config: dict[str, str]):
         """Create Ollama provider for testing."""
         registry = ProviderRegistry()
         provider = registry.get_provider("ollama")
@@ -52,9 +62,7 @@ class TestRealLLMResponses:
     @pytest.mark.asyncio
     async def test_simple_chat_completion(self, ollama_provider, provider_config):
         """Test basic chat completion with real model."""
-        messages = [
-            Message(role=Role.USER, content="Say 'Hello, World!' and nothing else.")
-        ]
+        messages = [create_user_message("Say 'Hello, World!' and nothing else.")]
 
         response = await ollama_provider.chat(
             messages=messages,
@@ -71,9 +79,7 @@ class TestRealLLMResponses:
     @pytest.mark.asyncio
     async def test_streaming_response(self, ollama_provider, provider_config):
         """Test streaming responses work correctly."""
-        messages = [
-            Message(role=Role.USER, content="Count from 1 to 3, one number per line.")
-        ]
+        messages = [create_user_message("Count from 1 to 3, one number per line.")]
 
         chunks = []
         async for chunk in ollama_provider.chat_stream(
@@ -90,20 +96,16 @@ class TestRealLLMResponses:
 
         # Should contain numbers 1, 2, 3
         response_lower = full_response.lower()
-        numbers_found = sum([
-            "1" in response_lower,
-            "2" in response_lower,
-            "3" in response_lower
-        ])
+        numbers_found = sum(
+            char in response_lower for char in ["1", "2", "3"]
+        )
         assert numbers_found >= 2  # At least 2 out of 3 numbers
 
     @pytest.mark.asyncio
     async def test_conversation_context(self, ollama_provider, provider_config):
         """Test that model maintains conversation context."""
         # First message
-        messages = [
-            Message(role=Role.USER, content="My name is TestUser. Remember this.")
-        ]
+        messages = [create_user_message("My name is TestUser. Remember this.")]
 
         response1 = await ollama_provider.chat(
             messages=messages,
@@ -115,7 +117,7 @@ class TestRealLLMResponses:
         # Add AI response and ask follow-up
         messages.extend([
             Message(role=Role.ASSISTANT, content=response1),
-            Message(role=Role.USER, content="What is my name?")
+            create_user_message("What is my name?")
         ])
 
         response2 = await ollama_provider.chat(
@@ -142,9 +144,7 @@ class TestRealLLMResponses:
     @pytest.mark.asyncio
     async def test_error_handling(self, ollama_provider):
         """Test error handling with invalid requests."""
-        messages = [
-            Message(role=Role.USER, content="Test message")
-        ]
+        messages = [create_user_message("Test message")]
 
         # Test with non-existent model
         with pytest.raises((ValueError, RuntimeError, ConnectionError)):  # Should raise some kind of error
@@ -159,9 +159,7 @@ class TestRealLLMResponses:
         """Test that responses come back in reasonable time."""
         import time
 
-        messages = [
-            Message(role=Role.USER, content="Say 'OK'")
-        ]
+        messages = [create_user_message("Say 'OK'")]
 
         start_time = time.time()
         response = await ollama_provider.chat(
@@ -196,7 +194,7 @@ class TestLLMProviderComparison:
         registry = ProviderRegistry()
         mock_provider = registry.get_provider("mock")
 
-        messages = [Message(role=Role.USER, content=prompt)]
+        messages = [create_user_message(prompt)]
         mock_response = await mock_provider.chat(
             messages=messages,
             model="mock-smart"

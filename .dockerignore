@@ -112,6 +112,12 @@ config.local.toml
 .ruff_cache/
 .uv/
 
+# Lock files that change frequently (better layer caching)
+# Note: Commenting out uv.lock as it's needed for Docker builds
+# uv.lock
+poetry.lock
+Pipfile.lock
+
 # Test files
 tests/
 test_*.py
