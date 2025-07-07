@@ -340,12 +340,18 @@ None currently - all bugs have been resolved!
 **Timeline**: Complete before merging Phase 5
 
 ### 4.4 AI-to-Tool Integration (Critical for Phase 5 tools)
-- [ ] Function calling protocol for OCI provider (Cohere models support this)
-- [ ] Parse AI responses for tool requests
-- [ ] Execute tools based on AI instructions
-- [ ] Include tool results in conversation context
+- [x] Function calling protocol for OCI provider (Cohere models support this) ✅
+- [x] Parse AI responses for tool requests ✅
+- [x] Execute tools based on AI instructions ✅
+- [x] Include tool results in conversation context ✅
 - [ ] Store tool invocations in session database
-- [ ] Handle tool errors gracefully in conversation flow
+- [x] Handle tool errors gracefully in conversation flow ✅
+- [ ] **Extend tool support to additional providers:**
+  - [ ] Ollama - implement native tool calling support
+  - [ ] xAI (Grok) models - tool calling protocol implementation needed
+  - [ ] Meta (Llama) models - tool calling protocol implementation needed
+  - [ ] Other OCI GenAI providers beyond Cohere
+  - [ ] Ensure LiteLLM properly passes through tool calls to supported providers
 
 ## Phase 5: Tool Integration (MCP) ✅ COMPLETED (July 5, 2025)
 
@@ -768,11 +774,39 @@ None currently - all bugs have been resolved!
 - ⏸️ External MCP server implementation (deferred)
 - ⏸️ Advanced permission system (deferred)
 
-**Integration Note**: Tools are currently "read-only" - viewable via `/tools` commands but not executable through AI conversation. Full AI-to-tool integration requires Phase 4 session management for:
-- Function calling protocol implementation
-- Tool result storage in conversation history
-- AI request parsing and tool execution
-- OCI provider supports function calling (Cohere models) but integration pending
+**Agent Integration ✅ COMPLETED (July 7, 2025)**:
+- ✅ Full AI-to-tool integration via Agent system
+- ✅ Agent-based chat with streaming support (`run_async_streaming`)
+- ✅ Intelligent tool usage - agents only use tools when necessary
+- ✅ Enhanced agent instructions for balanced tool usage
+- ✅ Real-time streaming responses while maintaining tool functionality
+- ✅ Cohere models now fully support streaming with tool capabilities
+- ✅ Agent can handle both tool-based and non-tool requests appropriately
+
+**Tools Support for Additional Providers 🚧 PENDING**:
+- [ ] **Ollama Provider** - Add native tool calling support (currently not supported)
+- [ ] **OCI GenAI Provider**:
+  - [ ] Add tools support for Meta (Llama) models
+  - [ ] Add tools support for xAI (Grok) models
+  - [ ] Add tools support for any other non-Cohere models
+- [ ] **LiteLLM Provider** - Ensure tool calling works for all supported underlying providers:
+  - [x] OpenAI models ✅ (already supported)
+  - [x] Google Gemini models ✅ (already supported)
+  - [x] Cohere models ✅ (already supported)
+  - [x] Mistral models ✅ (already supported)
+  - [ ] Anthropic Claude models (currently not supported by LiteLLM)
+- [ ] **MockProvider** - Already supports tools ✅ (for testing)
+- [ ] Implement provider-specific tool calling formats and protocols
+- [ ] Add comprehensive tests for tool functionality across all providers
+- [ ] Update documentation to clearly indicate which providers/models support tools
+
+**MCP Configuration Support 🚧 PENDING**:
+- [ ] Support for `mcp.json` configuration files
+- [ ] Global MCP config in `~/.config/coda/mcp.json`
+- [ ] Local project MCP config in `.coda/mcp.json` or `mcp.json`
+- [ ] MCP server discovery and registration from config files
+- [ ] Tool loading from external MCP servers specified in config
+- [ ] Priority: local project config > global config > built-in tools
 
 ### 2025.7.15 - Advanced Features (Target: July 15)
 
@@ -784,7 +818,7 @@ None currently - all bugs have been resolved!
 
 ## Next Steps
 
-**Current Status**: Phases 1, 2, 3, 4, and 5 are complete. Phase 4.6 (Code Quality Refactoring) pending.
+**Current Status**: Phases 1, 2, 3, 4, 5, and Agent Integration are complete. Phase 4.6 (Code Quality Refactoring) pending.
 
 1. **Pending - Phase 4.6**: Code Quality Refactoring
    - Create `coda/constants.py` for centralized configuration
@@ -792,21 +826,19 @@ None currently - all bugs have been resolved!
    - Remove duplicate code and unnecessary wrappers
    - Consolidate interactive CLI modules
    
-2. **Pending - AI-Tool Integration**: Enable Phase 5 tools in conversation
-   - Function calling protocol for OCI provider
-   - Parse AI responses for tool requests
-   - Execute tools based on AI instructions
-   - Include tool results in conversation context
-   - Store tool invocations in session database
-   
-3. **Next - Phase 6**: Advanced Features (Target: July 15)
+2. **Next - Phase 6**: Advanced Features (Target: July 15)
    - Multi-modal support (image understanding)
    - Code screenshot analysis
    - Document support (PDF, Word, PowerPoint, Excel)
    - Enhanced response rendering with live markdown
-4. **Future Phases**:
+   
+3. **Future Phases**:
    - Phase 7: Web UI with Streamlit
-   - Phase 8: Additional features (containerization, repo mapping, telemetry)
+   - Phase 8: Vector Embedding & Semantic Search
+   - Phase 9: Codebase Intelligence
+   - Phase 10: Help Mode Integration
+   - Phase 11: Observability & Performance
+   - Phase 12: DevOps & Automation
 
 ## Notes
 
