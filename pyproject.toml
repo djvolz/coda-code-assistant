@@ -65,6 +65,8 @@ markers = [
     "integration: Integration tests (requires OCI credentials)",
     "functional: Functional/E2E tests (requires full setup)",
     "slow: Slow running tests",
+    "llm: LLM tests (requires real language model)",
+    "ollama: Ollama-specific tests (requires Ollama service)",
 ]
 
 [tool.coverage.run]
