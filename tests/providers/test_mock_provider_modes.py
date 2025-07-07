@@ -34,8 +34,8 @@ class TestMockProviderModes:
             response = provider.chat(messages, "mock-echo")
             
             # MockProvider should respond about Python regardless of mode
-            assert "python" in response.lower(), f"Failed for mode: {mode}"
-            assert len(response) > 10, f"Response too short for mode: {mode}"
+            assert "python" in response.content.lower(), f"Failed for mode: {mode}"
+            assert len(response.content) > 10, f"Response too short for mode: {mode}"
     
     def test_mode_switching_scenarios(self):
         """Test conversation behavior when switching between modes."""
@@ -50,13 +50,13 @@ class TestMockProviderModes:
         
         # Switch to debug mode (simulated by changing system prompt)
         messages[0] = Message(role=Role.SYSTEM, content="You are in debug mode")
-        messages.append(Message(role=Role.ASSISTANT, content=response1))
+        messages.append(Message(role=Role.ASSISTANT, content=response1.content))
         messages.append(Message(role=Role.USER, content="Debug this Python code"))
         response2 = provider.chat(messages, "mock-echo")
         
         # Both should mention Python
-        assert "python" in response1.lower()
-        assert "python" in response2.lower()
+        assert "python" in response1.content.lower()
+        assert "python" in response2.content.lower()
     
     def test_mode_specific_questions(self):
         """Test mode-appropriate questions across all modes."""
@@ -82,11 +82,11 @@ class TestMockProviderModes:
             
             # Should get a response for each mode
             assert response, f"No response for mode: {mode}"
-            assert len(response) > 5, f"Response too short for mode: {mode}"
+            assert len(response.content) > 5, f"Response too short for mode: {mode}"
             
             # Python-related questions should trigger Python responses
             if "python" in question.lower():
-                assert "python" in response.lower() or "decorator" in response.lower(), \
+                assert "python" in response.content.lower() or "decorator" in response.content.lower(), \
                     f"Python not mentioned for mode: {mode}"
     
     def test_conversation_continuity_across_modes(self):
@@ -99,13 +99,13 @@ class TestMockProviderModes:
         messages.append(Message(role=Role.SYSTEM, content="You are in general mode"))
         messages.append(Message(role=Role.USER, content="I'm learning Python"))
         response1 = provider.chat(messages, "mock-echo")
-        messages.append(Message(role=Role.ASSISTANT, content=response1))
+        messages.append(Message(role=Role.ASSISTANT, content=response1.content))
         
         # Continue in code mode
         messages[0] = Message(role=Role.SYSTEM, content="You are in code mode")
         messages.append(Message(role=Role.USER, content="Show me a decorator example"))
         response2 = provider.chat(messages, "mock-echo")
-        messages.append(Message(role=Role.ASSISTANT, content=response2))
+        messages.append(Message(role=Role.ASSISTANT, content=response2.content))
         
         # Switch to explain mode and ask about previous topic
         messages[0] = Message(role=Role.SYSTEM, content="You are in explain mode")
@@ -113,8 +113,8 @@ class TestMockProviderModes:
         response3 = provider.chat(messages, "mock-echo")
         
         # Should remember Python and decorators were discussed
-        assert "python" in response3.lower(), "Should remember Python discussion"
-        assert "decorator" in response3.lower(), "Should remember decorator discussion"
+        assert "python" in response3.content.lower(), "Should remember Python discussion"
+        assert "decorator" in response3.content.lower(), "Should remember decorator discussion"
     
     def test_edge_cases_with_modes(self):
         """Test edge cases with different modes."""
@@ -138,7 +138,7 @@ class TestMockProviderModes:
         ]
         
         response = provider.chat(messages, "mock-echo")
-        assert "hello" in response.lower()
+        assert "hello" in response.content.lower()
 
 
 @pytest.mark.unit
@@ -155,8 +155,8 @@ class TestMockProviderModels:
             messages = [Message(role=Role.USER, content="Hello")]
             response = provider.chat(messages, model)
             
-            assert "hello" in response.lower(), f"Failed for model: {model}"
-            assert len(response) > 5, f"Response too short for model: {model}"
+            assert "hello" in response.content.lower(), f"Failed for model: {model}"
+            assert len(response.content) > 5, f"Response too short for model: {model}"
     
     def test_both_models_python_awareness(self):
         """Test that both models handle Python topics."""
@@ -173,8 +173,8 @@ class TestMockProviderModels:
             
             response = provider.chat(messages, model)
             
-            assert "decorator" in response.lower(), f"Failed for model: {model}"
-            assert "python" in response.lower(), f"Failed for model: {model}"
+            assert "decorator" in response.content.lower(), f"Failed for model: {model}"
+            assert "python" in response.content.lower(), f"Failed for model: {model}"
     
     def test_both_models_conversation_memory(self):
         """Test that both models maintain conversation context."""
@@ -191,7 +191,7 @@ class TestMockProviderModels:
             
             response = provider.chat(messages, model)
             
-            assert "alice" in response.lower(), f"Failed to remember name for model: {model}"
+            assert "alice" in response.content.lower(), f"Failed to remember name for model: {model}"
     
     def test_model_metadata_differences(self):
         """Test that models have different metadata but same behavior."""
@@ -214,8 +214,8 @@ class TestMockProviderModels:
         smart_response = provider.chat(messages, "mock-smart")
         
         # Both should mention Python
-        assert "python" in echo_response.lower()
-        assert "python" in smart_response.lower()
+        assert "python" in echo_response.content.lower()
+        assert "python" in smart_response.content.lower()
     
     def test_streaming_both_models(self):
         """Test streaming functionality for both models."""
@@ -276,7 +276,7 @@ class TestMockProviderModesAndModels:
                 response = provider.chat(messages, model)
                 
                 assert response, f"No response for mode={mode}, model={model}"
-                assert "python" in response.lower(), \
+                assert "python" in response.content.lower(), \
                     f"Python not mentioned for mode={mode}, model={model}"
     
     def test_mode_model_conversation_flow(self):
@@ -289,13 +289,13 @@ class TestMockProviderModesAndModels:
         messages.append(Message(role=Role.SYSTEM, content="You are in general mode"))
         messages.append(Message(role=Role.USER, content="I want to learn programming"))
         response1 = provider.chat(messages, "mock-echo")
-        messages.append(Message(role=Role.ASSISTANT, content=response1))
+        messages.append(Message(role=Role.ASSISTANT, content=response1.content))
         
         # Switch to code mode with smart model
         messages[0] = Message(role=Role.SYSTEM, content="You are in code mode")
         messages.append(Message(role=Role.USER, content="Show me Python basics"))
         response2 = provider.chat(messages, "mock-smart")
-        messages.append(Message(role=Role.ASSISTANT, content=response2))
+        messages.append(Message(role=Role.ASSISTANT, content=response2.content))
         
         # Switch to debug mode with echo model
         messages[0] = Message(role=Role.SYSTEM, content="You are in debug mode")
@@ -303,7 +303,7 @@ class TestMockProviderModesAndModels:
         response3 = provider.chat(messages, "mock-echo")
         
         # Should maintain context regardless of mode/model switches
-        assert any(word in response3.lower() for word in ["python", "programming"])
+        assert any(word in response3.content.lower() for word in ["python", "programming"])
     
     def test_async_methods_with_modes_and_models(self):
         """Test async methods work with all modes and models."""

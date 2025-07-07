@@ -253,7 +253,7 @@ class TestSessionEndToEnd:
         # Test topic recognition
         messages = [Message(role=Role.USER, content="Tell me about Python")]
         response = provider.chat(messages, "mock-echo")
-        assert "python" in response.lower() and "programming" in response.lower()
+        assert "python" in response.content.lower() and "programming" in response.content.lower()
         
         # Test memory questions
         conversation = [
@@ -265,7 +265,7 @@ class TestSessionEndToEnd:
         ]
         
         memory_response = provider.chat(conversation, "mock-echo")
-        assert any(word in memory_response.lower() for word in ['python', 'decorator'])
+        assert any(word in memory_response.content.lower() for word in ['python', 'decorator'])
         
         # Test context building
         assert provider.conversation_history == conversation
