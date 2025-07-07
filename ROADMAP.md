@@ -12,7 +12,7 @@ Build a multi-provider, CLI-focused code assistant that provides a unified inter
 - **Phase 2**: Core Provider Architecture (LiteLLM, Ollama, provider registry)
 - **Phase 3**: Enhanced CLI Experience (interactive shell, slash commands, developer modes)
 
-✅ **Phase 4**: Session Management - COMPLETED (July 7, 2025)
+✅ **Phase 4**: Session Management - COMPLETED (July 5, 2025) | 🚧 Enhancements 4.5 & 4.6 Pending
 
 - SQLite persistence layer (stored in ~/.cache/coda/sessions.db)
 - Session commands (/session save/load/list/branch/delete/info/search)
@@ -20,17 +20,16 @@ Build a multi-provider, CLI-focused code assistant that provides a unified inter
 - Full-text search across sessions
 - Context optimization for token limits
 - MockProvider for deterministic testing
-- **Phase 4.6**: Code Quality Refactoring with centralized constants and comprehensive theme system
 
-🚧 **Current**: Phase 5 - Tool Integration (MCP) - Target: July 12 (In Progress by Other Developer)
+🚧 **Current Focus**: Phase 4.6 - Code Quality Refactoring - Before Phase 5
 
-📅 **Next**: Phase 6 - Advanced Features - Starting Now
+📅 **Next**: Phase 5 - Tool Integration (MCP) - Target: July 12
 
 📅 **Upcoming**:
 
+- Phase 6: Advanced Features - July 15
 - Phase 7: Web UI (Streamlit)
-- Phase 8: Vector Embedding & Semantic Search
-- Phase 9: Codebase Intelligence
+- Phase 8: Additional features
 
 ## Reference Directories
 
@@ -202,12 +201,11 @@ None currently - all bugs have been resolved!
 
 ## Phase 4: Session Management
 
-**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 are being developed in parallel on separate branches. To minimize merge conflicts:
-
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 were developed in parallel. Phase 5 is now complete and merged.
 - Phase 4 branch: `feature/session-management` (focuses on persistence layer)
-- Phase 5 branch: `feature/mcp-tools` (focuses on tool execution)
-- Integration points: Session schema will need `tool_invocations` table from Phase 5
-- Merge strategy: Phase 4 merges first, then Phase 5 rebases and adds tool logging
+- Phase 5 branch: `feature/mcp-tools` ✅ MERGED
+- **Critical Integration**: Phase 4 must implement AI-to-tool integration for Phase 5 tools to work in conversation
+- Session schema needs `tool_invocations` table for storing tool execution history
 
 ### 4.1 Persistence Layer ✅ COMPLETED
 
@@ -288,156 +286,110 @@ None currently - all bugs have been resolved!
   - [x] Updated help display to show implemented commands
   - [ ] Full command initialization from registry (lower priority)
 
-### 4.6 Code Quality Refactoring ✅ COMPLETED
+### 4.6 Code Quality Refactoring (NEW) 🚧 PENDING
 
-**Branch**: `feature/code-quality-refactor`
+**Branch Strategy**: Create `feature/code-quality-refactor` from current feature branch
 
-#### High Priority - Eliminate Hardcoded Values ✅ COMPLETED
+#### High Priority - Eliminate Hardcoded Values
 
-- [x] **Create `coda/constants.py` module** for centralized configuration
-  - [x] Path constants (`.coda`, `.config`, `sessions.db`, etc.)
-  - [x] Default query limits (50, 100, 1000)
-  - [x] File extensions and formats (`.toml`, `.txt`, etc.)
-  - [x] Environment variable names
-  - [x] Database table and schema constants
-  - [x] Cache durations (24-hour model cache)
-  - [x] Default temperature and context limits
+- [ ] **Create `coda/constants.py` module** for centralized configuration
+  - [ ] Path constants (`.coda`, `.config`, `sessions.db`, etc.)
+  - [ ] Default query limits (50, 100, 1000)
+  - [ ] File extensions and formats (`.toml`, `.txt`, etc.)
+  - [ ] Environment variable names
+  - [ ] Database table and schema constants
+  - [ ] Cache durations (24-hour model cache)
+  - [ ] Default temperature and context limits
 
-- [x] **Create theme/styling configuration**
-  - [x] Extract all hardcoded colors from CLI modules
-  - [x] Create theme configuration system (`themes.py`)
-  - [x] Support for theme switching via `/theme` command
-  - [x] Consolidate prompt-toolkit styles
-  - [x] 5 pre-defined themes (default, dark, light, minimal, vibrant)
+- [ ] **Create theme/styling configuration**
+  - [ ] Extract all hardcoded colors from CLI modules
+  - [ ] Create theme configuration system
+  - [ ] Support for theme switching via `/theme` command
+  - [ ] Consolidate prompt-toolkit styles
 
-- [x] **Remove duplicate `commands_config.yaml`**
-  - [x] CommandRegistry in Python supersedes YAML
-  - [x] Delete unused YAML file
-  - [x] Update any references
+#### Medium Priority - Code Structure
 
-- [x] **Update configuration module**
-  - [x] Use constants instead of hardcoded values
-  - [x] Make session limits configurable
-  - [x] Add theme configuration support
-  - [x] Document all configuration options
+- [ ] **Remove duplicate `commands_config.yaml`**
+  - [ ] CommandRegistry in Python supersedes YAML
+  - [ ] Delete unused YAML file
+  - [ ] Update any references
 
-#### Medium Priority - Code Structure ✅ COMPLETED
+- [ ] **Consolidate interactive CLI modules**
+  - [ ] Merge `interactive.py` and `interactive_cli.py`
+  - [ ] Remove duplicate command handling logic
+  - [ ] Use InteractiveCLI class consistently
 
-- [x] **Consolidate interactive CLI modules**
-  - [x] Analyzed separation - found it architecturally sound
-  - [x] `interactive_cli.py` = reusable UI component
-  - [x] `interactive.py` = application orchestration
-  - [x] Kept separation for better maintainability
+- [ ] **Remove unnecessary wrapper methods**
+  - [ ] Direct calls to shared functions instead of wrappers
+  - [ ] Eliminate `get_system_prompt()` wrappers
 
-- [x] **Remove unnecessary wrapper methods**
-  - [x] Direct calls to shared functions instead of wrappers
-  - [x] Eliminated `get_system_prompt()` wrappers in CLI modules
-  - [x] Removed thin wrapper methods in BasicCommandProcessor
+#### Configuration Updates
 
-- [x] **Update remaining CLI modules to use theme system**
-  - [x] Updated `main.py` to use theme constants
-  - [x] Updated `interactive.py` to use theme system
-  - [x] Updated `provider_manager.py` console output
-  - [x] Updated `error_handler.py` styling
+- [ ] **Update configuration module**
+  - [ ] Use constants instead of hardcoded values
+  - [ ] Make session limits configurable
+  - [ ] Add theme configuration support
+  - [ ] Document all configuration options
 
-#### Testing ✅ COMPLETED
+#### Testing
 
-- [x] Reviewed tests - hardcoded values are intentional test data
-- [x] Test files appropriately use specific values for testing
-- [x] No configuration values that need centralization found in tests
+- [ ] Update tests to use constants
+- [ ] Ensure no hardcoded values in test files
+- [ ] Add tests for theme configuration
 
-#### Code Review Fixes ✅ COMPLETED (July 6, 2025)
+**Timeline**: Complete before merging Phase 5
 
-- [x] **Applied high-priority code review recommendations**
-  - [x] Fixed path construction to use Path objects instead of string concatenation
-  - [x] Added color validation to theme system (is_valid_color, validate_theme_colors)
-  - [x] Added model_provider and model_info theme attributes
-  - [x] Documented architectural constraint for style constants location
+### 4.4 AI-to-Tool Integration (Critical for Phase 5 tools)
+- [x] Function calling protocol for OCI provider (Cohere models support this) ✅
+- [x] Parse AI responses for tool requests ✅
+- [x] Execute tools based on AI instructions ✅
+- [x] Include tool results in conversation context ✅
+- [ ] Store tool invocations in session database
+- [x] Handle tool errors gracefully in conversation flow ✅
+- [ ] **Extend tool support to additional providers:**
+  - [ ] Ollama - implement native tool calling support
+  - [ ] xAI (Grok) models - tool calling protocol implementation needed
+  - [ ] Meta (Llama) models - tool calling protocol implementation needed
+  - [ ] Other OCI GenAI providers beyond Cohere
+  - [ ] Ensure LiteLLM properly passes through tool calls to supported providers
 
-#### Post-Merge Items ✅ COMPLETED (July 7, 2025)
+## Phase 5: Tool Integration (MCP) ✅ COMPLETED (July 5, 2025)
 
-- [x] **Fix import errors in CLI modules**
-  - [x] Fixed missing style constant imports in `interactive.py`
-  - [x] Added all required console style constants to imports
-  - [x] Verified CLI functionality works correctly
-  - [x] CLI help and one-shot mode working properly
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Developed in parallel with Phase 4 and is now complete.
 
-- [x] **Complete theme command implementation**
-  - [x] Replace placeholder `/theme` command with actual theme switching functionality
-  - [x] Connect `/theme` command to existing `ThemeManager.set_theme()` method
-  - [x] Add theme persistence to configuration (save theme preference)
-  - [x] Update help text to remove "Coming soon" message for `/theme` command
-  - [x] Add `/theme list`, `/theme current`, `/theme reset` subcommands
-  - [x] Add tests for theme command implementation and persistence
-  - [x] Added `tomli-w` dependency for TOML config file writing
-  - [x] Fixed configuration save functionality for theme persistence
+- Work on branch: `feature/mcp-tools` ✅ MERGED
+- Created new files: `tools/`, `mcp/` directories
+- Full integration with AI conversation pending Phase 4 completion
 
-**Status**: ✅ COMPLETED (July 7, 2025) - Successfully merged to main
+### 5.1 Core Tools ✅ COMPLETED
 
-## Phase 5: Tool Integration (MCP) 🚧 IN PROGRESS
+- [x] File operations (read, write, edit, list directory)
+- [x] Shell command execution with safety controls
+- [x] Web search and fetch capabilities
+- [x] Git operations (status, log, diff, branch)
+- [x] **Tool Result Storage**: Designed format for session integration
 
-**⚠️ DEVELOPMENT NOTE**: Currently being handled by another developer on branch `feature/mcp-tools`.
+### 5.2 Tool Commands ✅ COMPLETED
 
-**Status**: In progress, targeting July 12 completion.
+- [x] `/tools` (`/t`) - Manage MCP tools
+  - [x] `list` - List all available tools
+  - [x] `info` - Show detailed tool information
+  - [x] `categories` - Show all tool categories
+  - [x] `stats` - Show tool statistics
+  - [x] `help` - Show detailed tools help
 
-### 5.1 Core Tools
+### 5.3 MCP Protocol 🚧 PARTIALLY COMPLETED
 
-- [ ] File operations (read, write, edit)
-- [ ] Shell command execution
-- [ ] Web search and fetch
-- [ ] Git operations
-- [ ] **Tool Result Storage**: Design format for session integration
+- [x] Base tool architecture with MCP compatibility
+- [x] Tool discovery and registration
+- [x] Permission management for dangerous tools
+- [x] Parameter validation and error handling
+- [ ] External MCP server implementation (deferred)
+- [ ] Custom tool development SDK (deferred)
 
-### 5.2 Tool Commands
+## Phase 6: Advanced Features
 
-- [ ] `/tools` (`/t`) - Manage MCP tools
-  - [ ] `list` - List available MCP tools
-  - [ ] `enable` - Enable specific tools
-  - [ ] `disable` - Disable specific tools
-  - [ ] `config` - Configure tool settings
-  - [ ] `status` - Show tool status
-
-### 5.3 MCP Protocol
-
-- [ ] MCP server implementation
-- [ ] Tool discovery and registration
-- [ ] Permission management
-- [ ] Custom tool development SDK
-
-## Phase 6: Advanced Features 📅 CURRENT PHASE
-
-**Status**: Ready to begin - Phase 5 is being handled by another developer.
-
-**Priority Organization for Phase 6**:
-1. **Immediate Priority**: Add Rich Panel around input prompt (simple visual improvement)
-2. **High Priority**: Enhanced Response Rendering (immediate user experience improvement)
-3. **Medium Priority**: Multi-Modal Support (image understanding, document support) 
-4. **Lower Priority**: Project Intelligence (longer-term features)
-
-### 6.0 Input Prompt Panel Enhancement ✅ COMPLETED (July 7, 2025)
-
-- [x] **Add mode title display** - Clean mode title without separator lines
-- [x] **Keep existing prompt-toolkit functionality** - Preserved all current features (multiline, history, autocomplete, shortcuts)
-- [x] **Mode-specific styling integration** - Mode titles with colors and emojis matching theme system
-- [x] **Clean visual hierarchy** - Minimal 30-char separator after input for subtle visual break
-- [x] **Maintain performance** - No impact on input responsiveness or async behavior
-
-**Implementation Details**:
-- Removed decorative separator lines for cleaner interface
-- Mode title displays with mode-specific colors and emojis
-- Left-aligned minimal separator after user input
-- Maximum width of 60 chars to prevent stretching
-- Professional, uncluttered appearance that focuses on content
-
-### 6.1 Enhanced Response Rendering (🔥 HIGH PRIORITY)
-
-- [ ] **Live markdown rendering during streaming** - Real-time formatting as AI responds
-- [ ] **Syntax highlighting for code blocks** - Better code readability in terminal
-- [ ] **Proper handling of tables and lists** - Structured data display
-- [ ] **Toggle between raw and formatted view** - User preference for output style
-- [ ] **Preserve terminal scrollback while rendering** - Maintain terminal history
-
-### 6.2 Multi-Modal Support
+### 6.1 Multi-Modal Support
 
 - [ ] Image understanding (for providers that support it)
 - [ ] Code screenshot analysis
@@ -449,7 +401,7 @@ None currently - all bugs have been resolved!
 - [ ] Diagram generation
 - [ ] Use [diagram-renderer](https://github.com/djvolz/diagram-renderer)
 
-### 6.3 Project Intelligence (🔄 LOWER PRIORITY)
+### 6.2 Project Intelligence
 
 - [ ] Automatic project type detection
 - [ ] Specifically handle multiple version control systems beyond just git. Very important.
@@ -459,17 +411,22 @@ None currently - all bugs have been resolved!
 - [ ] Support for external projects (work on codebases outside current directory)
 - [ ] Multi-project management (handle multiple projects simultaneously)
 
-### 6.4 UI Customization ✅ MOSTLY COMPLETED
+### 6.3 UI Customization
 
-- [x] `/theme` - Change UI theme ✅ COMPLETED in Phase 4.6
-  - [x] `default` - Default color scheme
-  - [x] `dark` - Dark mode optimized  
-  - [x] `light` - Light terminal theme
-  - [x] `minimal` - Minimal colors
-  - [x] `vibrant` - High contrast colors
-  - [x] Additional themes: `monokai_dark/light`, `dracula_dark/light`, `gruvbox_dark/light`
+- [ ] `/theme` - Change UI theme
+  - [ ] `default` - Default color scheme
+  - [ ] `dark` - Dark mode optimized
+  - [ ] `light` - Light terminal theme
+  - [ ] `minimal` - Minimal colors
+  - [ ] `vibrant` - High contrast colors
+- [ ] **Enhanced Response Rendering**
+  - [ ] Live markdown rendering during streaming
+  - [ ] Syntax highlighting for code blocks
+  - [ ] Proper handling of tables and lists
+  - [ ] Toggle between raw and formatted view
+  - [ ] Preserve terminal scrollback while rendering
 
-### 6.5 Collaboration Features (DEFERRED)
+### 6.4 Collaboration Features (DEFERRED)
 
 - [ ] Session sharing via URLs
 - [ ] Team knowledge base
@@ -801,71 +758,87 @@ None currently - all bugs have been resolved!
 - ✅ Seamless integration with existing interactive shell
 - ✅ Conversation continuity across save/load cycles
 
-### 2025.7.7 - Code Quality & Theme System ✅ COMPLETED
+### 2025.7.12 - Tool Integration / MCP ✅ COMPLETED (July 5, 2025)
 
-**Phase 4.6 Achievements**:
-- ✅ Centralized constants system (`coda/constants.py`)
-- ✅ Comprehensive theme system with 11 pre-defined themes
-- ✅ Complete `/theme` command implementation
-- ✅ Code quality refactoring across 57 files
-- ✅ Enhanced test coverage (25 new theme-related tests)
-- ✅ Backward compatibility maintained
+- ✅ Core tools implemented (12 tools across 4 categories)
+  - ✅ File operations (read, write, edit, list directory)
+  - ✅ Shell command execution with safety controls
+  - ✅ Web search and fetch capabilities
+  - ✅ Git operations (status, log, diff, branch)
+- ✅ Tool commands (/tools list/info/categories/stats/help)
+- ✅ Base tool architecture with MCP compatibility
+- ✅ Parameter validation and error handling
+- ✅ Permission management for dangerous tools
+- ✅ Comprehensive test suite (30+ tests)
+- ✅ CLI integration (both interactive and basic modes)
+- ⏸️ External MCP server implementation (deferred)
+- ⏸️ Advanced permission system (deferred)
 
-### 2025.7.12 - Tool Integration / MCP (Target: July 12) 🚧 IN PROGRESS
+**Agent Integration ✅ COMPLETED (July 7, 2025)**:
+- ✅ Full AI-to-tool integration via Agent system
+- ✅ Agent-based chat with streaming support (`run_async_streaming`)
+- ✅ Intelligent tool usage - agents only use tools when necessary
+- ✅ Enhanced agent instructions for balanced tool usage
+- ✅ Real-time streaming responses while maintaining tool functionality
+- ✅ Cohere models now fully support streaming with tool capabilities
+- ✅ Agent can handle both tool-based and non-tool requests appropriately
 
-- MCP server implementation
-- Core tools (file ops, shell, web search, git)
-- Tool commands (/tools list/enable/disable/config/status)
-- Permission management
-- Custom tool SDK
+**Tools Support for Additional Providers 🚧 PENDING**:
+- [ ] **Ollama Provider** - Add native tool calling support (currently not supported)
+- [ ] **OCI GenAI Provider**:
+  - [ ] Add tools support for Meta (Llama) models
+  - [ ] Add tools support for xAI (Grok) models
+  - [ ] Add tools support for any other non-Cohere models
+- [ ] **LiteLLM Provider** - Ensure tool calling works for all supported underlying providers:
+  - [x] OpenAI models ✅ (already supported)
+  - [x] Google Gemini models ✅ (already supported)
+  - [x] Cohere models ✅ (already supported)
+  - [x] Mistral models ✅ (already supported)
+  - [ ] Anthropic Claude models (currently not supported by LiteLLM)
+- [ ] **MockProvider** - Already supports tools ✅ (for testing)
+- [ ] Implement provider-specific tool calling formats and protocols
+- [ ] Add comprehensive tests for tool functionality across all providers
+- [ ] Update documentation to clearly indicate which providers/models support tools
 
-### 2025.7.7 (Part 2) - Input Prompt Enhancement ✅ COMPLETED
+**MCP Configuration Support 🚧 PENDING**:
+- [ ] Support for `mcp.json` configuration files
+- [ ] Global MCP config in `~/.config/coda/mcp.json`
+- [ ] Local project MCP config in `.coda/mcp.json` or `mcp.json`
+- [ ] MCP server discovery and registration from config files
+- [ ] Tool loading from external MCP servers specified in config
+- [ ] Priority: local project config > global config > built-in tools
 
-**Phase 6.0 Achievement**:
-- ✅ Clean mode title display without decorative lines
-- ✅ Minimal separator after input (30 chars, left-aligned)
-- ✅ Mode-specific colors and emojis
-- ✅ Preserved all prompt-toolkit functionality
-- ✅ Professional, uncluttered interface
+### 2025.7.15 - Advanced Features (Target: July 15)
 
-### 2025.7.15 - Advanced Features (Target: July 15) 📅 CURRENT PHASE
-
-- Enhanced response rendering (live markdown) - Phase 6.1
-- Multi-modal support (image understanding) - Phase 6.2
+- Multi-modal support (image understanding)
 - Document support (PDF, Word, PowerPoint, Excel)
+- Enhanced response rendering (live markdown)
 - Project intelligence (VCS support, language optimizations)
-- Additional UI improvements
+- UI customization (/theme command)
 
 ## Next Steps
 
-**Current Status**: Phases 1, 2, 3, 4 (including 4.6), and 6.0 are complete. Phase 5 in progress by other developer. Ready to continue with Phase 6.1.
+**Current Status**: Phases 1, 2, 3, 4, 5, and Agent Integration are complete. Phase 4.6 (Code Quality Refactoring) pending.
 
-1. **Completed - Phase 4**: Session Management ✅ (Including Phase 4.6 Code Quality Refactoring)
-   - SQLite database stored in `~/.cache/coda/sessions.db`
-   - Message persistence with provider/model metadata
-   - Session branching with parent-child relationships
-   - Full-text search using SQLite FTS5
-   - Complete implementation of `/session` and `/export` commands
-   - MockProvider for deterministic testing
-   - 100+ tests covering all session functionality
-   - **Phase 4.6**: Centralized constants, comprehensive theme system (11 themes), complete `/theme` command
-2. **In Progress - Phase 5**: Tool Integration (MCP) 🚧 (Target: July 12) - Being handled by another developer
-   - Core tools for file operations
-   - Shell command execution
-   - Web search and fetch capabilities
-   - Git operations
-   - Implementation of `/tools` command
-3. **Current - Phase 6**: Advanced Features 📅 (In Progress)
-   - ✅ Phase 6.0: Input prompt enhancement (clean mode titles, minimal separators)
-   - Phase 6.1: Enhanced response rendering with live markdown (Next Priority)
-   - Phase 6.2: Multi-modal support (image understanding)
-   - Phase 6.3: Document support (PDF, Word, PowerPoint, Excel)
-   - Phase 6.4: Project intelligence features
-4. **Future Phases**:
+1. **Pending - Phase 4.6**: Code Quality Refactoring
+   - Create `coda/constants.py` for centralized configuration
+   - Create theme/styling configuration system
+   - Remove duplicate code and unnecessary wrappers
+   - Consolidate interactive CLI modules
+   
+2. **Next - Phase 6**: Advanced Features (Target: July 15)
+   - Multi-modal support (image understanding)
+   - Code screenshot analysis
+   - Document support (PDF, Word, PowerPoint, Excel)
+   - Enhanced response rendering with live markdown
+   
+3. **Future Phases**:
    - Phase 7: Web UI with Streamlit
    - Phase 8: Vector Embedding & Semantic Search
    - Phase 9: Codebase Intelligence
    - Phase 10: Help Mode Integration
+   - Phase 11: Observability & Performance
+   - Phase 12: DevOps & Automation
 
 ## Notes
 

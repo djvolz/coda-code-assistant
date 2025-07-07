@@ -19,6 +19,16 @@ class TestChatSession:
         """Create a mock provider."""
         provider = Mock()
         provider.chat_stream = MagicMock()
+        # Mock list_models for _should_use_tools method
+        models = [
+            Model(
+                id="test-model",
+                name="Test Model",
+                provider="test",
+                metadata={"supports_functions": False},
+            )
+        ]
+        provider.list_models.return_value = models
         return provider
 
     @pytest.fixture

@@ -146,6 +146,13 @@ class SessionManager:
         Returns:
             Created message object
         """
+        # Normalize content to string if it's not already
+        if not isinstance(content, str):
+            if hasattr(content, "content"):
+                content = content.content
+            else:
+                content = str(content)
+
         with self.db.get_session() as db:
             # Get next sequence number
             last_msg = (
@@ -209,6 +216,13 @@ class SessionManager:
     def _prepare_search_content(self, content: str) -> str:
         """Prepare content for full-text search."""
         # Basic preprocessing - can be enhanced later
+        # Handle cases where content might not be a string
+        if not isinstance(content, str):
+            # If it's a ChatCompletion object, extract the content
+            if hasattr(content, "content"):
+                content = content.content
+            else:
+                content = str(content)
         return content.lower().strip()
 
     def get_session(self, session_id: str) -> Session | None:

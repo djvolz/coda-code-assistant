@@ -34,6 +34,8 @@ class BasicCommandProcessor(CommandHandler):
             "model": lambda: self.switch_model(args),
             "provider": lambda: self.show_provider_info(args),
             "mode": lambda: self.switch_mode(args),
+            "tools": lambda: self.handle_tools_command(args),
+            "t": lambda: self.handle_tools_command(args),
             "clear": lambda: self.clear_conversation(),
             "exit": lambda: self.exit_application(),
             # Note: session, export, theme, tools not supported in basic mode

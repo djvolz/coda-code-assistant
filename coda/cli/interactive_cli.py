@@ -6,11 +6,10 @@ from threading import Event
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
-from prompt_toolkit.formatted_text import HTML, FormattedText
+from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
-from prompt_toolkit.layout.processors import BeforeInput, AfterInput
 from rich.console import Console
 
 from coda.session import SessionCommands
@@ -166,7 +165,7 @@ class InteractiveCLI(CommandHandler):
 
         # Initialize session management
         self.session_commands = SessionCommands()
-        
+
         # Track terminal dimensions
         self._last_terminal_width = None
 
@@ -314,7 +313,7 @@ class InteractiveCLI(CommandHandler):
         """Get terminal width with minimum constraint to prevent squashing."""
         MIN_WIDTH = 40  # Minimum width to prevent ugly squashing
         MAX_WIDTH = 60  # Reduced max width for cleaner look
-        
+
         try:
             width = self.console.size.width
             # Clamp between min and max
@@ -322,42 +321,42 @@ class InteractiveCLI(CommandHandler):
         except Exception:
             # Fallback if console size detection fails
             return 60
-    
+
     def _render_input_separator(self) -> None:
         """Render just the mode title without separator lines."""
         config = self._get_mode_panel_config()
-        
+
         # Just print the mode title without any lines
         title = config["title"]
-        
+
         # Print the title with mode-specific color
         self.console.print(f"[{config['title_style']}]{title}[/{config['title_style']}]")
-    
+
     def _render_bottom_separator(self) -> None:
         """Render a minimal bottom separator line after input."""
         config = self._get_mode_panel_config()
-        
+
         # Just print a simple, short separator line
         # This provides a subtle visual break without being too prominent
         separator = "─" * 30  # Fixed 30 character width, left-aligned
-        
+
         # Left-align the separator (no padding)
         self.console.print(f"[{config['border_style']}]{separator}[/{config['border_style']}]")
-    
+
     def _get_prompt(self) -> HTML:
         """Generate the prompt with mode indicator."""
         mode_color = {
             DeveloperMode.GENERAL: "white",
             DeveloperMode.CODE: "green",
-            DeveloperMode.DEBUG: "yellow", 
+            DeveloperMode.DEBUG: "yellow",
             DeveloperMode.EXPLAIN: "blue",
             DeveloperMode.REVIEW: "magenta",
             DeveloperMode.REFACTOR: "cyan",
             DeveloperMode.PLAN: "red",
         }.get(self.current_mode, "white")
-        
+
         # Simple colored prompt arrow
-        return HTML(f'<ansi{mode_color}>❯</ansi{mode_color}> ')
+        return HTML(f"<ansi{mode_color}>❯</ansi{mode_color}> ")
 
     async def get_input(self, multiline: bool = False) -> str:
         """Get input from user with rich features."""
@@ -378,10 +377,10 @@ class InteractiveCLI(CommandHandler):
             )
             # Reset Ctrl+C count on successful input
             self.ctrl_c_count = 0
-            
+
             # Render bottom separator
             self._render_bottom_separator()
-            
+
             return text.strip()
         except EOFError:
             # Still render bottom separator on EOF
@@ -615,13 +614,9 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("tools", [])
-            self._show_coming_soon_command(
-                "tools", "MCP Tools Management", options, "/tools <subcommand>"
-            )
-        else:
-            self.console.print(f"[yellow]Tools command '{args}' not implemented yet[/yellow]")
+        # Use the shared command handler
+        result = self.handle_tools_command(args)
+        return result
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
