@@ -8,61 +8,69 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from ..constants import (
+    PANEL_BORDER_STYLE,
+)
 from .interactive_cli import DeveloperMode, InteractiveCLI
+from .shared.modes import get_system_prompt
 
 try:
     from ..__version__ import __version__
 except ImportError:
     __version__ = "dev"
 
-console = Console()
+# Create themed console that respects user's theme configuration
+from ..themes import get_console_theme, get_themed_console
+
+console = get_themed_console()
+theme = get_console_theme()
 
 
 async def _check_first_run(console: Console, auto_save_enabled: bool):
     """Check if this is the first run and show auto-save notification."""
     import os
     from pathlib import Path
-    
+
     # Check for first-run marker in XDG data directory
     data_dir = Path(os.path.expanduser("~/.local/share/coda"))
     first_run_marker = data_dir / ".first_run_complete"
-    
+
     if not first_run_marker.exists():
         # This is the first run
         data_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Show notification
         from rich.panel import Panel
-        
-        if auto_save_enabled:
-            notification = """[bold cyan]Welcome to Coda![/bold cyan]
 
-[yellow]Auto-Save is ENABLED[/yellow] 💾
+        if auto_save_enabled:
+            notification = """[info][bold]Welcome to Coda![/]
+
+[warning]Auto-Save is ENABLED[/] 💾
 
 Your conversations will be automatically saved when you start chatting.
 This helps you resume conversations and search through history.
 
-[dim]To disable auto-save:[/dim]
-• Use [cyan]--no-save[/cyan] flag when starting Coda
-• Set [cyan]autosave = false[/cyan] in ~/.config/coda/config.toml
-• Delete sessions with [cyan]/session delete-all[/cyan]
+[dim]To disable auto-save:[/]
+• Use [info]--no-save[/] flag when starting Coda
+• Set [info]autosave = false[/] in ~/.config/coda/config.toml
+• Delete sessions with [info]/session delete-all[/]
 
-[dim]Your privacy matters - sessions are stored locally only.[/dim]"""
+[dim]Your privacy matters - sessions are stored locally only.[/]"""
         else:
-            notification = """[bold cyan]Welcome to Coda![/bold cyan]
+            notification = """[info][bold]Welcome to Coda![/]
 
-[yellow]Auto-Save is DISABLED[/yellow] 🔒
+[warning]Auto-Save is DISABLED[/] 🔒
 
 Your conversations will NOT be saved automatically.
 
-[dim]To enable auto-save for future sessions:[/dim]
-• Remove [cyan]--no-save[/cyan] flag when starting Coda
-• Set [cyan]autosave = true[/cyan] in ~/.config/coda/config.toml"""
-        
+[dim]To enable auto-save for future sessions:[/]
+• Remove [info]--no-save[/] flag when starting Coda
+• Set [info]autosave = true[/] in ~/.config/coda/config.toml"""
+
         console.print("\n")
-        console.print(Panel(notification, title="First Run", border_style="blue"))
+        console.print(Panel(notification, title="First Run", border_style=PANEL_BORDER_STYLE))
         console.print("\n")
-        
+
         # Create marker file
         try:
             first_run_marker.touch()
@@ -71,14 +79,14 @@ Your conversations will NOT be saved automatically.
             pass
 
 
-async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
+async def _initialize_provider(factory, provider: str, console: Console):
     """Initialize and connect to the provider."""
-    console.print(f"\n[green]Provider:[/green] {provider}")
-    console.print(f"[yellow]Initializing {provider}...[/yellow]")
+    console.print(f"\n[success]Provider:[/] {provider}")
+    console.print(f"[warning]Initializing {provider}...[/]")
 
     # Create provider instance
     provider_instance = factory.create(provider)
-    console.print(f"[green]✓ Connected to {provider}[/green]")
+    console.print(f"[success]✓ Connected to {provider}[/]")
 
     return provider_instance
 
@@ -87,7 +95,7 @@ async def _get_chat_models(provider_instance, console: Console):
     """Get and filter available chat models from the provider."""
     # List models
     models = provider_instance.list_models()
-    console.print(f"[green]✓ Found {len(models)} available models[/green]")
+    console.print(f"[success]✓ Found {len(models)} available models[/]")
 
     # Filter for chat models - different providers use different indicators
     chat_models = [
@@ -123,14 +131,16 @@ async def _select_model(unique_models, model: str, console: Console):
         model = await selector.select_model_interactive()
 
         if not model:
-            console.print("\n[yellow]No model selected. Exiting.[/yellow]")
+            console.print(f"\n[{theme.warning}]No model selected. Exiting.[/{theme.warning}]")
             return None
 
-    console.print(f"[green]Model:[/green] {model}")
-    console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
-    console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
-    console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
-    console.print("[dim]Press Ctrl+R to search command history[/dim]\n")
+    console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
+    console.print(f"[{theme.dim}]Found {len(unique_models)} unique models available[/{theme.dim}]")
+    console.print(f"\n[{theme.dim}]Type /help for commands, /exit or Ctrl+D to quit[/{theme.dim}]")
+    console.print(
+        f"[{theme.dim}]Press Ctrl+C to clear input or interrupt AI response[/{theme.dim}]"
+    )
+    console.print(f"[{theme.dim}]Press Ctrl+R to search command history[/{theme.dim}]\n")
 
     return model
 
@@ -143,10 +153,11 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     try:
         user_input = await cli.get_input()
     except (KeyboardInterrupt, EOFError) as e:
-        console.print(f"[red]Input interrupted: {e}[/red]")
+        theme = get_console_theme()
+        console.print(f"[{theme.error}]Input interrupted: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception as e:
-        console.print(f"[red]Unexpected error getting input: {e}[/red]")
+        console.print(f"[{theme.error}]Unexpected error getting input: {e}[/{theme.error}]")
         return True  # Continue loop
 
     # Skip empty input (from Ctrl+C)
@@ -163,19 +174,21 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Replace current messages with loaded session messages
                     messages.clear()
                     messages.extend(loaded_messages)
-                    console.print(f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]")
-                
+                    console.print(
+                        f"[{theme.dim}]Restored {len(loaded_messages)} messages to conversation history[/{theme.dim}]"
+                    )
+
                 # Check if conversation was cleared
                 if cli.session_commands.was_conversation_cleared():
                     messages.clear()
-                    console.print(f"[dim]Cleared conversation history[/dim]")
-                
+                    console.print(f"[{theme.dim}]Cleared conversation history[/{theme.dim}]")
+
                 return True
         except (ValueError, AttributeError) as e:
-            console.print(f"[red]Invalid command: {e}[/red]")
+            console.print(f"[{theme.error}]Invalid command: {e}[/{theme.error}]")
             return True
         except Exception as e:
-            console.print(f"[red]Error processing command: {e}[/red]")
+            console.print(f"[{theme.error}]Error processing command: {e}[/{theme.error}]")
             return True
 
     # Check for multiline indicator
@@ -188,20 +201,20 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         return True
 
     # Add system prompt based on mode
-    system_prompt = _get_system_prompt_for_mode(cli.current_mode)
+    system_prompt = get_system_prompt(cli.current_mode)
 
     # Add user message
     messages.append(Message(role=Role.USER, content=user_input))
-    
+
     # Track message in session manager
     cli.session_commands.add_message(
         role="user",
         content=user_input,
         metadata={
             "mode": cli.current_mode.value,
-            "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
-            "model": cli.current_model
-        }
+            "provider": provider_instance.name if hasattr(provider_instance, "name") else "unknown",
+            "model": cli.current_model,
+        },
     )
 
     # Choose thinking message based on mode
@@ -235,7 +248,10 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     try:
         # Create a status spinner for thinking animation
         # Using "dots" spinner style - other options: "line", "star", "bouncingBar", "arrow3"
-        with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
+        theme = get_console_theme()
+        with console.status(
+            f"[{theme.info}]{thinking_msg}...[/{theme.info}]", spinner="dots"
+        ) as status:
             # Get generation parameters from config or defaults
             if not config:
                 from coda.configuration import get_config
@@ -257,13 +273,16 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Stop the spinner when we get the first chunk
                     status.stop()
                     # Just print the assistant label
-                    console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                    console.print(
+                        f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ",
+                        end="",
+                    )
                     first_chunk = False
 
                 # Check for interrupt
                 if cli.interrupt_event.is_set():
                     interrupted = True
-                    console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                    console.print("\n\n[warning]Response interrupted by user[/]")
                     break
 
                 # Stream the response as plain text
@@ -274,12 +293,12 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         if full_response:
             console.print()  # Ensure we end on a new line
     except (ConnectionError, TimeoutError) as e:
-        console.print(f"\n\n[red]Network error during streaming: {e}[/red]")
+        console.print(f"\n\n[{theme.error}]Network error during streaming: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception:
         if cli.interrupt_event.is_set():
             interrupted = True
-            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+            console.print(f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]")
         else:
             raise
     finally:
@@ -289,54 +308,59 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     # Add assistant message to history (even if interrupted)
     if full_response or interrupted:
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
-        
+
         # Track assistant message in session manager
         cli.session_commands.add_message(
             role="assistant",
             content=full_response,
             metadata={
                 "mode": cli.current_mode.value,
-                "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
+                "provider": (
+                    provider_instance.name if hasattr(provider_instance, "name") else "unknown"
+                ),
                 "model": cli.current_model,
-                "interrupted": interrupted
-            }
+                "interrupted": interrupted,
+            },
         )
     console.print("\n")  # Add spacing after response
 
     return True  # Continue loop
 
 
-async def run_interactive_session(provider: str, model: str, debug: bool, no_save: bool, resume: bool):
+async def run_interactive_session(
+    provider: str, model: str, debug: bool, no_save: bool, resume: bool
+):
     """Run the enhanced interactive session."""
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
-    
+
     # Load configuration
     from coda.configuration import get_config
     from coda.providers import ProviderFactory
 
     config = get_config()
-    
+    cli.config = config  # Make config available to CLI commands
+
     # Set auto-save based on config and CLI flag
     # CLI flag takes precedence over config
     if no_save:
         cli.session_commands.auto_save_enabled = False
     else:
         # Use config value, defaulting to True if not specified
-        cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
-    
+        cli.session_commands.auto_save_enabled = config.session.get("autosave", True)
+
     # Check for first run and show auto-save notification
     await _check_first_run(console, cli.session_commands.auto_save_enabled)
-    
+
     # Load last session if requested
     if resume:
-        console.print("\n[cyan]Resuming last session...[/cyan]")
+        console.print(f"\n[{theme.info}]Resuming last session...[/{theme.info}]")
         result = cli.session_commands._load_last_session()
         if result:  # Error message
-            console.print(f"[yellow]{result}[/yellow]")
+            console.print(f"[{theme.warning}]{result}[/{theme.warning}]")
         else:
             # Successfully loaded, show a separator
-            console.print("\n[dim]─" * 50 + "[/dim]\n")
+            console.print(f"\n[{theme.dim}]{'─' * 50}[/{theme.dim}]\n")
 
     # Apply debug override
     if debug:
@@ -367,17 +391,23 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
 
         # Interactive chat loop
         # Initialize messages - use loaded messages if available
-        if resume and hasattr(cli.session_commands, '_messages_loaded') and cli.session_commands._messages_loaded:
+        if (
+            resume
+            and hasattr(cli.session_commands, "_messages_loaded")
+            and cli.session_commands._messages_loaded
+        ):
             # Import Message and Role for conversion
             from coda.providers import Message, Role
-            
+
             # Convert loaded messages to Message objects
             messages = []
             for msg in cli.session_commands.current_messages:
-                messages.append(Message(
-                    role=Role.USER if msg['role'] == 'user' else Role.ASSISTANT,
-                    content=msg['content']
-                ))
+                messages.append(
+                    Message(
+                        role=Role.USER if msg["role"] == "user" else Role.ASSISTANT,
+                        content=msg["content"],
+                    )
+                )
             # Reset the flag
             cli.session_commands._messages_loaded = False
         else:
@@ -392,17 +422,23 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
 
     except ValueError as e:
         if "compartment_id is required" in str(e):
-            console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+            console.print(
+                f"\n[{theme.error}]Error:[/{theme.error}] OCI compartment ID not configured"
+            )
             console.print("\nPlease set it via one of these methods:")
             console.print(
-                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+                f"1. Environment variable: [{theme.info}]export OCI_COMPARTMENT_ID='your-compartment-id'[/{theme.info}]"
             )
-            console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+            console.print(
+                f"2. Coda config file: [{theme.info}]~/.config/coda/config.toml[/{theme.info}]"
+            )
         elif "Unknown provider" in str(e):
-            console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
+            console.print(
+                f"\n[{theme.error}]Error:[/{theme.error}] Provider '{provider}' not found"
+            )
             console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
         else:
-            console.print(f"\n[red]Error:[/red] {e}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
         if debug:
             import traceback
 
@@ -413,22 +449,15 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
         pass
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully - just exit cleanly
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)
     except Exception as e:
-        console.print(f"\n[red]Error:[/red] {e}")
+        console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
         if debug:
             import traceback
 
             traceback.print_exc()
         sys.exit(1)
-
-
-def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
-    """Get system prompt based on developer mode."""
-    from coda.cli.shared import get_system_prompt
-
-    return get_system_prompt(mode)
 
 
 @click.command()
@@ -445,20 +474,24 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
 @click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.option("--resume", is_flag=True, help="Resume the most recent session")
 @click.version_option(version=__version__, prog_name="coda")
-def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool):
+def interactive_main(
+    provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool
+):
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
-        "[bold cyan]Coda[/bold cyan] - Code Assistant\n"
-        f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
-        "[dim]Interactive mode with prompt-toolkit[/dim]"
+        f"[{theme.info}][{theme.bold}]Coda[/{theme.bold}][/{theme.info}] - Code Assistant\n"
+        f"[{theme.dim}]Multi-provider AI coding companion v{__version__}[/{theme.dim}]\n"
+        f"[{theme.dim}]Interactive mode with prompt-toolkit[/{theme.dim}]"
     )
 
-    console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
+    console.print(Panel(welcome_text, title="Welcome", border_style=PANEL_BORDER_STYLE))
 
     if one_shot:
         # Handle one-shot mode (simplified for now)
-        console.print("[yellow]One-shot mode not yet updated for enhanced CLI[/yellow]")
+        console.print(
+            f"[{theme.warning}]One-shot mode not yet updated for enhanced CLI[/{theme.warning}]"
+        )
         console.print(f"Would execute: {one_shot}")
     else:
         # Run interactive session
@@ -470,5 +503,5 @@ if __name__ == "__main__":
         interactive_main()
     except KeyboardInterrupt:
         # Handle Ctrl+C at the top level
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)

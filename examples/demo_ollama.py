@@ -8,13 +8,13 @@ Make sure Ollama is running: https://ollama.ai/
 
 import asyncio
 
-from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
 from coda.providers import Message, OllamaProvider, Role
+from coda.themes import get_themed_console
 
-console = Console()
+console = get_themed_console()
 
 
 def demo_basic_chat():

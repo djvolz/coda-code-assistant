@@ -2,10 +2,8 @@
 
 import asyncio
 from collections.abc import Callable
-from pathlib import Path
 from threading import Event
 
-import yaml
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -14,8 +12,12 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-from .shared import CommandHandler, CommandResult, DeveloperMode
 from coda.session import SessionCommands
+
+from ..constants import (
+    HISTORY_FILE_PATH,
+)
+from .shared import CommandHandler, CommandResult, DeveloperMode
 
 
 class SlashCommand:
@@ -38,7 +40,7 @@ class SlashCommandCompleter(Completer):
     def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
         """Load command options from the command registry."""
         from coda.cli.command_registry import CommandRegistry
-        
+
         # Get autocomplete options from the registry
         # This currently only includes commands with subcommands
         return CommandRegistry.get_autocomplete_options()
@@ -143,8 +145,14 @@ class InteractiveCLI(CommandHandler):
     """Interactive CLI with advanced prompt features using prompt-toolkit."""
 
     def __init__(self, console: Console = None):
-        super().__init__(console or Console())
+        if console:
+            super().__init__(console)
+        else:
+            from ..themes import get_themed_console
+
+            super().__init__(get_themed_console())
         self.session = None
+        self.config = None  # Will be set by interactive.py
         self.commands = self._init_commands()
         self.style = self._create_style()
 
@@ -154,7 +162,7 @@ class InteractiveCLI(CommandHandler):
         self.escape_count = 0
         self.last_ctrl_c_time = 0
         self.ctrl_c_count = 0
-        
+
         # Initialize session management
         self.session_commands = SessionCommands()
 
@@ -164,7 +172,7 @@ class InteractiveCLI(CommandHandler):
     def _init_commands(self) -> dict[str, SlashCommand]:
         """Initialize slash commands from the command registry."""
         from coda.cli.command_registry import CommandRegistry
-        
+
         # Map command names to their handlers
         handler_map = {
             "help": self._cmd_help,
@@ -173,17 +181,17 @@ class InteractiveCLI(CommandHandler):
             "mode": self._cmd_mode,
             "session": self._cmd_session,
             "export": self._cmd_export,
+            "theme": self._cmd_theme,
             "clear": self._cmd_clear,
             "exit": self._cmd_exit,
         }
-        
+
         # Add handlers for commands not yet implemented
         placeholder_handlers = {
-            "theme": self._cmd_theme,
             "tools": self._cmd_tools,
         }
         handler_map.update(placeholder_handlers)
-        
+
         commands = {}
         for cmd_def in CommandRegistry.COMMANDS:
             if cmd_def.name in handler_map:
@@ -191,19 +199,32 @@ class InteractiveCLI(CommandHandler):
                     name=cmd_def.name,
                     handler=handler_map[cmd_def.name],
                     help_text=cmd_def.description,
-                    aliases=cmd_def.aliases
+                    aliases=cmd_def.aliases,
                 )
-        
+
         return commands
 
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
-        return Style.from_dict(
+        # Get theme-based style and extend it with additional styles
+        from coda.themes import get_theme_manager
+
+        theme_manager = get_theme_manager()
+        theme_style = theme_manager.current_theme.prompt.to_prompt_toolkit_style()
+
+        # Get the base style dictionary and add custom styles
+        combined_styles = {}
+
+        # Add theme styles (if they have a style_dict attribute)
+        if hasattr(theme_style, "style_dict"):
+            combined_styles.update(theme_style.style_dict)
+
+        # Add custom additions
+        combined_styles.update(
             {
-                # Prompt colors
-                "prompt": "#00aa00 bold",
+                # Additional prompt-specific styles
                 "prompt.mode": "#888888",
-                # Completion colors - more visible
+                # Completion menu enhancements
                 "completion-menu": "bg:#2c2c2c #ffffff",
                 "completion-menu.completion": "bg:#2c2c2c #ffffff",
                 "completion-menu.completion.current": "bg:#005588 #ffffff bold",
@@ -212,17 +233,15 @@ class InteractiveCLI(CommandHandler):
                 # Scrollbar
                 "scrollbar.background": "bg:#2c2c2c",
                 "scrollbar.button": "bg:#888888",
-                # Status bar
-                "status-bar": "bg:#444444 #ffffff",
             }
         )
+
+        return Style.from_dict(combined_styles)
 
     def _init_session(self):
         """Initialize the prompt session with all features."""
         # Create history directory if it doesn't exist
-        history_dir = Path.home() / ".local" / "share" / "coda"
-        history_dir.mkdir(parents=True, exist_ok=True)
-        history_file = history_dir / "history.txt"
+        HISTORY_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
         # Create key bindings
         kb = KeyBindings()
@@ -231,7 +250,7 @@ class InteractiveCLI(CommandHandler):
         # Double escape is not reliable with prompt-toolkit during streaming
 
         self.session = PromptSession(
-            history=FileHistory(str(history_file)),
+            history=FileHistory(str(HISTORY_FILE_PATH)),
             auto_suggest=None,  # Disable auto-suggestions from history
             completer=EnhancedCompleter(self.commands),
             style=self.style,
@@ -400,15 +419,107 @@ class InteractiveCLI(CommandHandler):
         if result:
             self.console.print(result)
 
-    def _cmd_theme(self, args: str):
+    async def _cmd_theme(self, args: str):
         """Change UI theme."""
+        from ..configuration import save_config
+        from ..themes import THEMES, get_theme_manager
+
+        theme_manager = get_theme_manager()
+
         if not args:
-            options = self.session.completer.slash_completer.command_options.get("theme", [])
-            self._show_coming_soon_command(
-                "theme", "Theme Settings", options, "/theme <theme_name>"
-            )
-        else:
-            self.console.print(f"[yellow]Theme '{args}' not implemented yet[/yellow]")
+            # Show interactive theme selector
+            from .theme_selector import ThemeSelector
+
+            selector = ThemeSelector(self.console)
+            new_theme = await selector.select_theme_interactive()
+
+            if new_theme:
+                # Set the theme using the same logic as when args are provided
+                try:
+                    # Update theme manager
+                    theme_manager.set_theme(new_theme)
+
+                    # Update configuration and save
+                    if self.config:
+                        self.config.ui["theme"] = new_theme
+                        save_config()
+
+                    # Update console theme
+                    from ..themes import get_themed_console
+
+                    new_console = get_themed_console()
+                    self.console = new_console
+
+                    # Recreate the prompt style with new theme
+                    self.style = self._create_style()
+
+                    # Update the prompt session style
+                    if hasattr(self, "session") and self.session:
+                        self.session.style = self.style
+
+                    self.console.print(f"[green]✓[/] Theme changed to '[cyan]{new_theme}[/]'")
+                    if self.config:
+                        self.console.print("[dim]Theme preference saved to configuration[/]")
+
+                except ValueError as e:
+                    self.console.print(f"[red]Error:[/] {e}")
+            else:
+                # Show current theme if no selection was made
+                self.console.print(
+                    f"\n[yellow]Current theme:[/] {theme_manager.current_theme_name}"
+                )
+            return
+
+        # Handle subcommands
+        if args == "list":
+            self.console.print("\n[bold]Available themes:[/]")
+            for theme_name, theme in THEMES.items():
+                status = (
+                    "[green]●[/]" if theme_name == theme_manager.current_theme_name else "[dim]○[/]"
+                )
+                self.console.print(f"  {status} [cyan]{theme_name}[/] - {theme.description}")
+            return
+
+        elif args == "current":
+            self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
+            self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
+            return
+
+        elif args == "reset":
+            # Reset to default theme
+            from ..constants import THEME_DEFAULT
+
+            args = THEME_DEFAULT
+
+        # Set the theme
+        try:
+            # Update theme manager
+            theme_manager.set_theme(args)
+
+            # Update configuration and save
+            if self.config:
+                self.config.ui["theme"] = args
+                save_config()
+
+            # Update console theme
+            from ..themes import get_themed_console
+
+            new_console = get_themed_console()
+            self.console = new_console
+
+            # Recreate the prompt style with new theme
+            self.style = self._create_style()
+
+            # Update the prompt session style
+            if hasattr(self, "session") and self.session:
+                self.session.style = self.style
+
+            self.console.print(f"[green]✓[/] Theme changed to '[cyan]{args}[/]'")
+            if self.config:
+                self.console.print("[dim]Theme preference saved to configuration[/]")
+
+        except ValueError as e:
+            self.console.print(f"[red]Error:[/] {e}")
 
     def _cmd_export(self, args: str):
         """Export conversation."""
@@ -438,12 +549,6 @@ class InteractiveCLI(CommandHandler):
         """Exit the application."""
         self.console.print("[dim]Goodbye![/dim]")
         raise SystemExit(0)
-
-    def get_system_prompt(self) -> str:
-        """Get system prompt based on current mode."""
-        from .shared import get_system_prompt
-
-        return get_system_prompt(self.current_mode)
 
     def reset_interrupt(self):
         """Reset the interrupt state."""

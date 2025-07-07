@@ -119,13 +119,13 @@ class OCIGenAIProvider(BaseProvider):
 
         age = datetime.now() - self._cache_timestamp
         return age.total_seconds() < (self._cache_duration_hours * 3600)
-    
+
     def _get_model_context_length(self, model_id: str) -> int:
         """Get accurate context length for a model.
-        
+
         Args:
             model_id: Model ID
-            
+
         Returns:
             Context length in tokens
         """
@@ -135,23 +135,21 @@ class OCIGenAIProvider(BaseProvider):
             "cohere.command-r-plus": 128000,
             "cohere.command-r-16k": 16000,
             "cohere.command": 4000,
-            
             # Meta Llama models
             "meta.llama-3.1-405b": 128000,
             "meta.llama-3.1-70b": 128000,
             "meta.llama-3.3-70b": 128000,
             "meta.llama-4-3-90b": 131072,
-            
             # XAI models
             "xai.grok-3": 131072,
         }
-        
+
         # Check exact match
         model_lower = model_id.lower()
         for key, length in context_lengths.items():
             if key in model_lower or model_lower.startswith(key):
                 return length
-        
+
         # Default based on model name patterns
         if "16k" in model_lower:
             return 16384
@@ -165,7 +163,7 @@ class OCIGenAIProvider(BaseProvider):
             return 128000
         elif "grok" in model_lower:
             return 131072
-        
+
         # Conservative default
         return 4096
 
@@ -295,7 +293,7 @@ class OCIGenAIProvider(BaseProvider):
                 "supports_functions": False,
             },
         ]
-        
+
         return [
             Model(
                 id=m["id"],
