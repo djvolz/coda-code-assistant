@@ -363,7 +363,8 @@ class OCIGenAIProvider(BaseProvider):
                     # Collect any tool responses that follow
                     while j < len(messages) and messages[j].role == Role.TOOL:
                         tool_msg = messages[j]
-                        assistant_content += f"\n\nTool '{tool_msg.name if hasattr(tool_msg, 'name') else 'result'}': {tool_msg.content}"
+                        tool_name = tool_msg.name if tool_msg.name else 'tool'
+                        assistant_content += f"\n\nTool execution result ({tool_name}): {tool_msg.content}"
                         j += 1
                     
                     # Add the combined assistant + tool results message
@@ -375,7 +376,8 @@ class OCIGenAIProvider(BaseProvider):
                 elif msg.role == Role.TOOL:
                     # This shouldn't happen as we process tool messages with their assistant message
                     # But if it does, add it as a system message
-                    chat_history.append(CohereSystemMessage(role="SYSTEM", message=f"Tool result: {msg.content}"))
+                    tool_name = msg.name if msg.name else 'tool'
+                    chat_history.append(CohereSystemMessage(role="SYSTEM", message=f"Tool execution result ({tool_name}): {msg.content}"))
                 
                 i += 1
             
@@ -384,9 +386,18 @@ class OCIGenAIProvider(BaseProvider):
                 # Check if the last message in history contains tool results
                 if chat_history and isinstance(chat_history[-1], CohereChatBotMessage):
                     last_msg = chat_history[-1].message
-                    if "Tool '" in last_msg and ":" in last_msg:
-                        # We have tool results, prompt for final answer
-                        current_message = "Based on the tool results, please provide a complete answer to the user's original question."
+                    if "Tool execution result" in last_msg:
+                        # We have tool results, find the original user question for context
+                        original_question = None
+                        for msg in reversed(chat_history):
+                            if isinstance(msg, CohereUserMessage):
+                                original_question = msg.message
+                                break
+                        
+                        if original_question:
+                            current_message = f"Based on the tool results above, please provide a complete answer to the user's question: \"{original_question}\""
+                        else:
+                            current_message = "Based on the tool results above, please provide a complete answer to the user's original question."
                 
                 # Otherwise look for last user message
                 if not current_message and chat_history:
