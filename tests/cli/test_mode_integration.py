@@ -187,18 +187,12 @@ class TestInteractiveModeIntegration:
         # Session commands are now implemented, should show help
         assert any("Session help" in str(call) for call in calls)
 
-        # Theme command - still coming soon
-        cli.console.reset_mock()
-        cli._cmd_theme("")
-        calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Theme Settings" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
-
         # Tools command - still coming soon
         cli.console.reset_mock()
         cli._cmd_tools("")
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("MCP Tools Management" in str(call) for call in calls)
+        assert any("Coming soon" in str(call) for call in calls)
 
     def test_interactive_exit_command(self, cli):
         """Test exit command in interactive mode."""
