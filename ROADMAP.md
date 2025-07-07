@@ -353,6 +353,24 @@ None currently - all bugs have been resolved!
   - [x] Added model_provider and model_info theme attributes
   - [x] Documented architectural constraint for style constants location
 
+#### Post-Merge Items ✅ COMPLETED (July 7, 2025)
+
+- [x] **Fix import errors in CLI modules**
+  - [x] Fixed missing style constant imports in `interactive.py`
+  - [x] Added all required console style constants to imports
+  - [x] Verified CLI functionality works correctly
+  - [x] CLI help and one-shot mode working properly
+
+- [x] **Complete theme command implementation**
+  - [x] Replace placeholder `/theme` command with actual theme switching functionality
+  - [x] Connect `/theme` command to existing `ThemeManager.set_theme()` method
+  - [x] Add theme persistence to configuration (save theme preference)
+  - [x] Update help text to remove "Coming soon" message for `/theme` command
+  - [x] Add `/theme list`, `/theme current`, `/theme reset` subcommands
+  - [x] Add tests for theme command implementation and persistence
+  - [x] Added `tomli-w` dependency for TOML config file writing
+  - [x] Fixed configuration save functionality for theme persistence
+
 **Timeline**: Complete before merging Phase 5
 
 ## Phase 5: Tool Integration (MCP)

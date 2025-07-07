@@ -199,8 +199,16 @@ class ConfigManager:
                 raise ImportError("No TOML writer available (install tomli-w or toml)") from None
 
         # Write config
-        with open(config_path, "w") as f:
-            writer.dump(self.config.to_dict(), f)
+        config_dict = self.config.to_dict()
+        if hasattr(writer, 'dumps'):
+            # tomli_w pattern
+            content = writer.dumps(config_dict)
+            with open(config_path, "w") as f:
+                f.write(content)
+        else:
+            # toml pattern
+            with open(config_path, "w") as f:
+                writer.dump(config_dict, f)
 
 
 # Global config instance
@@ -221,3 +229,11 @@ def get_provider_config(provider: str) -> dict[str, Any]:
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager.get_provider_config(provider)
+
+
+def save_config() -> None:
+    """Save the current configuration to user config file."""
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = ConfigManager()
+    _config_manager.save_user_config()

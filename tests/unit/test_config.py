@@ -196,3 +196,32 @@ class TestGlobalConfig:
 
         # Non-existent provider
         assert get_provider_config("nonexistent") == {}
+
+    def test_save_config_theme_persistence(self, tmp_path):
+        """Test saving theme configuration changes."""
+        from unittest.mock import patch
+        import tempfile
+        from coda.configuration import save_config
+        
+        # Create a temporary config file path
+        config_file = tmp_path / "config.toml"
+        
+        # Patch the USER_CONFIG_PATH to use our temp file
+        with patch('coda.configuration.USER_CONFIG_PATH', config_file):
+            # Get config and modify theme
+            config = get_config()
+            original_theme = config.ui["theme"]
+            config.ui["theme"] = "dark"
+            
+            # Save the config
+            save_config()
+            
+            # Verify file was created and contains the theme
+            assert config_file.exists()
+            
+            # Read the saved config
+            content = config_file.read_text()
+            assert "theme = \"dark\"" in content
+            
+            # Restore original theme for other tests
+            config.ui["theme"] = original_theme

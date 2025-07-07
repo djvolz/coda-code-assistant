@@ -151,6 +151,7 @@ class InteractiveCLI(CommandHandler):
             from ..themes import get_themed_console
             super().__init__(get_themed_console())
         self.session = None
+        self.config = None  # Will be set by interactive.py
         self.commands = self._init_commands()
         self.style = self._create_style()
 
@@ -179,13 +180,13 @@ class InteractiveCLI(CommandHandler):
             "mode": self._cmd_mode,
             "session": self._cmd_session,
             "export": self._cmd_export,
+            "theme": self._cmd_theme,
             "clear": self._cmd_clear,
             "exit": self._cmd_exit,
         }
 
         # Add handlers for commands not yet implemented
         placeholder_handlers = {
-            "theme": self._cmd_theme,
             "tools": self._cmd_tools,
         }
         handler_map.update(placeholder_handlers)
@@ -415,15 +416,100 @@ class InteractiveCLI(CommandHandler):
         if result:
             self.console.print(result)
 
-    def _cmd_theme(self, args: str):
+    async def _cmd_theme(self, args: str):
         """Change UI theme."""
+        from ..themes import get_theme_manager, THEMES
+        from ..configuration import save_config
+        
+        theme_manager = get_theme_manager()
+        
         if not args:
-            options = self.session.completer.slash_completer.command_options.get("theme", [])
-            self._show_coming_soon_command(
-                "theme", "Theme Settings", options, "/theme <theme_name>"
-            )
-        else:
-            self.console.print(f"[yellow]Theme '{args}' not implemented yet[/yellow]")
+            # Show interactive theme selector
+            from .theme_selector import ThemeSelector
+
+            selector = ThemeSelector(self.console)
+            new_theme = await selector.select_theme_interactive()
+            
+            if new_theme:
+                # Set the theme using the same logic as when args are provided
+                try:
+                    # Update theme manager
+                    theme_manager.set_theme(new_theme)
+                    
+                    # Update configuration and save
+                    if self.config:
+                        self.config.ui["theme"] = new_theme
+                        save_config()
+                        
+                    # Update console theme
+                    from ..themes import get_themed_console
+                    new_console = get_themed_console()
+                    self.console = new_console
+                    
+                    # Recreate the prompt style with new theme
+                    self.style = self._create_style()
+                    
+                    # Update the prompt session style
+                    if hasattr(self, 'session') and self.session:
+                        self.session.style = self.style
+                        
+                    self.console.print(f"[green]✓[/] Theme changed to '[cyan]{new_theme}[/]'")
+                    if self.config:
+                        self.console.print("[dim]Theme preference saved to configuration[/]")
+                    
+                except ValueError as e:
+                    self.console.print(f"[red]Error:[/] {e}")
+            else:
+                # Show current theme if no selection was made
+                self.console.print(f"\n[yellow]Current theme:[/] {theme_manager.current_theme_name}")
+            return
+            
+        # Handle subcommands
+        if args == "list":
+            self.console.print("\n[bold]Available themes:[/]")
+            for theme_name, theme in THEMES.items():
+                status = "[green]●[/]" if theme_name == theme_manager.current_theme_name else "[dim]○[/]"
+                self.console.print(f"  {status} [cyan]{theme_name}[/] - {theme.description}")
+            return
+            
+        elif args == "current":
+            self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
+            self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
+            return
+            
+        elif args == "reset":
+            # Reset to default theme
+            from ..constants import THEME_DEFAULT
+            args = THEME_DEFAULT
+            
+        # Set the theme
+        try:
+            # Update theme manager
+            theme_manager.set_theme(args)
+            
+            # Update configuration and save
+            if self.config:
+                self.config.ui["theme"] = args
+                save_config()
+                
+            # Update console theme
+            from ..themes import get_themed_console
+            new_console = get_themed_console()
+            self.console = new_console
+            
+            # Recreate the prompt style with new theme
+            self.style = self._create_style()
+            
+            # Update the prompt session style
+            if hasattr(self, 'session') and self.session:
+                self.session.style = self.style
+                
+            self.console.print(f"[green]✓[/] Theme changed to '[cyan]{args}[/]'")
+            if self.config:
+                self.console.print("[dim]Theme preference saved to configuration[/]")
+            
+        except ValueError as e:
+            self.console.print(f"[red]Error:[/] {e}")
 
     def _cmd_export(self, args: str):
         """Export conversation."""

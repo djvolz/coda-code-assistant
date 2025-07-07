@@ -84,5 +84,5 @@ def print_interactive_only_commands(console: Console):
 
     console.print("[bold]Advanced:[/bold] [dim](Interactive mode only)[/dim]")
     console.print("  [cyan]/tools[/cyan] (/t) - Manage MCP tools [yellow](Coming soon)[/yellow]")
-    console.print("  [cyan]/theme[/cyan] - Change UI theme [yellow](Coming soon)[/yellow]")
+    console.print("  [cyan]/theme[/cyan] - Change UI theme")
     console.print()

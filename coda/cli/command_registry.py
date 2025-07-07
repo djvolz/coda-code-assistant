@@ -38,6 +38,36 @@ class CommandDefinition:
         return (self.name, self.description)
 
 
+def _get_theme_options():
+    """Get theme options dynamically from available themes."""
+    from coda.themes import THEMES
+    return [
+        CommandDefinition(
+            name=theme_name,
+            description=theme.description,
+            type=CommandType.OPTION
+        )
+        for theme_name, theme in THEMES.items()
+    ] + [
+        # Add subcommands
+        CommandDefinition(
+            name="list",
+            description="List all available themes",
+            type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="current",
+            description="Show current theme",
+            type=CommandType.SUBCOMMAND
+        ),
+        CommandDefinition(
+            name="reset",
+            description="Reset to default theme",
+            type=CommandType.SUBCOMMAND
+        ),
+    ]
+
+
 class CommandRegistry:
     """Registry of all CLI commands."""
 
@@ -205,35 +235,6 @@ class CommandRegistry:
         ),
     ]
 
-    # Theme options
-    THEME_OPTIONS = [
-        CommandDefinition(
-            name="default",
-            description="Default color scheme",
-            type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="dark",
-            description="Dark mode optimized",
-            type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="light",
-            description="Light terminal theme",
-            type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="minimal",
-            description="Minimal colors",
-            type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="vibrant",
-            description="High contrast colors",
-            type=CommandType.OPTION
-        ),
-    ]
-
     # Tools subcommands
     TOOLS_SUBCOMMANDS = [
         CommandDefinition(
@@ -319,7 +320,7 @@ class CommandRegistry:
         CommandDefinition(
             name="theme",
             description="Change UI theme",
-            subcommands=THEME_OPTIONS,
+            subcommands=_get_theme_options(),
             examples=["/theme", "/theme dark"]
         ),
         CommandDefinition(
