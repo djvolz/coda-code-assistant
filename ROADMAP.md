@@ -695,6 +695,13 @@ None currently - all bugs have been resolved!
   - [ ] Docker compose setup for development
   - [ ] Multi-architecture container builds
   - [ ] Container optimization for size and performance
+  - [ ] **Observability Container with Grafana**
+    - [ ] Pre-configured Grafana instance for monitoring
+    - [ ] Dashboards for metrics, traces, errors, and health
+    - [ ] Prometheus or OpenTelemetry collector integration
+    - [ ] Docker compose profile for observability stack
+    - [ ] Automated datasource configuration
+    - [ ] Sample alerts and monitoring rules
 
 ### 12.2 Development Workflow
 
