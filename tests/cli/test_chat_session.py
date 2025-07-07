@@ -8,7 +8,7 @@ from rich.console import Console
 from coda.cli.chat_session import ChatSession
 from coda.cli.shared import DeveloperMode
 from coda.configuration import CodaConfig
-from coda.providers import Message, Model, Role
+from coda.providers import Model, Role
 
 
 class TestChatSession:
@@ -203,22 +203,22 @@ class TestChatSession:
         mock_provider.chat_stream.return_value = [Mock(content="Response")]
 
         seen_prompts = set()
-        
+
         for mode in DeveloperMode:
             chat_session.set_mode(mode.value)
-            
+
             with patch("rich.prompt.Prompt.ask", side_effect=["Test", "/exit"]):
                 chat_session.run_interactive()
-            
+
             # Get the system prompt that was used
             messages = mock_provider.chat_stream.call_args[1]["messages"]
             system_prompt = messages[0].content
-            
+
             # Verify it's unique and not empty
             assert system_prompt not in seen_prompts
             assert len(system_prompt) > 20  # Not just a placeholder
             seen_prompts.add(system_prompt)
-            
+
             # Verify it contains mode-specific keywords
             if mode == DeveloperMode.CODE:
                 assert "coding" in system_prompt.lower()

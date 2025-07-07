@@ -2,11 +2,17 @@
 
 from typing import Any
 
+from coda.constants import (
+    PROVIDER_LITELLM,
+    PROVIDER_MOCK,
+    PROVIDER_OCI_GENAI,
+    PROVIDER_OLLAMA,
+)
 from coda.providers.base import BaseProvider
 from coda.providers.litellm_provider import LiteLLMProvider
+from coda.providers.mock_provider import MockProvider
 from coda.providers.oci_genai import OCIGenAIProvider
 from coda.providers.ollama_provider import OllamaProvider
-from coda.providers.mock_provider import MockProvider
 
 
 class ProviderRegistry:
@@ -58,7 +64,7 @@ class ProviderRegistry:
 
         def serialize_value(obj):
             """Convert objects to JSON-serializable form."""
-            if isinstance(obj, (list, dict)):
+            if isinstance(obj, list | dict):
                 return json.dumps(obj, sort_keys=True)
             elif hasattr(obj, "__dict__"):
                 return json.dumps(obj.__dict__, sort_keys=True)
@@ -114,10 +120,10 @@ class ProviderRegistry:
 
 
 # Register built-in providers
-ProviderRegistry.register("oci_genai", OCIGenAIProvider)
-ProviderRegistry.register("litellm", LiteLLMProvider)
-ProviderRegistry.register("ollama", OllamaProvider)
-ProviderRegistry.register("mock", MockProvider)
+ProviderRegistry.register(PROVIDER_OCI_GENAI, OCIGenAIProvider)
+ProviderRegistry.register(PROVIDER_LITELLM, LiteLLMProvider)
+ProviderRegistry.register(PROVIDER_OLLAMA, OllamaProvider)
+ProviderRegistry.register(PROVIDER_MOCK, MockProvider)
 
 
 class ProviderFactory:
