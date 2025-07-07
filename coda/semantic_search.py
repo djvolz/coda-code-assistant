@@ -1,62 +1,47 @@
 """
-Semantic search functionality for Coda.
+Semantic search functionality.
 
-This module provides the main interface for semantic search capabilities,
-including content indexing, similarity search, and hybrid search.
+This module provides a self-contained interface for semantic search capabilities,
+including content indexing, similarity search, and hybrid search. It can be used
+independently by external projects without Coda dependencies.
 """
 
-from typing import List, Dict, Any, Optional, Union, Tuple
+from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
 import asyncio
 import logging
 from datetime import datetime
 
-from .embeddings import BaseEmbeddingProvider, OCIEmbeddingProvider
+from .embeddings import BaseEmbeddingProvider
 from .vector_stores import BaseVectorStore, FAISSVectorStore, SearchResult
-from .configuration import CodaConfig
-from .constants import get_cache_dir
 
 logger = logging.getLogger(__name__)
 
 
 class SemanticSearchManager:
-    """Manages semantic search functionality for Coda.
+    """Manages semantic search functionality.
     
     Coordinates between embedding providers and vector stores to provide
-    unified semantic search capabilities.
+    unified semantic search capabilities. This is designed to be self-contained
+    and usable by external projects.
     """
     
     def __init__(
         self,
-        embedding_provider: Optional[BaseEmbeddingProvider] = None,
+        embedding_provider: BaseEmbeddingProvider,
         vector_store: Optional[BaseVectorStore] = None,
-        config: Optional[CodaConfig] = None
+        index_dir: Optional[Union[str, Path]] = None
     ):
         """Initialize semantic search manager.
         
         Args:
-            embedding_provider: Provider for generating embeddings
-            vector_store: Store for vector similarity search
-            config: Configuration object
+            embedding_provider: Provider for generating embeddings (required)
+            vector_store: Store for vector similarity search (optional, defaults to FAISS)
+            index_dir: Directory for storing indexes (optional)
         """
-        self.config = config or CodaConfig()
+        self.embedding_provider = embedding_provider
         
-        # Initialize embedding provider
-        if embedding_provider is None:
-            # Default to OCI embeddings if available
-            oci_config = self.config.providers.get("oci_genai", {})
-            if oci_config.get("compartment_id"):
-                self.embedding_provider = OCIEmbeddingProvider(config=self.config)
-            else:
-                # TODO: Add fallback to sentence-transformers
-                raise ValueError(
-                    "No embedding provider available. "
-                    "Configure OCI or install sentence-transformers."
-                )
-        else:
-            self.embedding_provider = embedding_provider
-            
-        # Initialize vector store
+        # Initialize vector store if not provided
         if vector_store is None:
             # Get dimension from embedding provider
             model_info = self.embedding_provider.get_model_info()
@@ -67,8 +52,13 @@ class SemanticSearchManager:
         else:
             self.vector_store = vector_store
             
-        # Index paths
-        self.index_dir = get_cache_dir() / "semantic_search"
+        # Set index directory
+        if index_dir is None:
+            # Default to user's cache directory
+            self.index_dir = Path.home() / ".cache" / "embeddings" / "indexes"
+        else:
+            self.index_dir = Path(index_dir)
+            
         self.index_dir.mkdir(parents=True, exist_ok=True)
         
     async def index_content(
