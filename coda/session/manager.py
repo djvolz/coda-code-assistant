@@ -35,7 +35,7 @@ class SessionManager:
         system_prompt: str | None = None,
         config: dict[str, Any] | None = None,
         parent_id: str | None = None,
-        branch_point_message_id: str | None = None
+        branch_point_message_id: str | None = None,
     ) -> Session:
         """Create a new session.
 
@@ -64,7 +64,7 @@ class SessionManager:
                 system_prompt=system_prompt,
                 config=config or {},
                 parent_id=parent_id,
-                branch_point_message_id=branch_point_message_id
+                branch_point_message_id=branch_point_message_id,
             )
             db.add(session)
             db.commit()
@@ -81,11 +81,7 @@ class SessionManager:
             return db.query(Session).filter_by(id=session_id).first()
 
     def _copy_messages_to_branch(
-        self,
-        db: DBSession,
-        parent_id: str,
-        new_session_id: str,
-        branch_point_message_id: str
+        self, db: DBSession, parent_id: str, new_session_id: str, branch_point_message_id: str
     ):
         """Copy messages from parent session up to branch point."""
         # Get branch point message sequence
@@ -94,12 +90,12 @@ class SessionManager:
             return
 
         # Copy all messages up to and including branch point
-        parent_messages = db.query(Message).filter(
-            and_(
-                Message.session_id == parent_id,
-                Message.sequence <= branch_msg.sequence
-            )
-        ).order_by(Message.sequence).all()
+        parent_messages = (
+            db.query(Message)
+            .filter(and_(Message.session_id == parent_id, Message.sequence <= branch_msg.sequence))
+            .order_by(Message.sequence)
+            .all()
+        )
 
         for msg in parent_messages:
             new_msg = Message(
@@ -116,7 +112,7 @@ class SessionManager:
                 metadata=msg.metadata,
                 tool_calls=msg.tool_calls,
                 attachments=msg.attachments,
-                search_content=msg.search_content
+                search_content=msg.search_content,
             )
             db.add(new_msg)
 
@@ -131,7 +127,7 @@ class SessionManager:
         tool_calls: list[dict[str, Any]] | None = None,
         attachments: list[dict[str, Any]] | None = None,
         token_usage: dict[str, int] | None = None,
-        cost: float | None = None
+        cost: float | None = None,
     ) -> Message:
         """Add a message to a session.
 
@@ -152,9 +148,12 @@ class SessionManager:
         """
         with self.db.get_session() as db:
             # Get next sequence number
-            last_msg = db.query(Message).filter_by(
-                session_id=session_id
-            ).order_by(desc(Message.sequence)).first()
+            last_msg = (
+                db.query(Message)
+                .filter_by(session_id=session_id)
+                .order_by(desc(Message.sequence))
+                .first()
+            )
 
             sequence = (last_msg.sequence + 1) if last_msg else 1
 
@@ -170,10 +169,10 @@ class SessionManager:
                 tool_calls=tool_calls,
                 attachments=attachments,
                 search_content=self._prepare_search_content(content),
-                prompt_tokens=token_usage.get('prompt_tokens') if token_usage else None,
-                completion_tokens=token_usage.get('completion_tokens') if token_usage else None,
-                total_tokens=token_usage.get('total_tokens') if token_usage else None,
-                cost=cost
+                prompt_tokens=token_usage.get("prompt_tokens") if token_usage else None,
+                completion_tokens=token_usage.get("completion_tokens") if token_usage else None,
+                total_tokens=token_usage.get("total_tokens") if token_usage else None,
+                cost=cost,
             )
             db.add(message)
 
@@ -182,21 +181,21 @@ class SessionManager:
             if session:
                 session.message_count += 1
                 session.accessed_at = datetime.utcnow()
-                if token_usage and token_usage.get('total_tokens'):
-                    session.total_tokens += token_usage['total_tokens']
+                if token_usage and token_usage.get("total_tokens"):
+                    session.total_tokens += token_usage["total_tokens"]
                 if cost:
                     session.total_cost += cost
 
             # Update FTS index
-            db.execute(text("""
+            db.execute(
+                text(
+                    """
                 INSERT INTO messages_fts (message_id, session_id, content, role)
                 VALUES (:msg_id, :session_id, :content, :role)
-            """), {
-                'msg_id': message.id,
-                'session_id': session_id,
-                'content': content,
-                'role': role
-            })
+            """
+                ),
+                {"msg_id": message.id, "session_id": session_id, "content": content, "role": role},
+            )
 
             db.commit()
             db.refresh(message)
@@ -215,48 +214,41 @@ class SessionManager:
     def get_session(self, session_id: str) -> Session | None:
         """Get a session by ID."""
         from sqlalchemy.orm import joinedload
+
         with self.db.get_session() as db:
-            session = db.query(Session).options(joinedload(Session.tags)).filter_by(id=session_id).first()
+            session = (
+                db.query(Session).options(joinedload(Session.tags)).filter_by(id=session_id).first()
+            )
             if session:
                 # Access tags to ensure they're loaded
                 _ = session.tags
             return session
 
-    def get_active_sessions(
-        self,
-        limit: int = 50,
-        offset: int = 0
-    ) -> list[Session]:
+    def get_active_sessions(self, limit: int = 50, offset: int = 0) -> list[Session]:
         """Get active sessions ordered by last access."""
         with self.db.get_session() as db:
-            return db.query(Session).filter_by(
-                status=SessionStatus.ACTIVE.value
-            ).order_by(
-                desc(Session.accessed_at)
-            ).limit(limit).offset(offset).all()
+            return (
+                db.query(Session)
+                .filter_by(status=SessionStatus.ACTIVE.value)
+                .order_by(desc(Session.accessed_at))
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
 
     def get_messages(
-        self,
-        session_id: str,
-        limit: int | None = None,
-        offset: int = 0
+        self, session_id: str, limit: int | None = None, offset: int = 0
     ) -> list[Message]:
         """Get messages for a session."""
         with self.db.get_session() as db:
-            query = db.query(Message).filter_by(
-                session_id=session_id
-            ).order_by(Message.sequence)
+            query = db.query(Message).filter_by(session_id=session_id).order_by(Message.sequence)
 
             if limit:
                 query = query.limit(limit).offset(offset)
 
             return query.all()
 
-    def search_sessions(
-        self,
-        query: str,
-        limit: int = 20
-    ) -> list[tuple[Session, list[Message]]]:
+    def search_sessions(self, query: str, limit: int = 20) -> list[tuple[Session, list[Message]]]:
         """Search sessions and messages using full-text search.
 
         Args:
@@ -268,13 +260,18 @@ class SessionManager:
         """
         with self.db.get_session() as db:
             # Search in messages using FTS
-            results = db.execute(text("""
+            results = db.execute(
+                text(
+                    """
                 SELECT DISTINCT session_id, message_id
                 FROM messages_fts
                 WHERE messages_fts MATCH :query
                 ORDER BY rank
                 LIMIT :limit
-            """), {'query': query, 'limit': limit}).fetchall()
+            """
+                ),
+                {"query": query, "limit": limit},
+            ).fetchall()
 
             if not results:
                 return []
@@ -291,9 +288,12 @@ class SessionManager:
             for session_id, message_ids in session_messages.items():
                 session = db.query(Session).filter_by(id=session_id).first()
                 if session and session.status == SessionStatus.ACTIVE.value:
-                    messages = db.query(Message).filter(
-                        Message.id.in_(message_ids)
-                    ).order_by(Message.sequence).all()
+                    messages = (
+                        db.query(Message)
+                        .filter(Message.id.in_(message_ids))
+                        .order_by(Message.sequence)
+                        .all()
+                    )
                     result_list.append((session, messages))
 
             return result_list
@@ -312,10 +312,15 @@ class SessionManager:
 
             if hard_delete:
                 # Delete from FTS index
-                db.execute(text("""
+                db.execute(
+                    text(
+                        """
                     DELETE FROM messages_fts
                     WHERE session_id = :session_id
-                """), {'session_id': session_id})
+                """
+                    ),
+                    {"session_id": session_id},
+                )
 
                 # Delete session (cascades to messages)
                 db.delete(session)
@@ -339,7 +344,7 @@ class SessionManager:
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
-        config: dict[str, Any] | None = None
+        config: dict[str, Any] | None = None,
     ):
         """Update session metadata.
 
@@ -383,7 +388,7 @@ class SessionManager:
         max_messages: int | None = None,
         max_tokens: int | None = None,
         model: str | None = None,
-        mode: str = "balanced"
+        mode: str = "balanced",
     ) -> tuple[list[dict[str, Any]], bool]:
         """Get session messages formatted for LLM context with intelligent windowing.
 
@@ -406,10 +411,7 @@ class SessionManager:
         # Convert to LLM format
         context = []
         for msg in messages:
-            msg_dict = {
-                'role': msg.role,
-                'content': msg.content
-            }
+            msg_dict = {"role": msg.role, "content": msg.content}
             context.append(msg_dict)
 
         # Apply message limit if specified
@@ -420,17 +422,14 @@ class SessionManager:
         if model or max_tokens:
             model_name = model or session.model
             context, was_truncated = self.context_manager.optimize_context(
-                context,
-                model_name,
-                target_tokens=max_tokens,
-                preserve_last_n=10
+                context, model_name, target_tokens=max_tokens, preserve_last_n=10
             )
 
             # Add summary if truncated
             if was_truncated and len(messages) > len(context):
-                truncated_messages = messages[:len(messages) - len(context)]
+                truncated_messages = messages[: len(messages) - len(context)]
                 summary = self.context_manager.create_summary_message(
-                    [{'role': m.role, 'content': m.content} for m in truncated_messages]
+                    [{"role": m.role, "content": m.content} for m in truncated_messages]
                 )
                 context.insert(0, summary)
 
@@ -438,11 +437,7 @@ class SessionManager:
 
         return context, False
 
-    def export_session(
-        self,
-        session_id: str,
-        format: str = 'json'
-    ) -> str:
+    def export_session(self, session_id: str, format: str = "json") -> str:
         """Export a session in various formats.
 
         Args:
@@ -458,13 +453,13 @@ class SessionManager:
 
         messages = self.get_messages(session_id)
 
-        if format == 'json':
+        if format == "json":
             return self._export_json(session, messages)
-        elif format == 'markdown':
+        elif format == "markdown":
             return self._export_markdown(session, messages)
-        elif format == 'txt':
+        elif format == "txt":
             return self._export_txt(session, messages)
-        elif format == 'html':
+        elif format == "html":
             return self._export_html(session, messages)
         else:
             raise ValueError(f"Unsupported export format: {format}")
@@ -472,40 +467,40 @@ class SessionManager:
     def _export_json(self, session: Session, messages: list[Message]) -> str:
         """Export as JSON."""
         data = {
-            'session': {
-                'id': session.id,
-                'name': session.name,
-                'description': session.description,
-                'provider': session.provider,
-                'model': session.model,
-                'mode': session.mode,
-                'created_at': session.created_at.isoformat(),
-                'updated_at': session.updated_at.isoformat(),
-                'message_count': session.message_count,
-                'total_tokens': session.total_tokens,
-                'total_cost': session.total_cost,
-                'config': session.config
+            "session": {
+                "id": session.id,
+                "name": session.name,
+                "description": session.description,
+                "provider": session.provider,
+                "model": session.model,
+                "mode": session.mode,
+                "created_at": session.created_at.isoformat(),
+                "updated_at": session.updated_at.isoformat(),
+                "message_count": session.message_count,
+                "total_tokens": session.total_tokens,
+                "total_cost": session.total_cost,
+                "config": session.config,
             },
-            'messages': [
+            "messages": [
                 {
-                    'sequence': msg.sequence,
-                    'role': msg.role,
-                    'content': msg.content,
-                    'created_at': msg.created_at.isoformat(),
-                    'model': msg.model,
-                    'provider': msg.provider,
-                    'tokens': {
-                        'prompt': msg.prompt_tokens,
-                        'completion': msg.completion_tokens,
-                        'total': msg.total_tokens
+                    "sequence": msg.sequence,
+                    "role": msg.role,
+                    "content": msg.content,
+                    "created_at": msg.created_at.isoformat(),
+                    "model": msg.model,
+                    "provider": msg.provider,
+                    "tokens": {
+                        "prompt": msg.prompt_tokens,
+                        "completion": msg.completion_tokens,
+                        "total": msg.total_tokens,
                     },
-                    'cost': msg.cost,
-                    'metadata': msg.message_metadata,
-                    'tool_calls': msg.tool_calls,
-                    'attachments': msg.attachments
+                    "cost": msg.cost,
+                    "metadata": msg.message_metadata,
+                    "tool_calls": msg.tool_calls,
+                    "attachments": msg.attachments,
                 }
                 for msg in messages
-            ]
+            ],
         }
         return json.dumps(data, indent=2)
 
@@ -520,7 +515,7 @@ class SessionManager:
             f"**Created:** {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}  ",
             f"**Messages:** {session.message_count}  ",
             f"**Total Tokens:** {session.total_tokens}  ",
-            ""
+            "",
         ]
 
         if session.description:
@@ -530,12 +525,9 @@ class SessionManager:
         lines.append("")
 
         for msg in messages:
-            role_emoji = {
-                'user': '👤',
-                'assistant': '🤖',
-                'system': '⚙️',
-                'tool': '🔧'
-            }.get(msg.role, '❓')
+            role_emoji = {"user": "👤", "assistant": "🤖", "system": "⚙️", "tool": "🔧"}.get(
+                msg.role, "❓"
+            )
 
             lines.append(f"### {role_emoji} {msg.role.title()}")
             lines.append(f"*{msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}*")
@@ -561,7 +553,7 @@ class SessionManager:
             f"Created: {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
             f"Messages: {session.message_count}",
             "=" * 80,
-            ""
+            "",
         ]
 
         for msg in messages:
@@ -607,9 +599,9 @@ class SessionManager:
             if msg.metadata or msg.tool_calls:
                 html += '<div class="metadata">'
                 if msg.tool_calls:
-                    html += f'<pre>{json.dumps(msg.tool_calls, indent=2)}</pre>'
-                html += '</div>'
-            html += '    </div>\n'
+                    html += f"<pre>{json.dumps(msg.tool_calls, indent=2)}</pre>"
+                html += "</div>"
+            html += "    </div>\n"
 
         html += """
 </body>

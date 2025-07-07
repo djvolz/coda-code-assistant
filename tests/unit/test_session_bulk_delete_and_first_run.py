@@ -18,7 +18,7 @@ class TestBulkDelete:
     @pytest.fixture
     def temp_db_path(self):
         """Create temporary database path."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
         yield db_path
         if db_path.exists():
@@ -46,23 +46,19 @@ class TestBulkDelete:
         """Test delete-all auto-only when no auto sessions exist."""
         # Create a non-auto session
         session_commands.manager.create_session(
-            name="Manual Session",
-            provider="mock",
-            model="mock-echo"
+            name="Manual Session", provider="mock", model="mock-echo"
         )
 
         result = session_commands._delete_all_sessions(["--auto-only"])
         assert result == "No auto-saved sessions found to delete."
 
-    @patch('coda.session.commands.Confirm.ask')
+    @patch("coda.session.commands.Confirm.ask")
     def test_delete_all_cancelled(self, mock_confirm, session_commands):
         """Test delete-all cancelled by user."""
         # Create sessions
         for i in range(3):
             session_commands.manager.create_session(
-                name=f"Session {i}",
-                provider="mock",
-                model="mock-echo"
+                name=f"Session {i}", provider="mock", model="mock-echo"
             )
 
         # User cancels
@@ -75,15 +71,13 @@ class TestBulkDelete:
         sessions = session_commands.manager.get_active_sessions(limit=10)
         assert len(sessions) == 3
 
-    @patch('coda.session.commands.Confirm.ask')
+    @patch("coda.session.commands.Confirm.ask")
     def test_delete_all_success(self, mock_confirm, session_commands):
         """Test successful delete-all."""
         # Create sessions
         for i in range(3):
             session_commands.manager.create_session(
-                name=f"Session {i}",
-                provider="mock",
-                model="mock-echo"
+                name=f"Session {i}", provider="mock", model="mock-echo"
             )
 
         # User confirms
@@ -96,24 +90,18 @@ class TestBulkDelete:
         sessions = session_commands.manager.get_active_sessions(limit=10)
         assert len(sessions) == 0
 
-    @patch('coda.session.commands.Confirm.ask')
+    @patch("coda.session.commands.Confirm.ask")
     def test_delete_all_auto_only(self, mock_confirm, session_commands):
         """Test delete-all with auto-only flag."""
         # Create mixed sessions
         session_commands.manager.create_session(
-            name="auto-20250105_120000",
-            provider="mock",
-            model="mock-echo"
+            name="auto-20250105_120000", provider="mock", model="mock-echo"
         )
         session_commands.manager.create_session(
-            name="auto-20250105_130000",
-            provider="mock",
-            model="mock-echo"
+            name="auto-20250105_130000", provider="mock", model="mock-echo"
         )
         session_commands.manager.create_session(
-            name="Manual Session",
-            provider="mock",
-            model="mock-echo"
+            name="Manual Session", provider="mock", model="mock-echo"
         )
 
         # User confirms
@@ -127,14 +115,12 @@ class TestBulkDelete:
         assert len(sessions) == 1
         assert sessions[0].name == "Manual Session"
 
-    @patch('coda.session.commands.Confirm.ask')
+    @patch("coda.session.commands.Confirm.ask")
     def test_delete_all_clears_current_session(self, mock_confirm, session_commands):
         """Test that delete-all clears current session if it's being deleted."""
         # Create and set current session
         session = session_commands.manager.create_session(
-            name="Current Session",
-            provider="mock",
-            model="mock-echo"
+            name="Current Session", provider="mock", model="mock-echo"
         )
         session_commands.current_session_id = session.id
         session_commands.current_messages = [{"role": "user", "content": "test"}]
@@ -159,7 +145,7 @@ class TestFirstRunNotification:
         """Create temporary home directory."""
         home = tmp_path / "home"
         home.mkdir()
-        with patch.dict(os.environ, {'HOME': str(home)}):
+        with patch.dict(os.environ, {"HOME": str(home)}):
             yield home
 
     @pytest.mark.asyncio
@@ -176,7 +162,7 @@ class TestFirstRunNotification:
 
         # Verify notification was printed
         console.file.write.assert_called()
-        output = ''.join(call[0][0] for call in console.file.write.call_args_list)
+        output = "".join(call[0][0] for call in console.file.write.call_args_list)
         assert "Welcome to Coda!" in output
         assert "Auto-Save is ENABLED" in output
         assert "💾" in output
@@ -193,7 +179,7 @@ class TestFirstRunNotification:
         await _check_first_run(console, auto_save_enabled=False)
 
         # Verify correct notification
-        output = ''.join(call[0][0] for call in console.file.write.call_args_list)
+        output = "".join(call[0][0] for call in console.file.write.call_args_list)
         assert "Welcome to Coda!" in output
         assert "Auto-Save is DISABLED" in output
         assert "🔒" in output
@@ -221,7 +207,7 @@ class TestDatabaseIndexes:
     @pytest.fixture
     def temp_db_path(self):
         """Create temporary database path."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
         yield db_path
         if db_path.exists():
@@ -237,16 +223,19 @@ class TestDatabaseIndexes:
 
         # Query for indexes
         from sqlalchemy import text
-        result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='index' AND sql NOT NULL"))
+
+        result = conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='index' AND sql NOT NULL")
+        )
         index_names = [row[0] for row in result]
 
         # Verify new indexes exist
         expected_indexes = [
-            'idx_session_created',
-            'idx_session_accessed',
-            'idx_session_name',
-            'idx_session_parent',
-            'idx_session_tags_tag'
+            "idx_session_created",
+            "idx_session_accessed",
+            "idx_session_name",
+            "idx_session_parent",
+            "idx_session_tags_tag",
         ]
 
         for expected in expected_indexes:

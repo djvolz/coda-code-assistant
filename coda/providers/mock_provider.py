@@ -29,8 +29,8 @@ class MockProvider(BaseProvider):
                 metadata={
                     "capabilities": ["CHAT"],
                     "context_window": 4096,
-                    "description": "Echoes back with conversation awareness"
-                }
+                    "description": "Echoes back with conversation awareness",
+                },
             ),
             Model(
                 id="mock-smart",
@@ -39,17 +39,12 @@ class MockProvider(BaseProvider):
                 metadata={
                     "capabilities": ["CHAT"],
                     "context_window": 8192,
-                    "description": "Provides contextual responses"
-                }
-            )
+                    "description": "Provides contextual responses",
+                },
+            ),
         ]
 
-    def chat(
-        self,
-        messages: list[Message],
-        model: str,
-        **kwargs
-    ) -> str:
+    def chat(self, messages: list[Message], model: str, **kwargs) -> str:
         """Generate a mock response based on the conversation."""
         # Store conversation for context
         self.conversation_history = messages
@@ -66,7 +61,9 @@ class MockProvider(BaseProvider):
         if "what were we discussing" in last_message or "talking about" in last_message:
             # Only look for topics in PREVIOUS messages (not the current one asking about discussion)
             topics = []
-            previous_messages = messages[:-1]  # Exclude the current "what were we discussing" message
+            previous_messages = messages[
+                :-1
+            ]  # Exclude the current "what were we discussing" message
 
             if not previous_messages:
                 return "I don't see any previous conversation to reference."
@@ -92,7 +89,9 @@ class MockProvider(BaseProvider):
                 return "Python is a high-level programming language known for its simplicity and readability."
 
         elif "javascript" in last_message:
-            return "JavaScript is a dynamic programming language primarily used for web development."
+            return (
+                "JavaScript is a dynamic programming language primarily used for web development."
+            )
 
         elif "decorator" in last_message and len(messages) == 1:
             # If this is the only message, provide general info
@@ -116,20 +115,19 @@ class MockProvider(BaseProvider):
             response_parts = [f"You said: '{user_messages[-1].content}'"]
 
             if len(messages) > 1:
-                response_parts.append(f"This is message #{len([m for m in messages if m.role == Role.USER])} in our conversation.")
+                response_parts.append(
+                    f"This is message #{len([m for m in messages if m.role == Role.USER])} in our conversation."
+                )
 
             # Add context about previous messages
             if len(user_messages) > 1:
-                response_parts.append(f"Earlier you asked about: '{user_messages[-2].content[:50]}...'")
+                response_parts.append(
+                    f"Earlier you asked about: '{user_messages[-2].content[:50]}...'"
+                )
 
             return " ".join(response_parts)
 
-    def chat_stream(
-        self,
-        messages: list[Message],
-        model: str,
-        **kwargs
-    ) -> Iterator[Message]:
+    def chat_stream(self, messages: list[Message], model: str, **kwargs) -> Iterator[Message]:
         """Stream a mock response word by word."""
         response = self.chat(messages, model, **kwargs)
 
@@ -139,10 +137,7 @@ class MockProvider(BaseProvider):
             # Add space except for first word
             content = word if i == 0 else f" {word}"
 
-            yield Message(
-                role=Role.ASSISTANT,
-                content=content
-            )
+            yield Message(role=Role.ASSISTANT, content=content)
 
             # Small delay to simulate real streaming
             time.sleep(0.01)
@@ -158,25 +153,17 @@ class MockProvider(BaseProvider):
                 "provider": model.provider,
                 "capabilities": model.metadata.get("capabilities", []),
                 "context_window": model.metadata.get("context_window", 4096),
-                "description": model.metadata.get("description", "")
+                "description": model.metadata.get("description", ""),
             }
 
         raise ValueError(f"Model {model_id} not found")
 
-    async def achat(
-        self,
-        messages: list[Message],
-        model: str,
-        **kwargs
-    ) -> str:
+    async def achat(self, messages: list[Message], model: str, **kwargs) -> str:
         """Async version of chat (delegates to sync)."""
         return self.chat(messages, model, **kwargs)
 
     async def achat_stream(
-        self,
-        messages: list[Message],
-        model: str,
-        **kwargs
+        self, messages: list[Message], model: str, **kwargs
     ) -> Iterator[Message]:
         """Async version of chat_stream (delegates to sync)."""
         for chunk in self.chat_stream(messages, model, **kwargs):

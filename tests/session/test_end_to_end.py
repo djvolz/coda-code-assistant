@@ -15,7 +15,7 @@ class TestSessionEndToEnd:
     @pytest.fixture
     def temp_db_path(self):
         """Create temporary database path."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
         yield db_path
         if db_path.exists():
@@ -67,10 +67,10 @@ class TestSessionEndToEnd:
             print("  AI knows about: Python, decorators")
 
             # Track in session commands
-            commands.add_message('user', user_msg1.content, {'provider': 'mock'})
-            commands.add_message('assistant', ai_response1, {'provider': 'mock'})
-            commands.add_message('user', user_msg2.content, {'provider': 'mock'})
-            commands.add_message('assistant', ai_response2, {'provider': 'mock'})
+            commands.add_message("user", user_msg1.content, {"provider": "mock"})
+            commands.add_message("assistant", ai_response1, {"provider": "mock"})
+            commands.add_message("user", user_msg2.content, {"provider": "mock"})
+            commands.add_message("assistant", ai_response2, {"provider": "mock"})
 
             # === STEP 2: Save session ===
             print("\n💾 STEP 2: Saving session to database")
@@ -79,18 +79,18 @@ class TestSessionEndToEnd:
                 name="Python Tutorial",
                 provider="mock",
                 model="mock-echo",
-                description="Testing conversation continuity"
+                description="Testing conversation continuity",
             )
 
             # Save all messages to database
             for msg_data in commands.current_messages:
                 manager.add_message(
                     session_id=session.id,
-                    role=msg_data['role'],
-                    content=msg_data['content'],
-                    metadata=msg_data.get('metadata', {}),
-                    provider=msg_data['metadata'].get('provider'),
-                    model=msg_data['metadata'].get('model')
+                    role=msg_data["role"],
+                    content=msg_data["content"],
+                    metadata=msg_data.get("metadata", {}),
+                    provider=msg_data["metadata"].get("provider"),
+                    model=msg_data["metadata"].get("model"),
                 )
 
             commands.current_session_id = session.id
@@ -107,7 +107,7 @@ class TestSessionEndToEnd:
             test_msg = Message(role=Role.USER, content="What were we discussing about decorators?")
             no_memory_response = provider.chat([test_msg], "mock-echo")
 
-            has_memory = any(word in no_memory_response.lower() for word in ['python', 'decorator'])
+            has_memory = any(word in no_memory_response.lower() for word in ["python", "decorator"])
             assert not has_memory, f"AI should have no memory after clear: {no_memory_response}"
 
             print(f"  ✓ AI has no memory: '{no_memory_response[:50]}...'")
@@ -122,11 +122,13 @@ class TestSessionEndToEnd:
             # Convert to CLI format and restore
             commands.current_messages = []
             for msg in messages_from_db:
-                commands.current_messages.append({
-                    'role': msg.role,
-                    'content': msg.content,
-                    'metadata': {'provider': msg.provider, 'model': msg.model}
-                })
+                commands.current_messages.append(
+                    {
+                        "role": msg.role,
+                        "content": msg.content,
+                        "metadata": {"provider": msg.provider, "model": msg.model},
+                    }
+                )
 
             commands.current_session_id = session.id
             commands._messages_loaded = True
@@ -142,13 +144,17 @@ class TestSessionEndToEnd:
             print("\n🧠 STEP 5: Testing AI memory restoration")
 
             # Ask about previous conversation
-            memory_test = Message(role=Role.USER, content="What were we discussing about decorators?")
+            memory_test = Message(
+                role=Role.USER, content="What were we discussing about decorators?"
+            )
             cli_messages.append(memory_test)
 
             # AI should now remember the context
             memory_response = provider.chat(cli_messages, "mock-echo")
 
-            has_context = any(word in memory_response.lower() for word in ['python', 'decorator', 'function'])
+            has_context = any(
+                word in memory_response.lower() for word in ["python", "decorator", "function"]
+            )
             assert has_context, f"AI should remember context after load: {memory_response}"
 
             print(f"  ✓ AI remembers context: '{memory_response[:50]}...'")
@@ -167,7 +173,9 @@ class TestSessionEndToEnd:
             followup_response = provider.chat(cli_messages, "mock-echo")
 
             # Should continue conversation about decorators
-            continues_topic = any(word in followup_response.lower() for word in ['decorator', 'python', '@'])
+            continues_topic = any(
+                word in followup_response.lower() for word in ["decorator", "python", "@"]
+            )
             assert continues_topic, f"Should continue decorator topic: {followup_response}"
 
             print(f"  ✓ Conversation continues: '{followup_response[:50]}...'")
@@ -180,14 +188,16 @@ class TestSessionEndToEnd:
             assert len(saved_messages) == 4, "Should have 4 saved messages"
 
             # Check export functionality
-            json_export = manager.export_session(session.id, 'json')
+            json_export = manager.export_session(session.id, "json")
             assert "Python" in json_export and "decorator" in json_export
 
             # Check search functionality
             search_results = manager.search_sessions("decorator")
             assert len(search_results) >= 1, "Should find at least one session in search"
             # Verify our named session is in the results
-            named_session_found = any(session.name == "Python Tutorial" for session, _ in search_results)
+            named_session_found = any(
+                session.name == "Python Tutorial" for session, _ in search_results
+            )
             assert named_session_found, "Should find our named session in search results"
 
             print("  ✓ Session integrity verified")
@@ -217,7 +227,9 @@ class TestSessionEndToEnd:
 
             # Add conversation
             manager.add_message(session.id, "user", "What is Python?")
-            msg1_response = manager.add_message(session.id, "assistant", "Python is a programming language")
+            msg1_response = manager.add_message(
+                session.id, "assistant", "Python is a programming language"
+            )
             manager.add_message(session.id, "user", "What about JavaScript?")
             manager.add_message(session.id, "assistant", "JavaScript is for web development")
 
@@ -227,7 +239,7 @@ class TestSessionEndToEnd:
                 "mock",
                 "mock-echo",
                 parent_id=session.id,
-                branch_point_message_id=msg1_response.id
+                branch_point_message_id=msg1_response.id,
             )
 
             # Get branch context
@@ -235,7 +247,7 @@ class TestSessionEndToEnd:
             assert len(context) == 2  # Up to branch point
 
             # Test AI context in branch
-            messages = [Message(role=Role(msg['role']), content=msg['content']) for msg in context]
+            messages = [Message(role=Role(msg["role"]), content=msg["content"]) for msg in context]
             messages.append(Message(role=Role.USER, content="Tell me more about Python decorators"))
 
             response = provider.chat(messages, "mock-echo")
@@ -262,11 +274,11 @@ class TestSessionEndToEnd:
             Message(role=Role.ASSISTANT, content="Python is a language"),
             Message(role=Role.USER, content="What about decorators?"),
             Message(role=Role.ASSISTANT, content="Decorators modify functions"),
-            Message(role=Role.USER, content="What were we discussing?")
+            Message(role=Role.USER, content="What were we discussing?"),
         ]
 
         memory_response = provider.chat(conversation, "mock-echo")
-        assert any(word in memory_response.lower() for word in ['python', 'decorator'])
+        assert any(word in memory_response.lower() for word in ["python", "decorator"])
 
         # Test context building
         assert provider.conversation_history == conversation

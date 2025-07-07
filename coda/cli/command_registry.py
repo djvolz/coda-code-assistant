@@ -7,6 +7,7 @@ from typing import Optional
 
 class CommandType(Enum):
     """Type of command or subcommand."""
+
     MAIN = "main"
     SUBCOMMAND = "subcommand"
     OPTION = "option"
@@ -15,10 +16,11 @@ class CommandType(Enum):
 @dataclass
 class CommandDefinition:
     """Definition of a command or subcommand."""
+
     name: str
     description: str
     aliases: list[str] = field(default_factory=list)
-    subcommands: list['CommandDefinition'] = field(default_factory=list)
+    subcommands: list["CommandDefinition"] = field(default_factory=list)
     examples: list[str] = field(default_factory=list)
     type: CommandType = CommandType.MAIN
 
@@ -26,7 +28,7 @@ class CommandDefinition:
         """Get all names including aliases."""
         return [self.name] + self.aliases
 
-    def get_subcommand(self, name: str) -> Optional['CommandDefinition']:
+    def get_subcommand(self, name: str) -> Optional["CommandDefinition"]:
         """Get subcommand by name or alias."""
         for sub in self.subcommands:
             if name in sub.get_all_names():
@@ -41,29 +43,20 @@ class CommandDefinition:
 def _get_theme_options():
     """Get theme options dynamically from available themes."""
     from coda.themes import THEMES
+
     return [
-        CommandDefinition(
-            name=theme_name,
-            description=theme.description,
-            type=CommandType.OPTION
-        )
+        CommandDefinition(name=theme_name, description=theme.description, type=CommandType.OPTION)
         for theme_name, theme in THEMES.items()
     ] + [
         # Add subcommands
         CommandDefinition(
-            name="list",
-            description="List all available themes",
-            type=CommandType.SUBCOMMAND
+            name="list", description="List all available themes", type=CommandType.SUBCOMMAND
         ),
         CommandDefinition(
-            name="current",
-            description="Show current theme",
-            type=CommandType.SUBCOMMAND
+            name="current", description="Show current theme", type=CommandType.SUBCOMMAND
         ),
         CommandDefinition(
-            name="reset",
-            description="Reset to default theme",
-            type=CommandType.SUBCOMMAND
+            name="reset", description="Reset to default theme", type=CommandType.SUBCOMMAND
         ),
     ]
 
@@ -78,67 +71,67 @@ class CommandRegistry:
             description="Save current conversation",
             aliases=["s"],
             type=CommandType.SUBCOMMAND,
-            examples=["/session save", "/session save my_session"]
+            examples=["/session save", "/session save my_session"],
         ),
         CommandDefinition(
             name="load",
             description="Load a saved conversation",
             aliases=["l"],
             type=CommandType.SUBCOMMAND,
-            examples=["/session load my_session", "/session load abc123"]
+            examples=["/session load my_session", "/session load abc123"],
         ),
         CommandDefinition(
             name="last",
             description="Load the most recent session",
             type=CommandType.SUBCOMMAND,
-            examples=["/session last"]
+            examples=["/session last"],
         ),
         CommandDefinition(
             name="list",
             description="List all saved sessions",
             aliases=["ls"],
             type=CommandType.SUBCOMMAND,
-            examples=["/session list"]
+            examples=["/session list"],
         ),
         CommandDefinition(
             name="branch",
             description="Create a branch from current conversation",
             aliases=["b"],
             type=CommandType.SUBCOMMAND,
-            examples=["/session branch", "/session branch new_branch"]
+            examples=["/session branch", "/session branch new_branch"],
         ),
         CommandDefinition(
             name="delete",
             description="Delete a saved session",
             aliases=["d", "rm"],
             type=CommandType.SUBCOMMAND,
-            examples=["/session delete my_session", "/session delete abc123"]
+            examples=["/session delete my_session", "/session delete abc123"],
         ),
         CommandDefinition(
             name="delete-all",
             description="Delete all sessions (use --auto-only for just auto-saved)",
             type=CommandType.SUBCOMMAND,
-            examples=["/session delete-all", "/session delete-all --auto-only"]
+            examples=["/session delete-all", "/session delete-all --auto-only"],
         ),
         CommandDefinition(
             name="rename",
             description="Rename a session",
             aliases=["r"],
             type=CommandType.SUBCOMMAND,
-            examples=["/session rename new_name", "/session rename abc123 new_name"]
+            examples=["/session rename new_name", "/session rename abc123 new_name"],
         ),
         CommandDefinition(
             name="info",
             description="Show session details",
             aliases=["i"],
             type=CommandType.SUBCOMMAND,
-            examples=["/session info", "/session info abc123"]
+            examples=["/session info", "/session info abc123"],
         ),
         CommandDefinition(
             name="search",
             description="Search sessions",
             type=CommandType.SUBCOMMAND,
-            examples=["/session search python", "/session search 'error handling'"]
+            examples=["/session search python", "/session search 'error handling'"],
         ),
     ]
 
@@ -148,67 +141,45 @@ class CommandRegistry:
             name="json",
             description="Export as JSON",
             type=CommandType.SUBCOMMAND,
-            examples=["/export json", "/export json my_session"]
+            examples=["/export json", "/export json my_session"],
         ),
         CommandDefinition(
             name="markdown",
             description="Export as Markdown",
             aliases=["md"],
             type=CommandType.SUBCOMMAND,
-            examples=["/export markdown", "/export md my_session"]
+            examples=["/export markdown", "/export md my_session"],
         ),
         CommandDefinition(
             name="txt",
             description="Export as plain text",
             aliases=["text"],
             type=CommandType.SUBCOMMAND,
-            examples=["/export txt", "/export text my_session"]
+            examples=["/export txt", "/export text my_session"],
         ),
         CommandDefinition(
             name="html",
             description="Export as HTML",
             type=CommandType.SUBCOMMAND,
-            examples=["/export html", "/export html my_session"]
+            examples=["/export html", "/export html my_session"],
         ),
     ]
 
     # Mode options
     MODE_OPTIONS = [
         CommandDefinition(
-            name="general",
-            description="General conversational mode",
-            type=CommandType.OPTION
+            name="general", description="General conversational mode", type=CommandType.OPTION
         ),
+        CommandDefinition(name="code", description="Code writing mode", type=CommandType.OPTION),
+        CommandDefinition(name="debug", description="Debugging mode", type=CommandType.OPTION),
         CommandDefinition(
-            name="code",
-            description="Code writing mode",
-            type=CommandType.OPTION
+            name="explain", description="Code explanation mode", type=CommandType.OPTION
         ),
+        CommandDefinition(name="review", description="Code review mode", type=CommandType.OPTION),
         CommandDefinition(
-            name="debug",
-            description="Debugging mode",
-            type=CommandType.OPTION
+            name="refactor", description="Code refactoring mode", type=CommandType.OPTION
         ),
-        CommandDefinition(
-            name="explain",
-            description="Code explanation mode",
-            type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="review",
-            description="Code review mode",
-            type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="refactor",
-            description="Code refactoring mode",
-            type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="plan",
-            description="Planning mode",
-            type=CommandType.OPTION
-        ),
+        CommandDefinition(name="plan", description="Planning mode", type=CommandType.OPTION),
     ]
 
     # Provider options
@@ -216,51 +187,35 @@ class CommandRegistry:
         CommandDefinition(
             name="oci_genai",
             description="Oracle Cloud Infrastructure GenAI",
-            type=CommandType.OPTION
+            type=CommandType.OPTION,
         ),
         CommandDefinition(
-            name="ollama",
-            description="Local models via Ollama",
-            type=CommandType.OPTION
+            name="ollama", description="Local models via Ollama", type=CommandType.OPTION
         ),
         CommandDefinition(
-            name="openai",
-            description="OpenAI GPT models (coming soon)",
-            type=CommandType.OPTION
+            name="openai", description="OpenAI GPT models (coming soon)", type=CommandType.OPTION
         ),
         CommandDefinition(
-            name="litellm",
-            description="100+ providers via LiteLLM",
-            type=CommandType.OPTION
+            name="litellm", description="100+ providers via LiteLLM", type=CommandType.OPTION
         ),
     ]
 
     # Tools subcommands
     TOOLS_SUBCOMMANDS = [
         CommandDefinition(
-            name="list",
-            description="List available MCP tools",
-            type=CommandType.SUBCOMMAND
+            name="list", description="List available MCP tools", type=CommandType.SUBCOMMAND
         ),
         CommandDefinition(
-            name="enable",
-            description="Enable specific tools",
-            type=CommandType.SUBCOMMAND
+            name="enable", description="Enable specific tools", type=CommandType.SUBCOMMAND
         ),
         CommandDefinition(
-            name="disable",
-            description="Disable specific tools",
-            type=CommandType.SUBCOMMAND
+            name="disable", description="Disable specific tools", type=CommandType.SUBCOMMAND
         ),
         CommandDefinition(
-            name="config",
-            description="Configure tool settings",
-            type=CommandType.SUBCOMMAND
+            name="config", description="Configure tool settings", type=CommandType.SUBCOMMAND
         ),
         CommandDefinition(
-            name="status",
-            description="Show tool status",
-            type=CommandType.SUBCOMMAND
+            name="status", description="Show tool status", type=CommandType.SUBCOMMAND
         ),
     ]
 
@@ -270,65 +225,65 @@ class CommandRegistry:
             name="help",
             description="Show available commands",
             aliases=["h", "?"],
-            examples=["/help", "/?"]
+            examples=["/help", "/?"],
         ),
         CommandDefinition(
             name="exit",
             description="Exit the application",
             aliases=["quit", "q"],
-            examples=["/exit", "/quit", "/q"]
+            examples=["/exit", "/quit", "/q"],
         ),
         CommandDefinition(
             name="clear",
             description="Clear conversation history",
             aliases=["cls"],
-            examples=["/clear", "/cls"]
+            examples=["/clear", "/cls"],
         ),
         CommandDefinition(
             name="model",
             description="Select a different model",
             aliases=["m"],
-            examples=["/model", "/model gpt-4"]
+            examples=["/model", "/model gpt-4"],
         ),
         CommandDefinition(
             name="provider",
             description="Switch provider",
             aliases=["p"],
             subcommands=PROVIDER_OPTIONS,
-            examples=["/provider", "/provider ollama"]
+            examples=["/provider", "/provider ollama"],
         ),
         CommandDefinition(
             name="mode",
             description="Change developer mode",
             subcommands=MODE_OPTIONS,
-            examples=["/mode", "/mode code", "/mode debug"]
+            examples=["/mode", "/mode code", "/mode debug"],
         ),
         CommandDefinition(
             name="session",
             description="Manage sessions",
             aliases=["s"],
             subcommands=SESSION_SUBCOMMANDS,
-            examples=["/session save", "/session list", "/s last"]
+            examples=["/session save", "/session list", "/s last"],
         ),
         CommandDefinition(
             name="export",
             description="Export conversation",
             aliases=["e"],
             subcommands=EXPORT_SUBCOMMANDS,
-            examples=["/export json", "/export markdown", "/e html"]
+            examples=["/export json", "/export markdown", "/e html"],
         ),
         CommandDefinition(
             name="theme",
             description="Change UI theme",
             subcommands=_get_theme_options(),
-            examples=["/theme", "/theme dark"]
+            examples=["/theme", "/theme dark"],
         ),
         CommandDefinition(
             name="tools",
             description="Manage MCP tools",
             aliases=["t"],
             subcommands=TOOLS_SUBCOMMANDS,
-            examples=["/tools", "/tools list"]
+            examples=["/tools", "/tools list"],
         ),
     ]
 

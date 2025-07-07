@@ -1,7 +1,6 @@
 import sys
 
 import click
-from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
@@ -13,21 +12,17 @@ except ImportError:
 
 from coda.configuration import get_config
 from coda.constants import (
-    CONSOLE_STYLE_BOLD,
-    CONSOLE_STYLE_DIM,
-    CONSOLE_STYLE_INFO,
-    CONSOLE_STYLE_SUCCESS,
-    CONSOLE_STYLE_WARNING,
     PANEL_BORDER_STYLE,
 )
 
+# Create themed console that respects user's theme configuration
+from ..themes import get_console_theme, get_themed_console
 from .chat_session import ChatSession
 from .error_handler import CLIErrorHandler
 from .provider_manager import ProviderManager
 
-# Create themed console that respects user's theme configuration
-from ..themes import get_themed_console
 console = get_themed_console()
+theme = get_console_theme()
 
 
 @click.command()
@@ -45,7 +40,16 @@ console = get_themed_console()
 @click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.option("--resume", is_flag=True, help="Resume the most recent session")
 @click.version_option(version=__version__, prog_name="coda")
-def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mode: str, no_save: bool, resume: bool):
+def main(
+    provider: str,
+    model: str,
+    debug: bool,
+    one_shot: str,
+    basic: bool,
+    mode: str,
+    no_save: bool,
+    resume: bool,
+):
     """Coda - A multi-provider code assistant"""
 
     # Load configuration
@@ -79,7 +83,9 @@ def main(provider: str, model: str, debug: bool, one_shot: str, basic: bool, mod
             return
         except ImportError:
             # Fall back to basic mode if prompt-toolkit is not available
-            console.print(f"{CONSOLE_STYLE_WARNING}Note: Interactive mode not available, using basic mode[/]")
+            console.print(
+                f"[{theme.warning}]Note: Interactive mode not available, using basic mode[/{theme.warning}]"
+            )
 
     # Basic mode
     run_basic_mode(provider, model, config, one_shot, mode, error_handler)
@@ -104,7 +110,7 @@ def run_basic_mode(
 
         # Select model
         selected_model = provider_manager.select_model(unique_models, model, bool(one_shot))
-        console.print(f"{CONSOLE_STYLE_SUCCESS}Model:[/] {selected_model}")
+        console.print(f"[{theme.success}]Model:[/{theme.success}] {selected_model}")
 
         # Create chat session
         session = ChatSession(
@@ -141,9 +147,9 @@ def show_welcome_banner(one_shot: str):
         mode_text = "Basic mode (TTY not detected)"
 
     welcome_text = Text.from_markup(
-        f"{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}Coda[/] - Code Assistant\n"
-        f"{CONSOLE_STYLE_DIM}Multi-provider AI coding companion v{__version__}[/]\n"
-        f"{CONSOLE_STYLE_DIM}{mode_text}[/]"
+        f"[{theme.info}][{theme.bold}]Coda[/{theme.bold}][/{theme.info}] - Code Assistant\n"
+        f"[{theme.dim}]Multi-provider AI coding companion v{__version__}[/{theme.dim}]\n"
+        f"[{theme.dim}]{mode_text}[/{theme.dim}]"
     )
 
     console.print(Panel(welcome_text, title="Welcome", border_style=PANEL_BORDER_STYLE))
@@ -151,4 +157,3 @@ def show_welcome_banner(one_shot: str):
 
 if __name__ == "__main__":
     main()
-

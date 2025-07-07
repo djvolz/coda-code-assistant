@@ -6,10 +6,10 @@ import traceback
 from rich.console import Console
 
 from coda.constants import (
-    CONSOLE_STYLE_ERROR,
     ERROR_COMPARTMENT_ID_MISSING,
     HELP_COMPARTMENT_ID,
 )
+from coda.themes import get_console_theme
 
 
 class CLIErrorHandler:
@@ -18,27 +18,32 @@ class CLIErrorHandler:
     def __init__(self, console: Console, debug: bool = False):
         self.console = console
         self.debug = debug
+        self.theme = get_console_theme()
 
     def handle_provider_error(self, error: Exception, provider_name: str, factory=None):
         """Handle provider-specific errors with helpful messages."""
         error_str = str(error)
 
         if "compartment_id is required" in error_str:
-            self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {ERROR_COMPARTMENT_ID_MISSING}")
+            self.console.print(
+                f"\n[{self.theme.error}]Error:[/{self.theme.error}] {ERROR_COMPARTMENT_ID_MISSING}"
+            )
             self.console.print("\nPlease set it via one of these methods:")
             self.console.print(HELP_COMPARTMENT_ID)
         elif "Unknown provider" in error_str and factory:
-            self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] Provider '{provider_name}' not found")
+            self.console.print(
+                f"\n[{self.theme.error}]Error:[/{self.theme.error}] Provider '{provider_name}' not found"
+            )
             self.console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
         else:
-            self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {error}")
+            self.console.print(f"\n[{self.theme.error}]Error:[/{self.theme.error}] {error}")
 
         self._show_debug_info(error)
         sys.exit(1)
 
     def handle_general_error(self, error: Exception):
         """Handle general errors."""
-        self.console.print(f"\n{CONSOLE_STYLE_ERROR}Error:[/] {error}")
+        self.console.print(f"\n[{self.theme.error}]Error:[/{self.theme.error}] {error}")
         self._show_debug_info(error)
         sys.exit(1)
 
@@ -57,4 +62,3 @@ class CLIErrorHandler:
         except Exception as e:
             self.handle_general_error(e)
             return None
-

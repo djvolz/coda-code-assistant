@@ -8,11 +8,10 @@ from prompt_toolkit.widgets import TextArea
 from rich.console import Console
 
 from ..constants import (
-    CONSOLE_STYLE_ERROR,
     MAX_MODELS_BASIC_DISPLAY,
     MAX_MODELS_DISPLAY,
 )
-from ..themes import get_prompt_style
+from ..themes import get_console_theme, get_prompt_style
 
 
 class ModelSelector:
@@ -24,12 +23,14 @@ class ModelSelector:
             self.console = console
         else:
             from ..themes import get_themed_console
+
             self.console = get_themed_console()
         self.filtered_models = models
         self.selected_index = 0
         self.search_text = ""
         # Use theme-based style
         self.style = get_prompt_style()
+        self.theme = get_console_theme()
 
     def create_model_list_text(self) -> HTML:
         """Create formatted text for model list."""
@@ -47,7 +48,9 @@ class ModelSelector:
                 lines.append(f"  {model.id} <provider>({model.provider})</provider>")
 
         if len(self.filtered_models) > MAX_MODELS_DISPLAY:
-            lines.append(f"\n<info>... and {len(self.filtered_models) - MAX_MODELS_DISPLAY} more</info>")
+            lines.append(
+                f"\n<info>... and {len(self.filtered_models) - MAX_MODELS_DISPLAY} more</info>"
+            )
 
         # Add help text
         lines.append("\n<info>↑/↓: Navigate  Enter: Select  /: Search  Esc: Cancel</info>")
@@ -167,8 +170,12 @@ class ModelSelector:
                 if 0 <= index < len(self.models):
                     return self.models[index].id
                 else:
-                    self.console.print(f"{CONSOLE_STYLE_ERROR}Invalid selection. Please try again.[/]")
+                    self.console.print(
+                        f"[{self.theme.error}]Invalid selection. Please try again.[/{self.theme.error}]"
+                    )
             except ValueError:
-                self.console.print(f"{CONSOLE_STYLE_ERROR}Please enter a number.[/]")
+                self.console.print(
+                    f"[{self.theme.error}]Please enter a number.[/{self.theme.error}]"
+                )
             except KeyboardInterrupt:
                 raise SystemExit(0) from None

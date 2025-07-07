@@ -10,15 +10,7 @@ class TestMockProviderModes:
     """Test MockProvider behavior across all developer modes."""
 
     # All available developer modes
-    DEVELOPER_MODES = [
-        "general",
-        "code",
-        "debug",
-        "explain",
-        "review",
-        "refactor",
-        "plan"
-    ]
+    DEVELOPER_MODES = ["general", "code", "debug", "explain", "review", "refactor", "plan"]
 
     def test_all_modes_with_system_prompts(self):
         """Test that MockProvider works with all modes' system prompts."""
@@ -29,7 +21,7 @@ class TestMockProviderModes:
             system_prompt = f"You are in {mode} mode"
             messages = [
                 Message(role=Role.SYSTEM, content=system_prompt),
-                Message(role=Role.USER, content="Tell me about Python")
+                Message(role=Role.USER, content="Tell me about Python"),
             ]
 
             response = provider.chat(messages, "mock-echo")
@@ -45,7 +37,7 @@ class TestMockProviderModes:
         # Start in code mode
         messages = [
             Message(role=Role.SYSTEM, content="You are in code mode"),
-            Message(role=Role.USER, content="Write a Python function")
+            Message(role=Role.USER, content="Write a Python function"),
         ]
         response1 = provider.chat(messages, "mock-echo")
 
@@ -70,13 +62,13 @@ class TestMockProviderModes:
             "explain": "Explain Python decorators",
             "review": "Review this Python code for security",
             "refactor": "Refactor this Python function",
-            "plan": "Plan a Python web application"
+            "plan": "Plan a Python web application",
         }
 
         for mode, question in mode_questions.items():
             messages = [
                 Message(role=Role.SYSTEM, content=f"You are in {mode} mode"),
-                Message(role=Role.USER, content=question)
+                Message(role=Role.USER, content=question),
             ]
 
             response = provider.chat(messages, "mock-echo")
@@ -87,8 +79,9 @@ class TestMockProviderModes:
 
             # Python-related questions should trigger Python responses
             if "python" in question.lower():
-                assert "python" in response.lower() or "decorator" in response.lower(), \
-                    f"Python not mentioned for mode: {mode}"
+                assert (
+                    "python" in response.lower() or "decorator" in response.lower()
+                ), f"Python not mentioned for mode: {mode}"
 
     def test_conversation_continuity_across_modes(self):
         """Test that conversation context is maintained when mode changes."""
@@ -125,7 +118,7 @@ class TestMockProviderModes:
         for mode in self.DEVELOPER_MODES:
             messages = [
                 Message(role=Role.SYSTEM, content=f"You are in {mode} mode"),
-                Message(role=Role.USER, content="")
+                Message(role=Role.USER, content=""),
             ]
 
             response = provider.chat(messages, "mock-echo")
@@ -135,7 +128,7 @@ class TestMockProviderModes:
         long_prompt = "You are in code mode. " * 100
         messages = [
             Message(role=Role.SYSTEM, content=long_prompt),
-            Message(role=Role.USER, content="Hello")
+            Message(role=Role.USER, content="Hello"),
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -169,7 +162,7 @@ class TestMockProviderModels:
             messages = [
                 Message(role=Role.USER, content="What is Python?"),
                 Message(role=Role.ASSISTANT, content="Python is a programming language..."),
-                Message(role=Role.USER, content="Tell me about decorators")
+                Message(role=Role.USER, content="Tell me about decorators"),
             ]
 
             response = provider.chat(messages, model)
@@ -187,7 +180,7 @@ class TestMockProviderModels:
             messages = [
                 Message(role=Role.USER, content="My name is Alice"),
                 Message(role=Role.ASSISTANT, content="Nice to meet you, Alice!"),
-                Message(role=Role.USER, content="What's my name?")
+                Message(role=Role.USER, content="What's my name?"),
             ]
 
             response = provider.chat(messages, model)
@@ -271,14 +264,15 @@ class TestMockProviderModesAndModels:
             for model in models:
                 messages = [
                     Message(role=Role.SYSTEM, content=f"You are in {mode} mode"),
-                    Message(role=Role.USER, content="Tell me about Python")
+                    Message(role=Role.USER, content="Tell me about Python"),
                 ]
 
                 response = provider.chat(messages, model)
 
                 assert response, f"No response for mode={mode}, model={model}"
-                assert "python" in response.lower(), \
-                    f"Python not mentioned for mode={mode}, model={model}"
+                assert (
+                    "python" in response.lower()
+                ), f"Python not mentioned for mode={mode}, model={model}"
 
     def test_mode_model_conversation_flow(self):
         """Test a complete conversation flow with mode and model changes."""
@@ -317,13 +311,13 @@ class TestMockProviderModesAndModels:
             combinations = [
                 ("general", "mock-echo"),
                 ("code", "mock-smart"),
-                ("debug", "mock-echo")
+                ("debug", "mock-echo"),
             ]
 
             for mode, model in combinations:
                 messages = [
                     Message(role=Role.SYSTEM, content=f"You are in {mode} mode"),
-                    Message(role=Role.USER, content="Test async")
+                    Message(role=Role.USER, content="Test async"),
                 ]
 
                 # Test async chat

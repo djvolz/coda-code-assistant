@@ -4,7 +4,6 @@ import os
 from datetime import datetime
 from typing import Any
 
-from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
@@ -34,6 +33,7 @@ class SessionCommands:
         """
         self.manager = session_manager or SessionManager()
         from ..themes import get_themed_console
+
         self.console = get_themed_console()
         self.current_session_id: str | None = None
         self.current_messages: list[dict[str, Any]] = []
@@ -54,25 +54,25 @@ class SessionCommands:
 
         subcommand = args[0].lower()
 
-        if subcommand in ['save', 's']:
+        if subcommand in ["save", "s"]:
             return self._save_session(args[1:])
-        elif subcommand in ['load', 'l']:
+        elif subcommand in ["load", "l"]:
             return self._load_session(args[1:])
-        elif subcommand in ['last']:
+        elif subcommand in ["last"]:
             return self._load_last_session()
-        elif subcommand in ['list', 'ls']:
+        elif subcommand in ["list", "ls"]:
             return self._list_sessions(args[1:])
-        elif subcommand in ['branch', 'b']:
+        elif subcommand in ["branch", "b"]:
             return self._branch_session(args[1:])
-        elif subcommand in ['delete', 'd', 'rm']:
+        elif subcommand in ["delete", "d", "rm"]:
             return self._delete_session(args[1:])
-        elif subcommand in ['delete-all']:
+        elif subcommand in ["delete-all"]:
             return self._delete_all_sessions(args[1:])
-        elif subcommand in ['info', 'i']:
+        elif subcommand in ["info", "i"]:
             return self._session_info(args[1:])
-        elif subcommand in ['search']:
+        elif subcommand in ["search"]:
             return self._search_sessions(args[1:])
-        elif subcommand in ['rename', 'r']:
+        elif subcommand in ["rename", "r"]:
             return self._rename_session(args[1:])
         else:
             return f"Unknown session subcommand: {subcommand}. Use /session help for options."
@@ -115,7 +115,9 @@ class SessionCommands:
         if args:
             name = " ".join(args)
         else:
-            name = Prompt.ask("Session name", default=f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+            name = Prompt.ask(
+                "Session name", default=f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            )
 
         # Get description
         description = Prompt.ask("Description (optional)", default="")
@@ -124,9 +126,7 @@ class SessionCommands:
         if self.current_session_id:
             # Update existing session
             self.manager.update_session(
-                self.current_session_id,
-                name=name,
-                description=description if description else None
+                self.current_session_id, name=name, description=description if description else None
             )
             return f"Session updated: {name}"
         else:
@@ -137,10 +137,10 @@ class SessionCommands:
             mode = "general"
 
             for msg in self.current_messages:
-                if msg.get('role') == 'assistant' and msg.get('metadata'):
-                    provider = msg['metadata'].get('provider', provider)
-                    model = msg['metadata'].get('model', model)
-                    mode = msg['metadata'].get('mode', mode)
+                if msg.get("role") == "assistant" and msg.get("metadata"):
+                    provider = msg["metadata"].get("provider", provider)
+                    model = msg["metadata"].get("model", model)
+                    mode = msg["metadata"].get("mode", mode)
                     break
 
             session = self.manager.create_session(
@@ -148,20 +148,20 @@ class SessionCommands:
                 description=description if description else None,
                 provider=provider,
                 model=model,
-                mode=mode
+                mode=mode,
             )
 
             # Save all messages
             for msg in self.current_messages:
                 self.manager.add_message(
                     session_id=session.id,
-                    role=msg['role'],
-                    content=msg['content'],
-                    metadata=msg.get('metadata', {}),
-                    model=msg.get('metadata', {}).get('model'),
-                    provider=msg.get('metadata', {}).get('provider'),
-                    token_usage=msg.get('metadata', {}).get('token_usage'),
-                    cost=msg.get('metadata', {}).get('cost')
+                    role=msg["role"],
+                    content=msg["content"],
+                    metadata=msg.get("metadata", {}),
+                    model=msg.get("metadata", {}).get("model"),
+                    provider=msg.get("metadata", {}).get("provider"),
+                    token_usage=msg.get("metadata", {}).get("token_usage"),
+                    cost=msg.get("metadata", {}).get("cost"),
                 )
 
             self.current_session_id = session.id
@@ -185,28 +185,38 @@ class SessionCommands:
         # Convert to internal format
         self.current_messages = []
         for msg in messages:
-            self.current_messages.append({
-                'role': msg.role,
-                'content': msg.content,
-                'metadata': {
-                    'provider': msg.provider or session.provider,
-                    'model': msg.model or session.model,
-                    'mode': msg.message_metadata.get('mode', session.mode),
-                    'token_usage': {
-                        'prompt_tokens': msg.prompt_tokens,
-                        'completion_tokens': msg.completion_tokens,
-                        'total_tokens': msg.total_tokens
-                    } if msg.total_tokens else None,
-                    'cost': msg.cost
+            self.current_messages.append(
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "metadata": {
+                        "provider": msg.provider or session.provider,
+                        "model": msg.model or session.model,
+                        "mode": msg.message_metadata.get("mode", session.mode),
+                        "token_usage": (
+                            {
+                                "prompt_tokens": msg.prompt_tokens,
+                                "completion_tokens": msg.completion_tokens,
+                                "total_tokens": msg.total_tokens,
+                            }
+                            if msg.total_tokens
+                            else None
+                        ),
+                        "cost": msg.cost,
+                    },
                 }
-            })
+            )
 
         self.current_session_id = session.id
 
         # Display session info
         self.console.print(f"\n[green]Loaded session:[/green] {session.name}")
-        self.console.print(f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}")
-        self.console.print(f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}")
+        self.console.print(
+            f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}"
+        )
+        self.console.print(
+            f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
+        )
 
         if session.description:
             self.console.print(f"[dim]Description:[/dim] {session.description}")
@@ -237,7 +247,7 @@ class SessionCommands:
                 session.name[:40] + ("..." if len(session.name) > 40 else ""),
                 f"{session.provider}/{session.model.split('.')[-1][:20]}",
                 str(session.message_count),
-                session.accessed_at.strftime('%Y-%m-%d %H:%M')
+                session.accessed_at.strftime("%Y-%m-%d %H:%M"),
             )
 
         self.console.print(table)
@@ -267,9 +277,9 @@ class SessionCommands:
             name=name,
             provider=messages[0].provider or "unknown",
             model=messages[0].model or "unknown",
-            mode=self.current_messages[0].get('metadata', {}).get('mode', 'general'),
+            mode=self.current_messages[0].get("metadata", {}).get("mode", "general"),
             parent_id=self.current_session_id,
-            branch_point_message_id=last_message.id
+            branch_point_message_id=last_message.id,
         )
 
         # Switch to branch
@@ -325,7 +335,11 @@ class SessionCommands:
             f"[bold]Created:[/bold] {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
             f"[bold]Updated:[/bold] {session.updated_at.strftime('%Y-%m-%d %H:%M:%S')}",
             f"[bold]Messages:[/bold] {session.message_count}",
-            f"[bold]Total Tokens:[/bold] {session.total_tokens:,}" if session.total_tokens else "[bold]Total Tokens:[/bold] 0",
+            (
+                f"[bold]Total Tokens:[/bold] {session.total_tokens:,}"
+                if session.total_tokens
+                else "[bold]Total Tokens:[/bold] 0"
+            ),
         ]
 
         if session.total_cost:
@@ -339,7 +353,11 @@ class SessionCommands:
             if parent:
                 info_lines.append(f"\n[bold]Branched from:[/bold] {parent.name}")
 
-        self.console.print(Panel("\n".join(info_lines), title="Session Information", border_style=PANEL_BORDER_STYLE))
+        self.console.print(
+            Panel(
+                "\n".join(info_lines), title="Session Information", border_style=PANEL_BORDER_STYLE
+            )
+        )
         return None
 
     def _search_sessions(self, args: list[str]) -> str:
@@ -357,11 +375,13 @@ class SessionCommands:
 
         for session, messages in results:
             self.console.print(f"[bold cyan]{session.name}[/bold cyan] ({session.id[:8]}...)")
-            self.console.print(f"[dim]{session.provider}/{session.model} - {session.message_count} messages[/dim]")
+            self.console.print(
+                f"[dim]{session.provider}/{session.model} - {session.message_count} messages[/dim]"
+            )
 
             # Show matching messages
             for msg in messages[:3]:  # Show up to 3 matches
-                excerpt = msg.content[:100].replace('\n', ' ')
+                excerpt = msg.content[:100].replace("\n", " ")
                 if len(msg.content) > 100:
                     excerpt += "..."
                 self.console.print(f"  [yellow]→[/yellow] [{msg.role}] {excerpt}")
@@ -390,28 +410,38 @@ class SessionCommands:
         # Convert to internal format
         self.current_messages = []
         for msg in messages:
-            self.current_messages.append({
-                'role': msg.role,
-                'content': msg.content,
-                'metadata': {
-                    'provider': msg.provider or session.provider,
-                    'model': msg.model or session.model,
-                    'mode': msg.message_metadata.get('mode', session.mode),
-                    'token_usage': {
-                        'prompt_tokens': msg.prompt_tokens,
-                        'completion_tokens': msg.completion_tokens,
-                        'total_tokens': msg.total_tokens
-                    } if msg.total_tokens else None,
-                    'cost': msg.cost
+            self.current_messages.append(
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "metadata": {
+                        "provider": msg.provider or session.provider,
+                        "model": msg.model or session.model,
+                        "mode": msg.message_metadata.get("mode", session.mode),
+                        "token_usage": (
+                            {
+                                "prompt_tokens": msg.prompt_tokens,
+                                "completion_tokens": msg.completion_tokens,
+                                "total_tokens": msg.total_tokens,
+                            }
+                            if msg.total_tokens
+                            else None
+                        ),
+                        "cost": msg.cost,
+                    },
                 }
-            })
+            )
 
         self.current_session_id = session.id
 
         # Display session info
         self.console.print(f"\n[green]Loaded last session:[/green] {session.name}")
-        self.console.print(f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}")
-        self.console.print(f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}")
+        self.console.print(
+            f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}"
+        )
+        self.console.print(
+            f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
+        )
 
         if session.description:
             self.console.print(f"[dim]Description:[/dim] {session.description}")
@@ -457,8 +487,8 @@ class SessionCommands:
             if session_id == self.current_session_id:
                 # Update the name in current_messages metadata if needed
                 for msg in self.current_messages:
-                    if msg.get('metadata', {}).get('session_name'):
-                        msg['metadata']['session_name'] = new_name
+                    if msg.get("metadata", {}).get("session_name"):
+                        msg["metadata"]["session_name"] = new_name
 
             return f"Session renamed to: {new_name}"
         except Exception as e:
@@ -485,7 +515,9 @@ class SessionCommands:
         session_count = len(sessions)
         session_type = "auto-saved" if auto_only else "all"
 
-        self.console.print(f"\n[yellow]Warning:[/yellow] This will delete {session_count} {session_type} session(s):")
+        self.console.print(
+            f"\n[yellow]Warning:[/yellow] This will delete {session_count} {session_type} session(s):"
+        )
 
         # Show first 10 sessions
         for _i, session in enumerate(sessions[:10]):
@@ -495,7 +527,9 @@ class SessionCommands:
             self.console.print(f"  ... and {len(sessions) - 10} more")
 
         # Confirm deletion
-        if not Confirm.ask(f"\n[red]Delete {session_count} {session_type} session(s)?[/red]", default=False):
+        if not Confirm.ask(
+            f"\n[red]Delete {session_count} {session_type} session(s)?[/red]", default=False
+        ):
             return "Deletion cancelled."
 
         # Delete sessions
@@ -510,8 +544,11 @@ class SessionCommands:
             self._has_user_message = False
 
         from ..themes import get_console_theme
+
         theme = get_console_theme()
-        with self.console.status(f"[{theme.info}]Deleting {session_count} sessions...[/{theme.info}]", spinner="dots"):
+        with self.console.status(
+            f"[{theme.info}]Deleting {session_count} sessions...[/{theme.info}]", spinner="dots"
+        ):
             for session in sessions:
                 try:
                     self.manager.delete_session(session.id)
@@ -561,14 +598,14 @@ class SessionCommands:
             return self._show_export_help()
 
         format = args[0].lower()
-        if format not in ['json', 'markdown', 'md', 'txt', 'text', 'html']:
+        if format not in ["json", "markdown", "md", "txt", "text", "html"]:
             return f"Unknown export format: {format}. Use: json, markdown, txt, or html"
 
         # Normalize format names
-        if format == 'md':
-            format = 'markdown'
-        elif format == 'text':
-            format = 'txt'
+        if format == "md":
+            format = "markdown"
+        elif format == "text":
+            format = "txt"
 
         # Get session to export
         if len(args) > 1:
@@ -588,8 +625,10 @@ class SessionCommands:
             content = self.manager.export_session(session_id, format)
 
             # Generate filename
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            safe_name = "".join(c for c in session.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_name = "".join(
+                c for c in session.name if c.isalnum() or c in (" ", "-", "_")
+            ).rstrip()
             filename = f"{safe_name}_{timestamp}.{format}"
 
             # Get export directory
@@ -598,7 +637,7 @@ class SessionCommands:
             filepath = os.path.join(export_dir, filename)
 
             # Write file
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
 
             self.console.print(f"[green]✓[/green] Exported to: {filepath}")
@@ -624,12 +663,7 @@ class SessionCommands:
         self.console.print(Panel(help_text, title="Export Help", border_style=PANEL_BORDER_STYLE))
         return None
 
-    def add_message(
-        self,
-        role: str,
-        content: str,
-        metadata: dict[str, Any] | None = None
-    ):
+    def add_message(self, role: str, content: str, metadata: dict[str, Any] | None = None):
         """Add a message to the current conversation.
 
         Args:
@@ -637,11 +671,7 @@ class SessionCommands:
             content: Message content
             metadata: Optional metadata
         """
-        msg = {
-            'role': role,
-            'content': content,
-            'metadata': metadata or {}
-        }
+        msg = {"role": role, "content": content, "metadata": metadata or {}}
         self.current_messages.append(msg)
 
         # Track if we have a user message
@@ -649,20 +679,22 @@ class SessionCommands:
             self._has_user_message = True
 
         # Auto-create session on first user-assistant exchange if enabled
-        if (self.auto_save_enabled and
-            not self.current_session_id and
-            self._has_user_message and
-            role == "assistant" and
-            len(self.current_messages) >= 2):  # At least user + assistant message
+        if (
+            self.auto_save_enabled
+            and not self.current_session_id
+            and self._has_user_message
+            and role == "assistant"
+            and len(self.current_messages) >= 2
+        ):  # At least user + assistant message
 
             # Auto-create session with timestamp name
             timestamp = datetime.now().strftime(AUTO_SESSION_DATE_FORMAT)
             auto_name = f"{AUTO_SESSION_PREFIX}{timestamp}"
 
             # Get provider and model from metadata
-            provider = metadata.get('provider', 'unknown') if metadata else 'unknown'
-            model = metadata.get('model', 'unknown') if metadata else 'unknown'
-            mode = metadata.get('mode', 'general') if metadata else 'general'
+            provider = metadata.get("provider", "unknown") if metadata else "unknown"
+            model = metadata.get("model", "unknown") if metadata else "unknown"
+            mode = metadata.get("mode", "general") if metadata else "general"
 
             try:
                 session = self.manager.create_session(
@@ -670,7 +702,7 @@ class SessionCommands:
                     description="Auto-saved conversation",
                     provider=provider,
                     model=model,
-                    mode=mode
+                    mode=mode,
                 )
 
                 self.current_session_id = session.id
@@ -679,13 +711,13 @@ class SessionCommands:
                 for existing_msg in self.current_messages:
                     self.manager.add_message(
                         session_id=session.id,
-                        role=existing_msg['role'],
-                        content=existing_msg['content'],
-                        metadata=existing_msg.get('metadata', {}),
-                        model=existing_msg.get('metadata', {}).get('model'),
-                        provider=existing_msg.get('metadata', {}).get('provider'),
-                        token_usage=existing_msg.get('metadata', {}).get('token_usage'),
-                        cost=existing_msg.get('metadata', {}).get('cost')
+                        role=existing_msg["role"],
+                        content=existing_msg["content"],
+                        metadata=existing_msg.get("metadata", {}),
+                        model=existing_msg.get("metadata", {}).get("model"),
+                        provider=existing_msg.get("metadata", {}).get("provider"),
+                        token_usage=existing_msg.get("metadata", {}).get("token_usage"),
+                        cost=existing_msg.get("metadata", {}).get("cost"),
                     )
 
                 # Notify user about auto-save (subtly)
@@ -702,16 +734,14 @@ class SessionCommands:
                 role=role,
                 content=content,
                 metadata=metadata,
-                model=metadata.get('model') if metadata else None,
-                provider=metadata.get('provider') if metadata else None,
-                token_usage=metadata.get('token_usage') if metadata else None,
-                cost=metadata.get('cost') if metadata else None
+                model=metadata.get("model") if metadata else None,
+                provider=metadata.get("provider") if metadata else None,
+                token_usage=metadata.get("token_usage") if metadata else None,
+                cost=metadata.get("cost") if metadata else None,
             )
 
     def get_context_messages(
-        self,
-        model: str | None = None,
-        max_tokens: int | None = None
+        self, model: str | None = None, max_tokens: int | None = None
     ) -> tuple[list[dict[str, Any]], bool]:
         """Get current conversation messages for context with intelligent windowing.
 
@@ -725,9 +755,7 @@ class SessionCommands:
         if self.current_session_id:
             # Use session manager's context windowing
             return self.manager.get_session_context(
-                self.current_session_id,
-                model=model,
-                max_tokens=max_tokens
+                self.current_session_id, model=model, max_tokens=max_tokens
             )
         else:
             # Return current messages without windowing
@@ -739,7 +767,7 @@ class SessionCommands:
         Returns:
             List of Message objects for CLI conversation history, or empty list if no session loaded.
         """
-        if not hasattr(self, '_messages_loaded') or not self._messages_loaded:
+        if not hasattr(self, "_messages_loaded") or not self._messages_loaded:
             return []
 
         from coda.providers import Message, Role
@@ -748,17 +776,14 @@ class SessionCommands:
         for msg in self.current_messages:
             # Convert role string to Role enum
             role_map = {
-                'user': Role.USER,
-                'assistant': Role.ASSISTANT,
-                'system': Role.SYSTEM,
-                'tool': Role.USER  # Fallback for tool messages
+                "user": Role.USER,
+                "assistant": Role.ASSISTANT,
+                "system": Role.SYSTEM,
+                "tool": Role.USER,  # Fallback for tool messages
             }
-            role = role_map.get(msg['role'], Role.USER)
+            role = role_map.get(msg["role"], Role.USER)
 
-            cli_messages.append(Message(
-                role=role,
-                content=msg['content']
-            ))
+            cli_messages.append(Message(role=role, content=msg["content"]))
 
         # Reset the flag after providing messages
         self._messages_loaded = False
@@ -771,7 +796,7 @@ class SessionCommands:
         Returns:
             True if conversation was cleared since last check.
         """
-        if hasattr(self, '_conversation_cleared') and self._conversation_cleared:
+        if hasattr(self, "_conversation_cleared") and self._conversation_cleared:
             self._conversation_cleared = False
             return True
         return False

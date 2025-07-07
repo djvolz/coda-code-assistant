@@ -135,13 +135,11 @@ class OCIGenAIProvider(BaseProvider):
             "cohere.command-r-plus": 128000,
             "cohere.command-r-16k": 16000,
             "cohere.command": 4000,
-
             # Meta Llama models
             "meta.llama-3.1-405b": 128000,
             "meta.llama-3.1-70b": 128000,
             "meta.llama-3.3-70b": 128000,
             "meta.llama-4-3-90b": 131072,
-
             # XAI models
             "xai.grok-3": 131072,
         }

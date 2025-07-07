@@ -29,6 +29,7 @@ MARKDOWN_FILE_EXT = ".md"
 TEXT_FILE_EXT = ".txt"
 HTML_FILE_EXT = ".html"
 
+
 # XDG-compliant directory paths
 def get_config_dir() -> Path:
     """Get XDG-compliant config directory."""
@@ -37,6 +38,7 @@ def get_config_dir() -> Path:
         return Path(xdg_config) / CONFIG_DIR_NAME
     return Path.home() / ".config" / CONFIG_DIR_NAME
 
+
 def get_data_dir() -> Path:
     """Get XDG-compliant data directory."""
     xdg_data = os.environ.get("XDG_DATA_HOME")
@@ -44,12 +46,14 @@ def get_data_dir() -> Path:
         return Path(xdg_data) / DATA_DIR_NAME
     return Path.home() / ".local" / "share" / DATA_DIR_NAME
 
+
 def get_cache_dir() -> Path:
     """Get XDG-compliant cache directory."""
     xdg_cache = os.environ.get("XDG_CACHE_HOME")
     if xdg_cache:
         return Path(xdg_cache) / CACHE_DIR_NAME
     return Path.home() / ".cache" / CACHE_DIR_NAME
+
 
 # Default paths
 USER_CONFIG_PATH = get_config_dir() / CONFIG_FILE_NAME
@@ -90,7 +94,7 @@ DEFAULT_EXPORT_LIMIT = 50
 
 # Cache durations (in seconds)
 MODEL_CACHE_DURATION = 24 * 60 * 60  # 24 hours
-PROVIDER_CACHE_DURATION = 60 * 60    # 1 hour
+PROVIDER_CACHE_DURATION = 60 * 60  # 1 hour
 
 # Database schema constants
 FTS_TABLE_NAME = "messages_fts"
@@ -206,13 +210,8 @@ PROMPT_STYLE_SELECTED = "bg:#00aa00 #ffffff bold"
 PROMPT_STYLE_SEARCH = "bg:#444444 #ffffff"
 PROMPT_STYLE_TITLE = "#00aa00 bold"
 
-# Console output styles
-CONSOLE_STYLE_SUCCESS = "[green]"
-CONSOLE_STYLE_ERROR = "[red]"
-CONSOLE_STYLE_WARNING = "[yellow]"
-CONSOLE_STYLE_INFO = "[cyan]"
-CONSOLE_STYLE_DIM = "[dim]"
-CONSOLE_STYLE_BOLD = "[bold]"
+# Console output styles (DEPRECATED - use theme system instead)
+# Legacy constants removed - use coda.themes.get_console_theme() for themed output
 
 # Panel styles
 PANEL_BORDER_STYLE = "cyan"

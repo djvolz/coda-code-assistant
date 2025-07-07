@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -15,7 +15,7 @@ class TestSessionLast:
     @pytest.fixture
     def temp_db_path(self):
         """Create temporary database path."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
         yield db_path
         if db_path.exists():
@@ -47,21 +47,15 @@ class TestSessionLast:
             description="Test description",
             provider="mock",
             model="mock-echo",
-            mode="general"
+            mode="general",
         )
 
         # Add some messages
         session_commands.manager.add_message(
-            session_id=session.id,
-            role="user",
-            content="Hello",
-            metadata={}
+            session_id=session.id, role="user", content="Hello", metadata={}
         )
         session_commands.manager.add_message(
-            session_id=session.id,
-            role="assistant",
-            content="Hi there!",
-            metadata={}
+            session_id=session.id, role="assistant", content="Hi there!", metadata={}
         )
 
         # Load last session
@@ -71,51 +65,37 @@ class TestSessionLast:
         # Verify session loaded
         assert session_commands.current_session_id == session.id
         assert len(session_commands.current_messages) == 2
-        assert session_commands.current_messages[0]['content'] == "Hello"
-        assert session_commands.current_messages[1]['content'] == "Hi there!"
+        assert session_commands.current_messages[0]["content"] == "Hello"
+        assert session_commands.current_messages[1]["content"] == "Hi there!"
         assert session_commands._messages_loaded is True
 
     def test_load_last_with_multiple_sessions(self, session_commands):
         """Test loading last session returns most recent."""
         # Create older session
         older = session_commands.manager.create_session(
-            name="Older Session",
-            provider="mock",
-            model="mock-echo",
-            mode="general"
+            name="Older Session", provider="mock", model="mock-echo", mode="general"
         )
 
         # Add a message to older session
         session_commands.manager.add_message(
-            session_id=older.id,
-            role="user",
-            content="Old message",
-            metadata={}
+            session_id=older.id, role="user", content="Old message", metadata={}
         )
 
         # Create newer session (will have later created_at)
         import time
+
         time.sleep(0.1)  # Ensure different timestamp
 
         newer = session_commands.manager.create_session(
-            name="Newer Session",
-            provider="mock",
-            model="mock-smart",
-            mode="code"
+            name="Newer Session", provider="mock", model="mock-smart", mode="code"
         )
 
         # Add messages to newer session
         session_commands.manager.add_message(
-            session_id=newer.id,
-            role="user",
-            content="New message",
-            metadata={}
+            session_id=newer.id, role="user", content="New message", metadata={}
         )
         session_commands.manager.add_message(
-            session_id=newer.id,
-            role="assistant",
-            content="New response",
-            metadata={}
+            session_id=newer.id, role="assistant", content="New response", metadata={}
         )
 
         # Load last session
@@ -125,16 +105,13 @@ class TestSessionLast:
         # Should load the newer session
         assert session_commands.current_session_id == newer.id
         assert len(session_commands.current_messages) == 2
-        assert session_commands.current_messages[0]['content'] == "New message"
+        assert session_commands.current_messages[0]["content"] == "New message"
 
     def test_load_last_preserves_metadata(self, session_commands):
         """Test that load last preserves message metadata."""
         # Create session
         session = session_commands.manager.create_session(
-            name="Metadata Test",
-            provider="ollama",
-            model="llama3",
-            mode="debug"
+            name="Metadata Test", provider="ollama", model="llama3", mode="debug"
         )
 
         # Add message with metadata
@@ -146,7 +123,7 @@ class TestSessionLast:
             model="llama3",
             provider="ollama",
             token_usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
-            cost=0.001
+            cost=0.001,
         )
 
         # Load last session
@@ -154,18 +131,21 @@ class TestSessionLast:
 
         # Check metadata preserved
         msg = session_commands.current_messages[0]
-        assert msg['metadata']['provider'] == "ollama"
-        assert msg['metadata']['model'] == "llama3"
-        assert msg['metadata']['mode'] == "debug"
-        assert msg['metadata']['token_usage']['total_tokens'] == 30
-        assert msg['metadata']['cost'] == 0.001
+        assert msg["metadata"]["provider"] == "ollama"
+        assert msg["metadata"]["model"] == "llama3"
+        assert msg["metadata"]["mode"] == "debug"
+        assert msg["metadata"]["token_usage"]["total_tokens"] == 30
+        assert msg["metadata"]["cost"] == 0.001
 
-    @patch('coda.session.commands.Console')
-    def test_load_last_displays_session_info(self, mock_console, session_manager):
+    @patch("coda.themes.get_themed_console")
+    def test_load_last_displays_session_info(self, mock_get_console, session_manager):
         """Test that load last displays session information."""
+        # Create mock console
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         # Create commands with mocked console
         commands = SessionCommands(session_manager)
-        commands.console = mock_console()
 
         # Create session with description
         session = commands.manager.create_session(
@@ -173,15 +153,12 @@ class TestSessionLast:
             description="This is a test session",
             provider="litellm",
             model="gpt-4",
-            mode="explain"
+            mode="explain",
         )
 
         # Add a message
         commands.manager.add_message(
-            session_id=session.id,
-            role="user",
-            content="Test",
-            metadata={}
+            session_id=session.id, role="user", content="Test", metadata={}
         )
 
         # Load last session
@@ -203,22 +180,16 @@ class TestSessionLast:
         """Test /session last command through handle_session_command."""
         # Create a session
         session = session_commands.manager.create_session(
-            name="Command Test",
-            provider="mock",
-            model="mock-echo",
-            mode="general"
+            name="Command Test", provider="mock", model="mock-echo", mode="general"
         )
 
         # Add message
         session_commands.manager.add_message(
-            session_id=session.id,
-            role="user",
-            content="Test command",
-            metadata={}
+            session_id=session.id, role="user", content="Test command", metadata={}
         )
 
         # Call through command handler
-        result = session_commands.handle_session_command(['last'])
+        result = session_commands.handle_session_command(["last"])
 
         # Should succeed
         assert result is None

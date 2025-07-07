@@ -149,6 +149,7 @@ class InteractiveCLI(CommandHandler):
             super().__init__(console)
         else:
             from ..themes import get_themed_console
+
             super().__init__(get_themed_console())
         self.session = None
         self.config = None  # Will be set by interactive.py
@@ -198,7 +199,7 @@ class InteractiveCLI(CommandHandler):
                     name=cmd_def.name,
                     handler=handler_map[cmd_def.name],
                     help_text=cmd_def.description,
-                    aliases=cmd_def.aliases
+                    aliases=cmd_def.aliases,
                 )
 
         return commands
@@ -215,23 +216,25 @@ class InteractiveCLI(CommandHandler):
         combined_styles = {}
 
         # Add theme styles (if they have a style_dict attribute)
-        if hasattr(theme_style, 'style_dict'):
+        if hasattr(theme_style, "style_dict"):
             combined_styles.update(theme_style.style_dict)
 
         # Add custom additions
-        combined_styles.update({
-            # Additional prompt-specific styles
-            "prompt.mode": "#888888",
-            # Completion menu enhancements
-            "completion-menu": "bg:#2c2c2c #ffffff",
-            "completion-menu.completion": "bg:#2c2c2c #ffffff",
-            "completion-menu.completion.current": "bg:#005588 #ffffff bold",
-            "completion-menu.meta.completion": "bg:#2c2c2c #888888",
-            "completion-menu.meta.completion.current": "bg:#005588 #aaaaaa",
-            # Scrollbar
-            "scrollbar.background": "bg:#2c2c2c",
-            "scrollbar.button": "bg:#888888",
-        })
+        combined_styles.update(
+            {
+                # Additional prompt-specific styles
+                "prompt.mode": "#888888",
+                # Completion menu enhancements
+                "completion-menu": "bg:#2c2c2c #ffffff",
+                "completion-menu.completion": "bg:#2c2c2c #ffffff",
+                "completion-menu.completion.current": "bg:#005588 #ffffff bold",
+                "completion-menu.meta.completion": "bg:#2c2c2c #888888",
+                "completion-menu.meta.completion.current": "bg:#005588 #aaaaaa",
+                # Scrollbar
+                "scrollbar.background": "bg:#2c2c2c",
+                "scrollbar.button": "bg:#888888",
+            }
+        )
 
         return Style.from_dict(combined_styles)
 
@@ -418,96 +421,103 @@ class InteractiveCLI(CommandHandler):
 
     async def _cmd_theme(self, args: str):
         """Change UI theme."""
-        from ..themes import get_theme_manager, THEMES
         from ..configuration import save_config
-        
+        from ..themes import THEMES, get_theme_manager
+
         theme_manager = get_theme_manager()
-        
+
         if not args:
             # Show interactive theme selector
             from .theme_selector import ThemeSelector
 
             selector = ThemeSelector(self.console)
             new_theme = await selector.select_theme_interactive()
-            
+
             if new_theme:
                 # Set the theme using the same logic as when args are provided
                 try:
                     # Update theme manager
                     theme_manager.set_theme(new_theme)
-                    
+
                     # Update configuration and save
                     if self.config:
                         self.config.ui["theme"] = new_theme
                         save_config()
-                        
+
                     # Update console theme
                     from ..themes import get_themed_console
+
                     new_console = get_themed_console()
                     self.console = new_console
-                    
+
                     # Recreate the prompt style with new theme
                     self.style = self._create_style()
-                    
+
                     # Update the prompt session style
-                    if hasattr(self, 'session') and self.session:
+                    if hasattr(self, "session") and self.session:
                         self.session.style = self.style
-                        
+
                     self.console.print(f"[green]✓[/] Theme changed to '[cyan]{new_theme}[/]'")
                     if self.config:
                         self.console.print("[dim]Theme preference saved to configuration[/]")
-                    
+
                 except ValueError as e:
                     self.console.print(f"[red]Error:[/] {e}")
             else:
                 # Show current theme if no selection was made
-                self.console.print(f"\n[yellow]Current theme:[/] {theme_manager.current_theme_name}")
+                self.console.print(
+                    f"\n[yellow]Current theme:[/] {theme_manager.current_theme_name}"
+                )
             return
-            
+
         # Handle subcommands
         if args == "list":
             self.console.print("\n[bold]Available themes:[/]")
             for theme_name, theme in THEMES.items():
-                status = "[green]●[/]" if theme_name == theme_manager.current_theme_name else "[dim]○[/]"
+                status = (
+                    "[green]●[/]" if theme_name == theme_manager.current_theme_name else "[dim]○[/]"
+                )
                 self.console.print(f"  {status} [cyan]{theme_name}[/] - {theme.description}")
             return
-            
+
         elif args == "current":
             self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
             self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
             return
-            
+
         elif args == "reset":
             # Reset to default theme
             from ..constants import THEME_DEFAULT
+
             args = THEME_DEFAULT
-            
+
         # Set the theme
         try:
             # Update theme manager
             theme_manager.set_theme(args)
-            
+
             # Update configuration and save
             if self.config:
                 self.config.ui["theme"] = args
                 save_config()
-                
+
             # Update console theme
             from ..themes import get_themed_console
+
             new_console = get_themed_console()
             self.console = new_console
-            
+
             # Recreate the prompt style with new theme
             self.style = self._create_style()
-            
+
             # Update the prompt session style
-            if hasattr(self, 'session') and self.session:
+            if hasattr(self, "session") and self.session:
                 self.session.style = self.style
-                
+
             self.console.print(f"[green]✓[/] Theme changed to '[cyan]{args}[/]'")
             if self.config:
                 self.console.print("[dim]Theme preference saved to configuration[/]")
-            
+
         except ValueError as e:
             self.console.print(f"[red]Error:[/] {e}")
 
@@ -539,7 +549,6 @@ class InteractiveCLI(CommandHandler):
         """Exit the application."""
         self.console.print("[dim]Goodbye![/dim]")
         raise SystemExit(0)
-
 
     def reset_interrupt(self):
         """Reset the interrupt state."""

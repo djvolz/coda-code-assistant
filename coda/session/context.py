@@ -11,6 +11,7 @@ from coda.providers.base import BaseProvider
 @dataclass
 class ContextWindow:
     """Represents a context window configuration."""
+
     max_tokens: int
     max_messages: int
     preserve_system: bool = True
@@ -43,7 +44,6 @@ class ContextManager:
             "meta.llama-3.3-70b": 128000,
             "meta.llama-4-3-90b": 131072,
             "xai.grok-3": 131072,
-
             # OpenAI models
             "gpt-4": 8192,
             "gpt-4-32k": 32768,
@@ -51,9 +51,8 @@ class ContextManager:
             "gpt-4-turbo-preview": 128000,
             "gpt-3.5-turbo": 4096,
             "gpt-3.5-turbo-16k": 16384,
-
             # Default
-            "default": 4096
+            "default": 4096,
         }
 
     def _init_tokenizer(self):
@@ -97,7 +96,7 @@ class ContextManager:
         overhead = 4
 
         # Count content tokens
-        content_tokens = self.count_tokens(message.get('content', ''))
+        content_tokens = self.count_tokens(message.get("content", ""))
 
         return overhead + content_tokens
 
@@ -135,7 +134,7 @@ class ContextManager:
         messages: list[dict[str, Any]],
         model: str,
         target_tokens: int | None = None,
-        preserve_last_n: int = 10
+        preserve_last_n: int = 10,
     ) -> tuple[list[dict[str, Any]], bool]:
         """Optimize message context to fit within token limits.
 
@@ -170,7 +169,7 @@ class ContextManager:
 
         # Always keep system messages
         for msg in messages:
-            if msg.get('role') == 'system':
+            if msg.get("role") == "system":
                 preserved_messages.append(msg)
                 preserved_tokens += self.count_message_tokens(msg)
 
@@ -178,7 +177,7 @@ class ContextManager:
         recent_messages = []
         recent_tokens = 0
         for msg in reversed(messages[-preserve_last_n:]):
-            if msg.get('role') != 'system':
+            if msg.get("role") != "system":
                 msg_tokens = self.count_message_tokens(msg)
                 if preserved_tokens + recent_tokens + msg_tokens <= target_tokens:
                     recent_messages.insert(0, msg)
@@ -189,7 +188,7 @@ class ContextManager:
         older_messages = []
 
         for msg in messages[:-preserve_last_n]:
-            if msg.get('role') != 'system':
+            if msg.get("role") != "system":
                 msg_tokens = self.count_message_tokens(msg)
                 if msg_tokens <= remaining_tokens:
                     older_messages.append(msg)
@@ -207,9 +206,7 @@ class ContextManager:
         return optimized, was_truncated
 
     def create_summary_message(
-        self,
-        messages: list[dict[str, Any]],
-        max_tokens: int = 500
+        self, messages: list[dict[str, Any]], max_tokens: int = 500
     ) -> dict[str, Any]:
         """Create a summary message for truncated context.
 
@@ -223,13 +220,13 @@ class ContextManager:
         # Count messages by role
         role_counts = {}
         for msg in messages:
-            role = msg.get('role', 'unknown')
+            role = msg.get("role", "unknown")
             role_counts[role] = role_counts.get(role, 0) + 1
 
         # Create summary
         summary_parts = [
             f"[Previous conversation summary: {len(messages)} messages",
-            f"({role_counts.get('user', 0)} user, {role_counts.get('assistant', 0)} assistant)]"
+            f"({role_counts.get('user', 0)} user, {role_counts.get('assistant', 0)} assistant)]",
         ]
 
         # Add key points from messages (simplified for now)
@@ -240,10 +237,7 @@ class ContextManager:
 
         summary = " ".join(summary_parts)
 
-        return {
-            'role': 'system',
-            'content': summary
-        }
+        return {"role": "system", "content": summary}
 
     def _extract_key_topics(self, messages: list[dict[str, Any]]) -> list[str]:
         """Extract key topics from messages (simplified implementation).
@@ -260,14 +254,24 @@ class ContextManager:
 
         # Common programming keywords to look for
         keywords = [
-            'function', 'class', 'database', 'api', 'error', 'bug',
-            'feature', 'test', 'deploy', 'config', 'security', 'performance'
+            "function",
+            "class",
+            "database",
+            "api",
+            "error",
+            "bug",
+            "feature",
+            "test",
+            "deploy",
+            "config",
+            "security",
+            "performance",
         ]
 
         # Count keyword occurrences
         keyword_counts = {}
         for msg in messages:
-            content = msg.get('content', '').lower()
+            content = msg.get("content", "").lower()
             for keyword in keywords:
                 if keyword in content:
                     keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
@@ -278,11 +282,7 @@ class ContextManager:
 
         return topics
 
-    def get_context_window(
-        self,
-        model: str,
-        mode: str = "balanced"
-    ) -> ContextWindow:
+    def get_context_window(self, model: str, mode: str = "balanced") -> ContextWindow:
         """Get recommended context window configuration.
 
         Args:
@@ -307,8 +307,4 @@ class ContextManager:
             max_tokens = int(model_limit * 0.75)
             max_messages = 50
 
-        return ContextWindow(
-            max_tokens=max_tokens,
-            max_messages=max_messages,
-            preserve_system=True
-        )
+        return ContextWindow(max_tokens=max_tokens, max_messages=max_messages, preserve_system=True)

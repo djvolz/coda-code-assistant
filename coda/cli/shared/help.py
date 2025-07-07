@@ -10,6 +10,7 @@ def print_command_help(console: Console, mode: str = ""):
     # Try to use command registry
     try:
         from coda.cli.command_registry import CommandRegistry
+
         help_text = CommandRegistry.get_command_help(mode=mode)
         console.print(help_text)
         return

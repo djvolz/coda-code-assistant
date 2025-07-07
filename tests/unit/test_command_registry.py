@@ -9,8 +9,16 @@ class TestCommandRegistry:
     def test_session_subcommands_defined(self):
         """Test that all session subcommands are defined."""
         expected_subcommands = {
-            'save', 'load', 'last', 'list', 'branch',
-            'delete', 'delete-all', 'rename', 'info', 'search'
+            "save",
+            "load",
+            "last",
+            "list",
+            "branch",
+            "delete",
+            "delete-all",
+            "rename",
+            "info",
+            "search",
         }
 
         actual_subcommands = {cmd.name for cmd in CommandRegistry.SESSION_SUBCOMMANDS}

@@ -13,5 +13,5 @@ __all__ = [
     "Message",
     "SessionCommands",
     "ContextManager",
-    "ContextWindow"
+    "ContextWindow",
 ]

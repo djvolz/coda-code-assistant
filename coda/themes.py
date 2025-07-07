@@ -45,7 +45,10 @@ Last evaluated: 2025-07-06 (11 themes, ~500 lines)
 """
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 from prompt_toolkit.styles import Style
 
@@ -78,10 +81,29 @@ def is_valid_color(color: str) -> bool:
 
     # Basic color names that Rich supports
     valid_colors = {
-        "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
-        "bright_black", "bright_red", "bright_green", "bright_yellow",
-        "bright_blue", "bright_magenta", "bright_cyan", "bright_white",
-        "dim", "bold", "italic", "underline", "reverse", "strike", "blink",
+        "black",
+        "red",
+        "green",
+        "yellow",
+        "blue",
+        "magenta",
+        "cyan",
+        "white",
+        "bright_black",
+        "bright_red",
+        "bright_green",
+        "bright_yellow",
+        "bright_blue",
+        "bright_magenta",
+        "bright_cyan",
+        "bright_white",
+        "dim",
+        "bold",
+        "italic",
+        "underline",
+        "reverse",
+        "strike",
+        "blink",
     }
 
     # Check for hex colors
@@ -110,10 +132,22 @@ def validate_theme_colors(theme: "Theme") -> list[str]:
 
     # Validate console theme colors
     console_attrs = [
-        "success", "error", "warning", "info", "dim", "bold",
-        "panel_border", "panel_title", "user_message", "assistant_message",
-        "system_message", "table_header", "table_row_odd", "table_row_even",
-        "command", "command_description"
+        "success",
+        "error",
+        "warning",
+        "info",
+        "dim",
+        "bold",
+        "panel_border",
+        "panel_title",
+        "user_message",
+        "assistant_message",
+        "system_message",
+        "table_header",
+        "table_row_odd",
+        "table_row_even",
+        "command",
+        "command_description",
     ]
 
     for attr in console_attrs:
@@ -207,35 +241,32 @@ class PromptTheme:
 
     def to_prompt_toolkit_style(self) -> Style:
         """Convert theme to prompt-toolkit Style object."""
-        return Style.from_dict({
-            # Input field
-            "": self.input_field,
-            "cursor": self.cursor,
-            "selected-text": self.selection,
-
-            # Completions
-            "completion": self.completion,
-            "completion.current": self.completion_selected,
-            "completion.meta": self.completion_meta,
-
-            # Search
-            "search": self.search,
-            "search.current": self.search_match,
-
-            # Toolbar and status
-            "bottom-toolbar": self.toolbar,
-            "status": self.status,
-
-            # Prompts
-            "prompt": self.prompt,
-            "continuation": self.continuation,
-
-            # Model selector
-            "selected": self.model_selected,
-            "provider": self.model_provider,
-            "info": self.model_info,
-            "title": self.model_title,
-        })
+        return Style.from_dict(
+            {
+                # Input field
+                "": self.input_field,
+                "cursor": self.cursor,
+                "selected-text": self.selection,
+                # Completions
+                "completion": self.completion,
+                "completion.current": self.completion_selected,
+                "completion.meta": self.completion_meta,
+                # Search
+                "search": self.search,
+                "search.current": self.search_match,
+                # Toolbar and status
+                "bottom-toolbar": self.toolbar,
+                "status": self.status,
+                # Prompts
+                "prompt": self.prompt,
+                "continuation": self.continuation,
+                # Model selector
+                "selected": self.model_selected,
+                "provider": self.model_provider,
+                "info": self.model_info,
+                "title": self.model_title,
+            }
+        )
 
 
 @dataclass
@@ -261,7 +292,6 @@ THEMES: dict[str, Theme] = {
         prompt=PromptTheme(),
         is_dark=True,
     ),
-
     THEME_DARK: Theme(
         name=THEME_DARK,
         description="Dark mode optimized for low light",
@@ -284,7 +314,6 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-
     THEME_LIGHT: Theme(
         name=THEME_LIGHT,
         description="Light theme for bright environments",
@@ -309,7 +338,6 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=False,
     ),
-
     THEME_MINIMAL: Theme(
         name=THEME_MINIMAL,
         description="Minimal colors for focused work",
@@ -332,7 +360,6 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-
     THEME_VIBRANT: Theme(
         name=THEME_VIBRANT,
         description="High contrast with vibrant colors",
@@ -355,17 +382,16 @@ THEMES: dict[str, Theme] = {
         is_dark=True,
         high_contrast=True,
     ),
-
     # Monokai themes
     THEME_MONOKAI_DARK: Theme(
         name=THEME_MONOKAI_DARK,
         description="Monokai color scheme - dark variant",
         console=ConsoleTheme(
             success="#a6e22e",  # Monokai green
-            error="#f92672",    # Monokai red
+            error="#f92672",  # Monokai red
             warning="#e6db74",  # Monokai yellow
-            info="#66d9ef",     # Monokai blue
-            dim="#75715e",      # Monokai comment
+            info="#66d9ef",  # Monokai blue
+            dim="#75715e",  # Monokai comment
             panel_border="#66d9ef",
             panel_title="#f8f8f2",
             user_message="#66d9ef",
@@ -385,15 +411,14 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-
     THEME_MONOKAI_LIGHT: Theme(
         name=THEME_MONOKAI_LIGHT,
         description="Monokai color scheme - light variant",
         console=ConsoleTheme(
             success="#529b2f",  # Darker green for light bg
-            error="#d01b24",    # Darker red for light bg
+            error="#d01b24",  # Darker red for light bg
             warning="#b8860b",  # Darker yellow for light bg
-            info="#0066cc",     # Darker blue for light bg
+            info="#0066cc",  # Darker blue for light bg
             dim="#999999",
             panel_border="#0066cc",
             panel_title="#333333",
@@ -414,17 +439,16 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=False,
     ),
-
     # Dracula themes
     THEME_DRACULA_DARK: Theme(
         name=THEME_DRACULA_DARK,
         description="Dracula color scheme - dark variant",
         console=ConsoleTheme(
             success="#50fa7b",  # Dracula green
-            error="#ff5555",    # Dracula red
+            error="#ff5555",  # Dracula red
             warning="#f1fa8c",  # Dracula yellow
-            info="#8be9fd",     # Dracula cyan
-            dim="#6272a4",      # Dracula comment
+            info="#8be9fd",  # Dracula cyan
+            dim="#6272a4",  # Dracula comment
             panel_border="#bd93f9",  # Dracula purple
             panel_title="#f8f8f2",
             user_message="#8be9fd",
@@ -444,15 +468,14 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-
     THEME_DRACULA_LIGHT: Theme(
         name=THEME_DRACULA_LIGHT,
         description="Dracula color scheme - light variant",
         console=ConsoleTheme(
             success="#2d7d32",  # Darker green for light bg
-            error="#d32f2f",    # Darker red for light bg
+            error="#d32f2f",  # Darker red for light bg
             warning="#f57f17",  # Darker yellow for light bg
-            info="#0288d1",     # Darker cyan for light bg
+            info="#0288d1",  # Darker cyan for light bg
             dim="#757575",
             panel_border="#7b1fa2",  # Darker purple for light bg
             panel_title="#212121",
@@ -473,17 +496,16 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=False,
     ),
-
     # Gruvbox themes
     THEME_GRUVBOX_DARK: Theme(
         name=THEME_GRUVBOX_DARK,
         description="Gruvbox color scheme - dark variant",
         console=ConsoleTheme(
             success="#b8bb26",  # Gruvbox green
-            error="#fb4934",    # Gruvbox red
+            error="#fb4934",  # Gruvbox red
             warning="#fabd2f",  # Gruvbox yellow
-            info="#83a598",     # Gruvbox blue
-            dim="#a89984",      # Gruvbox gray
+            info="#83a598",  # Gruvbox blue
+            dim="#a89984",  # Gruvbox gray
             panel_border="#d3869b",  # Gruvbox purple
             panel_title="#ebdbb2",  # Gruvbox fg
             user_message="#83a598",
@@ -503,16 +525,15 @@ THEMES: dict[str, Theme] = {
         ),
         is_dark=True,
     ),
-
     THEME_GRUVBOX_LIGHT: Theme(
         name=THEME_GRUVBOX_LIGHT,
         description="Gruvbox color scheme - light variant",
         console=ConsoleTheme(
             success="#79740e",  # Gruvbox green (light)
-            error="#cc241d",    # Gruvbox red (light)
+            error="#cc241d",  # Gruvbox red (light)
             warning="#b57614",  # Gruvbox yellow (light)
-            info="#076678",     # Gruvbox blue (light)
-            dim="#928374",      # Gruvbox gray (light)
+            info="#076678",  # Gruvbox blue (light)
+            dim="#928374",  # Gruvbox gray (light)
             panel_border="#8f3f71",  # Gruvbox purple (light)
             panel_title="#3c3836",
             user_message="#076678",
@@ -565,17 +586,14 @@ class ThemeManager:
         """
         if theme_name not in THEMES:
             raise ValueError(
-                f"Unknown theme: {theme_name}. "
-                f"Available themes: {', '.join(THEMES.keys())}"
+                f"Unknown theme: {theme_name}. " f"Available themes: {', '.join(THEMES.keys())}"
             )
 
         # Validate theme colors
         theme = THEMES[theme_name]
         errors = validate_theme_colors(theme)
         if errors:
-            raise ValueError(
-                f"Theme '{theme_name}' has invalid colors:\n" + "\n".join(errors)
-            )
+            raise ValueError(f"Theme '{theme_name}' has invalid colors:\n" + "\n".join(errors))
 
         self.current_theme_name = theme_name
         self._current_theme = None
@@ -594,10 +612,7 @@ class ThemeManager:
 
     @staticmethod
     def create_custom_theme(
-        name: str,
-        description: str,
-        base_theme: str = THEME_DEFAULT,
-        **overrides: Any
+        name: str, description: str, base_theme: str = THEME_DEFAULT, **overrides: Any
     ) -> Theme:
         """Create a custom theme based on an existing theme.
 
@@ -634,9 +649,7 @@ class ThemeManager:
         # Validate the new theme
         errors = validate_theme_colors(new_theme)
         if errors:
-            raise ValueError(
-                f"Custom theme '{name}' has invalid colors:\n" + "\n".join(errors)
-            )
+            raise ValueError(f"Custom theme '{name}' has invalid colors:\n" + "\n".join(errors))
 
         return new_theme
 
@@ -651,6 +664,7 @@ def get_theme_manager() -> ThemeManager:
     if _theme_manager is None:
         # Get theme from configuration
         from .configuration import get_config
+
         config = get_config()
         theme_name = config.ui.get("theme", THEME_DEFAULT)
         _theme_manager = ThemeManager(theme_name)
@@ -678,21 +692,55 @@ def get_prompt_style() -> Style:
 
 def get_themed_console() -> "Console":
     """Get a Rich Console instance with the current theme applied.
-    
+
     Returns:
         Console instance with theme styles
     """
     from rich.console import Console
     from rich.theme import Theme as RichTheme
-    
+
     console_theme = get_console_theme()
     theme_dict = console_theme.to_style_dict()
-    
+
     # Add additional Rich-compatible styles
-    theme_dict.update({
-        "panel.border": console_theme.panel_border,
-        "panel.title": console_theme.panel_title,
-    })
-    
+    theme_dict.update(
+        {
+            "panel.border": console_theme.panel_border,
+            "panel.title": console_theme.panel_title,
+        }
+    )
+
     rich_theme = RichTheme(theme_dict)
     return Console(theme=rich_theme)
+
+
+def create_console(force_theme: str = None) -> "Console":
+    """Create a console instance with proper theming.
+
+    This is a convenience function that allows forcing a specific theme
+    temporarily without modifying the global theme configuration.
+
+    Args:
+        force_theme: Optional theme name to use instead of the current theme
+
+    Returns:
+        Console instance with appropriate theme applied
+
+    Example:
+        # Use current theme
+        console = create_console()
+
+        # Force dark theme for this console instance
+        console = create_console("dark")
+    """
+    if force_theme:
+        # Temporarily set theme, get console, then restore
+        original_theme = get_theme_manager().current_theme_name
+        try:
+            set_theme(force_theme)
+            return get_themed_console()
+        finally:
+            # Restore original theme
+            set_theme(original_theme)
+    else:
+        return get_themed_console()

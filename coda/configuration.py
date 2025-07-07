@@ -200,7 +200,7 @@ class ConfigManager:
 
         # Write config
         config_dict = self.config.to_dict()
-        if hasattr(writer, 'dumps'):
+        if hasattr(writer, "dumps"):
             # tomli_w pattern
             content = writer.dumps(config_dict)
             with open(config_path, "w") as f:

@@ -16,7 +16,7 @@ class TestSessionDatabase:
     @pytest.fixture
     def temp_db(self):
         """Create a temporary database for testing."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
 
         db = SessionDatabase(db_path)
@@ -33,26 +33,20 @@ class TestSessionDatabase:
 
         # Check tables exist
         with temp_db.engine.connect() as conn:
-            result = conn.execute(text(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ))
+            result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
             tables = [row[0] for row in result]
 
-            assert 'sessions' in tables
-            assert 'messages' in tables
-            assert 'tags' in tables
-            assert 'attachments' in tables
-            assert 'search_index' in tables
-            assert 'messages_fts' in tables
+            assert "sessions" in tables
+            assert "messages" in tables
+            assert "tags" in tables
+            assert "attachments" in tables
+            assert "search_index" in tables
+            assert "messages_fts" in tables
 
     def test_session_creation(self, temp_db):
         """Test creating a session."""
         with temp_db.get_session() as db:
-            session = Session(
-                name="Test Session",
-                provider="test_provider",
-                model="test_model"
-            )
+            session = Session(name="Test Session", provider="test_provider", model="test_model")
             db.add(session)
             db.commit()
 
@@ -67,26 +61,17 @@ class TestSessionDatabase:
         """Test creating messages."""
         with temp_db.get_session() as db:
             # Create session first
-            session = Session(
-                name="Test Session",
-                provider="test_provider",
-                model="test_model"
-            )
+            session = Session(name="Test Session", provider="test_provider", model="test_model")
             db.add(session)
             db.commit()
 
             # Create messages
-            msg1 = Message(
-                session_id=session.id,
-                sequence=1,
-                role="user",
-                content="Hello, world!"
-            )
+            msg1 = Message(session_id=session.id, sequence=1, role="user", content="Hello, world!")
             msg2 = Message(
                 session_id=session.id,
                 sequence=2,
                 role="assistant",
-                content="Hello! How can I help you?"
+                content="Hello! How can I help you?",
             )
             db.add(msg1)
             db.add(msg2)
@@ -102,11 +87,7 @@ class TestSessionDatabase:
         """Test full-text search functionality."""
         with temp_db.get_session() as db:
             # Create session and message
-            session = Session(
-                name="Test Session",
-                provider="test_provider",
-                model="test_model"
-            )
+            session = Session(name="Test Session", provider="test_provider", model="test_model")
             db.add(session)
             db.commit()
 
@@ -114,28 +95,37 @@ class TestSessionDatabase:
                 session_id=session.id,
                 sequence=1,
                 role="user",
-                content="Python programming with SQLite database"
+                content="Python programming with SQLite database",
             )
             db.add(message)
             db.commit()
 
             # Add to FTS index
-            db.execute(text("""
+            db.execute(
+                text(
+                    """
                 INSERT INTO messages_fts (message_id, session_id, content, role)
                 VALUES (:msg_id, :session_id, :content, :role)
-            """), {
-                'msg_id': message.id,
-                'session_id': session.id,
-                'content': message.content,
-                'role': message.role
-            })
+            """
+                ),
+                {
+                    "msg_id": message.id,
+                    "session_id": session.id,
+                    "content": message.content,
+                    "role": message.role,
+                },
+            )
             db.commit()
 
             # Search
-            result = db.execute(text("""
+            result = db.execute(
+                text(
+                    """
                 SELECT message_id FROM messages_fts
                 WHERE messages_fts MATCH 'SQLite'
-            """)).fetchall()
+            """
+                )
+            ).fetchall()
 
             assert len(result) == 1
             assert result[0][0] == message.id
@@ -144,11 +134,7 @@ class TestSessionDatabase:
         """Test tag relationships with sessions."""
         with temp_db.get_session() as db:
             # Create session and tags
-            session = Session(
-                name="Test Session",
-                provider="test_provider",
-                model="test_model"
-            )
+            session = Session(name="Test Session", provider="test_provider", model="test_model")
             tag1 = Tag(name="python")
             tag2 = Tag(name="database")
 
@@ -167,11 +153,7 @@ class TestSessionDatabase:
         """Test session parent-child relationships."""
         with temp_db.get_session() as db:
             # Create parent session
-            parent = Session(
-                name="Parent Session",
-                provider="test_provider",
-                model="test_model"
-            )
+            parent = Session(name="Parent Session", provider="test_provider", model="test_model")
             db.add(parent)
             db.commit()
 
@@ -180,7 +162,7 @@ class TestSessionDatabase:
                 name="Branch Session",
                 provider="test_provider",
                 model="test_model",
-                parent_id=parent.id
+                parent_id=parent.id,
             )
             db.add(branch)
             db.commit()
@@ -200,11 +182,7 @@ class TestSessionDatabase:
         # Create and delete some data
         with temp_db.get_session() as db:
             for i in range(10):
-                session = Session(
-                    name=f"Session {i}",
-                    provider="test",
-                    model="test"
-                )
+                session = Session(name=f"Session {i}", provider="test", model="test")
                 db.add(session)
             db.commit()
 
@@ -223,11 +201,7 @@ class TestSessionDatabase:
         """Test database backup functionality."""
         # Create some data
         with temp_db.get_session() as db:
-            session = Session(
-                name="Backup Test",
-                provider="test",
-                model="test"
-            )
+            session = Session(name="Backup Test", provider="test", model="test")
             db.add(session)
             db.commit()
 
@@ -237,7 +211,7 @@ class TestSessionDatabase:
             conn.commit()
 
         # Create backup
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             backup_path = Path(f.name)
 
         temp_db.backup(backup_path)

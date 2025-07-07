@@ -1,6 +1,5 @@
 """Tests for shared mode functionality."""
 
-
 from coda.cli.shared import DeveloperMode, get_mode_description, get_system_prompt
 
 

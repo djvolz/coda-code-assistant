@@ -123,6 +123,7 @@ class TestBasicCommands:
     def test_get_system_prompt(self, cmd_processor):
         """Test system prompt generation for different modes."""
         from coda.cli.shared.modes import get_system_prompt
+
         for mode in DeveloperMode:
             cmd_processor.current_mode = mode
             prompt = get_system_prompt(mode)

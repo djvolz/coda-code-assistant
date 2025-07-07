@@ -17,7 +17,7 @@ class TestInteractiveSessionIntegration:
     @pytest.fixture
     def temp_db_path(self):
         """Create temporary database path."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
         yield db_path
         if db_path.exists():
@@ -55,11 +55,9 @@ class TestInteractiveSessionIntegration:
         cli_messages.append(user_msg)
 
         # Track in session commands
-        cli.session_commands.add_message('user', 'What is Python?', {
-            'provider': 'mock',
-            'model': 'mock-echo',
-            'mode': 'general'
-        })
+        cli.session_commands.add_message(
+            "user", "What is Python?", {"provider": "mock", "model": "mock-echo", "mode": "general"}
+        )
 
         # Get AI response
         ai_response = mock_provider.chat(cli_messages, "mock-echo")
@@ -67,10 +65,9 @@ class TestInteractiveSessionIntegration:
         cli_messages.append(assistant_msg)
 
         # Track response
-        cli.session_commands.add_message('assistant', ai_response, {
-            'provider': 'mock',
-            'model': 'mock-echo'
-        })
+        cli.session_commands.add_message(
+            "assistant", ai_response, {"provider": "mock", "model": "mock-echo"}
+        )
 
         assert len(cli_messages) == 2
         assert "Python" in ai_response
@@ -78,21 +75,21 @@ class TestInteractiveSessionIntegration:
         # === Phase 2: Continue conversation ===
         user_msg2 = Message(role=Role.USER, content="Tell me about decorators")
         cli_messages.append(user_msg2)
-        cli.session_commands.add_message('user', 'Tell me about decorators', {'provider': 'mock'})
+        cli.session_commands.add_message("user", "Tell me about decorators", {"provider": "mock"})
 
         ai_response2 = mock_provider.chat(cli_messages, "mock-echo")
         assistant_msg2 = Message(role=Role.ASSISTANT, content=ai_response2)
         cli_messages.append(assistant_msg2)
-        cli.session_commands.add_message('assistant', ai_response2, {'provider': 'mock'})
+        cli.session_commands.add_message("assistant", ai_response2, {"provider": "mock"})
 
         assert len(cli_messages) == 4
         assert "decorator" in ai_response2.lower()
 
         # === Phase 3: Save session ===
-        with patch('rich.prompt.Prompt.ask', return_value=""):
-            result = cli.session_commands.handle_session_command(['save', 'Test Session'])
+        with patch("rich.prompt.Prompt.ask", return_value=""):
+            result = cli.session_commands.handle_session_command(["save", "Test Session"])
 
-        assert ("Session saved" in result or "Session updated" in result)
+        assert "Session saved" in result or "Session updated" in result
         session_id = cli.session_commands.current_session_id
         assert session_id is not None
 
@@ -118,14 +115,14 @@ class TestInteractiveSessionIntegration:
         no_memory_response = mock_provider.chat(cli_messages, "mock-echo")
 
         # Should not remember previous conversation
-        has_memory = any(word in no_memory_response.lower() for word in ['python', 'decorator'])
+        has_memory = any(word in no_memory_response.lower() for word in ["python", "decorator"])
         assert not has_memory, f"AI should not remember previous conversation: {no_memory_response}"
 
         # Remove test message
         cli_messages.pop()
 
         # === Phase 6: Load session ===
-        result = cli.session_commands.handle_session_command(['load', 'Test Session'])
+        result = cli.session_commands.handle_session_command(["load", "Test Session"])
         assert result is None  # Load prints directly
 
         # Check if messages were loaded
@@ -140,13 +137,18 @@ class TestInteractiveSessionIntegration:
         assert len(cli_messages) == original_message_count
 
         # === Phase 7: Test AI memory restoration ===
-        memory_test_msg = Message(role=Role.USER, content="What were we discussing about decorators?")
+        memory_test_msg = Message(
+            role=Role.USER, content="What were we discussing about decorators?"
+        )
         cli_messages.append(memory_test_msg)
 
         memory_response = mock_provider.chat(cli_messages, "mock-echo")
 
         # Should remember previous conversation
-        has_context = any(word in memory_response.lower() for word in ['python', 'decorator', 'function', 'modify'])
+        has_context = any(
+            word in memory_response.lower()
+            for word in ["python", "decorator", "function", "modify"]
+        )
         assert has_context, f"AI should remember context after loading: {memory_response}"
 
         # === Phase 8: Continue conversation ===
@@ -168,16 +170,16 @@ class TestInteractiveSessionIntegration:
         cli, mock_provider, db = setup_interactive_cli
 
         # Add messages
-        cli.session_commands.add_message('user', 'Hello', {'provider': 'mock'})
-        cli.session_commands.add_message('assistant', 'Hi there!', {'provider': 'mock'})
+        cli.session_commands.add_message("user", "Hello", {"provider": "mock"})
+        cli.session_commands.add_message("assistant", "Hi there!", {"provider": "mock"})
 
         # Test save
-        with patch('rich.prompt.Prompt.ask', return_value=""):
-            result = cli.session_commands.handle_session_command(['save', 'CLI Test'])
-        assert ("Session saved" in result or "Session updated" in result)
+        with patch("rich.prompt.Prompt.ask", return_value=""):
+            result = cli.session_commands.handle_session_command(["save", "CLI Test"])
+        assert "Session saved" in result or "Session updated" in result
 
         # Test list
-        result = cli.session_commands.handle_session_command(['list'])
+        result = cli.session_commands.handle_session_command(["list"])
         assert result is None  # List displays table
 
         # Test clear
@@ -185,7 +187,7 @@ class TestInteractiveSessionIntegration:
         assert len(cli.session_commands.current_messages) == 0
 
         # Test load
-        result = cli.session_commands.handle_session_command(['load', 'CLI Test'])
+        result = cli.session_commands.handle_session_command(["load", "CLI Test"])
         assert result is None  # Load displays info
         assert len(cli.session_commands.current_messages) == 2
 
@@ -202,11 +204,13 @@ class TestInteractiveSessionIntegration:
         ]
 
         # Test context-aware response
-        messages.append(Message(role=Role.USER, content="What were we discussing about decorators?"))
+        messages.append(
+            Message(role=Role.USER, content="What were we discussing about decorators?")
+        )
         response = mock_provider.chat(messages, "mock-echo")
 
         # Should reference previous conversation
-        context_indicators = ['decorator', 'python', 'function', 'modify', 'syntax']
+        context_indicators = ["decorator", "python", "function", "modify", "syntax"]
         has_context = any(indicator in response.lower() for indicator in context_indicators)
         assert has_context, f"Mock provider should show context awareness: {response}"
 
@@ -215,49 +219,53 @@ class TestInteractiveSessionIntegration:
         no_context_response = mock_provider.chat(no_context_messages, "mock-echo")
 
         # Should not reference specific topics
-        has_specific_context = any(word in no_context_response.lower() for word in ['python', 'decorator'])
-        assert not has_specific_context, f"Without context, should not reference specific topics: {no_context_response}"
+        has_specific_context = any(
+            word in no_context_response.lower() for word in ["python", "decorator"]
+        )
+        assert (
+            not has_specific_context
+        ), f"Without context, should not reference specific topics: {no_context_response}"
 
     def test_session_export_with_interactive_data(self, setup_interactive_cli):
         """Test session export contains correct interactive conversation data."""
         cli, mock_provider, db = setup_interactive_cli
 
         # Create conversation
-        cli.session_commands.add_message('user', 'Test export message', {'provider': 'mock'})
-        cli.session_commands.add_message('assistant', 'Export response', {'provider': 'mock'})
+        cli.session_commands.add_message("user", "Test export message", {"provider": "mock"})
+        cli.session_commands.add_message("assistant", "Export response", {"provider": "mock"})
 
         # Save session
-        with patch('rich.prompt.Prompt.ask', return_value=""):
-            cli.session_commands.handle_session_command(['save', 'Export Test'])
+        with patch("rich.prompt.Prompt.ask", return_value=""):
+            cli.session_commands.handle_session_command(["save", "Export Test"])
 
         session_id = cli.session_commands.current_session_id
 
         # Test export
         session_manager = cli.session_commands.manager
-        json_export = session_manager.export_session(session_id, 'json')
-        md_export = session_manager.export_session(session_id, 'markdown')
+        json_export = session_manager.export_session(session_id, "json")
+        md_export = session_manager.export_session(session_id, "markdown")
 
         # Verify content
-        assert 'Test export message' in json_export
-        assert 'Export response' in json_export
-        assert 'Test export message' in md_export
-        assert 'Export response' in md_export
+        assert "Test export message" in json_export
+        assert "Export response" in json_export
+        assert "Test export message" in md_export
+        assert "Export response" in md_export
 
         # Verify structure
         assert '"role": "user"' in json_export
         assert '"role": "assistant"' in json_export
-        assert '👤 User' in md_export or '🤖 Assistant' in md_export
+        assert "👤 User" in md_export or "🤖 Assistant" in md_export
 
     def test_conversation_continuity_edge_cases(self, setup_interactive_cli):
         """Test edge cases in conversation continuity."""
         cli, mock_provider, db = setup_interactive_cli
 
         # Test loading non-existent session
-        result = cli.session_commands.handle_session_command(['load', 'NonExistent'])
+        result = cli.session_commands.handle_session_command(["load", "NonExistent"])
         assert "Session not found" in result
 
         # Test saving empty conversation
-        result = cli.session_commands.handle_session_command(['save', 'Empty'])
+        result = cli.session_commands.handle_session_command(["save", "Empty"])
         assert "No messages to save" in result
 
         # Test clear when already empty

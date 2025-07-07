@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -15,7 +15,7 @@ class TestSessionAutoSave:
     @pytest.fixture
     def temp_db_path(self):
         """Create temporary database path."""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)
         yield db_path
         if db_path.exists():
@@ -50,7 +50,7 @@ class TestSessionAutoSave:
         session_commands.add_message(
             role="assistant",
             content="Hello there!",
-            metadata={"provider": "test", "model": "test-model"}
+            metadata={"provider": "test", "model": "test-model"},
         )
 
         # Should not create a session
@@ -60,11 +60,7 @@ class TestSessionAutoSave:
     def test_auto_save_on_first_exchange(self, session_commands):
         """Test that auto-save triggers on first user-assistant exchange."""
         # Add user message
-        session_commands.add_message(
-            role="user",
-            content="Hello AI!",
-            metadata={"mode": "general"}
-        )
+        session_commands.add_message(role="user", content="Hello AI!", metadata={"mode": "general"})
 
         # Session should not be created yet
         assert session_commands.current_session_id is None
@@ -73,11 +69,7 @@ class TestSessionAutoSave:
         session_commands.add_message(
             role="assistant",
             content="Hello! How can I help you?",
-            metadata={
-                "provider": "mock",
-                "model": "mock-echo",
-                "mode": "general"
-            }
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Session should now be created
@@ -107,21 +99,13 @@ class TestSessionAutoSave:
         session_commands.auto_save_enabled = False
 
         # Add user message
-        session_commands.add_message(
-            role="user",
-            content="Hello AI!",
-            metadata={"mode": "general"}
-        )
+        session_commands.add_message(role="user", content="Hello AI!", metadata={"mode": "general"})
 
         # Add assistant response
         session_commands.add_message(
             role="assistant",
             content="Hello! How can I help you?",
-            metadata={
-                "provider": "mock",
-                "model": "mock-echo",
-                "mode": "general"
-            }
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Session should not be created
@@ -132,18 +116,12 @@ class TestSessionAutoSave:
         """Test that subsequent messages are saved to existing auto-saved session."""
         # Create initial exchange to trigger auto-save
         session_commands.add_message(
-            role="user",
-            content="First message",
-            metadata={"mode": "general"}
+            role="user", content="First message", metadata={"mode": "general"}
         )
         session_commands.add_message(
             role="assistant",
             content="First response",
-            metadata={
-                "provider": "mock",
-                "model": "mock-echo",
-                "mode": "general"
-            }
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Capture session ID
@@ -152,18 +130,12 @@ class TestSessionAutoSave:
 
         # Add more messages
         session_commands.add_message(
-            role="user",
-            content="Second message",
-            metadata={"mode": "general"}
+            role="user", content="Second message", metadata={"mode": "general"}
         )
         session_commands.add_message(
             role="assistant",
             content="Second response",
-            metadata={
-                "provider": "mock",
-                "model": "mock-echo",
-                "mode": "general"
-            }
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Should still be the same session
@@ -179,18 +151,12 @@ class TestSessionAutoSave:
         """Test renaming an auto-saved session."""
         # Create auto-saved session
         session_commands.add_message(
-            role="user",
-            content="Test message",
-            metadata={"mode": "general"}
+            role="user", content="Test message", metadata={"mode": "general"}
         )
         session_commands.add_message(
             role="assistant",
             content="Test response",
-            metadata={
-                "provider": "mock",
-                "model": "mock-echo",
-                "mode": "general"
-            }
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         session_id = session_commands.current_session_id
@@ -204,27 +170,22 @@ class TestSessionAutoSave:
         session = session_commands.manager.get_session(session_id)
         assert session.name == "My Important Chat"
 
-    @patch('coda.session.commands.Console')
-    def test_auto_save_notification(self, mock_console, session_manager):
+    @patch("coda.themes.get_themed_console")
+    def test_auto_save_notification(self, mock_get_console, session_manager):
         """Test that auto-save shows notification."""
+        # Create mock console
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         # Create commands with mocked console
         commands = SessionCommands(session_manager)
-        commands.console = mock_console()
 
         # Trigger auto-save
-        commands.add_message(
-            role="user",
-            content="Test",
-            metadata={"mode": "general"}
-        )
+        commands.add_message(role="user", content="Test", metadata={"mode": "general"})
         commands.add_message(
             role="assistant",
             content="Response",
-            metadata={
-                "provider": "mock",
-                "model": "mock-echo",
-                "mode": "general"
-            }
+            metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
         )
 
         # Verify notification was printed
@@ -238,29 +199,24 @@ class TestSessionAutoSave:
                 break
         assert found_notification
 
-    @patch('coda.session.commands.Console')
-    def test_auto_save_error_handling(self, mock_console, session_manager):
+    @patch("coda.themes.get_themed_console")
+    def test_auto_save_error_handling(self, mock_get_console, session_manager):
         """Test that auto-save handles errors gracefully."""
+        # Create mock console
+        mock_console = MagicMock()
+        mock_get_console.return_value = mock_console
+
         # Create commands with mocked console
         commands = SessionCommands(session_manager)
-        commands.console = mock_console()
 
         # Mock the create_session to raise an error
-        with patch.object(commands.manager, 'create_session', side_effect=Exception("DB Error")):
+        with patch.object(commands.manager, "create_session", side_effect=Exception("DB Error")):
             # Trigger auto-save
-            commands.add_message(
-                role="user",
-                content="Test",
-                metadata={"mode": "general"}
-            )
+            commands.add_message(role="user", content="Test", metadata={"mode": "general"})
             commands.add_message(
                 role="assistant",
                 content="Response",
-                metadata={
-                    "provider": "mock",
-                    "model": "mock-echo",
-                    "mode": "general"
-                }
+                metadata={"provider": "mock", "model": "mock-echo", "mode": "general"},
             )
 
         # Verify error was handled

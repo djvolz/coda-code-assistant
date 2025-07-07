@@ -1,6 +1,5 @@
 """Tests for MockProvider with all CLI commands."""
 
-
 import pytest
 
 from coda.providers import Message, MockProvider, Role
@@ -19,7 +18,7 @@ class TestMockProviderCommands:
             Message(role=Role.USER, content="Tell me about Python"),
             Message(role=Role.ASSISTANT, content="Python is a programming language..."),
             Message(role=Role.USER, content="What about decorators?"),
-            Message(role=Role.ASSISTANT, content="Decorators are...")
+            Message(role=Role.ASSISTANT, content="Decorators are..."),
         ]
 
         # Ask about previous conversation
@@ -68,13 +67,13 @@ class TestMockProviderCommands:
             "explain": "You are a code explanation assistant",
             "review": "You are a code review assistant",
             "refactor": "You are a refactoring assistant",
-            "plan": "You are an architecture planning assistant"
+            "plan": "You are an architecture planning assistant",
         }
 
         for mode, prompt in mode_prompts.items():
             messages = [
                 Message(role=Role.SYSTEM, content=prompt),
-                Message(role=Role.USER, content=f"I need help with Python in {mode} mode")
+                Message(role=Role.USER, content=f"I need help with Python in {mode} mode"),
             ]
 
             response = provider.chat(messages, "mock-echo")
@@ -96,7 +95,7 @@ class TestMockProviderCommands:
             Message(role=Role.USER, content="Tell me about Flask"),
             Message(role=Role.ASSISTANT, content="Flask is a micro framework..."),
             Message(role=Role.USER, content="What about Django?"),
-            Message(role=Role.ASSISTANT, content="Django is a full-featured framework...")
+            Message(role=Role.ASSISTANT, content="Django is a full-featured framework..."),
         ]
 
         # User might ask to summarize before saving
@@ -113,7 +112,9 @@ class TestMockProviderCommands:
         response_loaded = provider.chat(loaded_messages, "mock-echo")
 
         # Should remember the context
-        assert any(word in response_loaded.lower() for word in ["python", "flask", "django", "framework"])
+        assert any(
+            word in response_loaded.lower() for word in ["python", "flask", "django", "framework"]
+        )
 
     def test_export_command_scenarios(self):
         """Test conversations that might be exported."""
@@ -125,7 +126,7 @@ class TestMockProviderCommands:
             Message(role=Role.ASSISTANT, content="Here's a decorator example..."),
             Message(role=Role.USER, content="Can you explain how it works?"),
             Message(role=Role.ASSISTANT, content="The decorator modifies..."),
-            Message(role=Role.USER, content="What else can decorators do?")
+            Message(role=Role.USER, content="What else can decorators do?"),
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -142,7 +143,7 @@ class TestMockProviderCommands:
         messages = [
             Message(role=Role.USER, content="I'm learning Python"),
             Message(role=Role.ASSISTANT, content="Great! Python is..."),
-            Message(role=Role.USER, content="help")  # Could be asking for help
+            Message(role=Role.USER, content="help"),  # Could be asking for help
         ]
 
         response = provider.chat(messages, "mock-echo")
@@ -174,7 +175,7 @@ class TestMockProviderCommands:
             "I tried /cleear but it didn't work",
             "The /modle command isn't working",
             "How do I use /sesion save?",
-            "Is there a /delete command?"
+            "Is there a /delete command?",
         ]
 
         for scenario in error_scenarios:
@@ -194,7 +195,7 @@ class TestMockProviderCommands:
             "How do I save this session?",
             "Can I export this conversation?",
             "How do I search my sessions?",
-            "Tell me about the tools command"
+            "Tell me about the tools command",
         ]
 
         for command_question in interactive_commands:
@@ -216,7 +217,7 @@ class TestMockProviderCommands:
             Message(role=Role.ASSISTANT, content="Great! I'm ready to help with code."),
             Message(role=Role.USER, content="And I'm using the smart model now"),
             Message(role=Role.ASSISTANT, content="Excellent choice!"),
-            Message(role=Role.USER, content="Show me a Python class example")
+            Message(role=Role.USER, content="Show me a Python class example"),
         ]
 
         response = provider.chat(messages, "mock-smart")
@@ -231,7 +232,7 @@ class TestMockProviderCommands:
         coming_soon = [
             "When will the tools command be available?",
             "I want to change the theme",
-            "Tell me about MCP tools"
+            "Tell me about MCP tools",
         ]
 
         for question in coming_soon:
@@ -252,9 +253,7 @@ class TestMockProviderCommandIntegration:
         provider = MockProvider()
 
         # 1. Start conversation
-        messages = [
-            Message(role=Role.USER, content="I need help with Python async programming")
-        ]
+        messages = [Message(role=Role.USER, content="I need help with Python async programming")]
         response1 = provider.chat(messages, "mock-echo")
         messages.append(Message(role=Role.ASSISTANT, content=response1))
 
@@ -295,9 +294,9 @@ class TestMockProviderCommandIntegration:
                     (Role.USER, "Hi, I want to learn programming"),
                     (Role.ASSISTANT, "Hello! I can help..."),
                     (Role.SYSTEM, "You are in code mode"),
-                    (Role.USER, "Show me a Python example")
+                    (Role.USER, "Show me a Python example"),
                 ],
-                "final_check": "python"
+                "final_check": "python",
             },
             # Code -> Debug
             {
@@ -306,9 +305,9 @@ class TestMockProviderCommandIntegration:
                     (Role.USER, "Here's my Python function"),
                     (Role.ASSISTANT, "I see your function..."),
                     (Role.SYSTEM, "You are in debug mode"),
-                    (Role.USER, "Why isn't it working?")
+                    (Role.USER, "Why isn't it working?"),
                 ],
-                "final_check": "python"
+                "final_check": "python",
             },
             # Debug -> Explain
             {
@@ -317,10 +316,10 @@ class TestMockProviderCommandIntegration:
                     (Role.USER, "Found the bug in my Python code"),
                     (Role.ASSISTANT, "Good job finding it..."),
                     (Role.SYSTEM, "You are in explain mode"),
-                    (Role.USER, "Can you explain why that happened?")
+                    (Role.USER, "Can you explain why that happened?"),
                 ],
-                "final_check": "python"
-            }
+                "final_check": "python",
+            },
         ]
 
         for workflow in workflows:

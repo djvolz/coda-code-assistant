@@ -22,10 +22,13 @@ class TestSystemPromptIntegration:
     def mock_models(self):
         """Create mock models."""
         return [
-            Model(id="model1", name="Model 1", provider="test", metadata={"capabilities": ["CHAT"]}),
-            Model(id="model2", name="Model 2", provider="test", metadata={"capabilities": ["CHAT"]}),
+            Model(
+                id="model1", name="Model 1", provider="test", metadata={"capabilities": ["CHAT"]}
+            ),
+            Model(
+                id="model2", name="Model 2", provider="test", metadata={"capabilities": ["CHAT"]}
+            ),
         ]
-
 
     def test_basic_mode_system_prompts(self, mock_provider):
         """Test that basic mode (ChatSession) correctly sends system prompts."""
@@ -58,7 +61,6 @@ class TestSystemPromptIntegration:
             # Verify system prompt matches expected
             assert messages[0].role == Role.SYSTEM
             assert messages[0].content == get_system_prompt(mode)
-
 
     def test_mode_command_takes_effect_immediately(self, mock_provider):
         """Test that mode commands take effect on the very next message."""
