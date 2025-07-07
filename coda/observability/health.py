@@ -9,6 +9,7 @@ This module provides health checks and monitoring for:
 
 import time
 import threading
+import json
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ from pathlib import Path
 
 from ..constants import ENV_PREFIX
 from ..configuration import ConfigManager
+from .base import ObservabilityComponent
 
 
 @dataclass
@@ -61,31 +63,26 @@ class ComponentHealth:
         }
 
 
-class HealthMonitor:
+class HealthMonitor(ObservabilityComponent):
     """Monitors health of Coda components and providers."""
     
-    def __init__(self, config_manager: ConfigManager):
+    def __init__(self, export_directory: Path, config_manager: ConfigManager,
+                 storage_backend=None, scheduler=None):
         """Initialize the health monitor.
         
         Args:
+            export_directory: Directory to export health data
             config_manager: Configuration manager instance
+            storage_backend: Optional storage backend
+            scheduler: Optional shared scheduler
         """
-        self.config_manager = config_manager
+        super().__init__(export_directory, config_manager, storage_backend, scheduler)
         
         # Health check storage
         self.component_health: Dict[str, ComponentHealth] = {}
         self.check_history: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
         
-        # Thread safety
-        self._lock = threading.RLock()
-        
         # Configuration
-        self.check_interval = config_manager.get_int(
-            "observability.health.check_interval",
-            default=30,  # 30 seconds
-            env_var=f"{ENV_PREFIX}HEALTH_CHECK_INTERVAL"
-        )
-        
         self.unhealthy_threshold = config_manager.get_int(
             "observability.health.unhealthy_threshold",
             default=3,  # 3 consecutive failures
@@ -101,44 +98,28 @@ class HealthMonitor:
         # Health check functions
         self.health_checkers: Dict[str, Callable[[], HealthCheck]] = {}
         
-        # Background monitoring
-        self._monitor_thread: Optional[threading.Thread] = None
-        self._running = False
+        # Health data file
+        self.health_file = self.export_directory / "health_status.json"
         
         # Register default health checks
         self._register_default_checks()
     
-    def start(self):
-        """Start the health monitor."""
-        with self._lock:
-            if self._running:
-                return
-            
-            self._running = True
-            self._monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
-            self._monitor_thread.start()
+    def get_component_name(self) -> str:
+        """Return the component name for logging."""
+        return "HealthMonitor"
     
-    def stop(self):
-        """Stop the health monitor."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._running = False
-            
-            if self._monitor_thread:
-                self._monitor_thread.join(timeout=5.0)
-                self._monitor_thread = None
+    def get_flush_interval(self) -> int:
+        """Return the flush interval in seconds."""
+        return self.config_manager.get_int(
+            "observability.health.check_interval",
+            default=30,  # 30 seconds
+            env_var=f"{ENV_PREFIX}HEALTH_CHECK_INTERVAL"
+        )
     
-    def _monitor_loop(self):
-        """Main monitoring loop."""
-        while self._running:
-            try:
-                self._run_health_checks()
-                time.sleep(self.check_interval)
-            except Exception as e:
-                print(f"Health monitor error: {e}")
-                time.sleep(self.check_interval)
+    def _flush_data(self) -> None:
+        """Run health checks as part of the flush cycle."""
+        self._run_health_checks()
+        self._save_health_data()
     
     def _run_health_checks(self):
         """Run all registered health checks."""
@@ -528,9 +509,31 @@ class HealthMonitor:
         with self._lock:
             return {
                 "running": self._running,
-                "check_interval": self.check_interval,
+                "check_interval": self.get_flush_interval(),
                 "unhealthy_threshold": self.unhealthy_threshold,
                 "degraded_threshold": self.degraded_threshold,
                 "registered_checks": list(self.health_checkers.keys()),
                 "component_count": len(self.component_health)
             }
+    
+    def _save_health_data(self):
+        """Save health data to file."""
+        try:
+            health_data = {
+                "overall_health": self.get_overall_health(),
+                "components": {
+                    name: component.to_dict()
+                    for name, component in self.component_health.items()
+                },
+                "last_updated": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # Write to temp file first, then atomic rename
+            temp_file = self.health_file.with_suffix('.tmp')
+            with open(temp_file, 'w') as f:
+                json.dump(health_data, f, indent=2)
+            
+            temp_file.replace(self.health_file)
+        
+        except Exception as e:
+            print(f"Warning: Failed to save health data: {e}")

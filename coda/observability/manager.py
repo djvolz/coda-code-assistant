@@ -15,6 +15,7 @@ from .tracing import TracingManager
 from .health import HealthMonitor
 from .error_tracker import ErrorTracker, ErrorCategory, ErrorSeverity
 from .profiler import PerformanceProfiler
+from .scheduler import PeriodicTaskScheduler
 
 
 class ObservabilityManager:
@@ -29,6 +30,9 @@ class ObservabilityManager:
         self.config_manager = config_manager
         self.enabled = self._is_enabled()
         self.export_directory = self._get_export_directory()
+        
+        # Initialize scheduler
+        self.scheduler: Optional[PeriodicTaskScheduler] = None
         
         # Initialize components
         self.metrics_collector: Optional[MetricsCollector] = None
@@ -66,38 +70,46 @@ class ObservabilityManager:
     def _initialize_components(self):
         """Initialize observability components."""
         try:
+            # Initialize shared scheduler
+            self.scheduler = PeriodicTaskScheduler(max_workers=2)
             # Initialize metrics collector
             if self.config_manager.get_bool("observability.metrics.enabled", default=True):
                 self.metrics_collector = MetricsCollector(
                     export_directory=self.export_directory,
-                    config_manager=self.config_manager
+                    config_manager=self.config_manager,
+                    scheduler=self.scheduler
                 )
             
             # Initialize tracing manager
             if self.config_manager.get_bool("observability.tracing.enabled", default=True):
                 self.tracing_manager = TracingManager(
                     export_directory=self.export_directory,
-                    config_manager=self.config_manager
+                    config_manager=self.config_manager,
+                    scheduler=self.scheduler
                 )
             
             # Initialize health monitor
             if self.config_manager.get_bool("observability.health.enabled", default=True):
                 self.health_monitor = HealthMonitor(
-                    config_manager=self.config_manager
+                    export_directory=self.export_directory,
+                    config_manager=self.config_manager,
+                    scheduler=self.scheduler
                 )
             
             # Initialize error tracker
             if self.config_manager.get_bool("observability.error_tracking.enabled", default=True):
                 self.error_tracker = ErrorTracker(
                     export_directory=self.export_directory,
-                    config_manager=self.config_manager
+                    config_manager=self.config_manager,
+                    scheduler=self.scheduler
                 )
             
             # Initialize performance profiler
             if self.config_manager.get_bool("observability.profiling.enabled", default=False):
                 self.profiler = PerformanceProfiler(
                     export_directory=self.export_directory,
-                    config_manager=self.config_manager
+                    config_manager=self.config_manager,
+                    scheduler=self.scheduler
                 )
             
             self.logger.info("Observability components initialized successfully")
@@ -112,6 +124,10 @@ class ObservabilityManager:
             return
         
         try:
+            # Start scheduler first
+            if self.scheduler:
+                self.scheduler.start()
+            
             if self.metrics_collector:
                 self.metrics_collector.start()
             
@@ -152,6 +168,10 @@ class ObservabilityManager:
             
             if self.metrics_collector:
                 self.metrics_collector.stop()
+            
+            # Stop scheduler last
+            if self.scheduler:
+                self.scheduler.stop(wait=True, timeout=5.0)
             
             self.logger.info("Observability monitoring stopped")
             

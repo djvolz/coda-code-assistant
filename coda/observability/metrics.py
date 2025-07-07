@@ -10,6 +10,7 @@ This module provides comprehensive metrics collection including:
 import json
 import time
 import threading
+import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from pathlib import Path
@@ -18,6 +19,10 @@ from collections import defaultdict, deque
 
 from ..constants import ENV_PREFIX
 from ..configuration import ConfigManager
+from .base import ObservabilityComponent
+from .collections import MemoryAwareDeque
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -83,84 +88,54 @@ class ProviderMetrics:
         return data
 
 
-class MetricsCollector:
+class MetricsCollector(ObservabilityComponent):
     """Collects and manages metrics for Coda."""
     
-    def __init__(self, export_directory: Path, config_manager: ConfigManager):
+    def __init__(self, export_directory: Path, config_manager: ConfigManager, 
+                 storage_backend=None, scheduler=None):
         """Initialize the metrics collector.
         
         Args:
             export_directory: Directory to export metrics data
             config_manager: Configuration manager instance
+            storage_backend: Optional storage backend
+            scheduler: Optional shared scheduler
         """
-        self.export_directory = export_directory
-        self.config_manager = config_manager
-        self.metrics_file = export_directory / "metrics.json"
+        super().__init__(export_directory, config_manager, storage_backend, scheduler)
+        self.metrics_file = self.export_directory / "metrics.json"
         
         # Metrics storage
         self.session_metrics: Dict[str, SessionMetrics] = {}
         self.provider_metrics: Dict[str, ProviderMetrics] = {}
-        self.error_log: deque = deque(maxlen=1000)  # Keep last 1000 errors
-        self.daily_stats: Dict[str, Dict[str, Any]] = defaultdict(dict)
         
-        # Thread safety
-        self._lock = threading.RLock()
-        
-        # Configuration
-        self.flush_interval = config_manager.get_int(
-            "observability.metrics.flush_interval",
-            default=300,  # 5 minutes
-            env_var=f"{ENV_PREFIX}METRICS_FLUSH_INTERVAL"
+        # Use memory-aware deque for error log
+        max_memory_mb = config_manager.get_float(
+            "observability.metrics.max_memory_mb",
+            default=50.0,
+            env_var=f"{ENV_PREFIX}METRICS_MAX_MEMORY_MB"
+        )
+        self.error_log = MemoryAwareDeque(
+            maxlen=10000,  # Keep last 10k errors max
+            max_memory_mb=max_memory_mb,
+            eviction_callback=self._on_error_evicted
         )
         
-        # Background flushing
-        self._flush_timer: Optional[threading.Timer] = None
-        self._running = False
+        self.daily_stats: Dict[str, Dict[str, Any]] = defaultdict(dict)
         
         # Load existing metrics if available
         self._load_metrics()
     
-    def start(self):
-        """Start the metrics collector."""
-        with self._lock:
-            if self._running:
-                return
-            
-            self._running = True
-            self._schedule_flush()
+    def get_component_name(self) -> str:
+        """Return the component name for logging."""
+        return "MetricsCollector"
     
-    def stop(self):
-        """Stop the metrics collector and flush data."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._running = False
-            
-            if self._flush_timer:
-                self._flush_timer.cancel()
-                self._flush_timer = None
-            
-            # Final flush
-            self._flush_metrics()
-    
-    def _schedule_flush(self):
-        """Schedule periodic metrics flushing."""
-        if not self._running:
-            return
-        
-        self._flush_timer = threading.Timer(self.flush_interval, self._periodic_flush)
-        self._flush_timer.daemon = True
-        self._flush_timer.start()
-    
-    def _periodic_flush(self):
-        """Periodic flush of metrics data."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._flush_metrics()
-            self._schedule_flush()
+    def get_flush_interval(self) -> int:
+        """Return the flush interval in seconds."""
+        return self.config_manager.get_int(
+            "observability.metrics.flush_interval",
+            default=300,  # 5 minutes
+            env_var=f"{ENV_PREFIX}METRICS_FLUSH_INTERVAL"
+        )
     
     def record_session_event(self, event_type: str, metadata: Dict[str, Any]):
         """Record a session-related event."""
@@ -369,7 +344,8 @@ class MetricsCollector:
             
             # Load error log
             if "errors" in data:
-                self.error_log.extend(data["errors"])
+                for error in data["errors"]:
+                    self.error_log.append(error)
             
             # Load daily stats
             if "daily_stats" in data:
@@ -378,6 +354,10 @@ class MetricsCollector:
         except Exception as e:
             # Log error but don't fail initialization
             print(f"Warning: Failed to load existing metrics: {e}")
+    
+    def _flush_data(self) -> None:
+        """Flush metrics data to storage."""
+        self._flush_metrics()
     
     def _flush_metrics(self):
         """Flush metrics to file."""
@@ -399,3 +379,8 @@ class MetricsCollector:
             
         except Exception as e:
             print(f"Warning: Failed to flush metrics: {e}")
+    
+    def _on_error_evicted(self, error_data: Dict[str, Any]) -> None:
+        """Handle evicted error data."""
+        # Log that we're evicting old errors due to memory pressure
+        logger.debug(f"Evicting old error from {error_data.get('timestamp', 'unknown')}")
