@@ -16,6 +16,8 @@ from collections import defaultdict
 
 from ..constants import ENV_PREFIX
 from ..configuration import ConfigManager
+from .base import ObservabilityComponent
+from .collections import MemoryAwareDeque, BoundedCache
 
 
 @dataclass
@@ -123,26 +125,37 @@ class NoopSpanContext:
         pass
 
 
-class TracingManager:
+class TracingManager(ObservabilityComponent):
     """Manages distributed tracing for Coda."""
     
-    def __init__(self, export_directory: Path, config_manager: ConfigManager):
+    def __init__(self, export_directory: Path, config_manager: ConfigManager,
+                 storage_backend=None, scheduler=None):
         """Initialize the tracing manager.
         
         Args:
             export_directory: Directory to export trace data
             config_manager: Configuration manager instance
+            storage_backend: Optional storage backend
+            scheduler: Optional shared scheduler
         """
-        self.export_directory = export_directory
-        self.config_manager = config_manager
-        self.traces_file = export_directory / "traces.json"
+        super().__init__(export_directory, config_manager, storage_backend, scheduler)
+        self.traces_file = self.export_directory / "traces.json"
         
         # Tracing storage
         self.active_spans: Dict[str, Span] = {}
-        self.completed_traces: Dict[str, List[Span]] = {}
         
-        # Thread safety
-        self._lock = threading.RLock()
+        # Use bounded cache for completed traces
+        max_memory_mb = config_manager.get_float(
+            "observability.tracing.max_memory_mb",
+            default=100.0,
+            env_var=f"{ENV_PREFIX}TRACING_MAX_MEMORY_MB"
+        )
+        self.completed_traces_cache = BoundedCache(
+            max_size=1000,  # Max 1000 traces
+            max_memory_mb=max_memory_mb,
+            ttl_seconds=3600  # Keep traces for 1 hour
+        )
+        self.completed_traces: Dict[str, List[Span]] = {}
         
         # Configuration
         self.sample_rate = config_manager.get_float(
@@ -157,68 +170,34 @@ class TracingManager:
             env_var=f"{ENV_PREFIX}TRACING_MAX_SPANS"
         )
         
-        self.flush_interval = config_manager.get_int(
-            "observability.tracing.flush_interval",
-            default=60,  # 1 minute
-            env_var=f"{ENV_PREFIX}TRACING_FLUSH_INTERVAL"
-        )
-        
-        # Background flushing
-        self._flush_timer: Optional[threading.Timer] = None
-        self._running = False
-        
         # Span ID generation
         self._span_counter = 0
         
         # Load existing traces if available
         self._load_traces()
     
-    def start(self):
-        """Start the tracing manager."""
-        with self._lock:
-            if self._running:
-                return
-            
-            self._running = True
-            self._schedule_flush()
+    def get_component_name(self) -> str:
+        """Return the component name for logging."""
+        return "TracingManager"
+    
+    def get_flush_interval(self) -> int:
+        """Return the flush interval in seconds."""
+        return self.config_manager.get_int(
+            "observability.tracing.flush_interval",
+            default=60,  # 1 minute
+            env_var=f"{ENV_PREFIX}TRACING_FLUSH_INTERVAL"
+        )
     
     def stop(self):
         """Stop the tracing manager and flush data."""
+        # Finish all active spans before calling parent stop
         with self._lock:
-            if not self._running:
-                return
-            
-            self._running = False
-            
-            if self._flush_timer:
-                self._flush_timer.cancel()
-                self._flush_timer = None
-            
-            # Finish all active spans
             for span in list(self.active_spans.values()):
                 span.finish()
                 self._finish_span(span)
-            
-            # Final flush
-            self._flush_traces()
-    
-    def _schedule_flush(self):
-        """Schedule periodic trace flushing."""
-        if not self._running:
-            return
         
-        self._flush_timer = threading.Timer(self.flush_interval, self._periodic_flush)
-        self._flush_timer.daemon = True
-        self._flush_timer.start()
-    
-    def _periodic_flush(self):
-        """Periodic flush of trace data."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._flush_traces()
-            self._schedule_flush()
+        # Call parent stop which handles flush
+        super().stop()
     
     def _generate_span_id(self) -> str:
         """Generate a unique span ID."""
@@ -402,6 +381,10 @@ class TracingManager:
             # Log error but don't fail initialization
             print(f"Warning: Failed to load existing traces: {e}")
     
+    def _flush_data(self) -> None:
+        """Flush trace data to storage."""
+        self._flush_traces()
+    
     def _flush_traces(self):
         """Flush traces to file."""
         try:
@@ -431,7 +414,7 @@ class TracingManager:
             print(f"Warning: Failed to flush traces: {e}")
     
     @contextmanager
-    def trace_operation(self, operation_name: str, **tags):
+    def trace(self, operation_name: str, **tags):
         """Context manager for tracing an operation."""
         with self.create_span(operation_name, **tags) as span:
             yield span

@@ -14,6 +14,7 @@ from rich.tree import Tree
 from rich.syntax import Syntax
 
 from .manager import ObservabilityManager
+from .security import PathValidator, SecurityError
 
 
 class ObservabilityCommands:
@@ -316,6 +317,29 @@ class ObservabilityCommands:
         if not self.obs_manager.enabled:
             self.console.print("[yellow]Observability is not enabled[/yellow]")
             return
+        
+        # Validate output file path if provided
+        if output_file:
+            try:
+                from pathlib import Path
+                output_path = Path(output_file)
+                
+                # Validate filename
+                PathValidator.validate_filename(
+                    output_path.name,
+                    allowed_extensions=['.json', '.txt']
+                )
+                
+                # If path has parent directories, validate them
+                if output_path.parent != Path('.'):
+                    # Use current directory as base for validation
+                    PathValidator.validate_export_path(
+                        output_path,
+                        Path.cwd()
+                    )
+            except SecurityError as e:
+                self.console.print(f"[red]Invalid output path: {e}[/red]")
+                return
         
         data = {}
         

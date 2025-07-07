@@ -16,6 +16,7 @@ import json
 
 from ..constants import ENV_PREFIX
 from ..configuration import ConfigManager
+from .base import ObservabilityComponent
 
 
 @dataclass
@@ -67,26 +68,25 @@ class FunctionStats:
         return asdict(self)
 
 
-class PerformanceProfiler:
+class PerformanceProfiler(ObservabilityComponent):
     """Lightweight performance profiler for debug mode."""
     
-    def __init__(self, export_directory: Path, config_manager: ConfigManager):
+    def __init__(self, export_directory: Path, config_manager: ConfigManager,
+                 storage_backend=None, scheduler=None):
         """Initialize the performance profiler.
         
         Args:
             export_directory: Directory to export profiling data
             config_manager: Configuration manager instance
+            storage_backend: Optional storage backend
+            scheduler: Optional shared scheduler
         """
-        self.export_directory = export_directory
-        self.config_manager = config_manager
-        self.profile_file = export_directory / "performance_profiles.json"
+        super().__init__(export_directory, config_manager, storage_backend, scheduler)
+        self.profile_file = self.export_directory / "performance_profiles.json"
         
         # Profiling storage
         self.profile_entries: deque = deque(maxlen=10000)  # Keep last 10k entries
         self.function_stats: Dict[str, FunctionStats] = {}
-        
-        # Thread safety
-        self._lock = threading.RLock()
         
         # Configuration
         self.enabled = config_manager.get_bool(
@@ -113,16 +113,6 @@ class PerformanceProfiler:
             env_var=f"{ENV_PREFIX}PROFILING_TRACK_MEMORY"
         )
         
-        self.flush_interval = config_manager.get_int(
-            "observability.profiling.flush_interval",
-            default=600,  # 10 minutes
-            env_var=f"{ENV_PREFIX}PROFILING_FLUSH_INTERVAL"
-        )
-        
-        # Background flushing
-        self._flush_timer: Optional[threading.Timer] = None
-        self._running = False
-        
         # Memory tracking
         self._memory_tracker = None
         if self.track_memory:
@@ -135,50 +125,24 @@ class PerformanceProfiler:
         # Load existing data
         self._load_profile_data()
     
+    def get_component_name(self) -> str:
+        """Return the component name for logging."""
+        return "PerformanceProfiler"
+    
+    def get_flush_interval(self) -> int:
+        """Return the flush interval in seconds."""
+        return self.config_manager.get_int(
+            "observability.profiling.flush_interval",
+            default=600,  # 10 minutes
+            env_var=f"{ENV_PREFIX}PROFILING_FLUSH_INTERVAL"
+        )
+    
     def start(self):
         """Start the profiler."""
         if not self.enabled:
             return
         
-        with self._lock:
-            if self._running:
-                return
-            
-            self._running = True
-            self._schedule_flush()
-    
-    def stop(self):
-        """Stop the profiler and flush data."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._running = False
-            
-            if self._flush_timer:
-                self._flush_timer.cancel()
-                self._flush_timer = None
-            
-            # Final flush
-            self._flush_data()
-    
-    def _schedule_flush(self):
-        """Schedule periodic data flushing."""
-        if not self._running:
-            return
-        
-        self._flush_timer = threading.Timer(self.flush_interval, self._periodic_flush)
-        self._flush_timer.daemon = True
-        self._flush_timer.start()
-    
-    def _periodic_flush(self):
-        """Periodic flush of profiling data."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._flush_data()
-            self._schedule_flush()
+        super().start()
     
     def is_profiling_enabled(self, debug_mode: bool = False) -> bool:
         """Check if profiling should be enabled.

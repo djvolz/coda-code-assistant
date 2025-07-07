@@ -16,6 +16,9 @@ from enum import Enum
 
 from ..constants import ENV_PREFIX
 from ..configuration import ConfigManager
+from .base import ObservabilityComponent
+from .collections import MemoryAwareDeque
+from .sanitizer import DataSanitizer
 
 
 class ErrorSeverity(str, Enum):
@@ -94,28 +97,27 @@ class ErrorPattern:
         return True
 
 
-class ErrorTracker:
+class ErrorTracker(ObservabilityComponent):
     """Tracks and analyzes errors for alerting and monitoring."""
     
-    def __init__(self, export_directory: Path, config_manager: ConfigManager):
+    def __init__(self, export_directory: Path, config_manager: ConfigManager,
+                 storage_backend=None, scheduler=None):
         """Initialize the error tracker.
         
         Args:
             export_directory: Directory to export error data
             config_manager: Configuration manager instance
+            storage_backend: Optional storage backend
+            scheduler: Optional shared scheduler
         """
-        self.export_directory = export_directory
-        self.config_manager = config_manager
-        self.errors_file = export_directory / "errors.json"
-        self.patterns_file = export_directory / "error_patterns.json"
+        super().__init__(export_directory, config_manager, storage_backend, scheduler)
+        self.errors_file = self.export_directory / "errors.json"
+        self.patterns_file = self.export_directory / "error_patterns.json"
         
         # Error storage
         self.error_events: deque = deque(maxlen=10000)  # Keep last 10k errors
         self.error_counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self.error_patterns: Dict[str, ErrorPattern] = {}
-        
-        # Thread safety
-        self._lock = threading.RLock()
         
         # Configuration
         self.enabled = config_manager.get_bool(
@@ -130,21 +132,14 @@ class ErrorTracker:
             env_var=f"{ENV_PREFIX}ERROR_TRACKING_MAX_STACK_LENGTH"
         )
         
-        self.flush_interval = config_manager.get_int(
-            "observability.error_tracking.flush_interval",
-            default=300,  # 5 minutes
-            env_var=f"{ENV_PREFIX}ERROR_TRACKING_FLUSH_INTERVAL"
-        )
-        
         # Alert callbacks
         self.alert_callbacks: List[Callable[[ErrorEvent, ErrorPattern], None]] = []
         
-        # Background processing
-        self._flush_timer: Optional[threading.Timer] = None
-        self._running = False
-        
         # Error ID counter
         self._error_counter = 0
+        
+        # Data sanitizer
+        self.sanitizer = DataSanitizer()
         
         # Load existing data
         self._load_error_data()
@@ -153,50 +148,24 @@ class ErrorTracker:
         # Register default error patterns
         self._register_default_patterns()
     
+    def get_component_name(self) -> str:
+        """Return the component name for logging."""
+        return "ErrorTracker"
+    
+    def get_flush_interval(self) -> int:
+        """Return the flush interval in seconds."""
+        return self.config_manager.get_int(
+            "observability.error_tracking.flush_interval",
+            default=300,  # 5 minutes
+            env_var=f"{ENV_PREFIX}ERROR_TRACKING_FLUSH_INTERVAL"
+        )
+    
     def start(self):
         """Start the error tracker."""
         if not self.enabled:
             return
         
-        with self._lock:
-            if self._running:
-                return
-            
-            self._running = True
-            self._schedule_flush()
-    
-    def stop(self):
-        """Stop the error tracker and flush data."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._running = False
-            
-            if self._flush_timer:
-                self._flush_timer.cancel()
-                self._flush_timer = None
-            
-            # Final flush
-            self._flush_data()
-    
-    def _schedule_flush(self):
-        """Schedule periodic data flushing."""
-        if not self._running:
-            return
-        
-        self._flush_timer = threading.Timer(self.flush_interval, self._periodic_flush)
-        self._flush_timer.daemon = True
-        self._flush_timer.start()
-    
-    def _periodic_flush(self):
-        """Periodic flush of error data."""
-        with self._lock:
-            if not self._running:
-                return
-            
-            self._flush_data()
-            self._schedule_flush()
+        super().start()
     
     def _generate_error_id(self) -> str:
         """Generate a unique error ID."""
@@ -236,18 +205,25 @@ class ErrorTracker:
             # Extract stack trace
             import traceback
             stack_trace = traceback.format_exc()
+            
+            # Sanitize stack trace
+            stack_trace = self.sanitizer.sanitize_stack_trace(stack_trace)
+            
             if len(stack_trace) > self.max_stack_trace_length:
                 stack_trace = stack_trace[:self.max_stack_trace_length] + "... (truncated)"
+            
+            # Sanitize context
+            sanitized_context = self.sanitizer.sanitize_dict(context or {})
             
             # Create error event
             error_event = ErrorEvent(
                 id=error_id,
                 timestamp=now,
                 error_type=type(error).__name__,
-                error_message=str(error),
+                error_message=self.sanitizer.sanitize_string(str(error)),
                 category=category,
                 severity=severity,
-                context=context or {},
+                context=sanitized_context,
                 stack_trace=stack_trace,
                 session_id=session_id,
                 provider=provider
