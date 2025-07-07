@@ -8,9 +8,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from .interactive_cli import DeveloperMode, InteractiveCLI
-from .tool_chat import ToolChatHandler
 from .agent_chat import AgentChatHandler
+from .interactive_cli import DeveloperMode, InteractiveCLI
 
 try:
     from ..__version__ import __version__
@@ -24,18 +23,18 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
     """Check if this is the first run and show auto-save notification."""
     import os
     from pathlib import Path
-    
+
     # Check for first-run marker in XDG data directory
     data_dir = Path(os.path.expanduser("~/.local/share/coda"))
     first_run_marker = data_dir / ".first_run_complete"
-    
+
     if not first_run_marker.exists():
         # This is the first run
         data_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Show notification
         from rich.panel import Panel
-        
+
         if auto_save_enabled:
             notification = """[bold cyan]Welcome to Coda![/bold cyan]
 
@@ -60,11 +59,11 @@ Your conversations will NOT be saved automatically.
 [dim]To enable auto-save for future sessions:[/dim]
 • Remove [cyan]--no-save[/cyan] flag when starting Coda
 • Set [cyan]autosave = true[/cyan] in ~/.config/coda/config.toml"""
-        
+
         console.print("\n")
         console.print(Panel(notification, title="First Run", border_style="blue"))
         console.print("\n")
-        
+
         # Create marker file
         try:
             first_run_marker.touch()
@@ -137,7 +136,9 @@ async def _select_model(unique_models, model: str, console: Console):
     return model
 
 
-async def _handle_chat_interaction(provider_instance, cli, messages, console: Console, config=None, use_tools=True):
+async def _handle_chat_interaction(
+    provider_instance, cli, messages, console: Console, config=None, use_tools=True
+):
     """Handle a single chat interaction including streaming response."""
     from coda.providers import Message, Role
 
@@ -165,13 +166,15 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Replace current messages with loaded session messages
                     messages.clear()
                     messages.extend(loaded_messages)
-                    console.print(f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]")
-                
+                    console.print(
+                        f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]"
+                    )
+
                 # Check if conversation was cleared
                 if cli.session_commands.was_conversation_cleared():
                     messages.clear()
-                    console.print(f"[dim]Cleared conversation history[/dim]")
-                
+                    console.print("[dim]Cleared conversation history[/dim]")
+
                 return True
         except (ValueError, AttributeError) as e:
             console.print(f"[red]Invalid command: {e}[/red]")
@@ -194,16 +197,16 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
 
     # Add user message
     messages.append(Message(role=Role.USER, content=user_input))
-    
+
     # Track message in session manager
     cli.session_commands.add_message(
         role="user",
         content=user_input,
         metadata={
             "mode": cli.current_mode.value,
-            "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
-            "model": cli.current_model
-        }
+            "provider": provider_instance.name if hasattr(provider_instance, "name") else "unknown",
+            "model": cli.current_model,
+        },
     )
 
     # Choose thinking message based on mode
@@ -238,39 +241,45 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         # Get generation parameters from config or defaults
         if not config:
             from coda.configuration import get_config
+
             config = get_config()
         temperature = config.to_dict().get("temperature", 0.7)
         max_tokens = config.to_dict().get("max_tokens", 2000)
 
         # Check if we should use tools (only for Cohere models and when enabled)
         model_supports_tools = cli.current_model.startswith("cohere.")
-        
+
         if use_tools and model_supports_tools:
             # Use agent-based chat
-            with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
+            with console.status(
+                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
+            ) as status:
                 agent_handler = AgentChatHandler(provider_instance, cli, console)
-                
+
                 # Get system prompt from mode
                 system_prompt_for_agent = cli.get_system_prompt()
-                
-                # Stop status before agent execution (agents handle their own output)
-                status.stop()
-                
-                # Execute with agent
+
+                # Don't stop status - pass it to agent handler to keep it running
+                # status.stop()  # Removed to keep spinner running
+
+                # Execute with agent (pass status to keep indicator running)
                 full_response, updated_messages = await agent_handler.chat_with_agent(
                     messages.copy(),  # Pass a copy to avoid modifying original
                     cli.current_model,
                     temperature,
                     max_tokens,
-                    system_prompt_for_agent
+                    system_prompt_for_agent,
+                    status=status,  # Pass status to agent handler
                 )
-                
+
                 # Update messages to match what happened
                 messages.clear()
                 messages.extend(updated_messages)
         else:
             # Use regular streaming
-            with console.status(f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots") as status:
+            with console.status(
+                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
+            ) as status:
                 stream = provider_instance.chat_stream(
                     messages=chat_messages,
                     model=cli.current_model,
@@ -316,45 +325,49 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     # Add assistant message to history (even if interrupted) - only for non-tool path
     if (full_response or interrupted) and not (use_tools and model_supports_tools):
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
-        
+
         # Track assistant message in session manager
         cli.session_commands.add_message(
             role="assistant",
             content=full_response,
             metadata={
                 "mode": cli.current_mode.value,
-                "provider": provider_instance.name if hasattr(provider_instance, 'name') else 'unknown',
+                "provider": (
+                    provider_instance.name if hasattr(provider_instance, "name") else "unknown"
+                ),
                 "model": cli.current_model,
-                "interrupted": interrupted
-            }
+                "interrupted": interrupted,
+            },
         )
     console.print("\n")  # Add spacing after response
 
     return True  # Continue loop
 
 
-async def run_interactive_session(provider: str, model: str, debug: bool, no_save: bool, resume: bool):
+async def run_interactive_session(
+    provider: str, model: str, debug: bool, no_save: bool, resume: bool
+):
     """Run the enhanced interactive session."""
     # Initialize interactive CLI
     cli = InteractiveCLI(console)
-    
+
     # Load configuration
     from coda.configuration import get_config
     from coda.providers import ProviderFactory
 
     config = get_config()
-    
+
     # Set auto-save based on config and CLI flag
     # CLI flag takes precedence over config
     if no_save:
         cli.session_commands.auto_save_enabled = False
     else:
         # Use config value, defaulting to True if not specified
-        cli.session_commands.auto_save_enabled = config.session.get('autosave', True)
-    
+        cli.session_commands.auto_save_enabled = config.session.get("autosave", True)
+
     # Check for first run and show auto-save notification
     await _check_first_run(console, cli.session_commands.auto_save_enabled)
-    
+
     # Load last session if requested
     if resume:
         console.print("\n[cyan]Resuming last session...[/cyan]")
@@ -394,17 +407,23 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
 
         # Interactive chat loop
         # Initialize messages - use loaded messages if available
-        if resume and hasattr(cli.session_commands, '_messages_loaded') and cli.session_commands._messages_loaded:
+        if (
+            resume
+            and hasattr(cli.session_commands, "_messages_loaded")
+            and cli.session_commands._messages_loaded
+        ):
             # Import Message and Role for conversion
             from coda.providers import Message, Role
-            
+
             # Convert loaded messages to Message objects
             messages = []
             for msg in cli.session_commands.current_messages:
-                messages.append(Message(
-                    role=Role.USER if msg['role'] == 'user' else Role.ASSISTANT,
-                    content=msg['content']
-                ))
+                messages.append(
+                    Message(
+                        role=Role.USER if msg["role"] == "user" else Role.ASSISTANT,
+                        content=msg["content"],
+                    )
+                )
             # Reset the flag
             cli.session_commands._messages_loaded = False
         else:
@@ -472,7 +491,9 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
 @click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.option("--resume", is_flag=True, help="Resume the most recent session")
 @click.version_option(version=__version__, prog_name="coda")
-def interactive_main(provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool):
+def interactive_main(
+    provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool
+):
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
