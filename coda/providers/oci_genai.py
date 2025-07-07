@@ -18,7 +18,6 @@ from oci.generative_ai_inference.models import (
     CohereParameterDefinition,
     CohereSystemMessage,
     CohereTool,
-    CohereToolCall,
     CohereUserMessage,
     GenericChatRequest,
     OnDemandServingMode,
@@ -124,13 +123,13 @@ class OCIGenAIProvider(BaseProvider):
 
         age = datetime.now() - self._cache_timestamp
         return age.total_seconds() < (self._cache_duration_hours * 3600)
-    
+
     def _get_model_context_length(self, model_id: str) -> int:
         """Get accurate context length for a model.
-        
+
         Args:
             model_id: Model ID
-            
+
         Returns:
             Context length in tokens
         """
@@ -140,23 +139,21 @@ class OCIGenAIProvider(BaseProvider):
             "cohere.command-r-plus": 128000,
             "cohere.command-r-16k": 16000,
             "cohere.command": 4000,
-            
             # Meta Llama models
             "meta.llama-3.1-405b": 128000,
             "meta.llama-3.1-70b": 128000,
             "meta.llama-3.3-70b": 128000,
             "meta.llama-4-3-90b": 131072,
-            
             # XAI models
             "xai.grok-3": 131072,
         }
-        
+
         # Check exact match
         model_lower = model_id.lower()
         for key, length in context_lengths.items():
             if key in model_lower or model_lower.startswith(key):
                 return length
-        
+
         # Default based on model name patterns
         if "16k" in model_lower:
             return 16384
@@ -170,7 +167,7 @@ class OCIGenAIProvider(BaseProvider):
             return 128000
         elif "grok" in model_lower:
             return 131072
-        
+
         # Conservative default
         return 4096
 
@@ -300,7 +297,7 @@ class OCIGenAIProvider(BaseProvider):
                 "supports_functions": False,
             },
         ]
-        
+
         return [
             Model(
                 id=m["id"],
@@ -333,15 +330,15 @@ class OCIGenAIProvider(BaseProvider):
             # We need to properly structure the conversation with tool results
             chat_history = []
             current_message = ""
-            
+
             # Process messages to build chat history
             i = 0
             while i < len(messages):
                 msg = messages[i]
-                
+
                 if msg.role == Role.SYSTEM:
                     chat_history.append(CohereSystemMessage(role="SYSTEM", message=msg.content))
-                    
+
                 elif msg.role == Role.USER:
                     # Keep the last user message as current_message
                     if i == len(messages) - 1:
@@ -354,33 +351,42 @@ class OCIGenAIProvider(BaseProvider):
                         else:
                             # Standalone user message
                             chat_history.append(CohereUserMessage(role="USER", message=msg.content))
-                            
+
                 elif msg.role == Role.ASSISTANT:
                     # Check if there are tool responses following this assistant message
                     assistant_content = msg.content
                     j = i + 1
-                    
+
                     # Collect any tool responses that follow
                     while j < len(messages) and messages[j].role == Role.TOOL:
                         tool_msg = messages[j]
-                        tool_name = tool_msg.name if tool_msg.name else 'tool'
-                        assistant_content += f"\n\nTool execution result ({tool_name}): {tool_msg.content}"
+                        tool_name = tool_msg.name if tool_msg.name else "tool"
+                        assistant_content += (
+                            f"\n\nTool execution result ({tool_name}): {tool_msg.content}"
+                        )
                         j += 1
-                    
+
                     # Add the combined assistant + tool results message
-                    chat_history.append(CohereChatBotMessage(role="CHATBOT", message=assistant_content))
-                    
+                    chat_history.append(
+                        CohereChatBotMessage(role="CHATBOT", message=assistant_content)
+                    )
+
                     # Skip the tool messages we've already processed
                     i = j - 1
-                    
+
                 elif msg.role == Role.TOOL:
                     # This shouldn't happen as we process tool messages with their assistant message
                     # But if it does, add it as a system message
-                    tool_name = msg.name if msg.name else 'tool'
-                    chat_history.append(CohereSystemMessage(role="SYSTEM", message=f"Tool execution result ({tool_name}): {msg.content}"))
-                
+                    tool_name = msg.name if msg.name else "tool"
+                    chat_history.append(
+                        CohereSystemMessage(
+                            role="SYSTEM",
+                            message=f"Tool execution result ({tool_name}): {msg.content}",
+                        )
+                    )
+
                 i += 1
-            
+
             # If we don't have a current message, check if we need to prompt for final answer
             if not current_message:
                 # Check if the last message in history contains tool results
@@ -393,12 +399,12 @@ class OCIGenAIProvider(BaseProvider):
                             if isinstance(msg, CohereUserMessage):
                                 original_question = msg.message
                                 break
-                        
+
                         if original_question:
-                            current_message = f"Based on the tool results above, please provide a complete answer to the user's question: \"{original_question}\""
+                            current_message = f'Based on the tool results above, please provide a complete answer to the user\'s question: "{original_question}"'
                         else:
                             current_message = "Based on the tool results above, please provide a complete answer to the user's original question."
-                
+
                 # Otherwise look for last user message
                 if not current_message and chat_history:
                     for msg in reversed(chat_history):
@@ -407,7 +413,7 @@ class OCIGenAIProvider(BaseProvider):
                             # Remove this message from history to avoid duplication
                             chat_history.remove(msg)
                             break
-                
+
                 # If still no current message, create a default one
                 if not current_message:
                     current_message = "Continue the conversation"
@@ -432,7 +438,7 @@ class OCIGenAIProvider(BaseProvider):
                 params["frequency_penalty"] = kwargs["frequency_penalty"]
             if kwargs.get("presence_penalty"):
                 params["presence_penalty"] = kwargs["presence_penalty"]
-                
+
             # Add tools if provided
             if tools:
                 cohere_tools = self._convert_tools_to_cohere(tools)
@@ -440,7 +446,9 @@ class OCIGenAIProvider(BaseProvider):
                 # Lower temperature for better tool accuracy
                 params["temperature"] = min(temperature, 0.3)
                 # Add preamble to encourage tool use and provide final answer
-                params["preamble_override"] = """You are a helpful assistant with access to tools. When the user asks questions that require external information or actions, use the appropriate tools to help them.
+                params[
+                    "preamble_override"
+                ] = """You are a helpful assistant with access to tools. When the user asks questions that require external information or actions, use the appropriate tools to help them.
 
 IMPORTANT: After receiving tool results, you MUST provide a final answer to the user that incorporates the tool results. Do not call the same tool again if you already have the result. Simply explain the answer using the tool's output."""
                 # Don't force single step - allow model to provide final answer
@@ -480,15 +488,17 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 params["top_p"] = top_p
 
             return GenericChatRequest(**params)
-    
+
     def _convert_tools_to_cohere(self, tools: list[Tool]) -> list[CohereTool]:
         """Convert standard tools to Cohere format."""
         cohere_tools = []
-        
+        # Store mapping of sanitized names to original names for tool calls
+        self._tool_name_mapping = {}
+
         for tool in tools:
             # Convert parameters from JSON Schema to Cohere format
             param_definitions = {}
-            
+
             if "properties" in tool.parameters:
                 for param_name, param_schema in tool.parameters["properties"].items():
                     # Convert type to uppercase as required by Cohere
@@ -499,21 +509,26 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                         param_type = "LIST"
                     elif param_type == "OBJECT":
                         param_type = "DICT"
-                        
+
                     param_def = CohereParameterDefinition(
                         description=param_schema.get("description", ""),
                         type=param_type,
-                        is_required=param_name in tool.parameters.get("required", [])
+                        is_required=param_name in tool.parameters.get("required", []),
                     )
                     param_definitions[param_name] = param_def
-            
+
+            # Sanitize tool name for OCI/Cohere compatibility (dots and hyphens not allowed)
+            sanitized_name = tool.name.replace(".", "_").replace("-", "_")
+            # Store mapping for tool call resolution
+            self._tool_name_mapping[sanitized_name] = tool.name
+
             cohere_tool = CohereTool(
-                name=tool.name,
+                name=sanitized_name,
                 description=tool.description,
-                parameter_definitions=param_definitions
+                parameter_definitions=param_definitions,
             )
             cohere_tools.append(cohere_tool)
-            
+
         return cohere_tools
 
     def chat(
@@ -557,21 +572,22 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             content = ""
             tool_calls = None
             finish_reason = getattr(chat_response, "finish_reason", None)
-            
-            
+
             # Check for tool calls
             if hasattr(chat_response, "tool_calls") and chat_response.tool_calls:
                 # Convert Cohere tool calls to our format
                 tool_calls = []
                 for tc in chat_response.tool_calls:
+                    # Map sanitized name back to original name
+                    original_name = getattr(self, "_tool_name_mapping", {}).get(tc.name, tc.name)
                     tool_call = ToolCall(
                         id=tc.name,  # Cohere doesn't provide IDs, use name
-                        name=tc.name,
-                        arguments=tc.parameters if hasattr(tc, "parameters") else {}
+                        name=original_name,
+                        arguments=tc.parameters if hasattr(tc, "parameters") else {},
                     )
                     tool_calls.append(tool_call)
                 finish_reason = "tool_calls"
-            
+
             # Get text content if available
             if hasattr(chat_response, "text") and chat_response.text:
                 content = chat_response.text
