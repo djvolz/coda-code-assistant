@@ -11,9 +11,6 @@ except ImportError:
     __version__ = "dev"
 
 from coda.configuration import get_config
-from coda.constants import (
-    PANEL_BORDER_STYLE,
-)
 
 # Create themed console that respects user's theme configuration
 from ..themes import get_console_theme, get_themed_console
@@ -152,7 +149,7 @@ def show_welcome_banner(one_shot: str):
         f"[{theme.dim}]{mode_text}[/{theme.dim}]"
     )
 
-    console.print(Panel(welcome_text, title="Welcome", border_style=PANEL_BORDER_STYLE))
+    console.print(Panel(welcome_text, title="Welcome", border_style=theme.panel_border))
 
 
 if __name__ == "__main__":
