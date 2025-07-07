@@ -132,6 +132,12 @@ THEME_DARK = "dark"
 THEME_LIGHT = "light"
 THEME_MINIMAL = "minimal"
 THEME_VIBRANT = "vibrant"
+THEME_MONOKAI_DARK = "monokai_dark"
+THEME_MONOKAI_LIGHT = "monokai_light"
+THEME_DRACULA_DARK = "dracula_dark"
+THEME_DRACULA_LIGHT = "dracula_light"
+THEME_GRUVBOX_DARK = "gruvbox_dark"
+THEME_GRUVBOX_LIGHT = "gruvbox_light"
 
 # Available themes
 AVAILABLE_THEMES = [
@@ -140,6 +146,12 @@ AVAILABLE_THEMES = [
     THEME_LIGHT,
     THEME_MINIMAL,
     THEME_VIBRANT,
+    THEME_MONOKAI_DARK,
+    THEME_MONOKAI_LIGHT,
+    THEME_DRACULA_DARK,
+    THEME_DRACULA_LIGHT,
+    THEME_GRUVBOX_DARK,
+    THEME_GRUVBOX_LIGHT,
 ]
 
 # Developer modes

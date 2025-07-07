@@ -2,6 +2,46 @@
 
 This module centralizes all UI theming, including colors, styles, and formatting
 for both the interactive prompt-toolkit UI and Rich console output.
+
+DESIGN DECISION: Single File vs Directory Structure
+==================================================
+
+Current approach (single themes.py file) is optimal because:
+
+✅ Pros of current structure:
+- Scale appropriate: 11 themes is manageable in one file (~500 lines)
+- Easy theme discovery: see all options at a glance
+- Simple imports: `from coda.themes import THEMES`
+- Easy maintenance: validation, inheritance, consistency checks in one place
+- Theme comparison: can easily compare color palettes side-by-side
+
+❌ Cons of splitting into themes/ directory:
+- Premature optimization at current scale
+- More complex imports and discovery
+- Harder to maintain consistency across themes
+- Added complexity for minimal benefit
+
+📋 Future refactoring criteria (consider splitting when):
+- 20+ themes: file becomes unwieldy
+- Plugin themes: user-contributed themes need isolation
+- Complex themes: themes become much more sophisticated (animations, dynamic colors)
+- Theme categories: fundamentally different types (accessibility, print-friendly, etc.)
+- File size: themes.py exceeds ~1000 lines
+
+If refactoring becomes necessary, suggested structure:
+```
+coda/themes/
+├── __init__.py        # Theme registry and manager
+├── base.py           # Theme classes and validation
+├── builtin/          # Built-in themes
+│   ├── default.py    # Default, dark, light, minimal, vibrant
+│   ├── monokai.py    # Monokai variants
+│   ├── dracula.py    # Dracula variants
+│   └── gruvbox.py    # Gruvbox variants
+└── plugins/          # User/plugin themes
+```
+
+Last evaluated: 2025-07-06 (11 themes, ~500 lines)
 """
 
 from dataclasses import dataclass, field
@@ -14,6 +54,12 @@ from .constants import (
     THEME_LIGHT,
     THEME_MINIMAL,
     THEME_VIBRANT,
+    THEME_MONOKAI_DARK,
+    THEME_MONOKAI_LIGHT,
+    THEME_DRACULA_DARK,
+    THEME_DRACULA_LIGHT,
+    THEME_GRUVBOX_DARK,
+    THEME_GRUVBOX_LIGHT,
     AVAILABLE_THEMES,
 )
 
@@ -245,9 +291,9 @@ THEMES: Dict[str, Theme] = {
         console=ConsoleTheme(
             success="green",
             error="red",
-            warning="yellow3",
+            warning="yellow",
             info="blue",
-            dim="grey50",
+            dim="white",
             panel_border="blue",
             user_message="blue",
             assistant_message="green",
@@ -308,6 +354,183 @@ THEMES: Dict[str, Theme] = {
         ),
         is_dark=True,
         high_contrast=True,
+    ),
+    
+    # Monokai themes
+    THEME_MONOKAI_DARK: Theme(
+        name=THEME_MONOKAI_DARK,
+        description="Monokai color scheme - dark variant",
+        console=ConsoleTheme(
+            success="#a6e22e",  # Monokai green
+            error="#f92672",    # Monokai red
+            warning="#e6db74",  # Monokai yellow
+            info="#66d9ef",     # Monokai blue
+            dim="#75715e",      # Monokai comment
+            panel_border="#66d9ef",
+            panel_title="#f8f8f2",
+            user_message="#66d9ef",
+            assistant_message="#a6e22e",
+            code_theme="monokai",
+        ),
+        prompt=PromptTheme(
+            input_field="bg:#272822 #f8f8f2",  # Monokai background/foreground
+            completion="bg:#3e3d32 #f8f8f2",
+            completion_selected="bg:#49483e #f8f8f2 bold",
+            search="bg:#272822 #f8f8f2",
+            toolbar="bg:#3e3d32 #f8f8f2",
+            model_selected="bg:#a6e22e #272822 bold",
+            model_title="#f92672 bold",
+            model_provider="#75715e",
+            model_info="#75715e italic",
+        ),
+        is_dark=True,
+    ),
+    
+    THEME_MONOKAI_LIGHT: Theme(
+        name=THEME_MONOKAI_LIGHT,
+        description="Monokai color scheme - light variant",
+        console=ConsoleTheme(
+            success="#529b2f",  # Darker green for light bg
+            error="#d01b24",    # Darker red for light bg
+            warning="#b8860b",  # Darker yellow for light bg
+            info="#0066cc",     # Darker blue for light bg
+            dim="#999999",
+            panel_border="#0066cc",
+            panel_title="#333333",
+            user_message="#0066cc",
+            assistant_message="#529b2f",
+            code_theme="default",
+        ),
+        prompt=PromptTheme(
+            input_field="bg:#f8f8f2 #272822",
+            completion="bg:#eeeeee #272822",
+            completion_selected="bg:#dddddd #272822 bold",
+            search="bg:#f8f8f2 #272822",
+            toolbar="bg:#eeeeee #272822",
+            model_selected="bg:#529b2f #f8f8f2 bold",
+            model_title="#d01b24 bold",
+            model_provider="#999999",
+            model_info="#999999 italic",
+        ),
+        is_dark=False,
+    ),
+    
+    # Dracula themes
+    THEME_DRACULA_DARK: Theme(
+        name=THEME_DRACULA_DARK,
+        description="Dracula color scheme - dark variant",
+        console=ConsoleTheme(
+            success="#50fa7b",  # Dracula green
+            error="#ff5555",    # Dracula red
+            warning="#f1fa8c",  # Dracula yellow
+            info="#8be9fd",     # Dracula cyan
+            dim="#6272a4",      # Dracula comment
+            panel_border="#bd93f9",  # Dracula purple
+            panel_title="#f8f8f2",
+            user_message="#8be9fd",
+            assistant_message="#50fa7b",
+            code_theme="dracula",
+        ),
+        prompt=PromptTheme(
+            input_field="bg:#282a36 #f8f8f2",  # Dracula background/foreground
+            completion="bg:#44475a #f8f8f2",
+            completion_selected="bg:#6272a4 #f8f8f2 bold",
+            search="bg:#282a36 #f8f8f2",
+            toolbar="bg:#44475a #f8f8f2",
+            model_selected="bg:#50fa7b #282a36 bold",
+            model_title="#ff79c6 bold",  # Dracula pink
+            model_provider="#6272a4",
+            model_info="#6272a4 italic",
+        ),
+        is_dark=True,
+    ),
+    
+    THEME_DRACULA_LIGHT: Theme(
+        name=THEME_DRACULA_LIGHT,
+        description="Dracula color scheme - light variant",
+        console=ConsoleTheme(
+            success="#2d7d32",  # Darker green for light bg
+            error="#d32f2f",    # Darker red for light bg
+            warning="#f57f17",  # Darker yellow for light bg
+            info="#0288d1",     # Darker cyan for light bg
+            dim="#757575",
+            panel_border="#7b1fa2",  # Darker purple for light bg
+            panel_title="#212121",
+            user_message="#0288d1",
+            assistant_message="#2d7d32",
+            code_theme="friendly",
+        ),
+        prompt=PromptTheme(
+            input_field="bg:#f8f8f2 #282a36",
+            completion="bg:#eeeeee #282a36",
+            completion_selected="bg:#dddddd #282a36 bold",
+            search="bg:#f8f8f2 #282a36",
+            toolbar="bg:#eeeeee #282a36",
+            model_selected="bg:#2d7d32 #f8f8f2 bold",
+            model_title="#c2185b bold",  # Darker pink for light bg
+            model_provider="#757575",
+            model_info="#757575 italic",
+        ),
+        is_dark=False,
+    ),
+    
+    # Gruvbox themes
+    THEME_GRUVBOX_DARK: Theme(
+        name=THEME_GRUVBOX_DARK,
+        description="Gruvbox color scheme - dark variant",
+        console=ConsoleTheme(
+            success="#b8bb26",  # Gruvbox green
+            error="#fb4934",    # Gruvbox red
+            warning="#fabd2f",  # Gruvbox yellow
+            info="#83a598",     # Gruvbox blue
+            dim="#a89984",      # Gruvbox gray
+            panel_border="#d3869b",  # Gruvbox purple
+            panel_title="#ebdbb2",  # Gruvbox fg
+            user_message="#83a598",
+            assistant_message="#b8bb26",
+            code_theme="gruvbox-dark",
+        ),
+        prompt=PromptTheme(
+            input_field="bg:#282828 #ebdbb2",  # Gruvbox dark bg/fg
+            completion="bg:#3c3836 #ebdbb2",
+            completion_selected="bg:#504945 #ebdbb2 bold",
+            search="bg:#282828 #ebdbb2",
+            toolbar="bg:#3c3836 #ebdbb2",
+            model_selected="bg:#b8bb26 #282828 bold",
+            model_title="#fe8019 bold",  # Gruvbox orange
+            model_provider="#a89984",
+            model_info="#a89984 italic",
+        ),
+        is_dark=True,
+    ),
+    
+    THEME_GRUVBOX_LIGHT: Theme(
+        name=THEME_GRUVBOX_LIGHT,
+        description="Gruvbox color scheme - light variant",
+        console=ConsoleTheme(
+            success="#79740e",  # Gruvbox green (light)
+            error="#cc241d",    # Gruvbox red (light)
+            warning="#b57614",  # Gruvbox yellow (light)
+            info="#076678",     # Gruvbox blue (light)
+            dim="#928374",      # Gruvbox gray (light)
+            panel_border="#8f3f71",  # Gruvbox purple (light)
+            panel_title="#3c3836",
+            user_message="#076678",
+            assistant_message="#79740e",
+            code_theme="gruvbox-light",
+        ),
+        prompt=PromptTheme(
+            input_field="bg:#fbf1c7 #3c3836",  # Gruvbox light bg/fg
+            completion="bg:#f2e5bc #3c3836",
+            completion_selected="bg:#ebdbb2 #3c3836 bold",
+            search="bg:#fbf1c7 #3c3836",
+            toolbar="bg:#f2e5bc #3c3836",
+            model_selected="bg:#79740e #fbf1c7 bold",
+            model_title="#af3a03 bold",  # Gruvbox orange (light)
+            model_provider="#928374",
+            model_info="#928374 italic",
+        ),
+        is_dark=False,
     ),
 }
 
