@@ -509,7 +509,9 @@ class SessionCommands:
             self.current_messages = []
             self._has_user_message = False
 
-        with self.console.status(f"[cyan]Deleting {session_count} sessions...[/cyan]", spinner="dots"):
+        from ..themes import get_console_theme
+        theme = get_console_theme()
+        with self.console.status(f"[{theme.info}]Deleting {session_count} sessions...[/{theme.info}]", spinner="dots"):
             for session in sessions:
                 try:
                     self.manager.delete_session(session.id)

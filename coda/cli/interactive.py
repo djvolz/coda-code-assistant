@@ -9,6 +9,12 @@ from rich.panel import Panel
 from rich.text import Text
 
 from ..constants import (
+    CONSOLE_STYLE_BOLD,
+    CONSOLE_STYLE_DIM,
+    CONSOLE_STYLE_ERROR,
+    CONSOLE_STYLE_INFO,
+    CONSOLE_STYLE_SUCCESS,
+    CONSOLE_STYLE_WARNING,
     PANEL_BORDER_STYLE,
 )
 from .interactive_cli import DeveloperMode, InteractiveCLI
@@ -241,7 +247,9 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
     try:
         # Create a status spinner for thinking animation
         # Using "dots" spinner style - other options: "line", "star", "bouncingBar", "arrow3"
-        with console.status(f"{CONSOLE_STYLE_INFO}{CONSOLE_STYLE_BOLD}{thinking_msg}...[/]", spinner="dots") as status:
+        from ..themes import get_console_theme
+        theme = get_console_theme()
+        with console.status(f"[{theme.info}]{thinking_msg}...[/{theme.info}]", spinner="dots") as status:
             # Get generation parameters from config or defaults
             if not config:
                 from coda.configuration import get_config
@@ -263,7 +271,9 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
                     # Stop the spinner when we get the first chunk
                     status.stop()
                     # Just print the assistant label
-                    console.print(f"\n[info][bold]Assistant:[/] ", end="")
+                    from ..themes import get_console_theme
+                    theme = get_console_theme()
+                    console.print(f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ", end="")
                     first_chunk = False
 
                 # Check for interrupt
@@ -322,6 +332,7 @@ async def run_interactive_session(provider: str, model: str, debug: bool, no_sav
     from coda.providers import ProviderFactory
 
     config = get_config()
+    cli.config = config  # Make config available to CLI commands
 
     # Set auto-save based on config and CLI flag
     # CLI flag takes precedence over config
