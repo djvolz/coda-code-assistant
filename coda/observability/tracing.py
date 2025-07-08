@@ -346,7 +346,7 @@ class TracingManager(ObservabilityComponent):
             return {
                 "running": self._running,
                 "sample_rate": self.sample_rate,
-                "flush_interval": self.flush_interval,
+                "flush_interval": self.get_flush_interval(),
                 "traces_file": str(self.traces_file),
                 "active_spans": len(self.active_spans),
                 "completed_traces": len(self.completed_traces),

@@ -436,7 +436,7 @@ class ErrorTracker(ObservabilityComponent):
             return {
                 "enabled": self.enabled,
                 "running": self._running,
-                "flush_interval": self.flush_interval,
+                "flush_interval": self.get_flush_interval(),
                 "errors_file": str(self.errors_file),
                 "total_errors": len(self.error_events),
                 "error_patterns_count": len(self.error_patterns),

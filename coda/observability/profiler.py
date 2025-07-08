@@ -341,7 +341,7 @@ class PerformanceProfiler(ObservabilityComponent):
                 "debug_mode_only": self.debug_mode_only,
                 "min_duration_ms": self.min_duration_ms,
                 "track_memory": self.track_memory,
-                "flush_interval": self.flush_interval,
+                "flush_interval": self.get_flush_interval(),
                 "profile_file": str(self.profile_file),
                 "total_entries": len(self.profile_entries),
                 "function_count": len(self.function_stats)
