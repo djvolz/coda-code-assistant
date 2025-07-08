@@ -237,13 +237,19 @@ class CommandRegistry:
             name="index",
             description="Index files for semantic search",
             type=CommandType.SUBCOMMAND,
-            examples=["/search index", "/search index src/"],
+            examples=["/search index", "/search index src/", "/search index demo"],
         ),
         CommandDefinition(
             name="status",
             description="Show semantic search index status",
             type=CommandType.SUBCOMMAND,
             examples=["/search status"],
+        ),
+        CommandDefinition(
+            name="reset",
+            description="Reset search manager and clear index",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search reset"],
         ),
     ]
 
