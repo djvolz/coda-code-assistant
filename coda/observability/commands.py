@@ -39,7 +39,7 @@ class ObservabilityCommands:
                     "To enable observability, add to your config:\n"
                     "[dim]observability.enabled = true[/dim]",
                     title="Observability Status",
-                    border_style="yellow"
+                    border_style="yellow",
                 )
             )
             return
@@ -62,13 +62,7 @@ class ObservabilityCommands:
                 else:
                     status_text.append("Stopped", style="red")
 
-        self.console.print(
-            Panel(
-                status_text,
-                title="Observability Status",
-                border_style="green"
-            )
-        )
+        self.console.print(Panel(status_text, title="Observability Status", border_style="green"))
 
     def show_metrics(self, detailed: bool = False):
         """Show metrics summary.
@@ -111,7 +105,7 @@ class ObservabilityCommands:
                     str(data["total_requests"]),
                     str(data["total_errors"]),
                     f"{data['average_response_time']:.2f}",
-                    f"{data['error_rate']:.1f}"
+                    f"{data['error_rate']:.1f}",
                 )
 
             self.console.print(provider_table)
@@ -146,7 +140,7 @@ class ObservabilityCommands:
                             "low": "green",
                             "medium": "yellow",
                             "high": "red",
-                            "critical": "bright_red"
+                            "critical": "bright_red",
                         }.get(severity, "white")
                         detailed_table.add_row("", f"[{color}]{severity}[/{color}]", str(count))
 
@@ -168,7 +162,7 @@ class ObservabilityCommands:
                         str(stats.get("sessions_created", 0)),
                         str(stats.get("messages_sent", 0)),
                         str(stats.get("total_tokens", 0)),
-                        str(stats.get("errors", 0))
+                        str(stats.get("errors", 0)),
                     )
 
                 self.console.print(daily_table)
@@ -193,11 +187,9 @@ class ObservabilityCommands:
                 return
 
             # Create component panel
-            status_color = {
-                "healthy": "green",
-                "degraded": "yellow",
-                "unhealthy": "red"
-            }.get(comp_health["status"], "white")
+            status_color = {"healthy": "green", "degraded": "yellow", "unhealthy": "red"}.get(
+                comp_health["status"], "white"
+            )
 
             health_text = Text()
             health_text.append(f"Status: {comp_health['status']}", style=status_color)
@@ -206,20 +198,14 @@ class ObservabilityCommands:
             health_text.append(f"\nRecent Checks: {len(comp_health['checks'])}")
 
             self.console.print(
-                Panel(
-                    health_text,
-                    title=f"Health Status: {component}",
-                    border_style=status_color
-                )
+                Panel(health_text, title=f"Health Status: {component}", border_style=status_color)
             )
         else:
             # Show overall health
             overall_health = health_monitor.get_overall_health()
-            status_color = {
-                "healthy": "green",
-                "degraded": "yellow",
-                "unhealthy": "red"
-            }.get(overall_health["status"], "white")
+            status_color = {"healthy": "green", "degraded": "yellow", "unhealthy": "red"}.get(
+                overall_health["status"], "white"
+            )
 
             self.console.print(
                 Panel(
@@ -229,7 +215,7 @@ class ObservabilityCommands:
                     f"Degraded: {overall_health.get('degraded_count', 0)}\n"
                     f"Unhealthy: {overall_health.get('unhealthy_count', 0)}",
                     title="Overall Health",
-                    border_style=status_color
+                    border_style=status_color,
                 )
             )
 
@@ -246,14 +232,14 @@ class ObservabilityCommands:
                     status_style = {
                         "healthy": "green",
                         "degraded": "yellow",
-                        "unhealthy": "red"
+                        "unhealthy": "red",
                     }.get(comp_data["status"], "white")
 
                     health_table.add_row(
                         comp_name,
                         f"[{status_style}]{comp_data['status']}[/{status_style}]",
                         f"{comp_data['uptime_percentage']:.1f}%",
-                        comp_data["last_check"]
+                        comp_data["last_check"],
                     )
 
                 self.console.print(health_table)
@@ -302,7 +288,7 @@ class ObservabilityCommands:
                     trace["trace_id"][:16] + "...",  # Truncate trace ID
                     str(trace["span_count"]),
                     f"{trace.get('duration_ms', 0):.2f}",
-                    ", ".join(list(operations)[:3]) + ("..." if len(operations) > 3 else "")
+                    ", ".join(list(operations)[:3]) + ("..." if len(operations) > 3 else ""),
                 )
 
             self.console.print(traces_table)
@@ -322,21 +308,18 @@ class ObservabilityCommands:
         if output_file:
             try:
                 from pathlib import Path
+
                 output_path = Path(output_file)
 
                 # Validate filename
                 PathValidator.validate_filename(
-                    output_path.name,
-                    allowed_extensions=['.json', '.txt']
+                    output_path.name, allowed_extensions=[".json", ".txt"]
                 )
 
                 # If path has parent directories, validate them
-                if output_path.parent != Path('.'):
+                if output_path.parent != Path("."):
                     # Use current directory as base for validation
-                    PathValidator.validate_export_path(
-                        output_path,
-                        Path.cwd()
-                    )
+                    PathValidator.validate_export_path(output_path, Path.cwd())
             except SecurityError as e:
                 self.console.print(f"[red]Invalid output path: {e}[/red]")
                 return
@@ -349,26 +332,26 @@ class ObservabilityCommands:
                 "sessions": self.obs_manager.metrics_collector.get_session_summary(),
                 "providers": self.obs_manager.metrics_collector.get_provider_summary(),
                 "errors": self.obs_manager.metrics_collector.get_error_summary(),
-                "daily_stats": self.obs_manager.metrics_collector.get_daily_stats(30)
+                "daily_stats": self.obs_manager.metrics_collector.get_daily_stats(30),
             }
 
         if self.obs_manager.tracing_manager:
             data["tracing"] = {
                 "summary": self.obs_manager.tracing_manager.get_trace_summary(),
-                "recent_traces": self.obs_manager.tracing_manager.get_recent_traces(20)
+                "recent_traces": self.obs_manager.tracing_manager.get_recent_traces(20),
             }
 
         if self.obs_manager.health_monitor:
             data["health"] = {
                 "overall": self.obs_manager.health_monitor.get_overall_health(),
-                "components": self.obs_manager.health_monitor.get_component_health()
+                "components": self.obs_manager.health_monitor.get_component_health(),
             }
 
         data["status"] = self.obs_manager.get_health_status()
 
         if format == "json":
             if output_file:
-                with open(output_file, 'w') as f:
+                with open(output_file, "w") as f:
                     json.dump(data, f, indent=2, default=str)
                 self.console.print(f"[green]Data exported to {output_file}[/green]")
             else:
@@ -467,7 +450,7 @@ class ObservabilityCommands:
                     "low": "green",
                     "medium": "yellow",
                     "high": "red",
-                    "critical": "bright_red"
+                    "critical": "bright_red",
                 }.get(severity, "white")
                 severity_table.add_row(f"[{color}]{severity}[/{color}]", str(count))
 
@@ -487,6 +470,7 @@ class ObservabilityCommands:
                 # Parse timestamp
                 try:
                     from datetime import datetime
+
                     timestamp = datetime.fromisoformat(error["timestamp"])
                     time_str = timestamp.strftime("%H:%M:%S")
                 except Exception:
@@ -497,7 +481,7 @@ class ObservabilityCommands:
                     "low": "green",
                     "medium": "yellow",
                     "high": "red",
-                    "critical": "bright_red"
+                    "critical": "bright_red",
                 }.get(severity, "white")
 
                 # Truncate long messages
@@ -510,7 +494,7 @@ class ObservabilityCommands:
                     error["error_type"],
                     error["category"],
                     f"[{severity_color}]{severity}[/{severity_color}]",
-                    message
+                    message,
                 )
 
             self.console.print(recent_table)
@@ -543,7 +527,9 @@ class ObservabilityCommands:
         summary_table.add_row("Unique Functions", str(perf_summary["unique_functions"]))
         summary_table.add_row("Total Time (ms)", f"{perf_summary['total_time_ms']:.2f}")
         summary_table.add_row("Avg Call Time (ms)", f"{perf_summary['avg_call_time_ms']:.2f}")
-        summary_table.add_row("Min Duration Threshold (ms)", f"{perf_summary['min_duration_threshold_ms']:.1f}")
+        summary_table.add_row(
+            "Min Duration Threshold (ms)", f"{perf_summary['min_duration_threshold_ms']:.1f}"
+        )
         summary_table.add_row("Memory Tracking", "Yes" if perf_summary["memory_tracking"] else "No")
 
         self.console.print(summary_table)
@@ -571,7 +557,7 @@ class ObservabilityCommands:
                     f"{stats['total_time_ms']:.2f}",
                     f"{stats['avg_time_ms']:.2f}",
                     f"{stats['min_time_ms']:.2f}",
-                    f"{stats['max_time_ms']:.2f}"
+                    f"{stats['max_time_ms']:.2f}",
                 )
 
             self.console.print(func_table)
@@ -594,7 +580,7 @@ class ObservabilityCommands:
                     func_name,
                     str(hotspot["call_count"]),
                     f"{hotspot['total_time_ms']:.2f}",
-                    f"{hotspot['avg_time_ms']:.2f}"
+                    f"{hotspot['avg_time_ms']:.2f}",
                 )
 
             self.console.print(hotspot_table)

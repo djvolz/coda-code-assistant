@@ -75,20 +75,20 @@ model_name = "mock-smart"
         # 3. Errors
         obs_manager.track_error(
             ConnectionError("Failed to connect to API endpoint"),
-            {"provider": "openai", "retry_count": 3, "severity": "high"}
+            {"provider": "openai", "retry_count": 3, "severity": "high"},
         )
         obs_manager.track_error(
-            ValueError("Invalid model name: gpt-5"),
-            {"user_input": "gpt-5", "severity": "medium"}
+            ValueError("Invalid model name: gpt-5"), {"user_input": "gpt-5", "severity": "medium"}
         )
         obs_manager.track_error(
-            RuntimeError("Token limit exceeded"),
-            {"tokens": 5000, "limit": 4096, "severity": "low"}
+            RuntimeError("Token limit exceeded"), {"tokens": 5000, "limit": 4096, "severity": "low"}
         )
 
         # 4. Provider metrics
         obs_manager.track_provider_request("openai", 0.234, True, {"model": "gpt-4", "tokens": 150})
-        obs_manager.track_provider_request("anthropic", 0.456, True, {"model": "claude-2", "tokens": 200})
+        obs_manager.track_provider_request(
+            "anthropic", 0.456, True, {"model": "claude-2", "tokens": 200}
+        )
         obs_manager.track_provider_request("openai", 1.234, False, {"error": "timeout"})
 
         # 5. Token usage
@@ -102,6 +102,7 @@ model_name = "mock-smart"
         """Capture stdout output from a function."""
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
         try:
@@ -117,12 +118,14 @@ model_name = "mock-smart"
         # Export to JSON
         export_path = os.path.join(temp_dir, "export.json")
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
-            output = self.capture_output(cli._cmd_observability, f"export --format json --output {export_path}")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --format json --output {export_path}"
+            )
             assert "export" in output.lower()
 
         # Verify JSON file was created and is valid
@@ -159,12 +162,14 @@ model_name = "mock-smart"
 
         export_path = os.path.join(temp_dir, "summary.txt")
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
-            output = self.capture_output(cli._cmd_observability, f"export --format summary --output {export_path}")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --format summary --output {export_path}"
+            )
             assert "export" in output.lower()
 
         # Verify summary file was created
@@ -190,13 +195,15 @@ model_name = "mock-smart"
         export_dir = os.path.join(temp_dir, "csv_export")
         os.makedirs(export_dir, exist_ok=True)
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
             # Try exporting to CSV format
-            output = self.capture_output(cli._cmd_observability, f"export --format csv --output {export_dir}/data.csv")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --format csv --output {export_dir}/data.csv"
+            )
 
             # CSV format might not be implemented, check response
             if "not supported" in output.lower() or "invalid format" in output.lower():
@@ -213,9 +220,9 @@ model_name = "mock-smart"
                     with open(csv_file) as f:
                         content = f.read()
                         # Should have header row
-                        lines = content.strip().split('\n')
+                        lines = content.strip().split("\n")
                         assert len(lines) > 1  # Header + at least one data row
-                        assert ',' in lines[0]  # CSV format
+                        assert "," in lines[0]  # CSV format
 
     def test_html_export_format(self, config_manager, observability_manager_with_data, temp_dir):
         """Test HTML export format."""
@@ -223,12 +230,14 @@ model_name = "mock-smart"
 
         export_path = os.path.join(temp_dir, "report.html")
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
-            output = self.capture_output(cli._cmd_observability, f"export --format html --output {export_path}")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --format html --output {export_path}"
+            )
 
             # HTML format might not be implemented
             if "not supported" in output.lower() or "invalid format" in output.lower():
@@ -248,13 +257,15 @@ model_name = "mock-smart"
                 assert "</html>" in content.lower()
 
                 # Should contain data sections
-                assert any(word in content.lower() for word in ["metrics", "traces", "errors", "health"])
+                assert any(
+                    word in content.lower() for word in ["metrics", "traces", "errors", "health"]
+                )
 
     def test_default_export_format(self, config_manager, observability_manager_with_data, temp_dir):
         """Test export with default format (should be JSON)."""
         obs_manager = observability_manager_with_data
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
@@ -273,12 +284,14 @@ model_name = "mock-smart"
 
         export_path = os.path.join(temp_dir, "empty_export.json")
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
-            output = self.capture_output(cli._cmd_observability, f"export --format json --output {export_path}")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --format json --output {export_path}"
+            )
             assert "export" in output.lower()
 
         # Should still create a valid file
@@ -295,25 +308,30 @@ model_name = "mock-smart"
         obs_manager = ObservabilityManager(config_manager)
 
         # Add data with special characters
-        obs_manager.track_event("test_event", {
-            "message": "Test with special chars: \"quotes\", 'apostrophes', \n newlines, \t tabs",
-            "unicode": "emojis 🚀 and symbols ♠♣♥♦",
-            "path": "C:\\Windows\\System32\\cmd.exe"
-        })
+        obs_manager.track_event(
+            "test_event",
+            {
+                "message": "Test with special chars: \"quotes\", 'apostrophes', \n newlines, \t tabs",
+                "unicode": "emojis 🚀 and symbols ♠♣♥♦",
+                "path": "C:\\Windows\\System32\\cmd.exe",
+            },
+        )
 
         obs_manager.track_error(
             Exception("Error with <html> tags & special chars"),
-            {"context": "Testing & validating < > characters"}
+            {"context": "Testing & validating < > characters"},
         )
 
         export_path = os.path.join(temp_dir, "special_chars.json")
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
-            output = self.capture_output(cli._cmd_observability, f"export --format json --output {export_path}")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --format json --output {export_path}"
+            )
             assert "export" in output.lower()
 
         # Verify JSON is still valid
@@ -331,10 +349,7 @@ model_name = "mock-smart"
             obs_manager.track_event(f"event_{i}", {"index": i, "data": f"value_{i}" * 10})
 
             if i % 10 == 0:
-                obs_manager.track_error(
-                    Exception(f"Error {i}"),
-                    {"index": i, "severity": "low"}
-                )
+                obs_manager.track_error(Exception(f"Error {i}"), {"index": i, "severity": "low"})
 
             if i % 5 == 0:
                 with obs_manager.trace(f"operation_{i}"):
@@ -342,12 +357,14 @@ model_name = "mock-smart"
 
         export_path = os.path.join(temp_dir, "large_export.json")
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
-            output = self.capture_output(cli._cmd_observability, f"export --format json --output {export_path}")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --format json --output {export_path}"
+            )
             assert "export" in output.lower()
 
         # Verify large file is created
@@ -360,18 +377,24 @@ model_name = "mock-smart"
                 data = json.load(f)
             assert isinstance(data, dict)
 
-    def test_export_format_validation(self, config_manager, observability_manager_with_data, temp_dir):
+    def test_export_format_validation(
+        self, config_manager, observability_manager_with_data, temp_dir
+    ):
         """Test validation of export format parameter."""
         obs_manager = observability_manager_with_data
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
 
             # Test invalid format
             output = self.capture_output(cli._cmd_observability, "export --format invalid_format")
-            assert "invalid" in output.lower() or "not supported" in output.lower() or "error" in output.lower()
+            assert (
+                "invalid" in output.lower()
+                or "not supported" in output.lower()
+                or "error" in output.lower()
+            )
 
             # Test case sensitivity
             output = self.capture_output(cli._cmd_observability, "export --format JSON")
@@ -382,7 +405,7 @@ model_name = "mock-smart"
         """Test validation of export output path."""
         obs_manager = observability_manager_with_data
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
@@ -390,10 +413,20 @@ model_name = "mock-smart"
             # Test invalid path
             invalid_path = "/invalid/directory/that/does/not/exist/export.json"
             output = self.capture_output(cli._cmd_observability, f"export --output {invalid_path}")
-            assert "error" in output.lower() or "failed" in output.lower() or "invalid" in output.lower()
+            assert (
+                "error" in output.lower()
+                or "failed" in output.lower()
+                or "invalid" in output.lower()
+            )
 
             # Test path traversal attempt
             dangerous_path = "../../../etc/passwd"
-            output = self.capture_output(cli._cmd_observability, f"export --output {dangerous_path}")
+            output = self.capture_output(
+                cli._cmd_observability, f"export --output {dangerous_path}"
+            )
             # Should be rejected for security reasons
-            assert "error" in output.lower() or "invalid" in output.lower() or "denied" in output.lower()
+            assert (
+                "error" in output.lower()
+                or "invalid" in output.lower()
+                or "denied" in output.lower()
+            )

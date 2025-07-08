@@ -29,6 +29,7 @@ class TestObservabilityComponent:
 
     def test_component_initialization(self, temp_dir, config_manager):
         """Test component initialization with file storage."""
+
         class TestComponent(ObservabilityComponent):
             def get_component_name(self) -> str:
                 return "TestComponent"
@@ -89,6 +90,7 @@ class TestObservabilityComponent:
 
     def test_stop_method(self, temp_dir, config_manager):
         """Test component stop method."""
+
         class TestComponent(ObservabilityComponent):
             def get_component_name(self) -> str:
                 return "TestComponent"
@@ -111,13 +113,17 @@ class TestObservabilityComponent:
             # This should fail because abstract methods are not implemented
             ObservabilityComponent(temp_dir, config_manager)
 
-    @pytest.mark.parametrize("flush_interval,expected", [
-        (30, 30),
-        (60, 60),
-        (300, 300),
-    ])
+    @pytest.mark.parametrize(
+        "flush_interval,expected",
+        [
+            (30, 30),
+            (60, 60),
+            (300, 300),
+        ],
+    )
     def test_different_flush_intervals(self, temp_dir, config_manager, flush_interval, expected):
         """Test components with different flush intervals."""
+
         class TestComponent(ObservabilityComponent):
             def get_component_name(self) -> str:
                 return "TestComponent"

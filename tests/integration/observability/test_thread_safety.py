@@ -33,13 +33,13 @@ class TestObservabilityThreadSafety:
             "thread_safety": {
                 "lock_timeout": 5.0,
                 "enable_thread_local": True,
-                "max_concurrent_writes": 10
+                "max_concurrent_writes": 10,
             },
             "metrics": {"enabled": True},
             "tracing": {"enabled": True},
             "health": {"enabled": True},
             "error_tracking": {"enabled": True},
-            "profiling": {"enabled": True}
+            "profiling": {"enabled": True},
         }
 
         manager = ConfigManager()
@@ -61,11 +61,9 @@ class TestObservabilityThreadSafety:
             try:
                 for i in range(events_per_thread):
                     event_id = f"thread_{thread_id}_event_{i}"
-                    obs_manager.track_event(event_id, {
-                        "thread_id": thread_id,
-                        "index": i,
-                        "timestamp": time.time()
-                    })
+                    obs_manager.track_event(
+                        event_id, {"thread_id": thread_id, "index": i, "timestamp": time.time()}
+                    )
                     thread_events.add(event_id)
             except Exception as e:
                 errors.append((thread_id, e))
@@ -114,10 +112,7 @@ class TestObservabilityThreadSafety:
 
         # Run threads
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            futures = [
-                executor.submit(create_traces, i)
-                for i in range(num_threads)
-            ]
+            futures = [executor.submit(create_traces, i) for i in range(num_threads)]
 
             # Wait for all to complete
             for future in as_completed(futures):
@@ -137,11 +132,10 @@ class TestObservabilityThreadSafety:
 
         def increment_counter(thread_id):
             for _ in range(increments_per_thread):
-                obs_manager.track_event("counter_increment", {
-                    "counter": counter_name,
-                    "thread_id": thread_id,
-                    "increment": 1
-                })
+                obs_manager.track_event(
+                    "counter_increment",
+                    {"counter": counter_name, "thread_id": thread_id, "increment": 1},
+                )
 
         # Run threads
         threads = []
@@ -154,10 +148,10 @@ class TestObservabilityThreadSafety:
             thread.join()
 
         # Get metrics summary
-        if hasattr(obs_manager.metrics_collector, 'get_summary'):
+        if hasattr(obs_manager.metrics_collector, "get_summary"):
             summary = obs_manager.metrics_collector.get_summary()
             # Total events should match expected
-            total_events = summary.get('total_events', 0)
+            total_events = summary.get("total_events", 0)
             expected_events = num_threads * increments_per_thread
             assert total_events >= expected_events  # May have other events too
 
@@ -172,11 +166,14 @@ class TestObservabilityThreadSafety:
         def track_errors(thread_id, error_type):
             for i in range(errors_per_thread):
                 error = error_type(f"Error from thread {thread_id}, iteration {i}")
-                obs_manager.track_error(error, {
-                    "thread_id": thread_id,
-                    "iteration": i,
-                    "severity": random.choice(["low", "medium", "high"])
-                })
+                obs_manager.track_error(
+                    error,
+                    {
+                        "thread_id": thread_id,
+                        "iteration": i,
+                        "severity": random.choice(["low", "medium", "high"]),
+                    },
+                )
 
                 # Occasionally query errors
                 if i % 50 == 0 and obs_manager.error_tracker:
@@ -196,7 +193,7 @@ class TestObservabilityThreadSafety:
         # Verify error tracking worked
         if obs_manager.error_tracker:
             analysis = obs_manager.error_tracker.get_error_analysis()
-            assert analysis['total_errors'] >= num_threads * errors_per_thread
+            assert analysis["total_errors"] >= num_threads * errors_per_thread
 
     def test_concurrent_health_checks(self, config_manager):
         """Test concurrent health check operations."""
@@ -215,8 +212,12 @@ class TestObservabilityThreadSafety:
 
                     # Check specific component
                     if obs_manager.health_monitor:
-                        component = random.choice(["metrics", "tracing", "health", "error_tracking"])
-                        component_health = obs_manager.health_monitor.check_component_health(component)
+                        component = random.choice(
+                            ["metrics", "tracing", "health", "error_tracking"]
+                        )
+                        component_health = obs_manager.health_monitor.check_component_health(
+                            component
+                        )
                         health_results.put((thread_id, i, component, component_health))
 
                     # Simulate some work between checks
@@ -258,7 +259,7 @@ class TestObservabilityThreadSafety:
             context = {
                 "thread_id": thread_id,
                 "user_id": f"user_{thread_id}",
-                "request_id": f"req_{thread_id}_{time.time()}"
+                "request_id": f"req_{thread_id}_{time.time()}",
             }
 
             # Store context (simulating thread-local)
@@ -267,10 +268,7 @@ class TestObservabilityThreadSafety:
 
             # Perform operations that should include context
             for i in range(100):
-                obs_manager.track_event(f"contextual_event_{i}", {
-                    "operation": "test",
-                    "index": i
-                })
+                obs_manager.track_event(f"contextual_event_{i}", {"operation": "test", "index": i})
 
                 with obs_manager.trace(f"contextual_trace_{i}"):
                     time.sleep(0.001)
@@ -327,10 +325,14 @@ class TestObservabilityThreadSafety:
 
         # Check if all threads completed
         active_threads = [t for t in threads if t.is_alive()]
-        assert len(active_threads) == 0, f"Deadlock detected! {len(active_threads)} threads still running"
+        assert len(active_threads) == 0, (
+            f"Deadlock detected! {len(active_threads)} threads still running"
+        )
 
         completion_time = time.time() - start_time
-        assert completion_time < 10, f"Operations took too long ({completion_time}s), possible lock contention"
+        assert completion_time < 10, (
+            f"Operations took too long ({completion_time}s), possible lock contention"
+        )
 
     def test_concurrent_configuration_updates(self, config_manager):
         """Test thread safety during configuration updates."""
@@ -344,13 +346,15 @@ class TestObservabilityThreadSafety:
                 try:
                     # Read configuration
                     enabled = config_manager.get_bool("observability.enabled")
-                    buffer_size = config_manager.get_int("observability.memory.buffer_size", default=1000)
+                    buffer_size = config_manager.get_int(
+                        "observability.memory.buffer_size", default=1000
+                    )
 
                     # Track event based on config
                     if enabled:
-                        obs_manager.track_event(f"reader_{thread_id}_{i}", {
-                            "buffer_size": buffer_size
-                        })
+                        obs_manager.track_event(
+                            f"reader_{thread_id}_{i}", {"buffer_size": buffer_size}
+                        )
                 except Exception as e:
                     errors.append(("reader", thread_id, e))
 
@@ -402,7 +406,7 @@ class TestObservabilityThreadSafety:
                 obs_manager.track_event("atomic_increment", {"value": 1})
 
                 # Try to read current state
-                if hasattr(obs_manager.metrics_collector, 'get_event_count'):
+                if hasattr(obs_manager.metrics_collector, "get_event_count"):
                     count = obs_manager.metrics_collector.get_event_count()
                     counter_values.append(count)
 
@@ -480,21 +484,19 @@ class TestObservabilityThreadSafety:
 
                 try:
                     if operation == "event":
-                        obs_manager.track_event(f"chaos_{thread_id}", {
-                            "random": random.random()
-                        })
+                        obs_manager.track_event(f"chaos_{thread_id}", {"random": random.random()})
                     elif operation == "trace":
                         with obs_manager.trace(f"chaos_trace_{thread_id}"):
                             time.sleep(random.uniform(0, 0.01))
                     elif operation == "error":
                         obs_manager.track_error(
                             Exception(f"Chaos error {thread_id}"),
-                            {"severity": random.choice(["low", "medium", "high"])}
+                            {"severity": random.choice(["low", "medium", "high"])},
                         )
                     elif operation == "health":
                         obs_manager.get_health_status()
                     elif operation == "export":
-                        if hasattr(obs_manager, 'get_metrics_summary'):
+                        if hasattr(obs_manager, "get_metrics_summary"):
                             obs_manager.get_metrics_summary()
                     elif operation == "stats":
                         obs_manager.get_status()

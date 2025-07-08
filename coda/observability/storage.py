@@ -53,7 +53,7 @@ class FileStorageBackend:
     def _get_file_path(self, key: str) -> Path:
         """Get the file path for a given key."""
         # Sanitize key to prevent path traversal
-        safe_key = key.replace('..', '').replace('/', '_').replace('\\', '_')
+        safe_key = key.replace("..", "").replace("/", "_").replace("\\", "_")
         return self.base_path / f"{safe_key}.json"
 
     def save(self, key: str, data: dict[str, Any]) -> None:
@@ -61,11 +61,11 @@ class FileStorageBackend:
         file_path = self._get_file_path(key)
 
         # Create temp file in same directory for atomic rename
-        fd, temp_path = tempfile.mkstemp(dir=self.base_path, suffix='.tmp')
+        fd, temp_path = tempfile.mkstemp(dir=self.base_path, suffix=".tmp")
 
         try:
             # Write data to temp file
-            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, default=str)
                 f.flush()
                 os.fsync(f.fileno())
@@ -92,7 +92,7 @@ class FileStorageBackend:
             return None
 
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"Failed to load data for key '{key}': {e}")
@@ -131,6 +131,7 @@ class MemoryStorageBackend:
         """Save data in memory."""
         # Deep copy to prevent external modifications
         import copy
+
         self.data[key] = copy.deepcopy(data)
 
     def load(self, key: str) -> dict[str, Any] | None:
@@ -140,6 +141,7 @@ class MemoryStorageBackend:
 
         # Deep copy to prevent external modifications
         import copy
+
         return copy.deepcopy(self.data[key])
 
     def exists(self, key: str) -> bool:
@@ -163,9 +165,9 @@ class MemoryStorageBackend:
 class BatchWriter:
     """Batches write operations for improved performance."""
 
-    def __init__(self, storage_backend: StorageBackend,
-                 batch_size: int = 100,
-                 batch_timeout: float = 5.0):
+    def __init__(
+        self, storage_backend: StorageBackend, batch_size: int = 100, batch_timeout: float = 5.0
+    ):
         """Initialize batch writer.
 
         Args:
@@ -189,13 +191,11 @@ class BatchWriter:
         """Queue data for batch writing."""
         with self._lock:
             # Extract prefix from key (e.g., "metrics_2024" -> "metrics")
-            prefix = key.split('_')[0] if '_' in key else key
+            prefix = key.split("_")[0] if "_" in key else key
 
-            self.pending[prefix].append({
-                "key": key,
-                "data": data,
-                "timestamp": data.get("timestamp", "")
-            })
+            self.pending[prefix].append(
+                {"key": key, "data": data, "timestamp": data.get("timestamp", "")}
+            )
 
             # Check if we should flush
             total_pending = sum(len(items) for items in self.pending.values())
@@ -233,14 +233,11 @@ class BatchWriter:
 
                 # Create batch key with timestamp
                 from datetime import datetime
+
                 batch_key = f"{prefix}_batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
                 # Save batch
-                batch_data = {
-                    "prefix": prefix,
-                    "count": len(items),
-                    "items": items
-                }
+                batch_data = {"prefix": prefix, "count": len(items), "items": items}
 
                 try:
                     self.storage.save(batch_key, batch_data)

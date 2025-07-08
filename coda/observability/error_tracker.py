@@ -22,6 +22,7 @@ from .sanitizer import DataSanitizer
 
 class ErrorSeverity(str, Enum):
     """Error severity levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -30,6 +31,7 @@ class ErrorSeverity(str, Enum):
 
 class ErrorCategory(str, Enum):
     """Error categories for classification."""
+
     PROVIDER = "provider"
     SESSION = "session"
     CONFIGURATION = "configuration"
@@ -43,6 +45,7 @@ class ErrorCategory(str, Enum):
 @dataclass
 class ErrorEvent:
     """Represents a single error event."""
+
     id: str
     timestamp: datetime
     error_type: str
@@ -69,6 +72,7 @@ class ErrorEvent:
 @dataclass
 class ErrorPattern:
     """Represents a pattern of errors for alerting."""
+
     pattern_id: str
     error_type: str
     category: ErrorCategory
@@ -99,8 +103,13 @@ class ErrorPattern:
 class ErrorTracker(ObservabilityComponent):
     """Tracks and analyzes errors for alerting and monitoring."""
 
-    def __init__(self, export_directory: Path, config_manager: ConfigManager,
-                 storage_backend=None, scheduler=None):
+    def __init__(
+        self,
+        export_directory: Path,
+        config_manager: ConfigManager,
+        storage_backend=None,
+        scheduler=None,
+    ):
         """Initialize the error tracker.
 
         Args:
@@ -122,13 +131,13 @@ class ErrorTracker(ObservabilityComponent):
         self.enabled = config_manager.get_bool(
             "observability.error_tracking.enabled",
             default=True,
-            env_var=f"{ENV_PREFIX}ERROR_TRACKING_ENABLED"
+            env_var=f"{ENV_PREFIX}ERROR_TRACKING_ENABLED",
         )
 
         self.max_stack_trace_length = config_manager.get_int(
             "observability.error_tracking.max_stack_trace_length",
             default=5000,
-            env_var=f"{ENV_PREFIX}ERROR_TRACKING_MAX_STACK_LENGTH"
+            env_var=f"{ENV_PREFIX}ERROR_TRACKING_MAX_STACK_LENGTH",
         )
 
         # Alert callbacks
@@ -156,7 +165,7 @@ class ErrorTracker(ObservabilityComponent):
         return self.config_manager.get_int(
             "observability.error_tracking.flush_interval",
             default=300,  # 5 minutes
-            env_var=f"{ENV_PREFIX}ERROR_TRACKING_FLUSH_INTERVAL"
+            env_var=f"{ENV_PREFIX}ERROR_TRACKING_FLUSH_INTERVAL",
         )
 
     def start(self):
@@ -179,7 +188,7 @@ class ErrorTracker(ObservabilityComponent):
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
         context: dict[str, Any] | None = None,
         session_id: str | None = None,
-        provider: str | None = None
+        provider: str | None = None,
     ) -> str:
         """Track an error event.
 
@@ -203,13 +212,14 @@ class ErrorTracker(ObservabilityComponent):
 
             # Extract stack trace
             import traceback
+
             stack_trace = traceback.format_exc()
 
             # Sanitize stack trace
             stack_trace = self.sanitizer.sanitize_stack_trace(stack_trace)
 
             if len(stack_trace) > self.max_stack_trace_length:
-                stack_trace = stack_trace[:self.max_stack_trace_length] + "... (truncated)"
+                stack_trace = stack_trace[: self.max_stack_trace_length] + "... (truncated)"
 
             # Sanitize context
             sanitized_context = self.sanitizer.sanitize_dict(context or {})
@@ -225,7 +235,7 @@ class ErrorTracker(ObservabilityComponent):
                 context=sanitized_context,
                 stack_trace=stack_trace,
                 session_id=session_id,
-                provider=provider
+                provider=provider,
             )
 
             # Store the error
@@ -248,14 +258,20 @@ class ErrorTracker(ObservabilityComponent):
         now = datetime.now(UTC)
 
         for pattern in self.error_patterns.values():
-            if pattern.error_type == error_event.error_type and pattern.category == error_event.category:
+            if (
+                pattern.error_type == error_event.error_type
+                and pattern.category == error_event.category
+            ):
                 # Count recent errors of this type
                 cutoff_time = now - timedelta(minutes=pattern.time_window_minutes)
                 recent_count = sum(
-                    1 for event in self.error_events
-                    if (event.error_type == pattern.error_type and
-                        event.category == pattern.category and
-                        event.timestamp >= cutoff_time)
+                    1
+                    for event in self.error_events
+                    if (
+                        event.error_type == pattern.error_type
+                        and event.category == pattern.category
+                        and event.timestamp >= cutoff_time
+                    )
                 )
 
                 if pattern.should_alert(recent_count, now):
@@ -291,48 +307,56 @@ class ErrorTracker(ObservabilityComponent):
     def _register_default_patterns(self):
         """Register default error patterns for common issues."""
         # Provider connection failures
-        self.add_error_pattern(ErrorPattern(
-            pattern_id="provider_connection_failures",
-            error_type="ConnectionError",
-            category=ErrorCategory.PROVIDER,
-            threshold_count=3,
-            time_window_minutes=15,
-            severity=ErrorSeverity.HIGH,
-            description="Multiple provider connection failures in short time"
-        ))
+        self.add_error_pattern(
+            ErrorPattern(
+                pattern_id="provider_connection_failures",
+                error_type="ConnectionError",
+                category=ErrorCategory.PROVIDER,
+                threshold_count=3,
+                time_window_minutes=15,
+                severity=ErrorSeverity.HIGH,
+                description="Multiple provider connection failures in short time",
+            )
+        )
 
         # Authentication errors
-        self.add_error_pattern(ErrorPattern(
-            pattern_id="auth_failures",
-            error_type="AuthenticationError",
-            category=ErrorCategory.AUTHENTICATION,
-            threshold_count=5,
-            time_window_minutes=10,
-            severity=ErrorSeverity.CRITICAL,
-            description="Multiple authentication failures"
-        ))
+        self.add_error_pattern(
+            ErrorPattern(
+                pattern_id="auth_failures",
+                error_type="AuthenticationError",
+                category=ErrorCategory.AUTHENTICATION,
+                threshold_count=5,
+                time_window_minutes=10,
+                severity=ErrorSeverity.CRITICAL,
+                description="Multiple authentication failures",
+            )
+        )
 
         # Configuration errors
-        self.add_error_pattern(ErrorPattern(
-            pattern_id="config_errors",
-            error_type="ConfigurationError",
-            category=ErrorCategory.CONFIGURATION,
-            threshold_count=2,
-            time_window_minutes=5,
-            severity=ErrorSeverity.HIGH,
-            description="Configuration errors indicating setup issues"
-        ))
+        self.add_error_pattern(
+            ErrorPattern(
+                pattern_id="config_errors",
+                error_type="ConfigurationError",
+                category=ErrorCategory.CONFIGURATION,
+                threshold_count=2,
+                time_window_minutes=5,
+                severity=ErrorSeverity.HIGH,
+                description="Configuration errors indicating setup issues",
+            )
+        )
 
         # Session errors
-        self.add_error_pattern(ErrorPattern(
-            pattern_id="session_failures",
-            error_type="SessionError",
-            category=ErrorCategory.SESSION,
-            threshold_count=5,
-            time_window_minutes=20,
-            severity=ErrorSeverity.MEDIUM,
-            description="Multiple session management failures"
-        ))
+        self.add_error_pattern(
+            ErrorPattern(
+                pattern_id="session_failures",
+                error_type="SessionError",
+                category=ErrorCategory.SESSION,
+                threshold_count=5,
+                time_window_minutes=20,
+                severity=ErrorSeverity.MEDIUM,
+                description="Multiple session management failures",
+            )
+        )
 
     def get_error_summary(self, days: int = 7) -> dict[str, Any]:
         """Get error summary for the last N days.
@@ -348,10 +372,7 @@ class ErrorTracker(ObservabilityComponent):
             cutoff_time = now - timedelta(days=days)
 
             # Filter recent errors
-            recent_errors = [
-                event for event in self.error_events
-                if event.timestamp >= cutoff_time
-            ]
+            recent_errors = [event for event in self.error_events if event.timestamp >= cutoff_time]
 
             # Count by type
             error_type_counts = defaultdict(int)
@@ -364,11 +385,7 @@ class ErrorTracker(ObservabilityComponent):
                 severity_counts[event.severity.value] += 1
 
             # Get top errors
-            top_errors = sorted(
-                error_type_counts.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )[:10]
+            top_errors = sorted(error_type_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
             return {
                 "total_errors": len(recent_errors),
@@ -376,7 +393,7 @@ class ErrorTracker(ObservabilityComponent):
                 "categories": dict(category_counts),
                 "severities": dict(severity_counts),
                 "top_errors": top_errors,
-                "time_window_days": days
+                "time_window_days": days,
             }
 
     def get_recent_errors(self, limit: int = 50) -> list[dict[str, Any]]:
@@ -410,7 +427,7 @@ class ErrorTracker(ObservabilityComponent):
                     "description": pattern.description,
                     "alert_enabled": pattern.alert_enabled,
                     "last_alert": pattern.last_alert.isoformat() if pattern.last_alert else None,
-                    "alert_cooldown_minutes": pattern.alert_cooldown_minutes
+                    "alert_cooldown_minutes": pattern.alert_cooldown_minutes,
                 }
                 for pattern_id, pattern in self.error_patterns.items()
             }
@@ -440,7 +457,7 @@ class ErrorTracker(ObservabilityComponent):
                 "total_errors": len(self.error_events),
                 "error_patterns_count": len(self.error_patterns),
                 "alert_callbacks": len(self.alert_callbacks),
-                "max_stack_trace_length": self.max_stack_trace_length
+                "max_stack_trace_length": self.max_stack_trace_length,
             }
 
     def _load_error_data(self):
@@ -479,7 +496,9 @@ class ErrorTracker(ObservabilityComponent):
                     pattern_data["category"] = ErrorCategory(pattern_data["category"])
                     pattern_data["severity"] = ErrorSeverity(pattern_data["severity"])
                     if pattern_data.get("last_alert"):
-                        pattern_data["last_alert"] = datetime.fromisoformat(pattern_data["last_alert"])
+                        pattern_data["last_alert"] = datetime.fromisoformat(
+                            pattern_data["last_alert"]
+                        )
 
                     pattern = ErrorPattern(**pattern_data)
                     self.error_patterns[pattern.pattern_id] = pattern
@@ -493,22 +512,22 @@ class ErrorTracker(ObservabilityComponent):
             # Save error events
             error_data = {
                 "errors": [event.to_dict() for event in self.error_events],
-                "last_updated": datetime.now(UTC).isoformat()
+                "last_updated": datetime.now(UTC).isoformat(),
             }
 
-            temp_file = self.errors_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = self.errors_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(error_data, f, indent=2)
             temp_file.replace(self.errors_file)
 
             # Save error patterns
             pattern_data = {
                 "patterns": list(self.get_error_patterns().values()),
-                "last_updated": datetime.now(UTC).isoformat()
+                "last_updated": datetime.now(UTC).isoformat(),
             }
 
-            temp_file = self.patterns_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = self.patterns_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(pattern_data, f, indent=2)
             temp_file.replace(self.patterns_file)
 

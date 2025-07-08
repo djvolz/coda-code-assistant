@@ -38,11 +38,11 @@ class TestMetricsCollector:
 
         assert collector.base_dir == temp_dir
         assert collector.config_manager == config_manager
-        assert hasattr(collector, '_session_events')
-        assert hasattr(collector, '_lifecycle_events')
-        assert hasattr(collector, '_provider_metrics')
-        assert hasattr(collector, '_error_counts')
-        assert hasattr(collector, '_token_usage')
+        assert hasattr(collector, "_session_events")
+        assert hasattr(collector, "_lifecycle_events")
+        assert hasattr(collector, "_provider_metrics")
+        assert hasattr(collector, "_error_counts")
+        assert hasattr(collector, "_token_usage")
 
     def test_record_session_event(self, temp_dir, config_manager):
         """Test recording session events."""
@@ -210,12 +210,8 @@ class TestMetricsCollector:
     def test_load_existing_data(self, temp_dir, config_manager):
         """Test loading existing data on initialization."""
         # Pre-create some data files
-        session_data = [
-            {"event_type": "old_event", "data": {}, "timestamp": time.time()}
-        ]
-        daily_stats = {
-            "2023-01-01": {"sessions": 10, "errors": 2}
-        }
+        session_data = [{"event_type": "old_event", "data": {}, "timestamp": time.time()}]
+        daily_stats = {"2023-01-01": {"sessions": 10, "errors": 2}}
 
         with open(temp_dir / "session_events.json", "w") as f:
             json.dump(session_data, f)

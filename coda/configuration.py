@@ -294,7 +294,7 @@ class ConfigManager:
         Returns:
             Configuration value or default
         """
-        keys = key.split('.')
+        keys = key.split(".")
         value = self.config.to_dict()
 
         try:

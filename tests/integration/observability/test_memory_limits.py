@@ -36,13 +36,13 @@ class TestObservabilityMemoryLimits:
                 "flush_interval_seconds": 5,  # Flush to disk every 5 seconds
                 "eviction_policy": "lru",  # Least Recently Used
                 "high_water_mark": 0.8,  # Start eviction at 80% capacity
-                "low_water_mark": 0.6   # Evict down to 60% capacity
+                "low_water_mark": 0.6,  # Evict down to 60% capacity
             },
             "metrics": {"enabled": True, "buffer_size": 500},
             "tracing": {"enabled": True, "buffer_size": 200},
             "health": {"enabled": True, "buffer_size": 100},
             "error_tracking": {"enabled": True, "buffer_size": 100},
-            "profiling": {"enabled": True, "buffer_size": 100}
+            "profiling": {"enabled": True, "buffer_size": 100},
         }
 
         manager = ConfigManager()
@@ -59,7 +59,9 @@ class TestObservabilityMemoryLimits:
         obs_manager = ObservabilityManager(config_with_memory_limits)
 
         initial_memory = self.get_memory_usage()
-        max_memory_mb = config_with_memory_limits.get_int("observability.memory.max_memory_mb", default=100)
+        max_memory_mb = config_with_memory_limits.get_int(
+            "observability.memory.max_memory_mb", default=100
+        )
 
         # Generate data to approach memory limit
         large_payload = "x" * 10000  # 10KB per event
@@ -87,14 +89,16 @@ class TestObservabilityMemoryLimits:
         """Test that buffer size limits are respected."""
         obs_manager = ObservabilityManager(config_with_memory_limits)
 
-        buffer_size = config_with_memory_limits.get_int("observability.memory.buffer_size", default=1000)
+        buffer_size = config_with_memory_limits.get_int(
+            "observability.memory.buffer_size", default=1000
+        )
 
         # Track more events than buffer size
         for i in range(buffer_size + 500):
             obs_manager.track_event(f"buffer_test_{i}", {"index": i})
 
         # Check that buffers don't exceed limits
-        if hasattr(obs_manager.metrics_collector, '_event_buffer'):
+        if hasattr(obs_manager.metrics_collector, "_event_buffer"):
             assert len(obs_manager.metrics_collector._event_buffer) <= buffer_size
 
     def test_lru_eviction_policy(self, config_with_memory_limits):
@@ -109,7 +113,7 @@ class TestObservabilityMemoryLimits:
             obs_manager.track_event(f"lru_test_{i}", {"index": i, "accessed": False})
 
         # Access some old events (make them recently used)
-        if hasattr(obs_manager, '_access_event'):
+        if hasattr(obs_manager, "_access_event"):
             for i in [2, 5, 8]:  # Access these specific events
                 obs_manager._access_event(f"lru_test_{i}")
 
@@ -126,7 +130,7 @@ class TestObservabilityMemoryLimits:
 
         buffer_size = 100  # Smaller buffer for testing
         high_water_mark = 0.8  # 80%
-        low_water_mark = 0.6   # 60%
+        low_water_mark = 0.6  # 60%
 
         # Fill buffer to high water mark
         for i in range(int(buffer_size * high_water_mark)):
@@ -136,7 +140,7 @@ class TestObservabilityMemoryLimits:
         obs_manager.track_event("trigger_eviction", {"trigger": True})
 
         # Buffer should be reduced to low water mark
-        if hasattr(obs_manager.metrics_collector, '_event_buffer'):
+        if hasattr(obs_manager.metrics_collector, "_event_buffer"):
             buffer_len = len(obs_manager.metrics_collector._event_buffer)
             assert buffer_len <= int(buffer_size * low_water_mark * 1.1)  # Allow 10% margin
 
@@ -150,7 +154,7 @@ class TestObservabilityMemoryLimits:
             obs_manager.track_event(f"flush_test_{i}", {"data": "x" * 1000})
 
         # Force memory pressure
-        if hasattr(obs_manager, '_check_memory_pressure'):
+        if hasattr(obs_manager, "_check_memory_pressure"):
             obs_manager._check_memory_pressure()
 
         # Data should be persisted to disk
@@ -162,8 +166,7 @@ class TestObservabilityMemoryLimits:
         obs_manager = ObservabilityManager(config_with_memory_limits)
 
         flush_interval = config_with_memory_limits.get_int(
-            "observability.memory.flush_interval_seconds",
-            default=60
+            "observability.memory.flush_interval_seconds", default=60
         )
 
         # Track some events
@@ -171,8 +174,8 @@ class TestObservabilityMemoryLimits:
             obs_manager.track_event(f"periodic_flush_{i}", {"index": i})
 
         # Wait for flush interval (or mock time)
-        with patch('time.time', side_effect=[0, flush_interval + 1]):
-            if hasattr(obs_manager, '_periodic_flush'):
+        with patch("time.time", side_effect=[0, flush_interval + 1]):
+            if hasattr(obs_manager, "_periodic_flush"):
                 obs_manager._periodic_flush()
 
         # Events should be flushed
@@ -182,8 +185,12 @@ class TestObservabilityMemoryLimits:
         obs_manager = ObservabilityManager(config_with_memory_limits)
 
         # Get component buffer sizes
-        metrics_buffer = config_with_memory_limits.get_int("observability.metrics.buffer_size", default=500)
-        tracing_buffer = config_with_memory_limits.get_int("observability.tracing.buffer_size", default=200)
+        metrics_buffer = config_with_memory_limits.get_int(
+            "observability.metrics.buffer_size", default=500
+        )
+        tracing_buffer = config_with_memory_limits.get_int(
+            "observability.tracing.buffer_size", default=200
+        )
 
         # Fill metrics buffer
         for i in range(metrics_buffer + 100):
@@ -195,10 +202,10 @@ class TestObservabilityMemoryLimits:
                 pass
 
         # Check buffer sizes
-        if hasattr(obs_manager.metrics_collector, '_event_buffer'):
+        if hasattr(obs_manager.metrics_collector, "_event_buffer"):
             assert len(obs_manager.metrics_collector._event_buffer) <= metrics_buffer
 
-        if hasattr(obs_manager.tracing_manager, '_spans'):
+        if hasattr(obs_manager.tracing_manager, "_spans"):
             assert len(obs_manager.tracing_manager._spans) <= tracing_buffer
 
     def test_memory_efficient_serialization(self, config_with_memory_limits):
@@ -213,7 +220,7 @@ class TestObservabilityMemoryLimits:
             "boolean": True,
             "null": None,
             "list": list(range(100)),
-            "nested": {"level1": {"level2": {"level3": "deep"}}}
+            "nested": {"level1": {"level2": {"level3": "deep"}}},
         }
 
         initial_memory = self.get_memory_usage()
@@ -238,10 +245,10 @@ class TestObservabilityMemoryLimits:
             obs_manager.track_event(f"eviction_metric_{i}", {"index": i})
 
             # Check for eviction metrics
-            if hasattr(obs_manager, 'get_eviction_stats'):
+            if hasattr(obs_manager, "get_eviction_stats"):
                 stats = obs_manager.get_eviction_stats()
-                if stats and stats.get('evicted_count', 0) > eviction_count:
-                    eviction_count = stats['evicted_count']
+                if stats and stats.get("evicted_count", 0) > eviction_count:
+                    eviction_count = stats["evicted_count"]
 
         # Some evictions should have occurred
         assert eviction_count > 0
@@ -257,7 +264,7 @@ class TestObservabilityMemoryLimits:
         initial_memory = self.get_memory_usage()
 
         # Shutdown observability
-        if hasattr(obs_manager, 'shutdown'):
+        if hasattr(obs_manager, "shutdown"):
             obs_manager.shutdown()
 
         # Force garbage collection
@@ -276,10 +283,9 @@ class TestObservabilityMemoryLimits:
 
         def track_events(thread_id):
             for i in range(500):
-                obs_manager.track_event(f"thread_{thread_id}_event_{i}", {
-                    "thread": thread_id,
-                    "data": "x" * 100
-                })
+                obs_manager.track_event(
+                    f"thread_{thread_id}_event_{i}", {"thread": thread_id, "data": "x" * 100}
+                )
                 time.sleep(0.001)
 
         # Start multiple threads
@@ -301,7 +307,9 @@ class TestObservabilityMemoryLimits:
             thread.join()
 
         # Memory should stay within limits even with concurrent access
-        memory_limit = config_with_memory_limits.get_int("observability.memory.max_memory_mb", default=50)
+        memory_limit = config_with_memory_limits.get_int(
+            "observability.memory.max_memory_mb", default=50
+        )
         assert max_memory < memory_limit * 3  # Allow 3x for overhead and initial memory
 
     def test_adaptive_buffer_sizing(self, config_with_memory_limits):
@@ -309,12 +317,12 @@ class TestObservabilityMemoryLimits:
         obs_manager = ObservabilityManager(config_with_memory_limits)
 
         # Simulate low memory conditions
-        with patch('psutil.virtual_memory') as mock_memory:
+        with patch("psutil.virtual_memory") as mock_memory:
             mock_memory.return_value.available = 100 * 1024 * 1024  # 100MB available
             mock_memory.return_value.percent = 90  # 90% used
 
             # Buffer sizes should adapt
-            if hasattr(obs_manager, '_adapt_buffer_sizes'):
+            if hasattr(obs_manager, "_adapt_buffer_sizes"):
                 obs_manager._adapt_buffer_sizes()
 
             # Buffers should be reduced under memory pressure
@@ -326,15 +334,11 @@ class TestObservabilityMemoryLimits:
         # Track events with different priorities
         for i in range(100):
             priority = "high" if i % 10 == 0 else "low"
-            obs_manager.track_event(f"priority_test_{i}", {
-                "index": i,
-                "priority": priority
-            })
+            obs_manager.track_event(f"priority_test_{i}", {"index": i, "priority": priority})
 
         # Track high priority error
         obs_manager.track_error(
-            Exception("Critical system error"),
-            {"severity": "critical", "priority": "high"}
+            Exception("Critical system error"), {"severity": "critical", "priority": "high"}
         )
 
         # Trigger eviction
@@ -358,8 +362,8 @@ class TestObservabilityMemoryLimits:
                     obs_manager.track_event(f"profile_{i}", data[-1])
 
                 # Get memory profile
-                if hasattr(obs_manager.profiler, 'get_memory_profile'):
+                if hasattr(obs_manager.profiler, "get_memory_profile"):
                     profile = obs_manager.profiler.get_memory_profile()
                     assert profile is not None
-                    assert 'peak_memory_mb' in profile
-                    assert 'current_memory_mb' in profile
+                    assert "peak_memory_mb" in profile
+                    assert "current_memory_mb" in profile

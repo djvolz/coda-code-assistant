@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SessionMetrics:
     """Metrics for a single session."""
+
     session_id: str
     created_at: datetime
     provider: str
@@ -49,6 +50,7 @@ class SessionMetrics:
 @dataclass
 class ProviderMetrics:
     """Metrics for a provider."""
+
     provider_name: str
     total_requests: int = 0
     total_errors: int = 0
@@ -89,8 +91,13 @@ class ProviderMetrics:
 class MetricsCollector(ObservabilityComponent):
     """Collects and manages metrics for Coda."""
 
-    def __init__(self, export_directory: Path, config_manager: ConfigManager,
-                 storage_backend=None, scheduler=None):
+    def __init__(
+        self,
+        export_directory: Path,
+        config_manager: ConfigManager,
+        storage_backend=None,
+        scheduler=None,
+    ):
         """Initialize the metrics collector.
 
         Args:
@@ -110,12 +117,12 @@ class MetricsCollector(ObservabilityComponent):
         max_memory_mb = config_manager.get_float(
             "observability.metrics.max_memory_mb",
             default=50.0,
-            env_var=f"{ENV_PREFIX}METRICS_MAX_MEMORY_MB"
+            env_var=f"{ENV_PREFIX}METRICS_MAX_MEMORY_MB",
         )
         self.error_log = MemoryAwareDeque(
             maxlen=10000,  # Keep last 10k errors max
             max_memory_mb=max_memory_mb,
-            eviction_callback=self._on_error_evicted
+            eviction_callback=self._on_error_evicted,
         )
 
         self.daily_stats: dict[str, dict[str, Any]] = defaultdict(dict)
@@ -132,7 +139,7 @@ class MetricsCollector(ObservabilityComponent):
         return self.config_manager.get_int(
             "observability.metrics.flush_interval",
             default=300,  # 5 minutes
-            env_var=f"{ENV_PREFIX}METRICS_FLUSH_INTERVAL"
+            env_var=f"{ENV_PREFIX}METRICS_FLUSH_INTERVAL",
         )
 
     def record_session_event(self, event_type: str, metadata: dict[str, Any]):
@@ -150,7 +157,7 @@ class MetricsCollector(ObservabilityComponent):
                     created_at=now,
                     provider=metadata.get("provider", "unknown"),
                     model=metadata.get("model", "unknown"),
-                    mode=metadata.get("mode", "general")
+                    mode=metadata.get("mode", "general"),
                 )
 
             elif event_type == "message_sent":
@@ -172,7 +179,7 @@ class MetricsCollector(ObservabilityComponent):
                     "sessions_created": 0,
                     "messages_sent": 0,
                     "errors": 0,
-                    "total_tokens": 0
+                    "total_tokens": 0,
                 }
 
             if event_type == "session_created":
@@ -212,7 +219,7 @@ class MetricsCollector(ObservabilityComponent):
                 "timestamp": datetime.now(UTC).isoformat(),
                 "error_type": type(error).__name__,
                 "error_message": str(error),
-                "context": context
+                "context": context,
             }
             self.error_log.append(error_data)
 
@@ -226,7 +233,7 @@ class MetricsCollector(ObservabilityComponent):
                     "total_tokens": 0,
                     "total_errors": 0,
                     "providers": {},
-                    "modes": {}
+                    "modes": {},
                 }
 
             total_sessions = len(self.session_metrics)
@@ -250,15 +257,14 @@ class MetricsCollector(ObservabilityComponent):
                 "total_tokens": total_tokens,
                 "total_errors": total_errors,
                 "providers": dict(provider_stats),
-                "modes": dict(mode_stats)
+                "modes": dict(mode_stats),
             }
 
     def get_provider_summary(self) -> dict[str, Any]:
         """Get summary statistics for all providers."""
         with self._lock:
             return {
-                provider: metrics.to_dict()
-                for provider, metrics in self.provider_metrics.items()
+                provider: metrics.to_dict() for provider, metrics in self.provider_metrics.items()
             }
 
     def get_daily_stats(self, days: int = 30) -> dict[str, Any]:
@@ -268,20 +274,13 @@ class MetricsCollector(ObservabilityComponent):
             sorted_dates = sorted(self.daily_stats.keys(), reverse=True)
             recent_dates = sorted_dates[:days]
 
-            return {
-                date: self.daily_stats[date]
-                for date in recent_dates
-            }
+            return {date: self.daily_stats[date] for date in recent_dates}
 
     def get_error_summary(self) -> dict[str, Any]:
         """Get error summary statistics."""
         with self._lock:
             if not self.error_log:
-                return {
-                    "total_errors": 0,
-                    "error_types": {},
-                    "recent_errors": []
-                }
+                return {"total_errors": 0, "error_types": {}, "recent_errors": []}
 
             # Count error types
             error_types = defaultdict(int)
@@ -294,7 +293,7 @@ class MetricsCollector(ObservabilityComponent):
             return {
                 "total_errors": len(self.error_log),
                 "error_types": dict(error_types),
-                "recent_errors": recent_errors
+                "recent_errors": recent_errors,
             }
 
     def get_status(self) -> dict[str, Any]:
@@ -307,7 +306,7 @@ class MetricsCollector(ObservabilityComponent):
                 "session_count": len(self.session_metrics),
                 "provider_count": len(self.provider_metrics),
                 "error_count": len(self.error_log),
-                "daily_stats_days": len(self.daily_stats)
+                "daily_stats_days": len(self.daily_stats),
             }
 
     def _load_metrics(self):
@@ -325,7 +324,9 @@ class MetricsCollector(ObservabilityComponent):
                     session_id = session_data["session_id"]
                     session_data["created_at"] = datetime.fromisoformat(session_data["created_at"])
                     if session_data.get("last_activity"):
-                        session_data["last_activity"] = datetime.fromisoformat(session_data["last_activity"])
+                        session_data["last_activity"] = datetime.fromisoformat(
+                            session_data["last_activity"]
+                        )
                     self.session_metrics[session_id] = SessionMetrics(**session_data)
 
             # Load provider metrics
@@ -334,7 +335,9 @@ class MetricsCollector(ObservabilityComponent):
                     provider_name = provider_data["provider_name"]
                     provider_data["models_used"] = set(provider_data.get("models_used", []))
                     if provider_data.get("last_request"):
-                        provider_data["last_request"] = datetime.fromisoformat(provider_data["last_request"])
+                        provider_data["last_request"] = datetime.fromisoformat(
+                            provider_data["last_request"]
+                        )
                     # Remove computed fields
                     provider_data.pop("average_response_time", None)
                     provider_data.pop("error_rate", None)
@@ -365,12 +368,12 @@ class MetricsCollector(ObservabilityComponent):
                 "providers": [m.to_dict() for m in self.provider_metrics.values()],
                 "errors": list(self.error_log),
                 "daily_stats": dict(self.daily_stats),
-                "last_updated": datetime.now(UTC).isoformat()
+                "last_updated": datetime.now(UTC).isoformat(),
             }
 
             # Write to temp file first, then atomic rename
-            temp_file = self.metrics_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = self.metrics_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
 
             temp_file.replace(self.metrics_file)

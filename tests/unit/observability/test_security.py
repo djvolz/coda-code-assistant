@@ -17,6 +17,7 @@ from coda.observability.security import (
 
 class InvalidFilenameError(SecurityError):
     """Invalid filename error used in tests."""
+
     pass
 
 
@@ -177,6 +178,7 @@ class TestSecureFileOperations:
         assert file_path.exists()
 
         import json
+
         with open(file_path) as f:
             loaded = json.load(f)
         assert loaded == data
@@ -196,12 +198,13 @@ class TestSecureFileOperations:
         SecureFileOperations.safe_write_json(file_path, {"v": 1}, temp_dir)
 
         # Simulate a write failure during the atomic operation
-        with patch('pathlib.Path.rename', side_effect=OSError("Rename failed")):
+        with patch("pathlib.Path.rename", side_effect=OSError("Rename failed")):
             with pytest.raises(OSError):
                 SecureFileOperations.safe_write_json(file_path, {"v": 2}, temp_dir)
 
         # Original file should still have old data
         import json
+
         with open(file_path) as f:
             data = json.load(f)
         assert data == {"v": 1}
@@ -212,7 +215,8 @@ class TestSecureFileOperations:
         data = {"key": "value", "list": [1, 2, 3]}
 
         import json
-        with open(file_path, 'w') as f:
+
+        with open(file_path, "w") as f:
             json.dump(data, f)
 
         loaded = SecureFileOperations.safe_read_json(file_path, temp_dir)

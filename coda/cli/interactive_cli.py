@@ -633,7 +633,7 @@ class InteractiveCLI(CommandHandler):
         from ..observability.manager import ObservabilityManager
 
         # Initialize observability manager if not already available
-        if not hasattr(self, 'observability_manager'):
+        if not hasattr(self, "observability_manager"):
             # Get the global ConfigManager instance which has loaded the config files
             config_manager = get_config_manager()
             self.observability_manager = ObservabilityManager(config_manager)
@@ -707,7 +707,7 @@ class InteractiveCLI(CommandHandler):
             elif subcommand in ["errors", "error"]:
                 # Parse error command parameters
                 limit = 20  # default
-                days = 7   # default
+                days = 7  # default
 
                 if "--limit" in sub_args:
                     try:
@@ -746,7 +746,9 @@ class InteractiveCLI(CommandHandler):
 
             else:
                 self.console.print(f"[red]Unknown observability subcommand: {subcommand}[/red]")
-                self.console.print("Available subcommands: status, metrics, health, traces, export, errors, performance")
+                self.console.print(
+                    "Available subcommands: status, metrics, health, traces, export, errors, performance"
+                )
                 self.console.print("Use [cyan]/help observability[/cyan] for more details")
 
         except Exception as e:

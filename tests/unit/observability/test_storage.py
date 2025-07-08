@@ -17,6 +17,7 @@ from coda.observability.storage import (
 
 class StorageError(Exception):
     """Storage error used in tests."""
+
     pass
 
 
@@ -146,18 +147,14 @@ class TestFileStorageBackend:
     def test_unicode_handling(self, temp_dir):
         """Test handling of unicode data."""
         storage = FileStorageBackend(temp_dir)
-        test_data = {
-            "emoji": "🚀",
-            "chinese": "你好",
-            "arabic": "مرحبا"
-        }
+        test_data = {"emoji": "🚀", "chinese": "你好", "arabic": "مرحبا"}
 
         storage.save("unicode_test", test_data)
         loaded = storage.load("unicode_test")
 
         assert loaded == test_data
 
-    @patch('pathlib.Path.write_text')
+    @patch("pathlib.Path.write_text")
     def test_save_error_handling(self, mock_write, temp_dir):
         """Test error handling during save."""
         mock_write.side_effect = OSError("Disk full")
@@ -248,6 +245,7 @@ class TestMemoryStorageBackend:
     def test_thread_safety(self):
         """Test basic thread safety of operations."""
         import threading
+
         storage = MemoryStorageBackend()
         errors = []
 

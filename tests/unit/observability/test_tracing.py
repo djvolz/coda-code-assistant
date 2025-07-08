@@ -142,8 +142,8 @@ class TestTracingManager:
 
         assert manager.base_dir == temp_dir
         assert manager.config_manager == config_manager
-        assert hasattr(manager, '_traces')
-        assert hasattr(manager, '_active_spans')
+        assert hasattr(manager, "_traces")
+        assert hasattr(manager, "_active_spans")
         assert manager._sampling_rate == 1.0  # 100% converted to 1.0
 
     def test_create_span(self, temp_dir, config_manager):

@@ -13,16 +13,19 @@ logger = logging.getLogger(__name__)
 
 class SecurityError(Exception):
     """Base exception for security-related errors."""
+
     pass
 
 
 class PathTraversalError(SecurityError):
     """Raised when path traversal is detected."""
+
     pass
 
 
 class PermissionError(SecurityError):
     """Raised when file permissions are insecure."""
+
     pass
 
 
@@ -53,14 +56,14 @@ class PathValidator:
 
             # Additional checks for common traversal patterns
             path_str = str(path)
-            if '..' in path_str:
+            if ".." in path_str:
                 # Check if it's a legitimate use (e.g., in filename)
                 parts = path_str.split(os.sep)
-                if '..' in parts:
+                if ".." in parts:
                     raise PathTraversalError(f"Path traversal detected in: {path}")
 
             # Check for null bytes
-            if '\x00' in path_str:
+            if "\x00" in path_str:
                 raise PathTraversalError(f"Null byte in path: {path}")
 
             return resolved_path
@@ -86,22 +89,45 @@ class PathValidator:
             SecurityError: If filename is invalid
         """
         # Check for empty filename
-        if not filename or filename.strip() == '':
+        if not filename or filename.strip() == "":
             raise SecurityError("Empty filename")
 
         # Check for path separators in filename
-        if os.sep in filename or '/' in filename or '\\' in filename:
+        if os.sep in filename or "/" in filename or "\\" in filename:
             raise SecurityError(f"Path separators not allowed in filename: {filename}")
 
         # Check for null bytes
-        if '\x00' in filename:
+        if "\x00" in filename:
             raise SecurityError(f"Null byte in filename: {filename}")
 
         # Check for special filenames
         base_name = filename.lower()
-        if base_name in {'.', '..', 'con', 'prn', 'aux', 'nul',
-                         'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
-                         'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'}:
+        if base_name in {
+            ".",
+            "..",
+            "con",
+            "prn",
+            "aux",
+            "nul",
+            "com1",
+            "com2",
+            "com3",
+            "com4",
+            "com5",
+            "com6",
+            "com7",
+            "com8",
+            "com9",
+            "lpt1",
+            "lpt2",
+            "lpt3",
+            "lpt4",
+            "lpt5",
+            "lpt6",
+            "lpt7",
+            "lpt8",
+            "lpt9",
+        }:
             raise SecurityError(f"Reserved filename: {filename}")
 
         # Check extension if required
@@ -145,9 +171,7 @@ class PathValidator:
                     os.chmod(path, required_mode)
                     logger.info(f"Fixed permissions on {path} to {oct(required_mode)}")
                 except OSError as e:
-                    raise PermissionError(
-                        f"Failed to set secure permissions on {path}: {e}"
-                    ) from e
+                    raise PermissionError(f"Failed to set secure permissions on {path}: {e}") from e
 
         except OSError as e:
             logger.error(f"Failed to check permissions on {path}: {e}")
@@ -163,7 +187,7 @@ class PathValidator:
         Raises:
             SecurityError: If JSON is too large
         """
-        size_bytes = len(json_str.encode('utf-8'))
+        size_bytes = len(json_str.encode("utf-8"))
         size_mb = size_bytes / (1024 * 1024)
 
         if size_mb > max_size_mb:
@@ -188,14 +212,12 @@ class SecureFileOperations:
 
         # Create temp file in same directory for atomic rename
         temp_fd, temp_path = tempfile.mkstemp(
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp"
+            dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
         )
 
         try:
             # Write content
-            with os.fdopen(temp_fd, 'w', encoding='utf-8') as f:
+            with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
                 f.write(content)
                 f.flush()
                 os.fsync(f.fileno())
@@ -238,7 +260,7 @@ class SecureFileOperations:
             )
 
         # Read file
-        with open(path, encoding='utf-8') as f:
+        with open(path, encoding="utf-8") as f:
             return f.read()
 
     @staticmethod
@@ -256,8 +278,9 @@ class SecureFileOperations:
             if overwrite and path.is_file():
                 # Overwrite with random data
                 size = path.stat().st_size
-                with open(path, 'wb') as f:
+                with open(path, "wb") as f:
                     import secrets
+
                     # Write random data in chunks
                     chunk_size = 4096
                     for _ in range(0, size, chunk_size):

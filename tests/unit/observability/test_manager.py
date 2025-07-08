@@ -51,15 +51,22 @@ class TestObservabilityManager:
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
-    @patch('coda.observability.manager.Path')
-    @patch('coda.observability.manager.MetricsCollector')
-    @patch('coda.observability.manager.TracingManager')
-    @patch('coda.observability.manager.HealthMonitor')
-    @patch('coda.observability.manager.ErrorTracker')
-    @patch('coda.observability.manager.PeriodicTaskScheduler')
-    def test_initialization_enabled(self, mock_scheduler, mock_error_tracker,
-                                  mock_health, mock_tracing, mock_metrics,
-                                  mock_path, config_manager):
+    @patch("coda.observability.manager.Path")
+    @patch("coda.observability.manager.MetricsCollector")
+    @patch("coda.observability.manager.TracingManager")
+    @patch("coda.observability.manager.HealthMonitor")
+    @patch("coda.observability.manager.ErrorTracker")
+    @patch("coda.observability.manager.PeriodicTaskScheduler")
+    def test_initialization_enabled(
+        self,
+        mock_scheduler,
+        mock_error_tracker,
+        mock_health,
+        mock_tracing,
+        mock_metrics,
+        mock_path,
+        config_manager,
+    ):
         """Test initialization with observability enabled."""
         mock_path.return_value.expanduser.return_value = Path("/tmp/observability")
         mock_path.return_value.expanduser.return_value.exists.return_value = True
@@ -85,7 +92,7 @@ class TestObservabilityManager:
         assert manager.error_tracker is None
         assert manager.scheduler is None
 
-    @patch('coda.observability.manager.Path')
+    @patch("coda.observability.manager.Path")
     def test_initialization_creates_directory(self, mock_path, config_manager):
         """Test that initialization creates export directory if missing."""
         mock_dir = MagicMock()
@@ -96,9 +103,11 @@ class TestObservabilityManager:
 
         mock_dir.mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch('coda.observability.manager.MetricsCollector')
-    @patch('coda.observability.manager.PeriodicTaskScheduler')
-    def test_start_enabled(self, mock_scheduler_class, mock_metrics_class, config_manager, temp_dir):
+    @patch("coda.observability.manager.MetricsCollector")
+    @patch("coda.observability.manager.PeriodicTaskScheduler")
+    def test_start_enabled(
+        self, mock_scheduler_class, mock_metrics_class, config_manager, temp_dir
+    ):
         """Test starting observability when enabled."""
         config_manager.get_string.return_value = str(temp_dir)
 
@@ -123,8 +132,8 @@ class TestObservabilityManager:
 
         assert not manager._running
 
-    @patch('coda.observability.manager.MetricsCollector')
-    @patch('coda.observability.manager.PeriodicTaskScheduler')
+    @patch("coda.observability.manager.MetricsCollector")
+    @patch("coda.observability.manager.PeriodicTaskScheduler")
     def test_stop(self, mock_scheduler_class, mock_metrics_class, config_manager, temp_dir):
         """Test stopping observability."""
         config_manager.get_string.return_value = str(temp_dir)
@@ -151,7 +160,7 @@ class TestObservabilityManager:
         # Should not raise
         manager.stop()
 
-    @patch('coda.observability.manager.MetricsCollector')
+    @patch("coda.observability.manager.MetricsCollector")
     def test_record_session_event_enabled(self, mock_metrics_class, config_manager, temp_dir):
         """Test recording session event when enabled."""
         config_manager.get_string.return_value = str(temp_dir)
@@ -170,7 +179,7 @@ class TestObservabilityManager:
         # Should not raise
         manager.record_session_event("test_event", {"key": "value"})
 
-    @patch('coda.observability.manager.ErrorTracker')
+    @patch("coda.observability.manager.ErrorTracker")
     def test_record_error_enabled(self, mock_error_class, config_manager, temp_dir):
         """Test recording error when enabled."""
         config_manager.get_string.return_value = str(temp_dir)
@@ -194,7 +203,7 @@ class TestObservabilityManager:
         # Should not raise
         manager.record_error(ValueError("Test"), {})
 
-    @patch('coda.observability.manager.TracingManager')
+    @patch("coda.observability.manager.TracingManager")
     def test_create_span_enabled(self, mock_tracing_class, config_manager, temp_dir):
         """Test creating span when enabled."""
         config_manager.get_string.return_value = str(temp_dir)
@@ -218,7 +227,7 @@ class TestObservabilityManager:
         span = manager.create_span("test_span")
         assert span is None
 
-    @patch('coda.observability.manager.HealthMonitor')
+    @patch("coda.observability.manager.HealthMonitor")
     def test_get_health_status_enabled(self, mock_health_class, config_manager, temp_dir):
         """Test getting health status when enabled."""
         config_manager.get_string.return_value = str(temp_dir)
@@ -265,7 +274,7 @@ class TestObservabilityManager:
 
         assert status == {"enabled": False}
 
-    @patch('coda.observability.manager.MetricsCollector')
+    @patch("coda.observability.manager.MetricsCollector")
     def test_export_data(self, mock_metrics_class, config_manager, temp_dir):
         """Test exporting data."""
         config_manager.get_string.return_value = str(temp_dir)
@@ -277,7 +286,7 @@ class TestObservabilityManager:
         manager = ObservabilityManager(config_manager)
 
         # Mock the commands module
-        with patch('coda.observability.manager.ObservabilityCommands') as mock_commands:
+        with patch("coda.observability.manager.ObservabilityCommands") as mock_commands:
             mock_export = Mock(return_value="/tmp/export.json")
             mock_commands.return_value.export = mock_export
 
@@ -303,10 +312,10 @@ class TestObservabilityManager:
 
         config_manager.get_bool.side_effect = get_bool_side_effect
 
-        with patch('coda.observability.manager.MetricsCollector') as mock_metrics:
-            with patch('coda.observability.manager.TracingManager') as mock_tracing:
-                with patch('coda.observability.manager.HealthMonitor') as mock_health:
-                    with patch('coda.observability.manager.ErrorTracker') as mock_error:
+        with patch("coda.observability.manager.MetricsCollector") as mock_metrics:
+            with patch("coda.observability.manager.TracingManager") as mock_tracing:
+                with patch("coda.observability.manager.HealthMonitor") as mock_health:
+                    with patch("coda.observability.manager.ErrorTracker") as mock_error:
                         _manager = ObservabilityManager(config_manager)
 
                         # Enabled components should be created
@@ -321,7 +330,7 @@ class TestObservabilityManager:
         """Test error handling in various operations."""
         config_manager.get_string.return_value = str(temp_dir)
 
-        with patch('coda.observability.manager.MetricsCollector') as mock_metrics_class:
+        with patch("coda.observability.manager.MetricsCollector") as mock_metrics_class:
             mock_metrics = Mock()
             mock_metrics.record_session_event.side_effect = Exception("Metrics error")
             mock_metrics_class.return_value = mock_metrics

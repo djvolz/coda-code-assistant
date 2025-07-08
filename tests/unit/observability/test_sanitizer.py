@@ -74,14 +74,8 @@ class TestDataSanitizer:
             "username": "john_doe",
             "password": "mysecret123",
             "api_key": "sk-abc123",
-            "data": {
-                "token": "bearer-token",
-                "safe_field": "this is safe"
-            },
-            "config": {
-                "database": "mydb",
-                "db_password": "dbpass123"
-            }
+            "data": {"token": "bearer-token", "safe_field": "this is safe"},
+            "config": {"database": "mydb", "db_password": "dbpass123"},
         }
 
         result = sanitizer.sanitize_dict(input_dict)
@@ -97,12 +91,9 @@ class TestDataSanitizer:
     def test_dict_with_list_sanitization(self, sanitizer):
         """Test sanitization of dictionaries containing lists."""
         input_dict = {
-            "items": [
-                {"name": "item1", "key": "secret"},
-                {"name": "item2", "password": "pass123"}
-            ],
+            "items": [{"name": "item1", "key": "secret"}, {"name": "item2", "password": "pass123"}],
             "tokens": ["token1", "token2"],
-            "safe_list": [1, 2, 3]
+            "safe_list": [1, 2, 3],
         }
 
         result = sanitizer.sanitize_dict(input_dict)
@@ -120,9 +111,7 @@ class TestDataSanitizer:
             "float_field": 3.14,
             "bool_field": True,
             "none_field": None,
-            "nested": {
-                "api_key": "my-api-key"
-            }
+            "nested": {"api_key": "my-api-key"},
         }
 
         result = sanitizer.sanitize_dict(input_data)
@@ -203,7 +192,7 @@ class TestDataSanitizer:
         # Create sanitizer with custom patterns
         custom_patterns = [
             r'credit_card["\']?\s*[:=]\s*["\']?([^"\'\s]+)',
-            r'ssn["\']?\s*[:=]\s*["\']?([^"\'\s]+)'
+            r'ssn["\']?\s*[:=]\s*["\']?([^"\'\s]+)',
         ]
 
         # For this test, we'll modify the sanitizer's patterns
@@ -230,7 +219,7 @@ class TestDataSanitizer:
                 f"level2_{j}": {
                     "password": f"secret_{i}_{j}",
                     "data": "x" * 1000,
-                    "api_key": f"key_{i}_{j}"
+                    "api_key": f"key_{i}_{j}",
                 }
                 for j in range(10)
             }

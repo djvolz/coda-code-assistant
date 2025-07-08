@@ -222,32 +222,46 @@ class CommandRegistry:
     # Observability subcommands
     OBSERVABILITY_SUBCOMMANDS = [
         CommandDefinition(
-            name="status", description="Show observability status", type=CommandType.SUBCOMMAND,
-            examples=["/obs status"]
+            name="status",
+            description="Show observability status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs status"],
         ),
         CommandDefinition(
-            name="metrics", description="Show metrics summary", type=CommandType.SUBCOMMAND,
-            examples=["/obs metrics", "/obs metrics --detailed"]
+            name="metrics",
+            description="Show metrics summary",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs metrics", "/obs metrics --detailed"],
         ),
         CommandDefinition(
-            name="health", description="Show health status", type=CommandType.SUBCOMMAND,
-            examples=["/obs health", "/obs health database"]
+            name="health",
+            description="Show health status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs health", "/obs health database"],
         ),
         CommandDefinition(
-            name="traces", description="Show recent traces", type=CommandType.SUBCOMMAND,
-            examples=["/obs traces", "/obs traces --limit 20"]
+            name="traces",
+            description="Show recent traces",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs traces", "/obs traces --limit 20"],
         ),
         CommandDefinition(
-            name="export", description="Export observability data", type=CommandType.SUBCOMMAND,
-            examples=["/obs export", "/obs export --format json --output data.json"]
+            name="export",
+            description="Export observability data",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs export", "/obs export --format json --output data.json"],
         ),
         CommandDefinition(
-            name="errors", description="Show error analysis and recent errors", type=CommandType.SUBCOMMAND,
-            examples=["/obs errors", "/obs errors --limit 50 --days 7"]
+            name="errors",
+            description="Show error analysis and recent errors",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs errors", "/obs errors --limit 50 --days 7"],
         ),
         CommandDefinition(
-            name="performance", description="Show performance profiling data", type=CommandType.SUBCOMMAND,
-            examples=["/obs performance", "/obs performance --limit 30"]
+            name="performance",
+            description="Show performance profiling data",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs performance", "/obs performance --limit 30"],
         ),
     ]
 

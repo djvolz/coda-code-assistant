@@ -14,14 +14,12 @@ class TestCodaConfigEnhancements:
     def test_observability_field_exists(self):
         """Test that observability field exists in CodaConfig."""
         config = CodaConfig()
-        assert hasattr(config, 'observability')
+        assert hasattr(config, "observability")
         assert config.observability == {}
 
     def test_merge_with_observability(self):
         """Test merging configurations with observability settings."""
-        config1 = CodaConfig(
-            observability={"enabled": True, "metrics": {"enabled": True}}
-        )
+        config1 = CodaConfig(observability={"enabled": True, "metrics": {"enabled": True}})
         config2 = CodaConfig(
             observability={"tracing": {"enabled": True}, "metrics": {"interval": 60}}
         )
@@ -35,13 +33,8 @@ class TestCodaConfigEnhancements:
 
     def test_merge_preserves_other_fields(self):
         """Test that merge preserves other configuration fields."""
-        config1 = CodaConfig(
-            default_persona="test_persona",
-            observability={"enabled": True}
-        )
-        config2 = CodaConfig(
-            observability={"metrics": {"enabled": True}}
-        )
+        config1 = CodaConfig(default_persona="test_persona", observability={"enabled": True})
+        config2 = CodaConfig(observability={"metrics": {"enabled": True}})
 
         merged = config1.merge(config2)
 
@@ -60,22 +53,11 @@ class TestConfigManagerEnhancements:
         manager._config = {
             "observability": {
                 "enabled": True,
-                "metrics": {
-                    "enabled": True,
-                    "interval": 60,
-                    "max_events": 1000
-                },
-                "tracing": {
-                    "enabled": False,
-                    "sampling_rate": 0.1
-                }
+                "metrics": {"enabled": True, "interval": 60, "max_events": 1000},
+                "tracing": {"enabled": False, "sampling_rate": 0.1},
             },
             "other_setting": "value",
-            "nested": {
-                "deep": {
-                    "value": "test"
-                }
-            }
+            "nested": {"deep": {"value": "test"}},
         }
         return manager
 
@@ -228,7 +210,7 @@ class TestConfigManagerEnhancements:
             "int": 42,
             "float": 3.14,
             "string": "hello",
-            "none": None
+            "none": None,
         }
 
         # get_bool should handle all types
@@ -267,16 +249,7 @@ class TestConfigManagerEnhancements:
     def test_complex_nested_structure(self, config_manager):
         """Test with complex nested configuration."""
         config_manager._config = {
-            "level1": {
-                "level2": {
-                    "level3": {
-                        "level4": {
-                            "value": "deep_value",
-                            "number": 42
-                        }
-                    }
-                }
-            }
+            "level1": {"level2": {"level3": {"level4": {"value": "deep_value", "number": 42}}}}
         }
 
         assert config_manager.get_string("level1.level2.level3.level4.value") == "deep_value"

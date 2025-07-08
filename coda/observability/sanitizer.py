@@ -18,46 +18,69 @@ class DataSanitizer:
     # Common patterns for sensitive data
     DEFAULT_PATTERNS: list[Pattern] = [
         # API keys and tokens
-        re.compile(r'(api[-_]?key|apikey|access[-_]?token|auth[-_]?token|authentication[-_]?token|private[-_]?key)\s*[:=]\s*["\']?([A-Za-z0-9+/=_\-]{20,})["\']?', re.IGNORECASE),
-        re.compile(r'(Bearer|Authorization)\s+([A-Za-z0-9+/=_\-]{20,})', re.IGNORECASE),
-
+        re.compile(
+            r'(api[-_]?key|apikey|access[-_]?token|auth[-_]?token|authentication[-_]?token|private[-_]?key)\s*[:=]\s*["\']?([A-Za-z0-9+/=_\-]{20,})["\']?',
+            re.IGNORECASE,
+        ),
+        re.compile(r"(Bearer|Authorization)\s+([A-Za-z0-9+/=_\-]{20,})", re.IGNORECASE),
         # Passwords and secrets
-        re.compile(r'(password|passwd|pwd|secret|pass)\s*[:=]\s*["\']?([^"\'\s]+)["\']?', re.IGNORECASE),
-
+        re.compile(
+            r'(password|passwd|pwd|secret|pass)\s*[:=]\s*["\']?([^"\'\s]+)["\']?', re.IGNORECASE
+        ),
         # Email addresses
-        re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
-
+        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
         # Credit card numbers (basic patterns)
-        re.compile(r'\b(?:\d{4}[-\s]?){3}\d{4}\b'),  # 16 digits
-        re.compile(r'\b\d{15}\b'),  # Amex
-
+        re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"),  # 16 digits
+        re.compile(r"\b\d{15}\b"),  # Amex
         # Social Security Numbers
-        re.compile(r'\b\d{3}-\d{2}-\d{4}\b'),
-
+        re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
         # AWS credentials
-        re.compile(r'AKIA[0-9A-Z]{16}'),  # AWS Access Key
+        re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS Access Key
         re.compile(r'aws_secret_access_key\s*=\s*["\']?([A-Za-z0-9+/]{40})["\']?', re.IGNORECASE),
-
         # Database connection strings
-        re.compile(r'(mongodb|postgres|postgresql|mysql|redis|mssql)://[^:\s]+:[^@\s]+@[^\s]+', re.IGNORECASE),
-
+        re.compile(
+            r"(mongodb|postgres|postgresql|mysql|redis|mssql)://[^:\s]+:[^@\s]+@[^\s]+",
+            re.IGNORECASE,
+        ),
         # JWT tokens
-        re.compile(r'eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*'),
-
+        re.compile(r"eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*"),
         # Private keys
-        re.compile(r'-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----[\s\S]+?-----END\s+(RSA\s+)?PRIVATE\s+KEY-----'),
+        re.compile(
+            r"-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----[\s\S]+?-----END\s+(RSA\s+)?PRIVATE\s+KEY-----"
+        ),
     ]
 
     # Sensitive key names to redact
     SENSITIVE_KEYS = {
-        'password', 'passwd', 'pwd', 'secret', 'token', 'key', 'api_key', 'apikey',
-        'auth', 'authorization', 'credential', 'private', 'access_token', 'refresh_token',
-        'client_secret', 'client_id', 'database_url', 'db_url', 'connection_string',
-        'aws_access_key_id', 'aws_secret_access_key', 'aws_session_token'
+        "password",
+        "passwd",
+        "pwd",
+        "secret",
+        "token",
+        "key",
+        "api_key",
+        "apikey",
+        "auth",
+        "authorization",
+        "credential",
+        "private",
+        "access_token",
+        "refresh_token",
+        "client_secret",
+        "client_id",
+        "database_url",
+        "db_url",
+        "connection_string",
+        "aws_access_key_id",
+        "aws_secret_access_key",
+        "aws_session_token",
     }
 
-    def __init__(self, custom_patterns: list[Pattern] | None = None,
-                 additional_sensitive_keys: list[str] | None = None):
+    def __init__(
+        self,
+        custom_patterns: list[Pattern] | None = None,
+        additional_sensitive_keys: list[str] | None = None,
+    ):
         """Initialize the sanitizer.
 
         Args:
@@ -91,6 +114,7 @@ class DataSanitizer:
             try:
                 # Handle patterns with groups
                 if pattern.groups > 0:
+
                     def replace_func(match):
                         groups = match.groups()
                         if len(groups) >= 2:
@@ -98,6 +122,7 @@ class DataSanitizer:
                             return f"{groups[0]}={placeholder}"
                         else:
                             return placeholder
+
                     sanitized = pattern.sub(replace_func, sanitized)
                 else:
                     # Simple replacement for patterns without groups
@@ -107,7 +132,9 @@ class DataSanitizer:
 
         return sanitized
 
-    def sanitize_dict(self, data: dict[str, Any], placeholder: str = "***REDACTED***") -> dict[str, Any]:
+    def sanitize_dict(
+        self, data: dict[str, Any], placeholder: str = "***REDACTED***"
+    ) -> dict[str, Any]:
         """Recursively sanitize a dictionary.
 
         Args:
@@ -178,7 +205,7 @@ class DataSanitizer:
             return stack_trace
 
         # Split by lines to preserve structure
-        lines = stack_trace.split('\n')
+        lines = stack_trace.split("\n")
         sanitized_lines = []
 
         for line in lines:
@@ -186,10 +213,11 @@ class DataSanitizer:
             sanitized_line = self.sanitize_string(line, placeholder)
             sanitized_lines.append(sanitized_line)
 
-        return '\n'.join(sanitized_lines)
+        return "\n".join(sanitized_lines)
 
-    def sanitize(self, data: str | dict | list | Any,
-                 placeholder: str = "***REDACTED***") -> str | dict | list | Any:
+    def sanitize(
+        self, data: str | dict | list | Any, placeholder: str = "***REDACTED***"
+    ) -> str | dict | list | Any:
         """Sanitize any supported data type.
 
         Args:

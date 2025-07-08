@@ -62,9 +62,9 @@ class TestErrorTracker:
 
         assert tracker.base_dir == temp_dir
         assert tracker.config_manager == config_manager
-        assert hasattr(tracker, '_errors')
-        assert hasattr(tracker, '_error_patterns')
-        assert hasattr(tracker, '_alert_counts')
+        assert hasattr(tracker, "_errors")
+        assert hasattr(tracker, "_error_patterns")
+        assert hasattr(tracker, "_alert_counts")
 
     def test_record_error_basic(self, temp_dir, config_manager):
         """Test recording a basic error."""
@@ -95,10 +95,7 @@ class TestErrorTracker:
         context = {"provider": "openai"}
 
         tracker.record_error(
-            error,
-            context,
-            category=ErrorCategory.NETWORK,
-            severity=ErrorSeverity.HIGH
+            error, context, category=ErrorCategory.NETWORK, severity=ErrorSeverity.HIGH
         )
 
         errors = list(tracker._errors)
@@ -166,9 +163,7 @@ class TestErrorTracker:
         for i in range(6):  # Threshold is 5
             error = PermissionError("Access denied")
             should_alert = tracker.record_error(
-                error,
-                {"attempt": i},
-                severity=ErrorSeverity.CRITICAL
+                error, {"attempt": i}, severity=ErrorSeverity.CRITICAL
             )
 
             if i < 5:
@@ -197,20 +192,10 @@ class TestErrorTracker:
         tracker = ErrorTracker(temp_dir, config_manager)
 
         # Record different categories
+        tracker.record_error(ConnectionError("Network error"), {}, category=ErrorCategory.NETWORK)
+        tracker.record_error(ValueError("Config error"), {}, category=ErrorCategory.CONFIGURATION)
         tracker.record_error(
-            ConnectionError("Network error"),
-            {},
-            category=ErrorCategory.NETWORK
-        )
-        tracker.record_error(
-            ValueError("Config error"),
-            {},
-            category=ErrorCategory.CONFIGURATION
-        )
-        tracker.record_error(
-            TimeoutError("Another network error"),
-            {},
-            category=ErrorCategory.NETWORK
+            TimeoutError("Another network error"), {}, category=ErrorCategory.NETWORK
         )
 
         network_errors = tracker.get_recent_errors(category=ErrorCategory.NETWORK)
@@ -259,7 +244,7 @@ class TestErrorTracker:
         for i in range(20):
             error = ValueError(f"Error {i}")
             # Mock timestamp
-            with patch('time.time', return_value=base_time + i * 60):
+            with patch("time.time", return_value=base_time + i * 60):
                 tracker.record_error(error, {"index": i})
 
         analysis = tracker.get_error_analysis(hours=1)
@@ -347,7 +332,7 @@ class TestErrorTracker:
             ValueError("Test error"),
             {"operation": "test"},
             category=ErrorCategory.CONFIGURATION,
-            severity=ErrorSeverity.HIGH
+            severity=ErrorSeverity.HIGH,
         )
 
         export_data = tracker.get_export_data()
@@ -364,6 +349,7 @@ class TestErrorTracker:
         def cause_error():
             def inner_function():
                 raise ValueError("Test error with sensitive data: password=secret123")
+
             inner_function()
 
         try:

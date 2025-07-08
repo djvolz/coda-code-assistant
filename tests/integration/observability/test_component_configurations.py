@@ -31,7 +31,7 @@ class TestIndividualComponentConfigurations:
             "tracing": False,
             "health": False,
             "error_tracking": False,
-            "profiling": False
+            "profiling": False,
         }
         defaults.update(components)
 
@@ -59,6 +59,7 @@ model_name = "mock-smart"
         """Capture stdout output from a function."""
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
         try:
@@ -85,7 +86,7 @@ model_name = "mock-smart"
         obs_manager.track_provider_request("mock", 0.1, True, {})
 
         # Test metrics command works
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -121,7 +122,7 @@ model_name = "mock-smart"
                 child.set_attribute("level", "child")
 
         # Test traces command works
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -147,7 +148,7 @@ model_name = "mock-smart"
         assert "overall_status" in health_status
 
         # Test health command works
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -177,7 +178,7 @@ model_name = "mock-smart"
         obs_manager.track_error(RuntimeError("Critical error"), {"severity": "high"})
 
         # Test errors command works
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -199,7 +200,7 @@ model_name = "mock-smart"
         assert obs_manager.profiler is not None
 
         # Test performance command
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -226,7 +227,7 @@ model_name = "mock-smart"
             obs_manager.track_token_usage("mock", 100, 50, 0.01)
 
         # Both commands should work
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -243,14 +244,16 @@ model_name = "mock-smart"
         obs_manager = ObservabilityManager(config)
 
         # Test error impact on health
-        obs_manager.track_error(Exception("Service unavailable"), {"service": "database", "severity": "high"})
+        obs_manager.track_error(
+            Exception("Service unavailable"), {"service": "database", "severity": "high"}
+        )
         obs_manager.track_error(Exception("Minor warning"), {"severity": "low"})
 
         health_status = obs_manager.get_health_status()
         assert health_status is not None
 
         # Both commands should work
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -264,12 +267,7 @@ model_name = "mock-smart"
     def test_all_except_profiling_configuration(self, temp_dir):
         """Test with all components except profiling enabled."""
         config = self.create_config_with_components(
-            temp_dir,
-            metrics=True,
-            tracing=True,
-            health=True,
-            error_tracking=True,
-            profiling=False
+            temp_dir, metrics=True, tracing=True, health=True, error_tracking=True, profiling=False
         )
         obs_manager = ObservabilityManager(config)
 
@@ -285,7 +283,7 @@ model_name = "mock-smart"
         assert health is not None
 
         # Performance command should indicate profiling is disabled
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -303,7 +301,7 @@ model_name = "mock-smart"
         assert health["overall_status"] in ["healthy", "degraded", "unhealthy"]
 
         # Test export with minimal data
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -314,14 +312,14 @@ model_name = "mock-smart"
     def test_component_initialization_failures(self, temp_dir):
         """Test graceful handling of component initialization failures."""
         config = self.create_config_with_components(
-            temp_dir,
-            metrics=True,
-            tracing=True,
-            health=True
+            temp_dir, metrics=True, tracing=True, health=True
         )
 
         # Mock a component to fail initialization
-        with patch('coda.observability.tracing.TracingManager.__init__', side_effect=Exception("Init failed")):
+        with patch(
+            "coda.observability.tracing.TracingManager.__init__",
+            side_effect=Exception("Init failed"),
+        ):
             obs_manager = ObservabilityManager(config)
 
             # Other components should still initialize
@@ -338,12 +336,7 @@ model_name = "mock-smart"
         """Test component behavior with dynamic state changes."""
         # Start with all enabled
         config = self.create_config_with_components(
-            temp_dir,
-            metrics=True,
-            tracing=True,
-            health=True,
-            error_tracking=True,
-            profiling=True
+            temp_dir, metrics=True, tracing=True, health=True, error_tracking=True, profiling=True
         )
         obs_manager = ObservabilityManager(config)
 
