@@ -757,4 +757,9 @@ class TreeSitterQueryAnalyzer:
             '.properties': 'properties',
             '.rules': 'udev',
             '.chatito': 'chatito',
+            '.sql': 'sql',
+            '.pls': 'sql',
+            '.plb': 'sql',
+            '.pks': 'sql',
+            '.pkb': 'sql',
         }
