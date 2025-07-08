@@ -112,8 +112,7 @@ def main():
     """Main setup function."""
     console.print(
         Panel.fit(
-            "[bold cyan]Coda OCI Setup[/bold cyan]\n"
-            "Configure Oracle Cloud Infrastructure for Coda",
+            "[bold cyan]Coda OCI Setup[/bold cyan]\nConfigure Oracle Cloud Infrastructure for Coda",
             border_style="cyan",
         )
     )

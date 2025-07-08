@@ -900,7 +900,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
 
         for i, model in enumerate(models):
             if verbose:
-                print(f"[{i+1}/{len(models)}] Verifying {model.id}...", end=" ", flush=True)
+                print(f"[{i + 1}/{len(models)}] Verifying {model.id}...", end=" ", flush=True)
 
             result = self.verify_model(model.id)
             results.append(result)

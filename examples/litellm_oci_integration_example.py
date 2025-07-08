@@ -224,7 +224,7 @@ import litellm
 
 # Use the model
 response = litellm.completion(
-    model="{sample_model['litellm_name']}",
+    model="{sample_model["litellm_name"]}",
     messages=[
         {{"role": "user", "content": "Hello, how are you?"}}
     ],

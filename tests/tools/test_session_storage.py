@@ -5,21 +5,21 @@ This module tests the storage format and management of tool invocations
 within sessions for replay, search, and analytics.
 """
 
-import pytest
-from datetime import datetime, timedelta
-from typing import List
 import uuid
+from datetime import datetime, timedelta
 
+import pytest
+
+from coda.providers import MockProvider
 from coda.tools.session_storage import (
+    SessionToolSummary,
     ToolInvocation,
+    ToolInvocationFilter,
     ToolInvocationStatus,
     ToolResult,
-    SessionToolSummary,
-    ToolInvocationFilter,
     create_tool_invocation,
-    update_invocation_result
+    update_invocation_result,
 )
-from coda.providers import MockProvider
 
 
 class TestToolInvocation:
@@ -33,9 +33,9 @@ class TestToolInvocation:
             tool_name="read_file",
             tool_category="filesystem",
             arguments={"filepath": "/test/file.txt"},
-            status=ToolInvocationStatus.PENDING
+            status=ToolInvocationStatus.PENDING,
         )
-        
+
         assert invocation.invocation_id == "test-123"
         assert invocation.session_id == "session-456"
         assert invocation.tool_name == "read_file"
@@ -54,9 +54,9 @@ class TestToolInvocation:
             tool_category="system",
             arguments={"command": "sleep 2"},
             started_at=now,
-            completed_at=now + timedelta(seconds=2.5)
+            completed_at=now + timedelta(seconds=2.5),
         )
-        
+
         duration = invocation.duration_seconds()
         assert duration == 2.5
 
@@ -68,10 +68,10 @@ class TestToolInvocation:
             session_id="session-1",
             tool_name="read_file",
             tool_category="filesystem",
-            arguments={}
+            arguments={},
         )
         assert not invocation1.is_dangerous()
-        
+
         # Dangerous invocation with approval
         invocation2 = ToolInvocation(
             invocation_id="test-2",
@@ -80,18 +80,14 @@ class TestToolInvocation:
             tool_category="system",
             arguments={"command": "rm -rf /tmp/test"},
             user_approved=True,
-            approval_prompt="This command will delete files. Continue?"
+            approval_prompt="This command will delete files. Continue?",
         )
         assert invocation2.is_dangerous()
 
     def test_tool_invocation_search_text(self):
         """Test generating searchable text from invocation."""
-        result = ToolResult(
-            success=True,
-            result="File contents: Hello World",
-            tool="read_file"
-        )
-        
+        result = ToolResult(success=True, result="File contents: Hello World", tool="read_file")
+
         invocation = ToolInvocation(
             invocation_id="test-123",
             session_id="session-456",
@@ -99,9 +95,9 @@ class TestToolInvocation:
             tool_category="filesystem",
             arguments={"filepath": "/test/hello.txt"},
             result=result,
-            tags=["test", "documentation"]
+            tags=["test", "documentation"],
         )
-        
+
         search_text = invocation.to_search_text()
         assert "read_file" in search_text
         assert "filesystem" in search_text
@@ -114,11 +110,11 @@ class TestToolInvocation:
 class TestSessionToolSummary:
     """Test SessionToolSummary model."""
 
-    def create_test_invocations(self) -> List[ToolInvocation]:
+    def create_test_invocations(self) -> list[ToolInvocation]:
         """Create test invocations for summary testing."""
         base_time = datetime.utcnow()
         invocations = []
-        
+
         # Successful file read
         inv1 = ToolInvocation(
             invocation_id="inv-1",
@@ -130,10 +126,10 @@ class TestSessionToolSummary:
             created_at=base_time,
             started_at=base_time,
             completed_at=base_time + timedelta(seconds=0.5),
-            result=ToolResult(success=True, result="Content", tool="read_file")
+            result=ToolResult(success=True, result="Content", tool="read_file"),
         )
         invocations.append(inv1)
-        
+
         # Failed shell command
         inv2 = ToolInvocation(
             invocation_id="inv-2",
@@ -145,10 +141,10 @@ class TestSessionToolSummary:
             created_at=base_time + timedelta(minutes=1),
             started_at=base_time + timedelta(minutes=1),
             completed_at=base_time + timedelta(minutes=1, seconds=1),
-            result=ToolResult(success=False, error="Command not found", tool="shell_execute")
+            result=ToolResult(success=False, error="Command not found", tool="shell_execute"),
         )
         invocations.append(inv2)
-        
+
         # Dangerous command with approval
         inv3 = ToolInvocation(
             invocation_id="inv-3",
@@ -161,10 +157,10 @@ class TestSessionToolSummary:
             started_at=base_time + timedelta(minutes=2),
             completed_at=base_time + timedelta(minutes=2, seconds=0.2),
             result=ToolResult(success=True, result="File deleted", tool="shell_execute"),
-            user_approved=True
+            user_approved=True,
         )
         invocations.append(inv3)
-        
+
         # Another file operation
         inv4 = ToolInvocation(
             invocation_id="inv-4",
@@ -176,41 +172,41 @@ class TestSessionToolSummary:
             created_at=base_time + timedelta(minutes=3),
             started_at=base_time + timedelta(minutes=3),
             completed_at=base_time + timedelta(minutes=3, seconds=0.3),
-            result=ToolResult(success=True, result="File written", tool="write_file")
+            result=ToolResult(success=True, result="File written", tool="write_file"),
         )
         invocations.append(inv4)
-        
+
         return invocations
 
     def test_session_summary_from_invocations(self):
         """Test creating session summary from invocations."""
         invocations = self.create_test_invocations()
         summary = SessionToolSummary.from_invocations("session-1", invocations)
-        
+
         assert summary.session_id == "session-1"
         assert summary.total_invocations == 4
         assert summary.successful_invocations == 3
         assert summary.failed_invocations == 1
         assert summary.dangerous_invocations == 1
-        
+
         assert "filesystem" in summary.categories_used
         assert "system" in summary.categories_used
-        
+
         assert "read_file" in summary.tools_used
         assert "shell_execute" in summary.tools_used
         assert "write_file" in summary.tools_used
-        
+
         assert summary.tool_usage_count["shell_execute"] == 2
         assert summary.tool_usage_count["read_file"] == 1
         assert summary.tool_usage_count["write_file"] == 1
-        
+
         # Check timing
         assert summary.total_execution_time == 0.5 + 1.0 + 0.2 + 0.3
 
     def test_empty_session_summary(self):
         """Test creating summary with no invocations."""
         summary = SessionToolSummary.from_invocations("session-empty", [])
-        
+
         assert summary.session_id == "session-empty"
         assert summary.total_invocations == 0
         assert summary.successful_invocations == 0
@@ -231,7 +227,7 @@ class TestToolInvocationFilter:
             "tool_category": "test",
             "arguments": {},
             "status": ToolInvocationStatus.COMPLETED,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
         }
         defaults.update(kwargs)
         return ToolInvocation(**defaults)
@@ -240,27 +236,21 @@ class TestToolInvocationFilter:
         """Test filtering by session ID."""
         inv1 = self.create_test_invocation(session_id="session-1")
         inv2 = self.create_test_invocation(session_id="session-2")
-        
+
         filter = ToolInvocationFilter(session_ids=["session-1"])
         assert filter.matches(inv1)
         assert not filter.matches(inv2)
 
     def test_filter_by_tool(self):
         """Test filtering by tool name and category."""
-        inv1 = self.create_test_invocation(
-            tool_name="read_file",
-            tool_category="filesystem"
-        )
-        inv2 = self.create_test_invocation(
-            tool_name="shell_execute",
-            tool_category="system"
-        )
-        
+        inv1 = self.create_test_invocation(tool_name="read_file", tool_category="filesystem")
+        inv2 = self.create_test_invocation(tool_name="shell_execute", tool_category="system")
+
         # Filter by name
         filter1 = ToolInvocationFilter(tool_names=["read_file"])
         assert filter1.matches(inv1)
         assert not filter1.matches(inv2)
-        
+
         # Filter by category
         filter2 = ToolInvocationFilter(tool_categories=["system"])
         assert not filter2.matches(inv1)
@@ -270,23 +260,23 @@ class TestToolInvocationFilter:
         """Test filtering by invocation status."""
         inv1 = self.create_test_invocation(
             status=ToolInvocationStatus.COMPLETED,
-            result=ToolResult(success=True, result="OK", tool="test")
+            result=ToolResult(success=True, result="OK", tool="test"),
         )
         inv2 = self.create_test_invocation(
             status=ToolInvocationStatus.FAILED,
-            result=ToolResult(success=False, error="Error", tool="test")
+            result=ToolResult(success=False, error="Error", tool="test"),
         )
-        
+
         # Filter by status
         filter1 = ToolInvocationFilter(statuses=[ToolInvocationStatus.COMPLETED])
         assert filter1.matches(inv1)
         assert not filter1.matches(inv2)
-        
+
         # Filter by success
         filter2 = ToolInvocationFilter(success_only=True)
         assert filter2.matches(inv1)
         assert not filter2.matches(inv2)
-        
+
         # Filter by failure
         filter3 = ToolInvocationFilter(failed_only=True)
         assert not filter3.matches(inv1)
@@ -298,26 +288,21 @@ class TestToolInvocationFilter:
         inv1 = self.create_test_invocation(
             created_at=now - timedelta(hours=2),
             started_at=now - timedelta(hours=2),
-            completed_at=now - timedelta(hours=2) + timedelta(seconds=5)
+            completed_at=now - timedelta(hours=2) + timedelta(seconds=5),
         )
         inv2 = self.create_test_invocation(
             created_at=now - timedelta(minutes=30),
             started_at=now - timedelta(minutes=30),
-            completed_at=now - timedelta(minutes=30) + timedelta(seconds=1)
+            completed_at=now - timedelta(minutes=30) + timedelta(seconds=1),
         )
-        
+
         # Filter by creation time
-        filter1 = ToolInvocationFilter(
-            created_after=now - timedelta(hours=1)
-        )
+        filter1 = ToolInvocationFilter(created_after=now - timedelta(hours=1))
         assert not filter1.matches(inv1)
         assert filter1.matches(inv2)
-        
+
         # Filter by duration
-        filter2 = ToolInvocationFilter(
-            duration_min=2.0,
-            duration_max=10.0
-        )
+        filter2 = ToolInvocationFilter(duration_min=2.0, duration_max=10.0)
         assert filter2.matches(inv1)  # 5 seconds
         assert not filter2.matches(inv2)  # 1 second
 
@@ -327,19 +312,17 @@ class TestToolInvocationFilter:
             tool_name="read_file",
             arguments={"filepath": "/test/data.json"},
             result=ToolResult(success=True, result='{"key": "value"}', tool="read_file"),
-            tags=["json", "test"]
+            tags=["json", "test"],
         )
         inv2 = self.create_test_invocation(
-            tool_name="write_file",
-            arguments={"filepath": "/test/output.txt"},
-            tags=["output"]
+            tool_name="write_file", arguments={"filepath": "/test/output.txt"}, tags=["output"]
         )
-        
+
         # Search text filter
         filter1 = ToolInvocationFilter(search_text="json")
         assert filter1.matches(inv1)  # Found in filepath and tags
         assert not filter1.matches(inv2)
-        
+
         # Tag filter
         filter2 = ToolInvocationFilter(tags=["test"])
         assert filter2.matches(inv1)
@@ -347,16 +330,11 @@ class TestToolInvocationFilter:
 
     def test_filter_dangerous_only(self):
         """Test filtering dangerous invocations only."""
-        inv1 = self.create_test_invocation(
-            tool_name="read_file",
-            user_approved=None
-        )
+        inv1 = self.create_test_invocation(tool_name="read_file", user_approved=None)
         inv2 = self.create_test_invocation(
-            tool_name="shell_execute",
-            user_approved=True,
-            approval_prompt="Delete files?"
+            tool_name="shell_execute", user_approved=True, approval_prompt="Delete files?"
         )
-        
+
         filter = ToolInvocationFilter(dangerous_only=True)
         assert not filter.matches(inv1)
         assert filter.matches(inv2)
@@ -374,9 +352,9 @@ class TestToolInvocationHelpers:
             tool_category="filesystem",
             message_id="msg-456",
             context={"user": "test_user"},
-            tags=["test", "read"]
+            tags=["test", "read"],
         )
-        
+
         assert invocation.session_id == "session-123"
         assert invocation.tool_name == "read_file"
         assert invocation.arguments["filepath"] == "/test.txt"
@@ -393,26 +371,20 @@ class TestToolInvocationHelpers:
             session_id="session-123",
             tool_name="read_file",
             arguments={"filepath": "/test.txt"},
-            tool_category="filesystem"
+            tool_category="filesystem",
         )
-        
+
         start_time = datetime.utcnow()
         end_time = start_time + timedelta(seconds=1)
-        
+
         result = ToolResult(
-            success=True,
-            result="File contents",
-            tool="read_file",
-            metadata={"size": 1024}
+            success=True, result="File contents", tool="read_file", metadata={"size": 1024}
         )
-        
+
         updated = update_invocation_result(
-            invocation,
-            result,
-            started_at=start_time,
-            completed_at=end_time
+            invocation, result, started_at=start_time, completed_at=end_time
         )
-        
+
         assert updated.result == result
         assert updated.status == ToolInvocationStatus.COMPLETED
         assert updated.started_at == start_time
@@ -425,17 +397,13 @@ class TestToolInvocationHelpers:
             session_id="session-123",
             tool_name="shell_execute",
             arguments={"command": "invalid"},
-            tool_category="system"
+            tool_category="system",
         )
-        
-        result = ToolResult(
-            success=False,
-            error="Command not found",
-            tool="shell_execute"
-        )
-        
+
+        result = ToolResult(success=False, error="Command not found", tool="shell_execute")
+
         updated = update_invocation_result(invocation, result)
-        
+
         assert updated.result == result
         assert updated.status == ToolInvocationStatus.FAILED
         assert updated.completed_at is not None
@@ -448,7 +416,7 @@ class TestToolSessionIntegration:
     def mock_provider(self):
         """Create a MockProvider instance."""
         return MockProvider()
-    
+
     @pytest.mark.asyncio
     async def test_tool_invocation_with_mock_provider(self, mock_provider):
         """Test tool invocations work with MockProvider context."""
@@ -457,16 +425,17 @@ class TestToolSessionIntegration:
             session_id="test-session",
             tool_name="get_current_time",
             arguments={},
-            tool_category="system"
+            tool_category="system",
         )
-        
+
         # Simulate tool execution
         from coda.tools import execute_tool
+
         result = await execute_tool("get_current_time", {})
-        
+
         # Update invocation with result
         updated = update_invocation_result(invocation, result)
-        
+
         assert updated.status == ToolInvocationStatus.COMPLETED
         assert updated.result.success
         assert "Current time" in updated.result.result
@@ -475,13 +444,13 @@ class TestToolSessionIntegration:
         """Test calculating comprehensive session statistics."""
         invocations = []
         base_time = datetime.utcnow()
-        
+
         # Create varied invocations
         for i in range(10):
             tool_name = ["read_file", "write_file", "shell_execute"][i % 3]
             category = "filesystem" if "file" in tool_name else "system"
             success = i % 4 != 0  # Every 4th fails
-            
+
             inv = ToolInvocation(
                 invocation_id=f"inv-{i}",
                 session_id="session-stats",
@@ -496,19 +465,19 @@ class TestToolSessionIntegration:
                     success=success,
                     result="OK" if success else None,
                     error=None if success else "Failed",
-                    tool=tool_name
+                    tool=tool_name,
                 ),
-                user_approved=True if tool_name == "shell_execute" and i % 2 == 0 else None
+                user_approved=True if tool_name == "shell_execute" and i % 2 == 0 else None,
             )
             invocations.append(inv)
-        
+
         summary = SessionToolSummary.from_invocations("session-stats", invocations)
-        
+
         assert summary.total_invocations == 10
         assert summary.successful_invocations == 7  # 75% success rate
         assert summary.failed_invocations == 3
         assert summary.dangerous_invocations == 2  # shell_execute with approval
-        
+
         # Check tool distribution
         assert summary.tool_usage_count["read_file"] == 4
         assert summary.tool_usage_count["write_file"] == 3
