@@ -41,6 +41,31 @@ The command registry pattern is implemented in `coda/cli/command_registry.py:45-
 3. **Post-writing**: Verify all claims against codebase
 4. **Review**: Cross-check documentation with code during reviews
 
+## Progress Tracking
+
+### Completed Tasks ✅
+- **Phase 1.1**: Documentation structure setup in wiki
+- **Phase 1.1.1**: Created module architecture template with evidence-based approach
+- **Phase 1.1.2**: Established wiki naming convention (Architecture.md, Architecture-{#}-{Module}.md)
+- **Phase 1.1.3**: Implemented proper documentation structure
+- **Phase 1.2**: Created Architecture Overview document with code references
+- **Phase 2.1**: Completed module documentation for:
+  - CLI Module (Architecture-1-CLI.md)
+  - Agents Module (Architecture-2-Agents.md)
+  - Providers Module (Architecture-3-Providers.md)
+  - Tools Module (Architecture-4-Tools.md)
+
+### In Progress 🚧
+- **Phase 2.1**: Session Module documentation
+- **Phase 1.3**: Initial diagrams (C4, component, deployment)
+
+### Remaining Tasks 📋
+- Complete Session module documentation
+- Create system diagrams
+- Phase 3: Integration documentation
+- Phase 4: Automation and maintenance setup
+- Phase 5: Developer tools
+
 ## Phase 1: Foundation (Week 1-2)
 
 ### 1.1 Documentation Structure Setup
