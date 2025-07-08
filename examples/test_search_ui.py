@@ -1,19 +1,25 @@
 """Test script to demonstrate the enhanced search UI."""
 
 import asyncio
+
 from rich.console import Console
-from coda.cli.search_display import SearchResultDisplay, IndexingProgress, create_search_stats_display
+
+from coda.cli.search_display import (
+    IndexingProgress,
+    SearchResultDisplay,
+    create_search_stats_display,
+)
 from coda.semantic_search import SearchResult
 
 
 async def main():
     console = Console()
     display = SearchResultDisplay(console)
-    
+
     # Test 1: Display search results with various scores
     console.print("\n[bold cyan]Test 1: Search Results Display[/bold cyan]")
     console.print("[dim]Searching for 'python programming'...[/dim]\n")
-    
+
     test_results = [
         SearchResult(
             id="doc-001",
@@ -66,17 +72,17 @@ async def main():
             }
         )
     ]
-    
+
     display.display_results(test_results, "python programming")
-    
+
     # Test 2: No results found
     console.print("\n[bold cyan]Test 2: No Results Found[/bold cyan]")
     console.print("[dim]Searching for 'quantum blockchain AI'...[/dim]\n")
     display.display_results([], "quantum blockchain AI")
-    
+
     # Test 3: Progress indicator for indexing
     console.print("\n[bold cyan]Test 3: Indexing Progress[/bold cyan]")
-    
+
     progress = IndexingProgress(console)
     files = [
         "src/main.py",
@@ -85,17 +91,17 @@ async def main():
         "src/models/product.py",
         "tests/test_main.py"
     ]
-    
+
     with progress.start_indexing(len(files)) as prog:
-        for i, file in enumerate(files):
+        for _i, file in enumerate(files):
             await asyncio.sleep(0.5)  # Simulate indexing time
             prog.update(1, f"Indexing {file}")
-    
+
     console.print("[green]✓ Indexing complete![/green]")
-    
+
     # Test 4: Index statistics display
     console.print("\n[bold cyan]Test 4: Index Statistics[/bold cyan]")
-    
+
     stats = {
         "vector_count": 1542,
         "embedding_model": "cohere.embed-multilingual-v3.0",
@@ -104,13 +110,13 @@ async def main():
         "index_type": "IVF",
         "memory_usage": 6291456  # 6MB
     }
-    
+
     create_search_stats_display(stats, console)
-    
+
     # Test 5: Code search results with syntax highlighting
     console.print("\n[bold cyan]Test 5: Code Search Results[/bold cyan]")
     console.print("[dim]Searching for 'async function'...[/dim]\n")
-    
+
     code_results = [
         SearchResult(
             id="js-001",
@@ -135,7 +141,7 @@ async def main():
             }
         )
     ]
-    
+
     display.display_results(code_results, "async function", show_metadata=True)
 
 

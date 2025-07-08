@@ -90,16 +90,27 @@ class SearchResultDisplay:
         header = f"[bold]#{index}[/bold]  [dim]Score:[/dim] [{score_color}]{result.score:.3f}[/{score_color}]"
 
         # Add source file if available in metadata
-        if result.metadata and "source" in result.metadata:
-            source = result.metadata["source"]
-            # Make path relative if possible
-            try:
-                source_path = Path(source)
-                if source_path.is_absolute():
-                    source = source_path.relative_to(Path.cwd())
-            except (ValueError, OSError):
-                pass
-            header += f"  [dim]Source:[/dim] [blue]{source}[/blue]"
+        if result.metadata:
+            source = None
+            if "source" in result.metadata:
+                source = result.metadata["source"]
+            elif "file_path" in result.metadata:
+                source = result.metadata["file_path"]
+
+            if source:
+                # Make path relative if possible
+                try:
+                    source_path = Path(source)
+                    if source_path.is_absolute():
+                        source = source_path.relative_to(Path.cwd())
+                except (ValueError, OSError):
+                    pass
+
+                # Add line numbers if chunk information is available
+                if "start_line" in result.metadata and "end_line" in result.metadata:
+                    source = f"{source}:{result.metadata['start_line']}-{result.metadata['end_line']}"
+
+                header += f"  [dim]Source:[/dim] [blue]{source}[/blue]"
 
         # Prepare content preview
         content = self._prepare_content_preview(result.text, max_preview_length)
@@ -112,35 +123,56 @@ class SearchResultDisplay:
         # Check if content looks like code
         is_code = self._detect_code(result.text, result.metadata)
 
-        if is_code and result.metadata and "language" in result.metadata:
-            # Display as syntax-highlighted code
-            lang = result.metadata["language"]
-            # Use the full text for syntax highlighting, not the truncated preview
-            syntax = Syntax(
-                result.text[:max_preview_length],
-                lang,
-                theme="monokai",
-                line_numbers=True,
-                word_wrap=True
-            )
-            code_panel = Panel(
-                syntax,
-                title=header,
-                title_align="left",
-                border_style="green",
-                padding=(0, 1)
-            )
-            self.console.print(code_panel)
-        else:
-            # Display as regular text with highlighting
-            content_panel = Panel(
-                highlighted_content,
-                title=header,
-                title_align="left",
-                border_style="blue",
-                padding=(0, 1)
-            )
-            self.console.print(content_panel)
+        if is_code:
+            # Try to determine language for syntax highlighting
+            lang = None
+            if result.metadata:
+                if "language" in result.metadata:
+                    lang = result.metadata["language"]
+                elif "file_type" in result.metadata:
+                    # Map file extensions to languages
+                    ext_map = {
+                        ".py": "python", ".js": "javascript", ".ts": "typescript",
+                        ".java": "java", ".cpp": "cpp", ".c": "c", ".go": "go",
+                        ".rs": "rust", ".rb": "ruby", ".php": "php", ".swift": "swift",
+                        ".kt": "kotlin", ".scala": "scala", ".r": "r", ".cs": "csharp"
+                    }
+                    lang = ext_map.get(result.metadata["file_type"])
+
+            if lang:
+                # Display as syntax-highlighted code
+                # Use the full text for syntax highlighting, not the truncated preview
+                syntax = Syntax(
+                    result.text[:max_preview_length],
+                    lang,
+                    theme="monokai",
+                    line_numbers=True,
+                    word_wrap=True
+                )
+                code_panel = Panel(
+                    syntax,
+                    title=header,
+                    title_align="left",
+                    border_style="green",
+                    padding=(0, 1)
+                )
+                self.console.print(code_panel)
+
+                # Display metadata if requested and available
+                if show_metadata and result.metadata:
+                    self._display_metadata(result.metadata)
+                return
+
+        # If not code or no language detected
+        # Display as regular text with highlighting
+        content_panel = Panel(
+            highlighted_content,
+            title=header,
+            title_align="left",
+            border_style="blue",
+            padding=(0, 1)
+        )
+        self.console.print(content_panel)
 
         # Display metadata if requested and available
         if show_metadata and result.metadata:
@@ -205,13 +237,30 @@ class SearchResultDisplay:
 
     def _display_metadata(self, metadata: dict) -> None:
         """Display metadata in a formatted table."""
-        # Filter out internal metadata
-        display_metadata = {
-            k: v for k, v in metadata.items()
-            if not k.startswith("_") and k not in ["source", "language", "type"]
+        # Filter out internal metadata and already displayed fields
+        exclude_keys = {
+            "source", "language", "type", "file_path", "file_type",
+            "start_line", "end_line", "chunk_index", "dimension"
         }
 
-        if not display_metadata:
+        display_metadata = {
+            k: v for k, v in metadata.items()
+            if not k.startswith("_") and k not in exclude_keys
+        }
+
+        # Add special formatting for certain fields
+        formatted_items = []
+
+        # Show chunk type if interesting
+        if "chunk_type" in metadata and metadata["chunk_type"] not in ["text", "module"]:
+            formatted_items.append(("Chunk Type", metadata["chunk_type"]))
+
+        # Show other metadata
+        for key, value in display_metadata.items():
+            formatted_key = key.replace("_", " ").title()
+            formatted_items.append((formatted_key, str(value)))
+
+        if not formatted_items:
             return
 
         table = Table(
@@ -223,8 +272,8 @@ class SearchResultDisplay:
         table.add_column("Key", style="cyan")
         table.add_column("Value")
 
-        for key, value in display_metadata.items():
-            table.add_row(f"  {key}:", str(value))
+        for key, value in formatted_items:
+            table.add_row(f"  {key}:", value)
 
         self.console.print(table)
 

@@ -1,9 +1,9 @@
 """OCI Generative AI Embeddings constants."""
 
-from typing import Dict, Any
+from typing import Any
 
 # Mapping of model names to OCI model IDs
-MODEL_MAPPING: Dict[str, str] = {
+MODEL_MAPPING: dict[str, str] = {
     "embed-english-v3.0": "cohere.embed-english-v3.0",
     "embed-multilingual-v3.0": "cohere.embed-multilingual-v3.0",
     "embed-english-light-v3.0": "cohere.embed-english-light-v3.0",
@@ -13,7 +13,7 @@ MODEL_MAPPING: Dict[str, str] = {
 }
 
 # Model information including dimensions and context windows
-MODEL_INFO: Dict[str, Dict[str, Any]] = {
+MODEL_INFO: dict[str, dict[str, Any]] = {
     "cohere.embed-english-v3.0": {
         "dimensions": 1024,
         "max_tokens": 512,

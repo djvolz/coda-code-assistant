@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
+from pathlib import Path
 from threading import Event
 
 from prompt_toolkit import PromptSession
@@ -168,7 +169,7 @@ class InteractiveCLI(CommandHandler):
 
         # Track terminal dimensions
         self._last_terminal_width = None
-        
+
         # Initialize semantic search manager (singleton)
         self._search_manager = None
 
@@ -674,7 +675,7 @@ class InteractiveCLI(CommandHandler):
                 self.console.print("[yellow]Using mock embeddings (OCI not configured)[/yellow]")
                 provider = MockEmbeddingProvider(dimension=768)
                 self._search_manager = SemanticSearchManager(embedding_provider=provider)
-        
+
         manager = self._search_manager
 
         if subcommand == "semantic":
@@ -754,10 +755,62 @@ class InteractiveCLI(CommandHandler):
                 except Exception as e:
                     self.console.print(f"[red]Indexing error: {e}[/red]")
             else:
-                path = query or "."
-                self.console.print(f"[cyan]Indexing files in: {path}[/cyan]")
-                self.console.print("[yellow]File indexing not yet implemented[/yellow]")
-                self.console.print("[dim]Try: /search index demo[/dim]")
+                # Index files in the specified path
+                path = Path(query or ".")
+
+                try:
+                    # Get list of files to index
+                    if path.is_file():
+                        # Single file
+                        files = [path]
+                        self.console.print(f"[cyan]Indexing file: {path}[/cyan]")
+                    else:
+                        # Directory - find all code files
+                        import glob
+
+                        # Common code file extensions
+                        extensions = [
+                            "*.py", "*.js", "*.ts", "*.jsx", "*.tsx",
+                            "*.java", "*.cpp", "*.c", "*.h", "*.hpp",
+                            "*.go", "*.rs", "*.rb", "*.php", "*.swift",
+                            "*.kt", "*.scala", "*.r", "*.m", "*.cs",
+                            "*.sh", "*.bash", "*.zsh", "*.fish",
+                            "*.md", "*.txt", "*.json", "*.yaml", "*.yml", "*.toml"
+                        ]
+
+                        files = []
+                        for ext in extensions:
+                            pattern = str(path / "**" / ext)
+                            files.extend(Path(p) for p in glob.glob(pattern, recursive=True))
+
+                        # Remove duplicates and sort
+                        files = sorted(set(files))
+
+                        if not files:
+                            self.console.print(f"[yellow]No code files found in {path}[/yellow]")
+                            return
+
+                        self.console.print(f"[cyan]Found {len(files)} files to index in {path}[/cyan]")
+
+                    # Index files with progress
+                    with indexing_progress.start_indexing(len(files)) as progress:
+                        indexed_ids = await manager.index_code_files(files)
+                        for _i, file in enumerate(files):
+                            progress.update(
+                                1,
+                                f"Indexed: {file.name}"
+                            )
+
+                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} files[/green]")
+
+                    # Show some stats
+                    stats = await manager.get_stats()
+                    self.console.print(f"[dim]Total vectors in index: {stats['vector_count']}[/dim]")
+
+                except Exception as e:
+                    import traceback
+                    self.console.print(f"[red]Indexing error: {e}[/red]")
+                    self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
         elif subcommand == "status":
             try:

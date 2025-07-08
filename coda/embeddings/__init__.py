@@ -6,15 +6,15 @@ including OCI GenAI, Ollama, and HuggingFace models.
 """
 
 from .base import BaseEmbeddingProvider, EmbeddingResult
+from .factory import EmbeddingProviderFactory, create_embedding_provider
+from .mock import MockEmbeddingProvider
 from .oci import (
     OCIEmbeddingProvider,
     create_oci_provider_from_coda_config,
     create_standalone_oci_provider,
 )
-from .mock import MockEmbeddingProvider
-from .sentence_transformers import SentenceTransformersProvider
 from .ollama import OllamaEmbeddingProvider
-from .factory import EmbeddingProviderFactory, create_embedding_provider
+from .sentence_transformers import SentenceTransformersProvider
 
 __all__ = [
     "BaseEmbeddingProvider",
