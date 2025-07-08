@@ -1,7 +1,5 @@
 """Test tool call storage in sessions."""
 
-import json
-from datetime import datetime
 
 import pytest
 
@@ -154,7 +152,7 @@ class TestToolStorage:
 
         # Add messages with tools
         session_manager.add_message(session.id, "user", "Analyze these files")
-        
+
         session_manager.add_message(
             session.id,
             "assistant",
@@ -164,20 +162,20 @@ class TestToolStorage:
                 {"id": "t2", "name": "read_file", "arguments": {"path": "main.py"}},
             ],
         )
-        
+
         session_manager.add_message(
-            session.id, "tool", "file1.py\nfile2.py\nmain.py", 
+            session.id, "tool", "file1.py\nfile2.py\nmain.py",
             metadata={"tool_call_id": "t1"}
         )
-        
+
         session_manager.add_message(
-            session.id, "tool", "def main():\n    pass", 
+            session.id, "tool", "def main():\n    pass",
             metadata={"tool_call_id": "t2"}
         )
 
         # Get tool history
         history = session_manager.get_tool_history(session.id)
-        
+
         assert len(history) == 3  # 1 call message + 2 result messages
         assert history[0]["type"] == "call"
         assert len(history[0]["tool_calls"]) == 2
