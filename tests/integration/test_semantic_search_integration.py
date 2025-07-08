@@ -13,6 +13,7 @@ from coda.vector_stores.faiss_store import FAISSVectorStore
 from coda.chunking import create_chunker
 
 
+@pytest.mark.integration
 class TestSemanticSearchIntegration:
     """Integration tests for the semantic search system."""
     
@@ -260,6 +261,7 @@ class Calculator:
         assert any(r.metadata.get("category") == "A" for r in results)
 
 
+@pytest.mark.integration  
 class TestProviderIntegration:
     """Test integration with different embedding providers."""
     
@@ -303,6 +305,7 @@ class TestProviderIntegration:
         assert stats2["embedding_dimension"] == 768
 
 
+@pytest.mark.integration
 class TestChunkingIntegration:
     """Test integration of chunking with semantic search."""
     
