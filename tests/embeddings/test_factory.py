@@ -85,7 +85,7 @@ class TestEmbeddingProviderFactory:
         assert provider.base_url == "http://remote:11434"
         assert provider.timeout == 60.0
     
-    @patch('coda.embeddings.factory.create_standalone_oci_provider')
+    @patch('coda.embeddings.oci.create_standalone_oci_provider')
     def test_create_oci_provider(self, mock_create_oci):
         """Test creating an OCI provider with special handling."""
         mock_provider = Mock(spec=OCIEmbeddingProvider)
@@ -109,7 +109,7 @@ class TestEmbeddingProviderFactory:
     def test_default_model_ids(self):
         """Test that default model IDs are set correctly."""
         # OCI
-        with patch('coda.embeddings.factory.create_standalone_oci_provider') as mock_create_oci:
+        with patch('coda.embeddings.oci.create_standalone_oci_provider') as mock_create_oci:
             mock_create_oci.return_value = Mock()
             EmbeddingProviderFactory.create_provider("oci")
             assert mock_create_oci.call_args[1]["model_id"] == "cohere.embed-multilingual-v3.0"

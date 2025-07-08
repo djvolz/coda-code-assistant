@@ -28,17 +28,18 @@ class TestSearchHighlighter:
     
     def test_case_insensitive_highlighting(self):
         """Test that highlighting is case-insensitive."""
-        highlighter = SearchHighlighter(["Python"])
-        text = Text("Learn python and PYTHON programming")
+        highlighter = SearchHighlighter(["python"])
         
-        # The highlighter should match all variations
-        # Note: Testing the regex patterns, not the actual highlighting
-        for pattern in highlighter.highlights:
-            import re
-            regex = re.compile(pattern, re.IGNORECASE)
-            assert regex.search("python") is not None
-            assert regex.search("Python") is not None
-            assert regex.search("PYTHON") is not None
+        # The highlighter should create case-insensitive patterns
+        assert len(highlighter.highlights) == 1
+        
+        # Test the pattern matches all case variations
+        import re
+        pattern = highlighter.highlights[0]
+        regex = re.compile(pattern, re.IGNORECASE)
+        assert regex.search("python") is not None
+        assert regex.search("Python") is not None
+        assert regex.search("PYTHON") is not None
 
 
 class TestSearchResultDisplay:
