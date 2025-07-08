@@ -586,7 +586,7 @@ class ThemeManager:
         """
         if theme_name not in THEMES:
             raise ValueError(
-                f"Unknown theme: {theme_name}. " f"Available themes: {', '.join(THEMES.keys())}"
+                f"Unknown theme: {theme_name}. Available themes: {', '.join(THEMES.keys())}"
             )
 
         # Validate theme colors

@@ -5,43 +5,42 @@ This package provides a collection of tools for file operations, shell commands,
 web interactions, and Git operations, all built on the Model Context Protocol (MCP).
 """
 
+# Import all tool modules to register them
+from . import file_tools as _file_tools  # noqa: F401
+from . import git_tools as _git_tools  # noqa: F401
+from . import shell_tools as _shell_tools  # noqa: F401
+from . import web_tools as _web_tools  # noqa: F401
 from .base import (
     BaseTool,
-    ToolSchema,
     ToolParameter,
     ToolParameterType,
-    ToolResult,
     ToolRegistry,
-    tool_registry
+    ToolResult,
+    ToolSchema,
+    tool_registry,
 )
 
-# Import all tool modules to register them
-from . import file_tools
-from . import shell_tools
-from . import web_tools
-from . import git_tools
-
 __all__ = [
-    'BaseTool',
-    'ToolSchema',
-    'ToolParameter',
-    'ToolParameterType',
-    'ToolResult',
-    'ToolRegistry',
-    'tool_registry',
-    'get_available_tools',
-    'execute_tool',
-    'get_tool_categories'
+    "BaseTool",
+    "ToolSchema",
+    "ToolParameter",
+    "ToolParameterType",
+    "ToolResult",
+    "ToolRegistry",
+    "tool_registry",
+    "get_available_tools",
+    "execute_tool",
+    "get_tool_categories",
 ]
 
 
 def get_available_tools(category: str = None) -> list:
     """
     Get list of available tools, optionally filtered by category.
-    
+
     Args:
         category: Optional category filter
-        
+
     Returns:
         List of tool schemas
     """
@@ -51,11 +50,11 @@ def get_available_tools(category: str = None) -> list:
 async def execute_tool(name: str, arguments: dict) -> ToolResult:
     """
     Execute a tool by name with given arguments.
-    
+
     Args:
         name: Tool name
         arguments: Tool arguments
-        
+
     Returns:
         ToolResult with execution outcome
     """
@@ -65,7 +64,7 @@ async def execute_tool(name: str, arguments: dict) -> ToolResult:
 def get_tool_categories() -> list:
     """
     Get list of all tool categories.
-    
+
     Returns:
         List of category names
     """
@@ -75,10 +74,10 @@ def get_tool_categories() -> list:
 def get_tool_info(name: str) -> dict:
     """
     Get detailed information about a specific tool.
-    
+
     Args:
         name: Tool name
-        
+
     Returns:
         Tool information dictionary or None if not found
     """
@@ -101,10 +100,10 @@ def get_tool_info(name: str) -> dict:
                     "min_value": param.min_value,
                     "max_value": param.max_value,
                     "min_length": param.min_length,
-                    "max_length": param.max_length
+                    "max_length": param.max_length,
                 }
                 for param_name, param in schema.parameters.items()
-            }
+            },
         }
     return None
 
@@ -112,15 +111,13 @@ def get_tool_info(name: str) -> dict:
 def list_tools_by_category() -> dict:
     """
     Get tools organized by category.
-    
+
     Returns:
         Dictionary with categories as keys and tool lists as values
     """
     categories = {}
     for category in tool_registry.list_categories():
-        categories[category] = [
-            tool.name for tool in tool_registry.list_tools(category)
-        ]
+        categories[category] = [tool.name for tool in tool_registry.list_tools(category)]
     return categories
 
 
@@ -128,25 +125,24 @@ def list_tools_by_category() -> dict:
 def get_tool_stats() -> dict:
     """
     Get statistics about available tools.
-    
+
     Returns:
         Dictionary with tool statistics
     """
     all_tools = tool_registry.list_tools()
     categories = tool_registry.list_categories()
-    
+
     dangerous_tools = [tool for tool in all_tools if tool.dangerous]
-    
+
     return {
         "total_tools": len(all_tools),
         "categories": len(categories),
         "dangerous_tools": len(dangerous_tools),
         "tools_by_category": {
-            category: len(tool_registry.list_tools(category))
-            for category in categories
+            category: len(tool_registry.list_tools(category)) for category in categories
         },
         "category_list": categories,
-        "dangerous_tool_names": [tool.name for tool in dangerous_tools]
+        "dangerous_tool_names": [tool.name for tool in dangerous_tools],
     }
 
 
@@ -154,11 +150,12 @@ def get_tool_stats() -> dict:
 __version__ = "1.0.0"
 __mcp_version__ = "2025-06-18"  # Supported MCP specification version
 
+
 def get_version_info() -> dict:
     """Get version and compatibility information."""
     return {
         "tools_version": __version__,
         "mcp_spec_version": __mcp_version__,
         "total_tools": len(tool_registry.list_tools()),
-        "categories": tool_registry.list_categories()
+        "categories": tool_registry.list_categories(),
     }
