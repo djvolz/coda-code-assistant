@@ -42,6 +42,35 @@ The command registry pattern is implemented in `coda/cli/command_registry.py:45-
 
 ### 1.1.1 Documentation Template
 The module architecture template is maintained in `docs/templates/MODULE_ARCHITECTURE_TEMPLATE.md`. Every architecture document must include:
+
+### 1.1.2 Wiki File Naming Convention
+To ensure proper wiki navigation and URLs:
+- Module documentation files should be named `{Module-Name}-Module.md` (e.g., `CLI-Module.md`)
+- Avoid using `README.md` in wiki as it creates confusing URLs
+- Verify wiki URLs after each push to ensure proper linking
+
+### 1.1.3 Documentation Structure in Wiki
+```
+architecture/
+├── Architecture-Overview.md
+├── modules/
+│   ├── cli/
+│   │   └── CLI-Module.md
+│   ├── agents/
+│   │   └── Agents-Module.md
+│   ├── providers/
+│   │   └── Providers-Module.md
+│   ├── tools/
+│   │   └── Tools-Module.md
+│   └── session/
+│       └── Session-Module.md
+└── integration/
+    ├── Provider-Integration.md
+    ├── Tool-Development.md
+    └── Agent-Creation.md
+```
+
+Every architecture document must include:
 ```markdown
 # [Module Name] Architecture
 
@@ -190,6 +219,8 @@ The [feature] is implemented in `file.py:line_start-line_end`...
    - Diagram clarity and correctness
    - Cross-reference validity
    - Example code functionality
+   - Wiki URL verification (check generated URLs match expected format)
+   - Module names properly formatted in wiki navigation
 
 ## Phase 5: Developer Tools (Week 10)
 
