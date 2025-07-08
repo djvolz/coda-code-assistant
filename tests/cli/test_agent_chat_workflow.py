@@ -63,14 +63,11 @@ class TestAgentChatWorkflow:
         handler = self._create_agent_handler(cli, provider)
 
         # Create messages
-        messages = [
-            Message(role=Role.USER, content="Hello, agent!")
-        ]
+        messages = [Message(role=Role.USER, content="Hello, agent!")]
 
         # Test chat
         result, updated_messages = await handler.chat_with_agent(
-            messages=messages,
-            model="test-model"
+            messages=messages, model="test-model"
         )
 
         # Verify
@@ -111,14 +108,11 @@ class TestAgentChatWorkflow:
         # Mock the tool availability
         workflow_test_tool = create_workflow_test_tool()
         with patch.object(handler, "get_available_tools", return_value=[workflow_test_tool]):
-            messages = [
-                Message(role=Role.USER, content="Process 'test input'")
-            ]
+            messages = [Message(role=Role.USER, content="Process 'test input'")]
 
             # Test chat
             result, updated_messages = await handler.chat_with_agent(
-                messages=messages,
-                model="test-model"
+                messages=messages, model="test-model"
             )
 
             # Verify
@@ -141,14 +135,11 @@ class TestAgentChatWorkflow:
 
         handler = self._create_agent_handler(cli, provider)
 
-        messages = [
-            Message(role=Role.USER, content="Cause an error")
-        ]
+        messages = [Message(role=Role.USER, content="Cause an error")]
 
         # Test chat with error
         result, updated_messages = await handler.chat_with_agent(
-            messages=messages,
-            model="test-model"
+            messages=messages, model="test-model"
         )
 
         # Should handle error gracefully
@@ -197,22 +188,16 @@ class TestAgentChatWorkflow:
 
         with patch.object(handler, "get_available_tools", return_value=[read_file, write_file]):
             # First turn
-            messages1 = [
-                Message(role=Role.USER, content="Create a file with 'Hello'")
-            ]
+            messages1 = [Message(role=Role.USER, content="Create a file with 'Hello'")]
             result1, updated_messages1 = await handler.chat_with_agent(
-                messages=messages1,
-                model="test-model"
+                messages=messages1, model="test-model"
             )
             assert "created" in result1.lower() or "file" in result1.lower()
 
             # Second turn
-            messages2 = updated_messages1 + [
-                Message(role=Role.USER, content="Now read it back")
-            ]
+            messages2 = updated_messages1 + [Message(role=Role.USER, content="Now read it back")]
             result2, updated_messages2 = await handler.chat_with_agent(
-                messages=messages2,
-                model="test-model"
+                messages=messages2, model="test-model"
             )
             assert "Hello" in result2 or "contains" in result2.lower()
 
@@ -235,14 +220,10 @@ class TestAgentChatWorkflow:
 
         handler = self._create_agent_handler(cli, provider)
 
-        messages = [
-            Message(role=Role.USER, content="Give me expert advice")
-        ]
+        messages = [Message(role=Role.USER, content="Give me expert advice")]
 
         await handler.chat_with_agent(
-            messages=messages,
-            model="test-model",
-            system_prompt="You are an expert assistant."
+            messages=messages, model="test-model", system_prompt="You are an expert assistant."
         )
 
         # Verify system prompt was used (it's passed to Agent's instructions)
@@ -266,15 +247,10 @@ class TestAgentChatWorkflow:
 
         handler = self._create_agent_handler(cli, provider)
 
-        messages = [
-            Message(role=Role.USER, content="Test streaming")
-        ]
+        messages = [Message(role=Role.USER, content="Test streaming")]
 
         # Test fallback streaming
-        result = await handler.stream_chat_fallback(
-            messages=messages,
-            model="test-model"
-        )
+        result = await handler.stream_chat_fallback(messages=messages, model="test-model")
 
         assert result == "Hello from streaming mode!"
 
@@ -359,16 +335,24 @@ class TestAgentChatWorkflow:
             # Add all file operation tools
             from coda.agents.builtin_tools import list_files, read_file, write_file
 
-            with patch.object(handler, "get_available_tools", return_value=[read_file, write_file, list_files]):
+            with patch.object(
+                handler, "get_available_tools", return_value=[read_file, write_file, list_files]
+            ):
                 # Execute workflow
                 messages = [Message(role=Role.USER, content=f"Create a file in {tmpdir}")]
-                result1, msgs1 = await handler.chat_with_agent(messages=messages, model="test-model")
+                result1, msgs1 = await handler.chat_with_agent(
+                    messages=messages, model="test-model"
+                )
 
                 messages = msgs1 + [Message(role=Role.USER, content="Now read it")]
-                result2, msgs2 = await handler.chat_with_agent(messages=messages, model="test-model")
+                result2, msgs2 = await handler.chat_with_agent(
+                    messages=messages, model="test-model"
+                )
 
                 messages = msgs2 + [Message(role=Role.USER, content="List the directory")]
-                result3, msgs3 = await handler.chat_with_agent(messages=messages, model="test-model")
+                result3, msgs3 = await handler.chat_with_agent(
+                    messages=messages, model="test-model"
+                )
 
                 # Verify
                 assert "workflow_test.txt" in result3 or "created" in result1.lower()
