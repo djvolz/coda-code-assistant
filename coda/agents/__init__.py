@@ -3,7 +3,7 @@
 from .agent import Agent
 from .decorators import tool
 from .function_tool import FunctionTool
-from .types import RequiredAction, PerformedAction, FunctionCall
+from .types import FunctionCall, PerformedAction, RequiredAction
 
 __all__ = [
     "Agent",

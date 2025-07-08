@@ -599,7 +599,7 @@ class SessionManager:
 <body>
     <h1>{session.name}</h1>
     <p><strong>Provider:</strong> {session.provider} | <strong>Model:</strong> {session.model}</p>
-    <p><strong>Created:</strong> {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
+    <p><strong>Created:</strong> {session.created_at.strftime("%Y-%m-%d %H:%M:%S")}</p>
     <hr>
 """
 
@@ -607,8 +607,8 @@ class SessionManager:
             html += f"""
     <div class="message {msg.role}">
         <strong>{msg.role.title()}</strong>
-        <span class="timestamp">{msg.created_at.strftime('%H:%M:%S')}</span>
-        <div>{msg.content.replace(chr(10), '<br>')}</div>
+        <span class="timestamp">{msg.created_at.strftime("%H:%M:%S")}</span>
+        <div>{msg.content.replace(chr(10), "<br>")}</div>
 """
             if msg.metadata or msg.tool_calls:
                 html += '<div class="metadata">'

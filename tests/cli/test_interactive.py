@@ -267,7 +267,9 @@ class TestInteractiveSession:
         # Run session without specifying model
         with pytest.raises(SystemExit):
             await run_interactive_session(
-                provider="oci_genai", model=None, debug=False  # No model specified
+                provider="oci_genai",
+                model=None,
+                debug=False,  # No model specified
             )
 
         # Verify model selector was used

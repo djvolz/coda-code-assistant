@@ -18,25 +18,25 @@ class Role(str, Enum):
 @dataclass
 class Tool:
     """Tool definition for function calling."""
-    
+
     name: str
     description: str
     parameters: dict  # JSON Schema format
-    
+
 
 @dataclass
 class ToolCall:
     """Tool call request from the model."""
-    
+
     id: str
     name: str
     arguments: dict
-    
+
 
 @dataclass
 class ToolResult:
     """Result from executing a tool."""
-    
+
     tool_call_id: str
     content: str
     is_error: bool = False
