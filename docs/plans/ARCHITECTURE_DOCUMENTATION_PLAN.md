@@ -53,22 +53,18 @@ To ensure proper wiki navigation and URLs:
 ```
 architecture/
 ├── Architecture-Overview.md
-├── modules/
-│   ├── cli/
-│   │   └── CLI-Module.md
-│   ├── agents/
-│   │   └── Agents-Module.md
-│   ├── providers/
-│   │   └── Providers-Module.md
-│   ├── tools/
-│   │   └── Tools-Module.md
-│   └── session/
-│       └── Session-Module.md
+├── CLI-Module.md
+├── Agents-Module.md
+├── Providers-Module.md
+├── Tools-Module.md
+├── Session-Module.md
 └── integration/
     ├── Provider-Integration.md
     ├── Tool-Development.md
     └── Agent-Creation.md
 ```
+
+Note: GitHub Wiki recognizes pages as subpages when they're in the same directory. This flat structure ensures modules appear under the Architecture section in the wiki sidebar.
 
 Every architecture document must include:
 ```markdown
