@@ -24,19 +24,37 @@ dependencies = [
     "pyyaml>=6.0.1",
     "tiktoken>=0.5.0",
     "tomli-w>=1.2.0",
+    "streamlit>=1.40.0",
+    "streamlit-ace>=0.1.1",
+    "plotly>=5.0.0",
+    "pandas>=2.0.0",
+    "requests>=2.32.4",
 ]
 
 [project.scripts]
-coda = "coda.cli.main:main"
+coda = "coda.cli.cli:cli"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+]
+test-web = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-selenium>=4.0.0",
+    "pytest-timeout>=2.0.0",
+    "pytest-asyncio>=0.21.0",
+    "selenium>=4.0.0",
+    "requests>=2.32.0",
+]
+performance = [
+    "pytest-benchmark>=4.0.0",
+    "locust>=2.0.0",
 ]
 
 [tool.uv]
@@ -61,9 +79,10 @@ addopts = [
 ]
 markers = [
     "unit: Unit tests (fast, no external dependencies)",
-    "integration: Integration tests (requires OCI credentials)",
+    "integration: Integration tests (requires OCI credentials or browser)",
     "functional: Functional/E2E tests (requires full setup)",
     "slow: Slow running tests",
+    "requires_browser: Tests that require Selenium WebDriver",
 ]
 
 [tool.coverage.run]

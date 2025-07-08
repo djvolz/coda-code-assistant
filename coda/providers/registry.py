@@ -161,3 +161,8 @@ class ProviderFactory:
     def list_available(self) -> list[str]:
         """List available provider names."""
         return ProviderRegistry.list_providers()
+
+
+def get_provider_registry() -> dict[str, type[BaseProvider]]:
+    """Get the current provider registry as a dictionary."""
+    return ProviderRegistry._providers.copy()

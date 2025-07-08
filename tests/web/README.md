@@ -1,229 +1,187 @@
 # Web UI Tests
 
-This directory contains comprehensive tests for the Coda Assistant Web UI built with Streamlit.
+This directory contains comprehensive tests for the Coda Assistant Streamlit web UI.
 
 ## Test Structure
 
 ```
 tests/web/
-├── unit/               # Unit tests for individual components
-│   ├── components/     # Tests for UI components
-│   ├── utils/         # Tests for utility functions
-│   └── pages/         # Tests for page modules
-├── integration/       # Integration tests for component interactions
-├── functional/        # End-to-end user workflow tests
-├── performance/       # Performance and load tests
-├── fixtures/          # Test fixtures and mock data
-├── conftest.py        # Pytest configuration and fixtures
-├── pytest.ini         # Pytest settings
-└── run_tests.sh      # Local test runner script
+├── unit/          # Fast, isolated component tests
+├── integration/   # Browser-based integration tests
+├── functional/    # End-to-end user workflow tests
+├── fixtures/      # Test data and utilities
+├── conftest.py    # Shared pytest fixtures
+├── pytest.ini     # Pytest configuration
+└── README.md      # This file
 ```
 
 ## Running Tests
 
-### Quick Start
+### Prerequisites
 
-Run all tests:
 ```bash
-./tests/web/run_tests.sh
+# Install test dependencies
+uv pip install -e ".[test-web]"
+
+# For browser tests, install browser drivers
+# Chrome
+brew install chromedriver  # macOS
+# or
+sudo apt-get install chromium-chromedriver  # Ubuntu
+
+# Firefox
+brew install geckodriver  # macOS
+# or
+sudo apt-get install firefox-geckodriver  # Ubuntu
 ```
 
-### Run Specific Test Types
+### Unit Tests (Fast)
 
 ```bash
-# Unit tests only (no browser required)
-./tests/web/run_tests.sh --type unit
-
-# Integration tests only
-./tests/web/run_tests.sh --type integration
-
-# Functional tests only
-./tests/web/run_tests.sh --type functional
-
-# All tests
-./tests/web/run_tests.sh --type all
-```
-
-### Browser Options
-
-```bash
-# Use Chrome (default)
-./tests/web/run_tests.sh --browser chrome
-
-# Use Firefox
-./tests/web/run_tests.sh --browser firefox
-
-# Run in headed mode (see browser)
-./tests/web/run_tests.sh --headed
-```
-
-### Direct pytest Commands
-
-```bash
-# Run unit tests
+# Run all unit tests
 pytest tests/web/unit/ -v
 
-# Run integration tests with specific browser
-BROWSER=firefox pytest tests/web/integration/ -v
-
-# Run tests with coverage
+# Run with coverage
 pytest tests/web/unit/ --cov=coda.web --cov-report=html
 
 # Run specific test file
-pytest tests/web/unit/components/test_chat_widget.py -v
+pytest tests/web/unit/pages/test_chat_page.py -v
 
 # Run tests matching pattern
-pytest tests/web/ -k "test_chat" -v
+pytest tests/web/unit/ -k "chat" -v
 ```
 
-## Test Categories
+### Integration Tests (Browser)
 
-### Unit Tests
-- Test individual components in isolation
-- Mock external dependencies
-- Fast execution
-- No browser or server required
+```bash
+# Run with Chrome
+pytest tests/web/integration/ --browser=chrome -v
 
-### Integration Tests
-- Test component interactions
-- Require running Streamlit server
-- Use Selenium for browser automation
-- Test real user interactions
+# Run with Firefox
+pytest tests/web/integration/ --browser=firefox -v
 
-### Functional Tests
-- Complete user workflows
-- End-to-end scenarios
-- Error handling and edge cases
-- Multi-step processes
+# Run headless (no browser window)
+pytest tests/web/integration/ --browser=chrome --headless -v
 
-### Performance Tests
-- Load testing with multiple users
-- Response time measurements
-- Resource usage monitoring
-- Scalability testing
+# Run specific integration test
+pytest tests/web/integration/test_navigation.py -v
+```
+
+### Functional Tests (E2E)
+
+```bash
+# Run all functional tests
+pytest tests/web/functional/ --browser=chrome -v
+
+# Run specific workflow
+pytest tests/web/functional/test_user_workflows.py::test_first_time_user_workflow -v
+```
+
+### All Tests
+
+```bash
+# Run all web tests
+pytest tests/web/ -v
+
+# Run with specific markers
+pytest tests/web/ -m "not slow" -v
+pytest tests/web/ -m "unit" -v
+pytest tests/web/ -m "requires_browser" -v
+```
+
+## Test Markers
+
+- `@pytest.mark.unit` - Fast unit tests without external dependencies
+- `@pytest.mark.integration` - Integration tests requiring browser/server
+- `@pytest.mark.functional` - End-to-end functional tests
+- `@pytest.mark.slow` - Tests that take more than 10 seconds
+- `@pytest.mark.requires_browser` - Tests that need Selenium WebDriver
 
 ## Writing Tests
 
-### Unit Test Example
+### Unit Tests
+
+Use Streamlit's `AppTest` for fast, headless testing:
 
 ```python
-from unittest.mock import Mock, patch
-import pytest
-from coda.web.components.chat_widget import render_chat_widget
+from streamlit.testing.v1 import AppTest
 
-def test_render_empty_chat(mock_streamlit):
-    """Test rendering with no messages."""
-    mock_streamlit['session_state'].messages = []
-    
-    render_chat_widget()
-    
-    # Verify welcome message is displayed
-    mock_streamlit['markdown'].assert_called()
-```
-
-### Integration Test Example
-
-```python
-def test_send_message(web_server, driver, base_url):
-    """Test sending a message in chat."""
-    driver.get(f"{base_url}")
+def test_chat_page():
+    at = AppTest.from_file("coda/web/app.py")
+    at.run()
     
     # Navigate to chat
-    chat_tab = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Chat')]"))
+    at.radio[0].set_value("💬 Chat").run()
+    
+    # Interact with widgets
+    at.text_input[0].set_value("Hello").run()
+    
+    # Verify state
+    assert at.session_state["messages"][-1]["content"] == "Hello"
+```
+
+### Integration Tests
+
+Use Selenium for browser-based testing:
+
+```python
+def test_navigation(driver, streamlit_server):
+    driver.get(streamlit_server)
+    
+    chat_link = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, "//span[text()='💬 Chat']"))
     )
-    chat_tab.click()
+    chat_link.click()
     
-    # Send message
-    chat_input = driver.find_element(By.XPATH, "//textarea[@data-testid='stChatInput']")
-    chat_input.send_keys("Hello, world!")
-    chat_input.send_keys(Keys.RETURN)
-    
-    # Verify message appears
-    messages = driver.find_elements(By.XPATH, "//div[@data-testid='stChatMessage']")
-    assert len(messages) > 0
+    # Verify page loaded
+    assert "Chat" in driver.title
 ```
 
 ## CI/CD Integration
 
-Tests run automatically on:
-- Push to main, develop, or feature branches
-- Pull requests
-- Manual workflow dispatch
+Tests run automatically on GitHub Actions:
 
-GitHub Actions workflow: `.github/workflows/test-web-ui.yml`
+- Unit tests run on every push
+- Browser tests run on PRs and main branch
+- Multiple browser matrix (Chrome, Firefox)
+- Coverage reports uploaded to Codecov
 
-## Dependencies
+## Debugging Tips
 
-Required packages:
-- pytest
-- selenium
-- streamlit
-- pytest-timeout
-- pytest-cov
-
-Install all test dependencies:
-```bash
-pip install -r requirements-test.txt
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Server won't start**: Check if port is already in use
-   ```bash
-   lsof -i:8600
+1. **Save screenshots on failure**:
+   ```python
+   def test_something(driver):
+       try:
+           # test code
+       except:
+           driver.save_screenshot("failure.png")
+           raise
    ```
 
-2. **Browser tests fail**: Ensure drivers are installed
+2. **Run tests with more output**:
    ```bash
-   # Chrome
-   brew install chromedriver
-   
-   # Firefox
-   brew install geckodriver
+   pytest tests/web/ -vv -s --tb=long
    ```
 
-3. **Timeout errors**: Increase timeout in pytest.ini or use --timeout flag
+3. **Run single test with debugging**:
+   ```bash
+   pytest tests/web/unit/test_app.py::test_app_runs -vv --pdb
+   ```
 
-4. **Flaky tests**: Mark with @pytest.mark.flaky and investigate
+4. **Check Streamlit logs**:
+   ```bash
+   STREAMLIT_LOG_LEVEL=debug pytest tests/web/integration/ -v
+   ```
 
-### Debug Mode
+## Performance Testing (Optional)
 
-Run tests with more verbose output:
 ```bash
-pytest tests/web/ -vv --tb=long --capture=no
+# Install performance testing tools
+uv pip install -e ".[performance]"
+
+# Run benchmark tests
+pytest tests/web/performance/ --benchmark-only
+
+# Run load tests with Locust
+locust -f tests/web/performance/locustfile.py
 ```
-
-View Streamlit server logs:
-```bash
-tail -f tests/web/logs/streamlit.log
-```
-
-## Coverage Reports
-
-Generate coverage report:
-```bash
-pytest tests/web/unit/ --cov=coda.web --cov-report=html
-open htmlcov/index.html
-```
-
-## Best Practices
-
-1. **Keep tests independent** - Each test should be runnable in isolation
-2. **Use fixtures** - Share common setup code via conftest.py
-3. **Mock external dependencies** - Unit tests shouldn't need real APIs
-4. **Use meaningful assertions** - Be specific about what you're testing
-5. **Handle timing issues** - Use WebDriverWait instead of sleep()
-6. **Clean up resources** - Kill servers, close browsers, delete temp files
-7. **Document flaky tests** - Mark and investigate intermittent failures
-
-## Contributing
-
-When adding new features:
-1. Write unit tests first (TDD approach)
-2. Add integration tests for UI interactions
-3. Include functional tests for complete workflows
-4. Update this README if needed
-5. Ensure all tests pass locally before pushing
