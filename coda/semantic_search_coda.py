@@ -81,18 +81,7 @@ def create_semantic_search_manager(
             except Exception as e:
                 error_messages.append(f"OCI: {str(e)}")
 
-        # 2. Try Ollama if running
-        if embedding_provider is None:
-            try:
-                embedding_provider = create_embedding_provider(
-                    provider_type="ollama",
-                    model_id=model_id or "mxbai-embed-large"
-                )
-                logger.info("Using Ollama embedding provider")
-            except Exception as e:
-                error_messages.append(f"Ollama: {str(e)}")
-
-        # 3. Try sentence-transformers as fallback
+        # 2. Try sentence-transformers (no external dependencies after install)
         if embedding_provider is None:
             try:
                 embedding_provider = create_embedding_provider(
@@ -102,6 +91,28 @@ def create_semantic_search_manager(
                 logger.info("Using sentence-transformers embedding provider")
             except Exception as e:
                 error_messages.append(f"Sentence-transformers: {str(e)}")
+
+        # 3. Try Ollama if running
+        if embedding_provider is None:
+            try:
+                # Quick check if Ollama is available
+                import httpx
+                try:
+                    with httpx.Client(timeout=1.0) as client:
+                        response = client.get("http://localhost:11434/api/version")
+                        response.raise_for_status()
+                    
+                    # Ollama is running, try to create provider
+                    embedding_provider = create_embedding_provider(
+                        provider_type="ollama",
+                        model_id=model_id or "mxbai-embed-large"
+                    )
+                    logger.info("Using Ollama embedding provider")
+                except (httpx.ConnectError, httpx.TimeoutException):
+                    # Ollama not running, skip silently
+                    pass
+            except Exception as e:
+                error_messages.append(f"Ollama: {str(e)}")
 
         # 4. Use mock as last resort
         if embedding_provider is None:

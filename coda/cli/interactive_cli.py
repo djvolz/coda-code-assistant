@@ -670,9 +670,13 @@ class InteractiveCLI(CommandHandler):
             try:
                 # Try to use configured provider first
                 self._search_manager = create_semantic_search_manager()
-            except Exception:
+                # Get provider info
+                provider_info = self._search_manager.embedding_provider.get_model_info()
+                self.console.print(f"[green]Using {provider_info.get('provider', 'configured')} embeddings[/green]")
+            except Exception as e:
                 # Fall back to mock provider
-                self.console.print("[yellow]Using mock embeddings (OCI not configured)[/yellow]")
+                self.console.print(f"[yellow]Failed to initialize configured provider: {str(e)}[/yellow]")
+                self.console.print("[yellow]Using mock embeddings for demo purposes[/yellow]")
                 provider = MockEmbeddingProvider(dimension=768)
                 self._search_manager = SemanticSearchManager(embedding_provider=provider)
 
