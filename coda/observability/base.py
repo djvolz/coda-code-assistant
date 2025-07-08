@@ -16,9 +16,13 @@ logger = logging.getLogger(__name__)
 class ObservabilityComponent(ABC):
     """Base class for all observability components."""
 
-    def __init__(self, export_directory: Path, config_manager: ConfigManager,
-                 storage_backend: StorageBackend | None = None,
-                 scheduler: PeriodicTaskScheduler | None = None):
+    def __init__(
+        self,
+        export_directory: Path,
+        config_manager: ConfigManager,
+        storage_backend: StorageBackend | None = None,
+        scheduler: PeriodicTaskScheduler | None = None,
+    ):
         """Initialize the base observability component.
 
         Args:

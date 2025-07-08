@@ -32,34 +32,26 @@ class TestObservabilityWorkflows:
             "observability": {
                 "enabled": True,
                 "export_directory": str(temp_dir),
-                "metrics": {
-                    "enabled": True,
-                    "max_events": 10000,
-                    "max_memory_mb": 50
-                },
+                "metrics": {"enabled": True, "max_events": 10000, "max_memory_mb": 50},
                 "tracing": {
                     "enabled": True,
                     "max_traces": 5000,
                     "sampling_rate": 100,
-                    "max_memory_mb": 50
+                    "max_memory_mb": 50,
                 },
                 "health": {
                     "enabled": True,
                     "check_interval": 5,  # Fast checks for testing
-                    "failure_threshold": 3
+                    "failure_threshold": 3,
                 },
                 "error_tracking": {
                     "enabled": True,
                     "max_errors": 5000,
                     "alert_threshold": 5,
-                    "max_memory_mb": 50
+                    "max_memory_mb": 50,
                 },
-                "profiling": {
-                    "enabled": False
-                },
-                "scheduler": {
-                    "max_workers": 4
-                }
+                "profiling": {"enabled": False},
+                "scheduler": {"max_workers": 4},
             }
         }
         return config
@@ -75,46 +67,44 @@ class TestObservabilityWorkflows:
             user_id = "user_456"
 
             # 1. Session starts
-            session_span = manager.create_span("user_session", {
-                "session_id": session_id,
-                "user_id": user_id,
-                "start_time": datetime.now().isoformat()
-            })
+            session_span = manager.create_span(
+                "user_session",
+                {
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "start_time": datetime.now().isoformat(),
+                },
+            )
 
-            manager.record_session_event("session_start", {
-                "session_id": session_id,
-                "user_id": user_id,
-                "client_version": "1.0.0"
-            })
+            manager.record_session_event(
+                "session_start",
+                {"session_id": session_id, "user_id": user_id, "client_version": "1.0.0"},
+            )
 
             # 2. User performs multiple operations
             operations_performed = []
 
             # Operation 1: List providers
             op1_span = manager.create_span("list_providers", parent_span=session_span)
-            manager.record_session_event("command_executed", {
-                "command": "list_providers",
-                "session_id": session_id
-            })
+            manager.record_session_event(
+                "command_executed", {"command": "list_providers", "session_id": session_id}
+            )
             time.sleep(0.05)  # Simulate work
             manager.tracing_manager.end_span(op1_span)
             operations_performed.append("list_providers")
 
             # Operation 2: Query with provider
-            op2_span = manager.create_span("query_provider", {
-                "provider": "openai",
-                "model": "gpt-4"
-            }, parent_span=session_span)
+            op2_span = manager.create_span(
+                "query_provider", {"provider": "openai", "model": "gpt-4"}, parent_span=session_span
+            )
 
             # Record provider metrics
             manager.metrics_collector.record_provider_metric("openai", "latency", 523.4)
             manager.metrics_collector.record_token_usage("openai", 1500, 750, 0.045)
 
-            manager.record_session_event("query_completed", {
-                "session_id": session_id,
-                "provider": "openai",
-                "success": True
-            })
+            manager.record_session_event(
+                "query_completed", {"session_id": session_id, "provider": "openai", "success": True}
+            )
 
             manager.tracing_manager.end_span(op2_span)
             operations_performed.append("query_provider")
@@ -123,17 +113,16 @@ class TestObservabilityWorkflows:
             op3_span = manager.create_span("failed_operation", parent_span=session_span)
 
             error = ConnectionError("Provider API timeout")
-            manager.record_error(error, {
-                "session_id": session_id,
-                "provider": "anthropic",
-                "retry_count": 3
-            }, category=manager.error_tracker.ErrorCategory.NETWORK)
+            manager.record_error(
+                error,
+                {"session_id": session_id, "provider": "anthropic", "retry_count": 3},
+                category=manager.error_tracker.ErrorCategory.NETWORK,
+            )
 
-            manager.record_session_event("query_failed", {
-                "session_id": session_id,
-                "provider": "anthropic",
-                "error": "timeout"
-            })
+            manager.record_session_event(
+                "query_failed",
+                {"session_id": session_id, "provider": "anthropic", "error": "timeout"},
+            )
 
             manager.tracing_manager.end_span(op3_span, status="error")
             operations_performed.append("failed_operation")
@@ -143,11 +132,14 @@ class TestObservabilityWorkflows:
             manager.health_monitor.check_provider_health("anthropic")
 
             # 4. Session ends
-            manager.record_session_event("session_end", {
-                "session_id": session_id,
-                "duration_seconds": 120,
-                "operations_count": len(operations_performed)
-            })
+            manager.record_session_event(
+                "session_end",
+                {
+                    "session_id": session_id,
+                    "duration_seconds": 120,
+                    "operations_count": len(operations_performed),
+                },
+            )
 
             manager.tracing_manager.end_span(session_span)
 
@@ -230,7 +222,7 @@ class TestObservabilityWorkflows:
                 manager.health_monitor.update_component_health(
                     "openai_performance",
                     manager.health_monitor.HealthStatus.DEGRADED,
-                    {"avg_latency": avg_recent, "threshold": 400}
+                    {"avg_latency": avg_recent, "threshold": 400},
                 )
 
             health_status = manager.get_health_status()
@@ -249,16 +241,16 @@ class TestObservabilityWorkflows:
 
             # Simulate error pattern - repeated authentication failures
             for i in range(6):  # Threshold is 5
-                error = PermissionError(f"Authentication failed - attempt {i+1}")
+                error = PermissionError(f"Authentication failed - attempt {i + 1}")
                 should_alert = manager.record_error(
                     error,
-                    {"provider": "openai", "attempt": i+1},
+                    {"provider": "openai", "attempt": i + 1},
                     category=manager.error_tracker.ErrorCategory.AUTHENTICATION,
-                    severity=manager.error_tracker.ErrorSeverity.HIGH
+                    severity=manager.error_tracker.ErrorSeverity.HIGH,
                 )
 
                 if should_alert:
-                    alerts_triggered.append(i+1)
+                    alerts_triggered.append(i + 1)
 
             # Should have triggered alert after 5th error
             assert len(alerts_triggered) >= 1
@@ -266,10 +258,7 @@ class TestObservabilityWorkflows:
 
             # Check error patterns
             patterns = manager.error_tracker.get_error_patterns()
-            auth_pattern = next(
-                (p for p in patterns if p["error_type"] == "PermissionError"),
-                None
-            )
+            auth_pattern = next((p for p in patterns if p["error_type"] == "PermissionError"), None)
             assert auth_pattern is not None
             assert auth_pattern["count"] >= 6
 
@@ -298,7 +287,7 @@ class TestObservabilityWorkflows:
                 event_data = {
                     "id": i,
                     "large_data": "x" * 10000,  # 10KB per event
-                    "timestamp": time.time()
+                    "timestamp": time.time(),
                 }
                 manager.record_session_event(f"large_event_{i}", event_data)
                 large_events.append(event_data)
@@ -327,23 +316,18 @@ class TestObservabilityWorkflows:
             # Simulate operations with different providers
             for provider in providers:
                 for i in range(10):
-                    span = manager.create_span(f"{provider}_operation_{i}", {
-                        "provider": provider
-                    })
+                    span = manager.create_span(f"{provider}_operation_{i}", {"provider": provider})
 
                     # Simulate varying performance
                     base_latency = {"openai": 100, "anthropic": 150, "google": 200}
                     latency = base_latency[provider] + (i * 10)
 
-                    manager.metrics_collector.record_provider_metric(
-                        provider, "latency", latency
-                    )
+                    manager.metrics_collector.record_provider_metric(provider, "latency", latency)
 
                     # Simulate varying error rates
                     if provider == "google" and i % 3 == 0:
                         manager.record_error(
-                            ConnectionError(f"{provider} connection failed"),
-                            {"provider": provider}
+                            ConnectionError(f"{provider} connection failed"), {"provider": provider}
                         )
 
                     manager.tracing_manager.end_span(span)
@@ -380,17 +364,14 @@ class TestObservabilityWorkflows:
             session_start = time.time()
 
             # Start long-running operation
-            main_span = manager.create_span("long_running_task", {
-                "task_type": "batch_processing"
-            })
+            main_span = manager.create_span("long_running_task", {"task_type": "batch_processing"})
 
             # Simulate periodic progress updates
             for i in range(5):
                 # Progress update
-                manager.record_session_event("progress_update", {
-                    "progress": (i + 1) * 20,
-                    "items_processed": (i + 1) * 100
-                })
+                manager.record_session_event(
+                    "progress_update", {"progress": (i + 1) * 20, "items_processed": (i + 1) * 100}
+                )
 
                 # Sub-operation
                 sub_span = manager.create_span(f"batch_{i}", parent_span=main_span)
@@ -408,10 +389,7 @@ class TestObservabilityWorkflows:
 
             # Verify monitoring data
             traces = manager.tracing_manager.get_recent_traces(limit=10)
-            main_trace = next(
-                (t for t in traces if t["name"] == "long_running_task"),
-                None
-            )
+            main_trace = next((t for t in traces if t["name"] == "long_running_task"), None)
 
             assert main_trace is not None
             assert len(main_trace["children"]) == 5
@@ -419,16 +397,13 @@ class TestObservabilityWorkflows:
 
             # Check progress events
             events = list(manager.metrics_collector._session_events)
-            progress_events = [
-                e for e in events
-                if e["event_type"] == "progress_update"
-            ]
+            progress_events = [e for e in events if e["event_type"] == "progress_update"]
             assert len(progress_events) == 5
 
         finally:
             manager.stop()
 
-    @patch('coda.cli.interactive_cli.ConfigManager')
+    @patch("coda.cli.interactive_cli.ConfigManager")
     def test_cli_driven_monitoring_workflow(self, mock_config_class, config_manager, temp_dir):
         """Test complete workflow driven through CLI commands."""
         mock_config_class.return_value = config_manager
@@ -485,5 +460,5 @@ class TestObservabilityWorkflows:
             assert (temp_dir / "cli_export.json").exists()
 
         finally:
-            if hasattr(cli, '_observability_manager') and cli._observability_manager:
+            if hasattr(cli, "_observability_manager") and cli._observability_manager:
                 cli._observability_manager.stop()

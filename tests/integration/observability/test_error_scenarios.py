@@ -49,6 +49,7 @@ model_name = "mock-smart"
         """Capture stdout output from a function."""
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
         try:
@@ -90,7 +91,11 @@ model_name = "mock-smart"
 
         # Mock storage write to simulate disk full
         if obs_manager.metrics_collector:
-            with patch.object(obs_manager.metrics_collector, '_persist_events', side_effect=OSError("No space left on device")):
+            with patch.object(
+                obs_manager.metrics_collector,
+                "_persist_events",
+                side_effect=OSError("No space left on device"),
+            ):
                 # Should not crash
                 obs_manager.track_event("test_event", {"data": "value"})
 
@@ -110,14 +115,14 @@ model_name = "mock-smart"
         if os.path.exists(storage_path):
             for file_path in Path(storage_path).glob("*.json"):
                 # Write invalid JSON
-                with open(file_path, 'w') as f:
+                with open(file_path, "w") as f:
                     f.write("{ corrupt json file [}")
 
         # Should handle corrupted files gracefully
         obs_manager.track_event("post_corruption_event", {"phase": "after_corruption"})
 
         # Should still function
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
@@ -129,14 +134,14 @@ model_name = "mock-smart"
         """Test recovery when individual components fail to initialize."""
         # Test each component failure
         components_to_fail = [
-            ('coda.observability.metrics.MetricsCollector', 'metrics_collector'),
-            ('coda.observability.tracing.TracingManager', 'tracing_manager'),
-            ('coda.observability.health.HealthMonitor', 'health_monitor'),
-            ('coda.observability.error_tracker.ErrorTracker', 'error_tracker'),
+            ("coda.observability.metrics.MetricsCollector", "metrics_collector"),
+            ("coda.observability.tracing.TracingManager", "tracing_manager"),
+            ("coda.observability.health.HealthMonitor", "health_monitor"),
+            ("coda.observability.error_tracker.ErrorTracker", "error_tracker"),
         ]
 
         for class_path, attr_name in components_to_fail:
-            with patch(f'{class_path}.__init__', side_effect=Exception(f"{attr_name} init failed")):
+            with patch(f"{class_path}.__init__", side_effect=Exception(f"{attr_name} init failed")):
                 obs_manager = ObservabilityManager(config_manager)
 
                 # Component should be None
@@ -148,7 +153,13 @@ model_name = "mock-smart"
                 assert status is not None
 
                 # Component should show as disabled in status
-                component_key = attr_name.replace('_', ' ').replace(' manager', '').replace(' collector', '').replace(' monitor', '').replace(' tracker', '')
+                component_key = (
+                    attr_name.replace("_", " ")
+                    .replace(" manager", "")
+                    .replace(" collector", "")
+                    .replace(" monitor", "")
+                    .replace(" tracker", "")
+                )
                 assert status["components"].get(component_key, False) is False
 
     def test_memory_pressure_handling(self, config_manager):
@@ -161,10 +172,7 @@ model_name = "mock-smart"
         # Track many events with large payloads
         for i in range(100):
             try:
-                obs_manager.track_event(f"memory_test_{i}", {
-                    "large_field": large_data,
-                    "index": i
-                })
+                obs_manager.track_event(f"memory_test_{i}", {"large_field": large_data, "index": i})
             except MemoryError:
                 # Should handle gracefully
                 break
@@ -174,7 +182,7 @@ model_name = "mock-smart"
         assert status is not None
 
         # Should be able to export data
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
@@ -187,6 +195,7 @@ model_name = "mock-smart"
         obs_manager = ObservabilityManager(config_manager)
 
         import threading
+
         errors = []
 
         def track_events(thread_id):
@@ -232,8 +241,8 @@ model_name = "mock-smart"
             # Very large numbers
             {"huge_number": 10**100},
             # Special float values
-            {"nan": float('nan')},
-            {"inf": float('inf')},
+            {"nan": float("nan")},
+            {"inf": float("inf")},
         ]
 
         # Set circular reference
@@ -244,7 +253,7 @@ model_name = "mock-smart"
             obs_manager.track_event(f"malformed_test_{i}", data)
 
         # Should still be able to export
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
@@ -262,7 +271,7 @@ model_name = "mock-smart"
         # Test export to network location (simulated)
         network_path = "\\\\network\\share\\export.json"
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager
@@ -341,7 +350,7 @@ tracing.sample_rate = 2.0  # Invalid rate > 1.0
 
     def test_cli_error_handling(self, config_manager):
         """Test CLI command error handling."""
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
 
@@ -367,7 +376,9 @@ tracing.sample_rate = 2.0  # Invalid rate > 1.0
             obs_manager.track_event(f"success_event_{i}", {"index": i})
 
         # Simulate storage error midway
-        with patch.object(obs_manager, 'track_event', side_effect=[None, None, Exception("Storage failed"), None]):
+        with patch.object(
+            obs_manager, "track_event", side_effect=[None, None, Exception("Storage failed"), None]
+        ):
             for i in range(5, 10):
                 try:
                     obs_manager.track_event(f"partial_event_{i}", {"index": i})
@@ -375,7 +386,7 @@ tracing.sample_rate = 2.0  # Invalid rate > 1.0
                     pass
 
         # Should be able to export successfully tracked data
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             cli._observability_manager = obs_manager

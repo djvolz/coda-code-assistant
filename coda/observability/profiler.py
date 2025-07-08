@@ -23,6 +23,7 @@ from .base import ObservabilityComponent
 @dataclass
 class ProfileEntry:
     """Represents a single profiling measurement."""
+
     function_name: str
     module_name: str
     start_time: datetime
@@ -42,17 +43,18 @@ class ProfileEntry:
             "duration_ms": self.duration_ms,
             "args_hash": self.args_hash,
             "memory_usage": self.memory_usage,
-            "thread_id": self.thread_id
+            "thread_id": self.thread_id,
         }
 
 
 @dataclass
 class FunctionStats:
     """Statistics for a specific function."""
+
     function_name: str
     call_count: int = 0
     total_time_ms: float = 0.0
-    min_time_ms: float = float('inf')
+    min_time_ms: float = float("inf")
     max_time_ms: float = 0.0
     avg_time_ms: float = 0.0
 
@@ -72,8 +74,13 @@ class FunctionStats:
 class PerformanceProfiler(ObservabilityComponent):
     """Lightweight performance profiler for debug mode."""
 
-    def __init__(self, export_directory: Path, config_manager: ConfigManager,
-                 storage_backend=None, scheduler=None):
+    def __init__(
+        self,
+        export_directory: Path,
+        config_manager: ConfigManager,
+        storage_backend=None,
+        scheduler=None,
+    ):
         """Initialize the performance profiler.
 
         Args:
@@ -93,25 +100,25 @@ class PerformanceProfiler(ObservabilityComponent):
         self.enabled = config_manager.get_bool(
             "observability.profiling.enabled",
             default=False,  # Disabled by default
-            env_var=f"{ENV_PREFIX}PROFILING_ENABLED"
+            env_var=f"{ENV_PREFIX}PROFILING_ENABLED",
         )
 
         self.debug_mode_only = config_manager.get_bool(
             "observability.profiling.debug_mode_only",
             default=True,
-            env_var=f"{ENV_PREFIX}PROFILING_DEBUG_MODE_ONLY"
+            env_var=f"{ENV_PREFIX}PROFILING_DEBUG_MODE_ONLY",
         )
 
         self.min_duration_ms = config_manager.get_float(
             "observability.profiling.min_duration_ms",
             default=1.0,  # Only profile functions taking >= 1ms
-            env_var=f"{ENV_PREFIX}PROFILING_MIN_DURATION_MS"
+            env_var=f"{ENV_PREFIX}PROFILING_MIN_DURATION_MS",
         )
 
         self.track_memory = config_manager.get_bool(
             "observability.profiling.track_memory",
             default=False,  # Memory tracking can be expensive
-            env_var=f"{ENV_PREFIX}PROFILING_TRACK_MEMORY"
+            env_var=f"{ENV_PREFIX}PROFILING_TRACK_MEMORY",
         )
 
         # Memory tracking
@@ -119,6 +126,7 @@ class PerformanceProfiler(ObservabilityComponent):
         if self.track_memory:
             try:
                 import psutil
+
                 self._memory_tracker = psutil.Process()
             except ImportError:
                 self.track_memory = False
@@ -135,7 +143,7 @@ class PerformanceProfiler(ObservabilityComponent):
         return self.config_manager.get_int(
             "observability.profiling.flush_interval",
             default=600,  # 10 minutes
-            env_var=f"{ENV_PREFIX}PROFILING_FLUSH_INTERVAL"
+            env_var=f"{ENV_PREFIX}PROFILING_FLUSH_INTERVAL",
         )
 
     def start(self):
@@ -173,11 +181,7 @@ class PerformanceProfiler(ObservabilityComponent):
             return None
 
     def record_function_call(
-        self,
-        function_name: str,
-        module_name: str,
-        duration_ms: float,
-        args_hash: str = ""
+        self, function_name: str, module_name: str, duration_ms: float, args_hash: str = ""
     ):
         """Record a function call for profiling.
 
@@ -203,7 +207,7 @@ class PerformanceProfiler(ObservabilityComponent):
                 duration_ms=duration_ms,
                 args_hash=args_hash,
                 memory_usage=self._get_memory_usage(),
-                thread_id=threading.get_ident()
+                thread_id=threading.get_ident(),
             )
 
             self.profile_entries.append(entry)
@@ -227,9 +231,7 @@ class PerformanceProfiler(ObservabilityComponent):
         with self._lock:
             # Sort by total time descending
             sorted_stats = sorted(
-                self.function_stats.values(),
-                key=lambda x: x.total_time_ms,
-                reverse=True
+                self.function_stats.values(), key=lambda x: x.total_time_ms, reverse=True
             )
 
             return [stats.to_dict() for stats in sorted_stats[:limit]]
@@ -245,12 +247,13 @@ class PerformanceProfiler(ObservabilityComponent):
         """
         with self._lock:
             slow_functions = [
-                stats.to_dict() for stats in self.function_stats.values()
+                stats.to_dict()
+                for stats in self.function_stats.values()
                 if stats.avg_time_ms >= min_avg_time_ms
             ]
 
             # Sort by average time descending
-            return sorted(slow_functions, key=lambda x: x['avg_time_ms'], reverse=True)
+            return sorted(slow_functions, key=lambda x: x["avg_time_ms"], reverse=True)
 
     def get_recent_calls(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent function calls.
@@ -282,8 +285,7 @@ class PerformanceProfiler(ObservabilityComponent):
 
             # Filter recent entries
             recent_entries = [
-                entry for entry in self.profile_entries
-                if entry.start_time >= cutoff_time
+                entry for entry in self.profile_entries if entry.start_time >= cutoff_time
             ]
 
             # Aggregate by function
@@ -297,14 +299,16 @@ class PerformanceProfiler(ObservabilityComponent):
             # Convert to list and sort by total time
             hotspot_list = []
             for func_name, data in hotspots.items():
-                hotspot_list.append({
-                    "function": func_name,
-                    "call_count": data["count"],
-                    "total_time_ms": data["total_time"],
-                    "avg_time_ms": data["total_time"] / data["count"]
-                })
+                hotspot_list.append(
+                    {
+                        "function": func_name,
+                        "call_count": data["count"],
+                        "total_time_ms": data["total_time"],
+                        "avg_time_ms": data["total_time"] / data["count"],
+                    }
+                )
 
-            return sorted(hotspot_list, key=lambda x: x['total_time_ms'], reverse=True)
+            return sorted(hotspot_list, key=lambda x: x["total_time_ms"], reverse=True)
 
     def get_summary(self) -> dict[str, Any]:
         """Get profiling summary statistics."""
@@ -315,7 +319,7 @@ class PerformanceProfiler(ObservabilityComponent):
                     "total_calls": 0,
                     "unique_functions": 0,
                     "total_time_ms": 0.0,
-                    "avg_call_time_ms": 0.0
+                    "avg_call_time_ms": 0.0,
                 }
 
             total_calls = len(self.profile_entries)
@@ -330,7 +334,7 @@ class PerformanceProfiler(ObservabilityComponent):
                 "total_time_ms": total_time,
                 "avg_call_time_ms": avg_time,
                 "min_duration_threshold_ms": self.min_duration_ms,
-                "memory_tracking": self.track_memory
+                "memory_tracking": self.track_memory,
             }
 
     def get_status(self) -> dict[str, Any]:
@@ -345,7 +349,7 @@ class PerformanceProfiler(ObservabilityComponent):
                 "flush_interval": self.get_flush_interval(),
                 "profile_file": str(self.profile_file),
                 "total_entries": len(self.profile_entries),
-                "function_count": len(self.function_stats)
+                "function_count": len(self.function_stats),
             }
 
     def clear_data(self):
@@ -378,12 +382,12 @@ class PerformanceProfiler(ObservabilityComponent):
             data = {
                 "function_stats": [stats.to_dict() for stats in self.function_stats.values()],
                 "summary": self.get_summary(),
-                "last_updated": datetime.now(UTC).isoformat()
+                "last_updated": datetime.now(UTC).isoformat(),
             }
 
             # Write to temp file first, then atomic rename
-            temp_file = self.profile_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = self.profile_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
 
             temp_file.replace(self.profile_file)
@@ -399,6 +403,7 @@ def profile(profiler: PerformanceProfiler | None = None, debug_mode: bool = Fals
         profiler: Performance profiler instance (optional)
         debug_mode: Whether debug mode is active
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -420,7 +425,7 @@ def profile(profiler: PerformanceProfiler | None = None, debug_mode: bool = Fals
                     function_name=func.__name__,
                     module_name=func.__module__ or "unknown",
                     duration_ms=duration_ms,
-                    args_hash=args_hash
+                    args_hash=args_hash,
                 )
 
         return wrapper

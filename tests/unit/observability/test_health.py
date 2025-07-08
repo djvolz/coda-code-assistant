@@ -13,6 +13,7 @@ from coda.observability.health import HealthMonitor
 
 class HealthStatus(Enum):
     """Health status values used in tests."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -56,9 +57,9 @@ class TestHealthMonitor:
 
         assert monitor.base_dir == temp_dir
         assert monitor.config_manager == config_manager
-        assert hasattr(monitor, '_provider_health')
-        assert hasattr(monitor, '_component_health')
-        assert hasattr(monitor, '_system_health')
+        assert hasattr(monitor, "_provider_health")
+        assert hasattr(monitor, "_component_health")
+        assert hasattr(monitor, "_system_health")
         assert monitor._start_time > 0
 
     def test_check_provider_health_success(self, temp_dir, config_manager):
@@ -66,7 +67,9 @@ class TestHealthMonitor:
         monitor = HealthMonitor(temp_dir, config_manager)
 
         # Mock successful provider check
-        with patch('coda.observability.health.HealthMonitor._check_provider_availability') as mock_check:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_provider_availability"
+        ) as mock_check:
             mock_check.return_value = True
 
             result = monitor.check_provider_health("openai")
@@ -80,7 +83,9 @@ class TestHealthMonitor:
         """Test failed provider health check."""
         monitor = HealthMonitor(temp_dir, config_manager)
 
-        with patch('coda.observability.health.HealthMonitor._check_provider_availability') as mock_check:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_provider_availability"
+        ) as mock_check:
             mock_check.return_value = False
 
             # First failure
@@ -102,7 +107,9 @@ class TestHealthMonitor:
         """Test provider health recovery."""
         monitor = HealthMonitor(temp_dir, config_manager)
 
-        with patch('coda.observability.health.HealthMonitor._check_provider_availability') as mock_check:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_provider_availability"
+        ) as mock_check:
             # Fail checks
             mock_check.return_value = False
             for _ in range(3):
@@ -122,7 +129,9 @@ class TestHealthMonitor:
         """Test successful database health check."""
         monitor = HealthMonitor(temp_dir, config_manager)
 
-        with patch('coda.observability.health.HealthMonitor._check_database_connectivity') as mock_check:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_database_connectivity"
+        ) as mock_check:
             mock_check.return_value = (True, 50.0)  # Connected, 50ms latency
 
             result = monitor.check_database_health()
@@ -135,7 +144,9 @@ class TestHealthMonitor:
         """Test failed database health check."""
         monitor = HealthMonitor(temp_dir, config_manager)
 
-        with patch('coda.observability.health.HealthMonitor._check_database_connectivity') as mock_check:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_database_connectivity"
+        ) as mock_check:
             mock_check.return_value = (False, None)
 
             result = monitor.check_database_health()
@@ -155,14 +166,14 @@ class TestHealthMonitor:
         assert result["space_available_gb"] > 0
         assert "last_check" in result
 
-    @patch('shutil.disk_usage')
+    @patch("shutil.disk_usage")
     def test_check_filesystem_health_low_space(self, mock_disk_usage, temp_dir, config_manager):
         """Test filesystem health with low disk space."""
         # Mock low disk space (500MB available)
         mock_disk_usage.return_value = MagicMock(
             total=100 * 1024**3,  # 100GB
             used=99.5 * 1024**3,  # 99.5GB
-            free=0.5 * 1024**3    # 0.5GB
+            free=0.5 * 1024**3,  # 0.5GB
         )
 
         monitor = HealthMonitor(temp_dir, config_manager)
@@ -220,7 +231,9 @@ class TestHealthMonitor:
         monitor.update_component_health("metrics", HealthStatus.HEALTHY)
         monitor.update_component_health("tracing", HealthStatus.DEGRADED)
 
-        with patch('coda.observability.health.HealthMonitor._check_provider_availability') as mock_check:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_provider_availability"
+        ) as mock_check:
             mock_check.return_value = True
             monitor.check_provider_health("openai")
 
@@ -238,7 +251,9 @@ class TestHealthMonitor:
         monitor = HealthMonitor(temp_dir, config_manager)
 
         # Check multiple providers
-        with patch('coda.observability.health.HealthMonitor._check_provider_availability') as mock_check:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_provider_availability"
+        ) as mock_check:
             mock_check.side_effect = [True, False, True]
 
             monitor.check_provider_health("openai")
@@ -291,13 +306,19 @@ class TestHealthMonitor:
         """Test running all health checks."""
         monitor = HealthMonitor(temp_dir, config_manager)
 
-        with patch('coda.observability.health.HealthMonitor._check_provider_availability') as mock_provider:
-            with patch('coda.observability.health.HealthMonitor._check_database_connectivity') as mock_db:
+        with patch(
+            "coda.observability.health.HealthMonitor._check_provider_availability"
+        ) as mock_provider:
+            with patch(
+                "coda.observability.health.HealthMonitor._check_database_connectivity"
+            ) as mock_db:
                 mock_provider.return_value = True
                 mock_db.return_value = (True, 50.0)
 
                 # Set provider list
-                with patch.object(monitor, '_get_configured_providers', return_value=['openai', 'anthropic']):
+                with patch.object(
+                    monitor, "_get_configured_providers", return_value=["openai", "anthropic"]
+                ):
                     monitor.run_all_checks()
 
         # Should have checked all systems

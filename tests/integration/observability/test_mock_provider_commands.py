@@ -33,12 +33,9 @@ class TestObservabilityCommandsWithMockProvider:
             "tracing": {"enabled": True},
             "health": {"enabled": True},
             "error_tracking": {"enabled": True},
-            "profiling": {"enabled": True}
+            "profiling": {"enabled": True},
         }
-        config.providers["mock"] = {
-            "type": "mock",
-            "model_name": "mock-smart"
-        }
+        config.providers["mock"] = {"type": "mock", "model_name": "mock-smart"}
         config.default_provider = "mock"
 
         # Create ConfigManager with our config
@@ -65,6 +62,7 @@ class TestObservabilityCommandsWithMockProvider:
         """Capture stdout output from a function."""
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
         try:
@@ -190,7 +188,9 @@ class TestObservabilityCommandsWithMockProvider:
         # Verify export was successful
         assert "exported to" in output.lower() or "export" in output.lower()
 
-    def test_observability_export_custom_format_and_path(self, cli, observability_manager, temp_dir):
+    def test_observability_export_custom_format_and_path(
+        self, cli, observability_manager, temp_dir
+    ):
         """Test observability export with custom format and output path."""
         cli._observability_manager = observability_manager
 
@@ -201,7 +201,9 @@ class TestObservabilityCommandsWithMockProvider:
         output_path = os.path.join(temp_dir, "custom_export.json")
 
         # Run export command with custom options
-        output = self.capture_output(cli._cmd_observability, f"export --format summary --output {output_path}")
+        output = self.capture_output(
+            cli._cmd_observability, f"export --format summary --output {output_path}"
+        )
 
         # Verify export
         assert "export" in output.lower()
@@ -212,12 +214,10 @@ class TestObservabilityCommandsWithMockProvider:
 
         # Track some errors
         observability_manager.track_error(
-            ValueError("Test error 1"),
-            {"context": "test", "severity": "medium"}
+            ValueError("Test error 1"), {"context": "test", "severity": "medium"}
         )
         observability_manager.track_error(
-            ConnectionError("Test connection error"),
-            {"context": "network", "severity": "high"}
+            ConnectionError("Test connection error"), {"context": "network", "severity": "high"}
         )
 
         # Run errors command
@@ -234,8 +234,7 @@ class TestObservabilityCommandsWithMockProvider:
         # Track multiple errors
         for i in range(20):
             observability_manager.track_error(
-                Exception(f"Error {i}"),
-                {"index": i, "severity": "low" if i % 2 == 0 else "medium"}
+                Exception(f"Error {i}"), {"index": i, "severity": "low" if i % 2 == 0 else "medium"}
             )
 
         # Run errors command with options
@@ -282,7 +281,7 @@ class TestObservabilityCommandsWithMockProvider:
             "tracing": {"enabled": False},
             "health": {"enabled": True},
             "error_tracking": {"enabled": False},
-            "profiling": {"enabled": False}
+            "profiling": {"enabled": False},
         }
 
         # Create ConfigManager with partial config
@@ -309,7 +308,9 @@ class TestObservabilityCommandsWithMockProvider:
         output = self.capture_output(cli._cmd_observability, f"export --output {invalid_path}")
 
         # Should handle error gracefully
-        assert "error" in output.lower() or "failed" in output.lower() or "invalid" in output.lower()
+        assert (
+            "error" in output.lower() or "failed" in output.lower() or "invalid" in output.lower()
+        )
 
     def test_observability_edge_cases(self, cli, observability_manager):
         """Test edge cases and error conditions."""

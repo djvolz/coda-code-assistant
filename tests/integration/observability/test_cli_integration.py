@@ -35,7 +35,7 @@ class TestCLIObservabilityIntegration:
                 "tracing": {"enabled": True},
                 "health": {"enabled": True},
                 "error_tracking": {"enabled": True},
-                "profiling": {"enabled": False}
+                "profiling": {"enabled": False},
             }
         }
         return config
@@ -43,12 +43,12 @@ class TestCLIObservabilityIntegration:
     @pytest.fixture
     def cli(self, config_manager):
         """Create CLI instance with observability enabled."""
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
             cli = InteractiveCLI()
             cli.config_manager = config_manager
             yield cli
             # Cleanup
-            if hasattr(cli, '_observability_manager') and cli._observability_manager:
+            if hasattr(cli, "_observability_manager") and cli._observability_manager:
                 cli._observability_manager.stop()
 
     def capture_output(self, func, *args, **kwargs):
@@ -96,8 +96,7 @@ class TestCLIObservabilityIntegration:
         # Export data
         export_path = temp_dir / "test_export.json"
         output = self.capture_output(
-            cli._cmd_observability,
-            f"export --format json --output {export_path}"
+            cli._cmd_observability, f"export --format json --output {export_path}"
         )
 
         assert "exported to" in output
@@ -120,7 +119,7 @@ class TestCLIObservabilityIntegration:
         cli._observability_manager.health_monitor.update_component_health(
             "metrics",
             cli._observability_manager.health_monitor.HealthStatus.DEGRADED,
-            {"reason": "High load"}
+            {"reason": "High load"},
         )
 
         # Check overall health
@@ -178,10 +177,7 @@ class TestCLIObservabilityIntegration:
 
         # Generate errors
         for i in range(10):
-            cli._observability_manager.record_error(
-                ValueError(f"Error {i}"),
-                {"index": i}
-            )
+            cli._observability_manager.record_error(ValueError(f"Error {i}"), {"index": i})
 
         # Check errors for different timeframes
         output = self.capture_output(cli._cmd_observability, "errors --days 1")
@@ -218,7 +214,7 @@ class TestCLIObservabilityIntegration:
             if i == 2:  # Simulate an error
                 manager.record_error(
                     ConnectionError("Provider timeout"),
-                    {"operation": f"operation_{i}", "provider": "openai"}
+                    {"operation": f"operation_{i}", "provider": "openai"},
                 )
                 manager.tracing_manager.end_span(op_span, status="error")
             else:
@@ -268,17 +264,13 @@ class TestCLIObservabilityIntegration:
 
         # Test JSON export (default)
         json_path = temp_dir / "export.json"
-        _output = self.capture_output(
-            cli._cmd_observability,
-            f"export --output {json_path}"
-        )
+        _output = self.capture_output(cli._cmd_observability, f"export --output {json_path}")
         assert json_path.exists()
 
         # Test CSV export
         csv_path = temp_dir / "export.csv"
         _output = self.capture_output(
-            cli._cmd_observability,
-            f"export --format csv --output {csv_path}"
+            cli._cmd_observability, f"export --format csv --output {csv_path}"
         )
         # Note: CSV export might not be implemented yet, but the command should be accepted
 

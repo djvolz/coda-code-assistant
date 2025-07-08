@@ -23,6 +23,7 @@ from .collections import BoundedCache
 @dataclass
 class Span:
     """A single trace span."""
+
     span_id: str
     trace_id: str
     parent_span_id: str | None
@@ -57,7 +58,7 @@ class Span:
             "timestamp": datetime.now(UTC).isoformat(),
             "level": level,
             "message": message,
-            **kwargs
+            **kwargs,
         }
         self.logs.append(log_entry)
 
@@ -85,7 +86,7 @@ class Span:
 class SpanContext:
     """Context manager for spans."""
 
-    def __init__(self, span: Span, tracing_manager: 'TracingManager'):
+    def __init__(self, span: Span, tracing_manager: "TracingManager"):
         self.span = span
         self.tracing_manager = tracing_manager
 
@@ -128,8 +129,13 @@ class NoopSpanContext:
 class TracingManager(ObservabilityComponent):
     """Manages distributed tracing for Coda."""
 
-    def __init__(self, export_directory: Path, config_manager: ConfigManager,
-                 storage_backend=None, scheduler=None):
+    def __init__(
+        self,
+        export_directory: Path,
+        config_manager: ConfigManager,
+        storage_backend=None,
+        scheduler=None,
+    ):
         """Initialize the tracing manager.
 
         Args:
@@ -148,12 +154,12 @@ class TracingManager(ObservabilityComponent):
         max_memory_mb = config_manager.get_float(
             "observability.tracing.max_memory_mb",
             default=100.0,
-            env_var=f"{ENV_PREFIX}TRACING_MAX_MEMORY_MB"
+            env_var=f"{ENV_PREFIX}TRACING_MAX_MEMORY_MB",
         )
         self.completed_traces_cache = BoundedCache(
             max_size=1000,  # Max 1000 traces
             max_memory_mb=max_memory_mb,
-            ttl_seconds=3600  # Keep traces for 1 hour
+            ttl_seconds=3600,  # Keep traces for 1 hour
         )
         self.completed_traces: dict[str, list[Span]] = {}
 
@@ -161,13 +167,13 @@ class TracingManager(ObservabilityComponent):
         self.sample_rate = config_manager.get_float(
             "observability.tracing.sample_rate",
             default=1.0,  # Sample 100% by default
-            env_var=f"{ENV_PREFIX}TRACING_SAMPLE_RATE"
+            env_var=f"{ENV_PREFIX}TRACING_SAMPLE_RATE",
         )
 
         self.max_spans_per_trace = config_manager.get_int(
             "observability.tracing.max_spans_per_trace",
             default=1000,
-            env_var=f"{ENV_PREFIX}TRACING_MAX_SPANS"
+            env_var=f"{ENV_PREFIX}TRACING_MAX_SPANS",
         )
 
         # Span ID generation
@@ -185,7 +191,7 @@ class TracingManager(ObservabilityComponent):
         return self.config_manager.get_int(
             "observability.tracing.flush_interval",
             default=60,  # 1 minute
-            env_var=f"{ENV_PREFIX}TRACING_FLUSH_INTERVAL"
+            env_var=f"{ENV_PREFIX}TRACING_FLUSH_INTERVAL",
         )
 
     def stop(self):
@@ -209,8 +215,13 @@ class TracingManager(ObservabilityComponent):
         """Generate a unique trace ID."""
         return f"trace_{int(time.time() * 1000)}_{threading.get_ident()}"
 
-    def create_span(self, operation_name: str, parent_span_id: str | None = None,
-                   trace_id: str | None = None, **tags) -> SpanContext:
+    def create_span(
+        self,
+        operation_name: str,
+        parent_span_id: str | None = None,
+        trace_id: str | None = None,
+        **tags,
+    ) -> SpanContext:
         """Create a new span.
 
         Args:
@@ -225,6 +236,7 @@ class TracingManager(ObservabilityComponent):
         # Check sampling rate
         if self.sample_rate < 1.0:
             import random
+
             if random.random() > self.sample_rate:
                 return self.create_noop_span()
 
@@ -240,7 +252,7 @@ class TracingManager(ObservabilityComponent):
                 parent_span_id=parent_span_id,
                 operation_name=operation_name,
                 start_time=datetime.now(UTC),
-                tags=tags
+                tags=tags,
             )
 
             self.active_spans[span_id] = span
@@ -268,7 +280,7 @@ class TracingManager(ObservabilityComponent):
                 # Remove oldest spans
                 spans = self.completed_traces[span.trace_id]
                 spans.sort(key=lambda s: s.start_time)
-                self.completed_traces[span.trace_id] = spans[-self.max_spans_per_trace:]
+                self.completed_traces[span.trace_id] = spans[-self.max_spans_per_trace :]
 
     def get_trace_summary(self) -> dict[str, Any]:
         """Get summary of all traces."""
@@ -304,7 +316,7 @@ class TracingManager(ObservabilityComponent):
                 "total_spans": total_spans,
                 "active_spans": active_spans,
                 "average_duration_ms": avg_duration,
-                "operations": dict(operation_stats)
+                "operations": dict(operation_stats),
             }
 
     def get_recent_traces(self, limit: int = 10) -> list[dict[str, Any]]:
@@ -325,7 +337,7 @@ class TracingManager(ObservabilityComponent):
                 trace_data = {
                     "trace_id": trace_id,
                     "span_count": len(spans),
-                    "spans": [span.to_dict() for span in spans]
+                    "spans": [span.to_dict() for span in spans],
                 }
 
                 # Calculate trace duration
@@ -350,7 +362,7 @@ class TracingManager(ObservabilityComponent):
                 "traces_file": str(self.traces_file),
                 "active_spans": len(self.active_spans),
                 "completed_traces": len(self.completed_traces),
-                "max_spans_per_trace": self.max_spans_per_trace
+                "max_spans_per_trace": self.max_spans_per_trace,
             }
 
     def _load_traces(self):
@@ -392,20 +404,14 @@ class TracingManager(ObservabilityComponent):
             traces_data = []
             for trace_id, spans in self.completed_traces.items():
                 if spans:
-                    trace_data = {
-                        "trace_id": trace_id,
-                        "spans": [span.to_dict() for span in spans]
-                    }
+                    trace_data = {"trace_id": trace_id, "spans": [span.to_dict() for span in spans]}
                     traces_data.append(trace_data)
 
-            data = {
-                "traces": traces_data,
-                "last_updated": datetime.now(UTC).isoformat()
-            }
+            data = {"traces": traces_data, "last_updated": datetime.now(UTC).isoformat()}
 
             # Write to temp file first, then atomic rename
-            temp_file = self.traces_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = self.traces_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
 
             temp_file.replace(self.traces_file)

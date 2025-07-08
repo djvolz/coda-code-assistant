@@ -36,17 +36,14 @@ class TestObservabilityLoadTesting:
                 "batch_size": 1000,
                 "write_buffer_size": 10000,
                 "compression": True,
-                "async_writes": True
+                "async_writes": True,
             },
-            "memory": {
-                "max_memory_mb": 200,
-                "buffer_size": 10000
-            },
+            "memory": {"max_memory_mb": 200, "buffer_size": 10000},
             "metrics": {"enabled": True},
             "tracing": {"enabled": True},
             "health": {"enabled": True},
             "error_tracking": {"enabled": True},
-            "profiling": {"enabled": True}
+            "profiling": {"enabled": True},
         }
 
         manager = ConfigManager()
@@ -71,13 +68,13 @@ class TestObservabilityLoadTesting:
         obs_manager = ObservabilityManager(config_for_load_testing)
 
         event_count = 0
+
         def track_event():
             nonlocal event_count
-            obs_manager.track_event(f"throughput_test_{event_count}", {
-                "timestamp": datetime.now().isoformat(),
-                "index": event_count,
-                "data": "x" * 100
-            })
+            obs_manager.track_event(
+                f"throughput_test_{event_count}",
+                {"timestamp": datetime.now().isoformat(), "index": event_count, "data": "x" * 100},
+            )
             event_count += 1
 
         # Measure throughput
@@ -106,10 +103,10 @@ class TestObservabilityLoadTesting:
 
                     # Mix of different operations
                     if i % 4 == 0:
-                        obs_manager.track_event(f"thread_{thread_id}_event_{i}", {
-                            "thread": thread_id,
-                            "operation": "event"
-                        })
+                        obs_manager.track_event(
+                            f"thread_{thread_id}_event_{i}",
+                            {"thread": thread_id, "operation": "event"},
+                        )
                     elif i % 4 == 1:
                         with obs_manager.trace(f"thread_{thread_id}_trace_{i}"):
                             time.sleep(0.0001)  # Simulate work
@@ -118,13 +115,13 @@ class TestObservabilityLoadTesting:
                             "test_provider",
                             random.uniform(0.01, 0.1),
                             random.choice([True, False]),
-                            {"thread": thread_id}
+                            {"thread": thread_id},
                         )
                     else:
                         if random.random() < 0.1:  # 10% error rate
                             obs_manager.track_error(
                                 Exception(f"Test error from thread {thread_id}"),
-                                {"thread": thread_id, "index": i}
+                                {"thread": thread_id, "index": i},
                             )
 
                     latency = time.time() - start
@@ -193,10 +190,13 @@ class TestObservabilityLoadTesting:
             # Track batch of events
             for _ in range(events_per_second):
                 try:
-                    obs_manager.track_event(f"sustained_load_{event_count}", {
-                        "timestamp": datetime.now().isoformat(),
-                        "batch": event_count // events_per_second
-                    })
+                    obs_manager.track_event(
+                        f"sustained_load_{event_count}",
+                        {
+                            "timestamp": datetime.now().isoformat(),
+                            "batch": event_count // events_per_second,
+                        },
+                    )
                     event_count += 1
                 except Exception as e:
                     errors.append(e)
@@ -217,7 +217,7 @@ class TestObservabilityLoadTesting:
         avg_memory = statistics.mean(memory_samples)
 
         print("\nSustained Load Test Results:")
-        print(f"  Duration: {total_duration/60:.2f} minutes")
+        print(f"  Duration: {total_duration / 60:.2f} minutes")
         print(f"  Total events: {event_count}")
         print(f"  Target rate: {events_per_second} events/sec")
         print(f"  Actual rate: {actual_rate:.2f} events/sec")
@@ -237,9 +237,9 @@ class TestObservabilityLoadTesting:
 
         # Test pattern: normal -> burst -> normal
         phases = [
-            ("normal", 100, 5),    # 100 events/sec for 5 seconds
-            ("burst", 10000, 2),   # 10000 events/sec for 2 seconds
-            ("normal", 100, 5),    # Back to 100 events/sec
+            ("normal", 100, 5),  # 100 events/sec for 5 seconds
+            ("burst", 10000, 2),  # 10000 events/sec for 2 seconds
+            ("normal", 100, 5),  # Back to 100 events/sec
         ]
 
         results = []
@@ -254,10 +254,9 @@ class TestObservabilityLoadTesting:
 
                 for _ in range(rate):
                     try:
-                        obs_manager.track_event(f"{phase_name}_burst_{events_sent}", {
-                            "phase": phase_name,
-                            "rate": rate
-                        })
+                        obs_manager.track_event(
+                            f"{phase_name}_burst_{events_sent}", {"phase": phase_name, "rate": rate}
+                        )
                         events_sent += 1
                     except Exception as e:
                         errors.append(e)
@@ -270,23 +269,27 @@ class TestObservabilityLoadTesting:
             phase_duration = time.time() - phase_start
             actual_rate = events_sent / phase_duration
 
-            results.append({
-                "phase": phase_name,
-                "target_rate": rate,
-                "actual_rate": actual_rate,
-                "events": events_sent,
-                "errors": len(errors)
-            })
+            results.append(
+                {
+                    "phase": phase_name,
+                    "target_rate": rate,
+                    "actual_rate": actual_rate,
+                    "events": events_sent,
+                    "errors": len(errors),
+                }
+            )
 
         print("\nBurst Load Test Results:")
         for result in results:
-            print(f"  {result['phase']}: {result['actual_rate']:.2f} events/sec "
-                  f"(target: {result['target_rate']}), errors: {result['errors']}")
+            print(
+                f"  {result['phase']}: {result['actual_rate']:.2f} events/sec "
+                f"(target: {result['target_rate']}), errors: {result['errors']}"
+            )
 
         # System should handle burst without errors
         for result in results:
-            assert result['errors'] == 0
-            assert result['actual_rate'] > result['target_rate'] * 0.8
+            assert result["errors"] == 0
+            assert result["actual_rate"] > result["target_rate"] * 0.8
 
     @pytest.mark.slow
     def test_mixed_workload(self, config_for_load_testing):
@@ -299,7 +302,7 @@ class TestObservabilityLoadTesting:
             "traces": 0,
             "errors": 0,
             "provider_requests": 0,
-            "health_checks": 0
+            "health_checks": 0,
         }
 
         start_time = time.time()
@@ -309,16 +312,19 @@ class TestObservabilityLoadTesting:
             operation = random.choices(
                 ["event", "trace", "error", "provider", "health"],
                 weights=[70, 20, 5, 4, 1],  # 70% events, 20% traces, etc.
-                k=1
+                k=1,
             )[0]
 
             try:
                 if operation == "event":
-                    obs_manager.track_event("mixed_workload_event", {
-                        "type": random.choice(["user_action", "system_event", "api_call"]),
-                        "user_id": random.randint(1, 1000),
-                        "timestamp": datetime.now().isoformat()
-                    })
+                    obs_manager.track_event(
+                        "mixed_workload_event",
+                        {
+                            "type": random.choice(["user_action", "system_event", "api_call"]),
+                            "user_id": random.randint(1, 1000),
+                            "timestamp": datetime.now().isoformat(),
+                        },
+                    )
                     operations["events"] += 1
 
                 elif operation == "trace":
@@ -330,7 +336,7 @@ class TestObservabilityLoadTesting:
                     error_types = [ValueError, ConnectionError, TimeoutError, RuntimeError]
                     obs_manager.track_error(
                         random.choice(error_types)("Simulated error"),
-                        {"severity": random.choice(["low", "medium", "high"])}
+                        {"severity": random.choice(["low", "medium", "high"])},
                     )
                     operations["errors"] += 1
 
@@ -339,7 +345,7 @@ class TestObservabilityLoadTesting:
                         random.choice(["openai", "anthropic", "ollama"]),
                         random.uniform(0.1, 2.0),
                         random.random() > 0.05,  # 95% success rate
-                        {"model": random.choice(["gpt-4", "claude-2", "llama2"])}
+                        {"model": random.choice(["gpt-4", "claude-2", "llama2"])},
                     )
                     operations["provider_requests"] += 1
 
@@ -356,7 +362,7 @@ class TestObservabilityLoadTesting:
         print("\nMixed Workload Test Results:")
         print(f"  Duration: {duration:.2f} seconds")
         print(f"  Total operations: {total_operations}")
-        print(f"  Throughput: {total_operations/duration:.2f} ops/sec")
+        print(f"  Throughput: {total_operations / duration:.2f} ops/sec")
         print("\n  Operation breakdown:")
         for op_type, count in operations.items():
             percentage = (count / total_operations * 100) if total_operations > 0 else 0
@@ -381,10 +387,9 @@ class TestObservabilityLoadTesting:
         event_count = 0
 
         while time.time() - start_time < 10:  # 10 second test
-            obs_manager.track_event(f"resource_test_{event_count}", {
-                "data": "x" * 1000,
-                "index": event_count
-            })
+            obs_manager.track_event(
+                f"resource_test_{event_count}", {"data": "x" * 1000, "index": event_count}
+            )
             event_count += 1
 
             if event_count % 1000 == 0:
@@ -430,9 +435,9 @@ class TestObservabilityLoadTesting:
 
             for _ in range(extreme_rate):
                 try:
-                    obs_manager.track_event(f"extreme_load_{successful_events}", {
-                        "timestamp": time.time()
-                    })
+                    obs_manager.track_event(
+                        f"extreme_load_{successful_events}", {"timestamp": time.time()}
+                    )
                     batch_success += 1
                 except Exception:
                     batch_dropped += 1
@@ -481,20 +486,21 @@ class TestObservabilityLoadTesting:
 
             for i in range(events_per_process):
                 try:
-                    obs_manager.track_event(f"process_{process_id}_event_{i}", {
-                        "process": process_id,
-                        "index": i
-                    })
+                    obs_manager.track_event(
+                        f"process_{process_id}_event_{i}", {"process": process_id, "index": i}
+                    )
                 except Exception:
                     errors += 1
 
             duration = time.time() - start_time
-            result_queue.put({
-                "process_id": process_id,
-                "duration": duration,
-                "errors": errors,
-                "rate": events_per_process / duration
-            })
+            result_queue.put(
+                {
+                    "process_id": process_id,
+                    "duration": duration,
+                    "errors": errors,
+                    "rate": events_per_process / duration,
+                }
+            )
 
         # Start processes
         result_queue = multiprocessing.Queue()
@@ -503,7 +509,7 @@ class TestObservabilityLoadTesting:
         for i in range(num_processes):
             p = multiprocessing.Process(
                 target=worker_process,
-                args=(i, config_for_load_testing.config.observability, result_queue)
+                args=(i, config_for_load_testing.config.observability, result_queue),
             )
             processes.append(p)
             p.start()

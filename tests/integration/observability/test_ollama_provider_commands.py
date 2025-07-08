@@ -62,8 +62,8 @@ api_base = "http://localhost:11434"
     @pytest.fixture
     def cli(self, config_manager, mock_ollama_provider):
         """Create an interactive CLI instance with mocked Ollama provider."""
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config_manager):
-            with patch('coda.providers.factory.create_provider', return_value=mock_ollama_provider):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config_manager):
+            with patch("coda.providers.factory.create_provider", return_value=mock_ollama_provider):
                 cli = InteractiveCLI()
                 cli.config_manager = config_manager
                 cli.provider = mock_ollama_provider
@@ -78,6 +78,7 @@ api_base = "http://localhost:11434"
         """Capture stdout output from a function."""
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
         try:
@@ -91,7 +92,9 @@ api_base = "http://localhost:11434"
         cli._observability_manager = observability_manager
 
         # Track some Ollama-specific events
-        observability_manager.track_event("provider_initialized", {"provider": "ollama", "model": "llama2"})
+        observability_manager.track_event(
+            "provider_initialized", {"provider": "ollama", "model": "llama2"}
+        )
 
         # Run status command
         output = self.capture_output(cli._cmd_observability, "status")
@@ -111,10 +114,7 @@ api_base = "http://localhost:11434"
         latency = time.time() - start_time
 
         observability_manager.track_provider_request(
-            "ollama",
-            latency,
-            True,
-            {"model": "llama2", "endpoint": "chat"}
+            "ollama", latency, True, {"model": "llama2", "endpoint": "chat"}
         )
 
         # Track token usage for Ollama
@@ -131,11 +131,9 @@ api_base = "http://localhost:11434"
         cli._observability_manager = observability_manager
 
         # Simulate health check for Ollama
-        observability_manager.track_event("health_check", {
-            "provider": "ollama",
-            "status": "healthy",
-            "response_time": 0.05
-        })
+        observability_manager.track_event(
+            "health_check", {"provider": "ollama", "status": "healthy", "response_time": 0.05}
+        )
 
         # Run health command
         output = self.capture_output(cli._cmd_observability, "health")
@@ -183,12 +181,12 @@ api_base = "http://localhost:11434"
         # Track Ollama-specific errors
         observability_manager.track_error(
             ConnectionError("Failed to connect to Ollama at localhost:11434"),
-            {"provider": "ollama", "severity": "high", "retry_count": 3}
+            {"provider": "ollama", "severity": "high", "retry_count": 3},
         )
 
         observability_manager.track_error(
             ValueError("Invalid model 'unknown-model' for Ollama"),
-            {"provider": "ollama", "severity": "medium", "model": "unknown-model"}
+            {"provider": "ollama", "severity": "medium", "model": "unknown-model"},
         )
 
         # Run errors command
@@ -208,12 +206,15 @@ api_base = "http://localhost:11434"
             chunks += 1
         stream_duration = time.time() - start_time
 
-        observability_manager.track_event("ollama_stream_complete", {
-            "provider": "ollama",
-            "chunks": chunks,
-            "duration": stream_duration,
-            "model": "llama2"
-        })
+        observability_manager.track_event(
+            "ollama_stream_complete",
+            {
+                "provider": "ollama",
+                "chunks": chunks,
+                "duration": stream_duration,
+                "model": "llama2",
+            },
+        )
 
         # Run metrics command
         output = self.capture_output(cli._cmd_observability, "metrics")
@@ -221,18 +222,19 @@ api_base = "http://localhost:11434"
         # Verify streaming metrics
         assert "Metrics" in output
 
-    def test_ollama_model_switching_tracking(self, cli, observability_manager, mock_ollama_provider):
+    def test_ollama_model_switching_tracking(
+        self, cli, observability_manager, mock_ollama_provider
+    ):
         """Test tracking of model switching operations in Ollama."""
         cli._observability_manager = observability_manager
 
         # Track model switches
         models = ["llama2", "codellama", "mistral"]
         for model in models:
-            observability_manager.track_event("model_switch", {
-                "provider": "ollama",
-                "from_model": mock_ollama_provider.model,
-                "to_model": model
-            })
+            observability_manager.track_event(
+                "model_switch",
+                {"provider": "ollama", "from_model": mock_ollama_provider.model, "to_model": model},
+            )
             mock_ollama_provider.model = model
 
         # Export data to verify events
@@ -271,7 +273,9 @@ api_base = "http://localhost:11434"
 
         # Export to custom path
         export_path = os.path.join(temp_dir, "ollama_metrics.json")
-        output = self.capture_output(cli._cmd_observability, f"export --format json --output {export_path}")
+        output = self.capture_output(
+            cli._cmd_observability, f"export --format json --output {export_path}"
+        )
 
         # Verify export
         assert "export" in output.lower()
@@ -285,13 +289,13 @@ api_base = "http://localhost:11434"
         # Simulate connection failures
         for i in range(3):
             observability_manager.track_error(
-                ConnectionError(f"Connection attempt {i+1} failed"),
+                ConnectionError(f"Connection attempt {i + 1} failed"),
                 {
                     "provider": "ollama",
-                    "attempt": i+1,
+                    "attempt": i + 1,
                     "endpoint": "http://localhost:11434",
-                    "severity": "high"
-                }
+                    "severity": "high",
+                },
             )
 
         # Check error analysis
@@ -312,12 +316,15 @@ api_base = "http://localhost:11434"
             time.sleep(0.01)
             load_time = time.time() - start
 
-            observability_manager.track_event("ollama_model_loaded", {
-                "provider": "ollama",
-                "model": model,
-                "load_time": load_time,
-                "size_gb": 4.5 if "7b" in model else 8.2
-            })
+            observability_manager.track_event(
+                "ollama_model_loaded",
+                {
+                    "provider": "ollama",
+                    "model": model,
+                    "load_time": load_time,
+                    "size_gb": 4.5 if "7b" in model else 8.2,
+                },
+            )
 
         # Check metrics
         output = self.capture_output(cli._cmd_observability, "metrics --detailed")
@@ -330,20 +337,25 @@ api_base = "http://localhost:11434"
         cli._observability_manager = observability_manager
 
         # Track resource usage
-        observability_manager.track_event("resource_usage", {
-            "provider": "ollama",
-            "cpu_percent": 45.2,
-            "memory_gb": 6.8,
-            "gpu_memory_gb": 4.2,
-            "active_models": 2
-        })
+        observability_manager.track_event(
+            "resource_usage",
+            {
+                "provider": "ollama",
+                "cpu_percent": 45.2,
+                "memory_gb": 6.8,
+                "gpu_memory_gb": 4.2,
+                "active_models": 2,
+            },
+        )
 
         # Check health with resource info
         output = self.capture_output(cli._cmd_observability, "health")
 
         assert "Health" in output or "health" in output.lower()
 
-    def test_all_observability_commands_sequence(self, cli, observability_manager, mock_ollama_provider):
+    def test_all_observability_commands_sequence(
+        self, cli, observability_manager, mock_ollama_provider
+    ):
         """Test running all observability commands in sequence with Ollama."""
         cli._observability_manager = observability_manager
 
@@ -361,8 +373,7 @@ api_base = "http://localhost:11434"
 
             # Error
             observability_manager.track_error(
-                RuntimeError("Test error in sequence"),
-                {"provider": "ollama", "severity": "low"}
+                RuntimeError("Test error in sequence"), {"provider": "ollama", "severity": "low"}
             )
 
         # 3. Run all commands
@@ -377,7 +388,7 @@ api_base = "http://localhost:11434"
             "errors",
             "errors --limit 5 --days 1",
             "performance",
-            "export --format summary"
+            "export --format summary",
         ]
 
         outputs = []

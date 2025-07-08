@@ -50,9 +50,7 @@ class ObservabilityManager:
     def _is_enabled(self) -> bool:
         """Check if observability is enabled via configuration."""
         return self.config_manager.get_bool(
-            "observability.enabled",
-            default=False,
-            env_var=f"{ENV_PREFIX}OBSERVABILITY_ENABLED"
+            "observability.enabled", default=False, env_var=f"{ENV_PREFIX}OBSERVABILITY_ENABLED"
         )
 
     def _get_export_directory(self) -> Path:
@@ -61,7 +59,7 @@ class ObservabilityManager:
         export_dir = self.config_manager.get_string(
             "observability.export_directory",
             default=str(default_dir),
-            env_var=f"{ENV_PREFIX}OBSERVABILITY_EXPORT_DIR"
+            env_var=f"{ENV_PREFIX}OBSERVABILITY_EXPORT_DIR",
         )
         path = Path(export_dir)
         path.mkdir(parents=True, exist_ok=True)
@@ -77,7 +75,7 @@ class ObservabilityManager:
                 self.metrics_collector = MetricsCollector(
                     export_directory=self.export_directory,
                     config_manager=self.config_manager,
-                    scheduler=self.scheduler
+                    scheduler=self.scheduler,
                 )
 
             # Initialize tracing manager
@@ -85,7 +83,7 @@ class ObservabilityManager:
                 self.tracing_manager = TracingManager(
                     export_directory=self.export_directory,
                     config_manager=self.config_manager,
-                    scheduler=self.scheduler
+                    scheduler=self.scheduler,
                 )
 
             # Initialize health monitor
@@ -93,7 +91,7 @@ class ObservabilityManager:
                 self.health_monitor = HealthMonitor(
                     export_directory=self.export_directory,
                     config_manager=self.config_manager,
-                    scheduler=self.scheduler
+                    scheduler=self.scheduler,
                 )
 
             # Initialize error tracker
@@ -101,7 +99,7 @@ class ObservabilityManager:
                 self.error_tracker = ErrorTracker(
                     export_directory=self.export_directory,
                     config_manager=self.config_manager,
-                    scheduler=self.scheduler
+                    scheduler=self.scheduler,
                 )
 
             # Initialize performance profiler
@@ -109,7 +107,7 @@ class ObservabilityManager:
                 self.profiler = PerformanceProfiler(
                     export_directory=self.export_directory,
                     config_manager=self.config_manager,
-                    scheduler=self.scheduler
+                    scheduler=self.scheduler,
                 )
 
             self.logger.info("Observability components initialized successfully")
@@ -187,7 +185,7 @@ class ObservabilityManager:
             "observability": {
                 "enabled": True,
                 "export_directory": str(self.export_directory),
-                "components": {}
+                "components": {},
             }
         }
 
@@ -201,7 +199,9 @@ class ObservabilityManager:
             status["observability"]["components"]["health"] = self.health_monitor.get_status()
 
         if self.error_tracker:
-            status["observability"]["components"]["error_tracking"] = self.error_tracker.get_status()
+            status["observability"]["components"]["error_tracking"] = (
+                self.error_tracker.get_status()
+            )
 
         if self.profiler:
             status["observability"]["components"]["profiling"] = self.profiler.get_status()
@@ -228,9 +228,13 @@ class ObservabilityManager:
         except Exception as e:
             self.logger.error(f"Failed to record provider event: {e}")
 
-    def record_error(self, error: Exception, context: dict[str, Any],
-                    category: ErrorCategory = ErrorCategory.INTERNAL,
-                    severity: ErrorSeverity = ErrorSeverity.MEDIUM):
+    def record_error(
+        self,
+        error: Exception,
+        context: dict[str, Any],
+        category: ErrorCategory = ErrorCategory.INTERNAL,
+        severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+    ):
         """Record an error with context."""
         if not self.enabled:
             return
@@ -248,7 +252,7 @@ class ObservabilityManager:
                     severity=severity,
                     context=context,
                     session_id=context.get("session_id"),
-                    provider=context.get("provider")
+                    provider=context.get("provider"),
                 )
         except Exception as e:
             self.logger.error(f"Failed to record error: {e}")

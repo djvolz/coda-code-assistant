@@ -24,6 +24,7 @@ from .base import ObservabilityComponent
 @dataclass
 class HealthCheck:
     """A single health check result."""
+
     name: str
     status: str  # healthy, degraded, unhealthy
     response_time_ms: float
@@ -39,13 +40,14 @@ class HealthCheck:
             "response_time_ms": self.response_time_ms,
             "timestamp": self.timestamp.isoformat(),
             "message": self.message,
-            "metadata": self.metadata or {}
+            "metadata": self.metadata or {},
         }
 
 
 @dataclass
 class ComponentHealth:
     """Health status for a component."""
+
     name: str
     status: str  # healthy, degraded, unhealthy
     last_check: datetime
@@ -59,15 +61,20 @@ class ComponentHealth:
             "status": self.status,
             "last_check": self.last_check.isoformat(),
             "uptime_percentage": self.uptime_percentage,
-            "checks": [check.to_dict() for check in self.checks]
+            "checks": [check.to_dict() for check in self.checks],
         }
 
 
 class HealthMonitor(ObservabilityComponent):
     """Monitors health of Coda components and providers."""
 
-    def __init__(self, export_directory: Path, config_manager: ConfigManager,
-                 storage_backend=None, scheduler=None):
+    def __init__(
+        self,
+        export_directory: Path,
+        config_manager: ConfigManager,
+        storage_backend=None,
+        scheduler=None,
+    ):
         """Initialize the health monitor.
 
         Args:
@@ -86,13 +93,13 @@ class HealthMonitor(ObservabilityComponent):
         self.unhealthy_threshold = config_manager.get_int(
             "observability.health.unhealthy_threshold",
             default=3,  # 3 consecutive failures
-            env_var=f"{ENV_PREFIX}HEALTH_UNHEALTHY_THRESHOLD"
+            env_var=f"{ENV_PREFIX}HEALTH_UNHEALTHY_THRESHOLD",
         )
 
         self.degraded_threshold = config_manager.get_float(
             "observability.health.degraded_threshold",
             default=5000.0,  # 5 seconds response time
-            env_var=f"{ENV_PREFIX}HEALTH_DEGRADED_THRESHOLD"
+            env_var=f"{ENV_PREFIX}HEALTH_DEGRADED_THRESHOLD",
         )
 
         # Health check functions
@@ -113,7 +120,7 @@ class HealthMonitor(ObservabilityComponent):
         return self.config_manager.get_int(
             "observability.health.check_interval",
             default=30,  # 30 seconds
-            env_var=f"{ENV_PREFIX}HEALTH_CHECK_INTERVAL"
+            env_var=f"{ENV_PREFIX}HEALTH_CHECK_INTERVAL",
         )
 
     def _flush_data(self) -> None:
@@ -135,7 +142,7 @@ class HealthMonitor(ObservabilityComponent):
                         status="unhealthy",
                         response_time_ms=0.0,
                         timestamp=datetime.now(UTC),
-                        message=f"Health check failed: {e}"
+                        message=f"Health check failed: {e}",
                     )
                     self._record_health_check(result)
 
@@ -148,10 +155,7 @@ class HealthMonitor(ObservabilityComponent):
             # Update component health
             if result.name not in self.component_health:
                 self.component_health[result.name] = ComponentHealth(
-                    name=result.name,
-                    status="healthy",
-                    last_check=result.timestamp,
-                    checks=[]
+                    name=result.name, status="healthy", last_check=result.timestamp, checks=[]
                 )
 
             component = self.component_health[result.name]
@@ -247,6 +251,7 @@ class HealthMonitor(ObservabilityComponent):
             provider_name: Name of the provider
             provider_instance: Provider instance for health checking
         """
+
         def provider_health_checker() -> HealthCheck:
             return self._check_provider_health(provider_name, provider_instance)
 
@@ -266,7 +271,7 @@ class HealthMonitor(ObservabilityComponent):
 
         try:
             # Check if provider has a health check method
-            if hasattr(provider_instance, 'health_check'):
+            if hasattr(provider_instance, "health_check"):
                 result = provider_instance.health_check()
                 response_time = (time.time() - start_time) * 1000
 
@@ -276,11 +281,11 @@ class HealthMonitor(ObservabilityComponent):
                     response_time_ms=response_time,
                     timestamp=datetime.now(UTC),
                     message=result.get("message", f"Provider {provider_name} health check"),
-                    metadata=result.get("metadata", {})
+                    metadata=result.get("metadata", {}),
                 )
 
             # Basic provider availability check
-            if hasattr(provider_instance, 'list_models'):
+            if hasattr(provider_instance, "list_models"):
                 try:
                     # Try to list models as a basic connectivity test
                     models = provider_instance.list_models()
@@ -293,7 +298,7 @@ class HealthMonitor(ObservabilityComponent):
                             response_time_ms=response_time,
                             timestamp=datetime.now(UTC),
                             message=f"Provider {provider_name} available ({len(models)} models)",
-                            metadata={"model_count": len(models)}
+                            metadata={"model_count": len(models)},
                         )
                     else:
                         return HealthCheck(
@@ -301,7 +306,7 @@ class HealthMonitor(ObservabilityComponent):
                             status="degraded",
                             response_time_ms=response_time,
                             timestamp=datetime.now(UTC),
-                            message=f"Provider {provider_name} available but no models found"
+                            message=f"Provider {provider_name} available but no models found",
                         )
 
                 except Exception as e:
@@ -311,7 +316,7 @@ class HealthMonitor(ObservabilityComponent):
                         status="unhealthy",
                         response_time_ms=response_time,
                         timestamp=datetime.now(UTC),
-                        message=f"Provider {provider_name} connectivity failed: {e}"
+                        message=f"Provider {provider_name} connectivity failed: {e}",
                     )
 
             # If no health check or list_models method, just check if provider exists
@@ -322,7 +327,7 @@ class HealthMonitor(ObservabilityComponent):
                 response_time_ms=response_time,
                 timestamp=datetime.now(UTC),
                 message=f"Provider {provider_name} instance available",
-                metadata={"type": type(provider_instance).__name__}
+                metadata={"type": type(provider_instance).__name__},
             )
 
         except Exception as e:
@@ -332,7 +337,7 @@ class HealthMonitor(ObservabilityComponent):
                 status="unhealthy",
                 response_time_ms=response_time,
                 timestamp=datetime.now(UTC),
-                message=f"Provider {provider_name} health check failed: {e}"
+                message=f"Provider {provider_name} health check failed: {e}",
             )
 
     def _check_database_health(self) -> HealthCheck:
@@ -354,7 +359,7 @@ class HealthMonitor(ObservabilityComponent):
                     status="healthy",
                     response_time_ms=response_time,
                     timestamp=datetime.now(UTC),
-                    message="Database file accessible"
+                    message="Database file accessible",
                 )
             else:
                 return HealthCheck(
@@ -362,7 +367,7 @@ class HealthMonitor(ObservabilityComponent):
                     status="degraded",
                     response_time_ms=0.0,
                     timestamp=datetime.now(UTC),
-                    message="Database file not found (will be created on first use)"
+                    message="Database file not found (will be created on first use)",
                 )
 
         except Exception as e:
@@ -371,7 +376,7 @@ class HealthMonitor(ObservabilityComponent):
                 status="unhealthy",
                 response_time_ms=0.0,
                 timestamp=datetime.now(UTC),
-                message=f"Database check failed: {e}"
+                message=f"Database check failed: {e}",
             )
 
     def _check_filesystem_health(self) -> HealthCheck:
@@ -399,7 +404,7 @@ class HealthMonitor(ObservabilityComponent):
                 status="healthy",
                 response_time_ms=response_time,
                 timestamp=datetime.now(UTC),
-                message="File system accessible"
+                message="File system accessible",
             )
 
         except Exception as e:
@@ -408,7 +413,7 @@ class HealthMonitor(ObservabilityComponent):
                 status="unhealthy",
                 response_time_ms=0.0,
                 timestamp=datetime.now(UTC),
-                message=f"File system check failed: {e}"
+                message=f"File system check failed: {e}",
             )
 
     def _check_configuration_health(self) -> HealthCheck:
@@ -430,7 +435,7 @@ class HealthMonitor(ObservabilityComponent):
                 status="healthy",
                 response_time_ms=response_time,
                 timestamp=datetime.now(UTC),
-                message="Configuration loaded successfully"
+                message="Configuration loaded successfully",
             )
 
         except Exception as e:
@@ -439,21 +444,22 @@ class HealthMonitor(ObservabilityComponent):
                 status="unhealthy",
                 response_time_ms=0.0,
                 timestamp=datetime.now(UTC),
-                message=f"Configuration check failed: {e}"
+                message=f"Configuration check failed: {e}",
             )
 
     def get_overall_health(self) -> dict[str, Any]:
         """Get overall health status."""
         with self._lock:
             if not self.component_health:
-                return {
-                    "status": "unknown",
-                    "message": "No health checks have been performed yet"
-                }
+                return {"status": "unknown", "message": "No health checks have been performed yet"}
 
             # Determine overall status
-            unhealthy_count = len([c for c in self.component_health.values() if c.status == "unhealthy"])
-            degraded_count = len([c for c in self.component_health.values() if c.status == "degraded"])
+            unhealthy_count = len(
+                [c for c in self.component_health.values() if c.status == "unhealthy"]
+            )
+            degraded_count = len(
+                [c for c in self.component_health.values() if c.status == "degraded"]
+            )
 
             if unhealthy_count > 0:
                 overall_status = "unhealthy"
@@ -470,9 +476,11 @@ class HealthMonitor(ObservabilityComponent):
                 "message": message,
                 "timestamp": datetime.now(UTC).isoformat(),
                 "component_count": len(self.component_health),
-                "healthy_count": len([c for c in self.component_health.values() if c.status == "healthy"]),
+                "healthy_count": len(
+                    [c for c in self.component_health.values() if c.status == "healthy"]
+                ),
                 "degraded_count": degraded_count,
-                "unhealthy_count": unhealthy_count
+                "unhealthy_count": unhealthy_count,
             }
 
     def get_component_health(self, component_name: str | None = None) -> dict[str, Any]:
@@ -484,8 +492,7 @@ class HealthMonitor(ObservabilityComponent):
                 return self.component_health[component_name].to_dict()
             else:
                 return {
-                    name: component.to_dict()
-                    for name, component in self.component_health.items()
+                    name: component.to_dict() for name, component in self.component_health.items()
                 }
 
     def get_health_summary(self) -> dict[str, Any]:
@@ -499,7 +506,7 @@ class HealthMonitor(ObservabilityComponent):
                     "status": component.status,
                     "uptime_percentage": component.uptime_percentage,
                     "last_check": component.last_check.isoformat(),
-                    "recent_checks": len(component.checks)
+                    "recent_checks": len(component.checks),
                 }
 
             return summary
@@ -513,7 +520,7 @@ class HealthMonitor(ObservabilityComponent):
                 "unhealthy_threshold": self.unhealthy_threshold,
                 "degraded_threshold": self.degraded_threshold,
                 "registered_checks": list(self.health_checkers.keys()),
-                "component_count": len(self.component_health)
+                "component_count": len(self.component_health),
             }
 
     def _save_health_data(self):
@@ -522,15 +529,14 @@ class HealthMonitor(ObservabilityComponent):
             health_data = {
                 "overall_health": self.get_overall_health(),
                 "components": {
-                    name: component.to_dict()
-                    for name, component in self.component_health.items()
+                    name: component.to_dict() for name, component in self.component_health.items()
                 },
-                "last_updated": datetime.now(UTC).isoformat()
+                "last_updated": datetime.now(UTC).isoformat(),
             }
 
             # Write to temp file first, then atomic rename
-            temp_file = self.health_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = self.health_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump(health_data, f, indent=2)
 
             temp_file.replace(self.health_file)

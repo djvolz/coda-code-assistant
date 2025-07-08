@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ScheduledTask:
     """Represents a scheduled periodic task."""
+
     name: str
     func: Callable[[], None]
     interval: float
@@ -41,6 +42,7 @@ class ScheduledTask:
     def update_next_run(self, current_time: datetime) -> None:
         """Update the next run time based on interval."""
         from datetime import timedelta
+
         self.last_run = current_time
         self.next_run = current_time + timedelta(seconds=self.interval)
 
@@ -56,8 +58,7 @@ class PeriodicTaskScheduler:
             tick_interval: How often to check for tasks to run (seconds)
         """
         self.executor = ThreadPoolExecutor(
-            max_workers=max_workers,
-            thread_name_prefix="observability-scheduler-"
+            max_workers=max_workers, thread_name_prefix="observability-scheduler-"
         )
         self.tick_interval = tick_interval
         self.tasks: dict[str, ScheduledTask] = {}
@@ -83,11 +84,7 @@ class PeriodicTaskScheduler:
                 logger.debug(f"Updated scheduled task: {name}")
             else:
                 # Create new task
-                self.tasks[name] = ScheduledTask(
-                    name=name,
-                    func=func,
-                    interval=interval
-                )
+                self.tasks[name] = ScheduledTask(name=name, func=func, interval=interval)
                 logger.debug(f"Scheduled new task: {name} (interval: {interval}s)")
 
     def unschedule(self, name: str) -> None:
@@ -122,9 +119,7 @@ class PeriodicTaskScheduler:
 
             self._running = True
             self._scheduler_thread = threading.Thread(
-                target=self._scheduler_loop,
-                name="observability-scheduler-main",
-                daemon=True
+                target=self._scheduler_loop, name="observability-scheduler-main", daemon=True
             )
             self._scheduler_thread.start()
             logger.info("Periodic task scheduler started")
@@ -226,14 +221,14 @@ class PeriodicTaskScheduler:
                     "interval": task.interval,
                     "last_run": task.last_run.isoformat() if task.last_run else None,
                     "next_run": task.next_run.isoformat() if task.next_run else None,
-                    "error_count": task.error_count
+                    "error_count": task.error_count,
                 }
 
             return {
                 "running": self._running,
                 "tick_interval": self.tick_interval,
                 "task_count": len(self.tasks),
-                "tasks": task_statuses
+                "tasks": task_statuses,
             }
 
     def force_run(self, name: str) -> bool:

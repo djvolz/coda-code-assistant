@@ -30,31 +30,18 @@ class TestObservabilityFullStack:
             "observability": {
                 "enabled": True,
                 "export_directory": str(temp_dir),
-                "metrics": {
-                    "enabled": True,
-                    "max_events": 1000,
-                    "max_memory_mb": 10
-                },
+                "metrics": {"enabled": True, "max_events": 1000, "max_memory_mb": 10},
                 "tracing": {
                     "enabled": True,
                     "max_traces": 1000,
-                    "sampling_rate": 100  # 100% for testing
+                    "sampling_rate": 100,  # 100% for testing
                 },
-                "health": {
-                    "enabled": True,
-                    "check_interval": 30
-                },
-                "error_tracking": {
-                    "enabled": True,
-                    "max_errors": 1000,
-                    "alert_threshold": 5
-                },
+                "health": {"enabled": True, "check_interval": 30},
+                "error_tracking": {"enabled": True, "max_errors": 1000, "alert_threshold": 5},
                 "profiling": {
                     "enabled": False  # Disabled for integration tests
                 },
-                "scheduler": {
-                    "max_workers": 2
-                }
+                "scheduler": {"max_workers": 2},
             }
         }
         return config
@@ -125,9 +112,7 @@ class TestObservabilityFullStack:
         try:
             # Update component health
             manager.health_monitor.update_component_health(
-                "metrics",
-                manager.health_monitor.HealthStatus.HEALTHY,
-                {"info": "All good"}
+                "metrics", manager.health_monitor.HealthStatus.HEALTHY, {"info": "All good"}
             )
 
             # Check overall health
@@ -140,7 +125,7 @@ class TestObservabilityFullStack:
             manager.health_monitor.update_component_health(
                 "tracing",
                 manager.health_monitor.HealthStatus.DEGRADED,
-                {"reason": "High memory usage"}
+                {"reason": "High memory usage"},
             )
 
             health_status = manager.get_health_status()
@@ -209,8 +194,7 @@ class TestObservabilityFullStack:
                     # Maybe record an error
                     if i % 3 == 0:
                         manager.record_error(
-                            ValueError(f"Error from thread {thread_id}"),
-                            {"iteration": i}
+                            ValueError(f"Error from thread {thread_id}"), {"iteration": i}
                         )
 
                     # End span
@@ -333,7 +317,7 @@ class TestObservabilityFullStack:
 
         manager.stop()
 
-    @patch('coda.observability.health.HealthMonitor._check_provider_availability')
+    @patch("coda.observability.health.HealthMonitor._check_provider_availability")
     def test_provider_health_integration(self, mock_provider_check, config_manager):
         """Test provider health monitoring integration."""
         mock_provider_check.return_value = True

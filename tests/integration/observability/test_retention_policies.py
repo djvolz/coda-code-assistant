@@ -34,13 +34,13 @@ class TestObservabilityRetentionPolicies:
                 "days": 7,  # Keep data for 7 days
                 "max_size_mb": 100,  # Max 100MB of data
                 "cleanup_interval_hours": 1,  # Run cleanup every hour
-                "archive_old_data": True  # Archive instead of delete
+                "archive_old_data": True,  # Archive instead of delete
             },
             "metrics": {"enabled": True, "retention_days": 7},
             "tracing": {"enabled": True, "retention_days": 3},
             "health": {"enabled": True, "retention_days": 1},
             "error_tracking": {"enabled": True, "retention_days": 14},
-            "profiling": {"enabled": True, "retention_days": 1}
+            "profiling": {"enabled": True, "retention_days": 1},
         }
 
         manager = ConfigManager()
@@ -55,7 +55,9 @@ class TestObservabilityRetentionPolicies:
         retention_days = config_with_retention.get_int("observability.retention.days", default=30)
         assert retention_days == 7
 
-        max_size = config_with_retention.get_int("observability.retention.max_size_mb", default=1000)
+        max_size = config_with_retention.get_int(
+            "observability.retention.max_size_mb", default=1000
+        )
         assert max_size == 100
 
     def test_data_cleanup_by_age(self, config_with_retention, temp_dir):
@@ -84,7 +86,7 @@ class TestObservabilityRetentionPolicies:
         os.utime(new_file, (new_date.timestamp(), new_date.timestamp()))
 
         # Run cleanup (would normally be scheduled)
-        if hasattr(obs_manager, '_cleanup_old_data'):
+        if hasattr(obs_manager, "_cleanup_old_data"):
             obs_manager._cleanup_old_data()
 
         # Check results
@@ -100,9 +102,9 @@ class TestObservabilityRetentionPolicies:
             "retention": {
                 "days": 30,
                 "max_size_mb": 0.001,  # Very small limit (1KB) to trigger cleanup
-                "cleanup_interval_hours": 1
+                "cleanup_interval_hours": 1,
             },
-            "metrics": {"enabled": True}
+            "metrics": {"enabled": True},
         }
 
         manager = ConfigManager()
@@ -125,9 +127,15 @@ class TestObservabilityRetentionPolicies:
         ObservabilityManager(config_with_retention)  # Initialize to test retention loading
 
         # Components have different retention periods
-        metrics_retention = config_with_retention.get_int("observability.metrics.retention_days", default=7)
-        tracing_retention = config_with_retention.get_int("observability.tracing.retention_days", default=7)
-        error_retention = config_with_retention.get_int("observability.error_tracking.retention_days", default=7)
+        metrics_retention = config_with_retention.get_int(
+            "observability.metrics.retention_days", default=7
+        )
+        tracing_retention = config_with_retention.get_int(
+            "observability.tracing.retention_days", default=7
+        )
+        error_retention = config_with_retention.get_int(
+            "observability.error_tracking.retention_days", default=7
+        )
 
         assert metrics_retention == 7
         assert tracing_retention == 3
@@ -149,27 +157,32 @@ class TestObservabilityRetentionPolicies:
         os.utime(old_file, (old_date.timestamp(), old_date.timestamp()))
 
         # Simulate archival process
-        if config_with_retention.get_bool("observability.retention.archive_old_data", default=False):
+        if config_with_retention.get_bool(
+            "observability.retention.archive_old_data", default=False
+        ):
             archive_path.mkdir(parents=True, exist_ok=True)
             # In real implementation, old files would be moved to archive
 
         # Archive directory should exist if archiving is enabled
-        assert archive_path.exists() or not config_with_retention.get_bool("observability.retention.archive_old_data")
+        assert archive_path.exists() or not config_with_retention.get_bool(
+            "observability.retention.archive_old_data"
+        )
 
     def test_cleanup_scheduling(self, config_with_retention):
         """Test that cleanup is scheduled according to configuration."""
         obs_manager = ObservabilityManager(config_with_retention)
 
         cleanup_interval = config_with_retention.get_int(
-            "observability.retention.cleanup_interval_hours",
-            default=24
+            "observability.retention.cleanup_interval_hours", default=24
         )
         assert cleanup_interval == 1
 
         # Check if scheduler has cleanup task
         if obs_manager.scheduler:
             # Scheduler should have tasks registered
-            assert hasattr(obs_manager.scheduler, '_tasks') or hasattr(obs_manager.scheduler, 'tasks')
+            assert hasattr(obs_manager.scheduler, "_tasks") or hasattr(
+                obs_manager.scheduler, "tasks"
+            )
 
     def test_manual_cleanup_trigger(self, config_with_retention, temp_dir):
         """Test manual triggering of cleanup process."""
@@ -180,7 +193,7 @@ class TestObservabilityRetentionPolicies:
             obs_manager.track_event(f"cleanup_test_{i}", {"index": i})
 
         # Manually trigger cleanup
-        if hasattr(obs_manager, 'cleanup_data'):
+        if hasattr(obs_manager, "cleanup_data"):
             result = obs_manager.cleanup_data()
             # Should return cleanup statistics
             assert isinstance(result, dict) or result is None
@@ -194,7 +207,7 @@ class TestObservabilityRetentionPolicies:
 
         # Track old inactive session
         old_date = datetime.now() - timedelta(days=10)
-        with patch('time.time', return_value=old_date.timestamp()):
+        with patch("time.time", return_value=old_date.timestamp()):
             obs_manager.track_event("session_start", {"session_id": "old_456", "active": False})
 
         # Cleanup should preserve active session data
@@ -208,9 +221,9 @@ class TestObservabilityRetentionPolicies:
             "storage_path": os.path.join(temp_dir, "observability"),
             "retention": {
                 "max_size_mb": 1,  # 1MB limit
-                "enforce_quota": True
+                "enforce_quota": True,
             },
-            "metrics": {"enabled": True}
+            "metrics": {"enabled": True},
         }
 
         manager = ConfigManager()
@@ -249,7 +262,7 @@ class TestObservabilityRetentionPolicies:
         start_time = time.time()
 
         # Trigger cleanup (implementation specific)
-        if hasattr(obs_manager, '_cleanup_old_data'):
+        if hasattr(obs_manager, "_cleanup_old_data"):
             obs_manager._cleanup_old_data()
 
         cleanup_time = time.time() - start_time
@@ -265,7 +278,7 @@ class TestObservabilityRetentionPolicies:
             "enabled": True,
             "storage_path": os.path.join(temp_dir, "observability"),
             "retention": {"days": 30},
-            "metrics": {"enabled": True}
+            "metrics": {"enabled": True},
         }
 
         manager = ConfigManager()
@@ -292,8 +305,7 @@ class TestObservabilityRetentionPolicies:
         obs_manager.track_event("critical_error", {"severity": "critical", "preserve": True})
         obs_manager.track_event("debug_info", {"severity": "debug", "preserve": False})
         obs_manager.track_error(
-            Exception("Important error"),
-            {"severity": "high", "preserve": True}
+            Exception("Important error"), {"severity": "high", "preserve": True}
         )
 
         # Cleanup should respect preservation flags
@@ -317,7 +329,7 @@ class TestObservabilityRetentionPolicies:
 
         # Trigger cleanup while writing
         time.sleep(0.05)  # Let some events be written
-        if hasattr(obs_manager, '_cleanup_old_data'):
+        if hasattr(obs_manager, "_cleanup_old_data"):
             obs_manager._cleanup_old_data()
 
         writer_thread.join()
@@ -354,7 +366,7 @@ class TestObservabilityRetentionPolicies:
         assert with_old_size > initial_size
 
         # Run cleanup
-        if hasattr(obs_manager, '_cleanup_old_data'):
+        if hasattr(obs_manager, "_cleanup_old_data"):
             obs_manager._cleanup_old_data()
 
         # Measure size after cleanup

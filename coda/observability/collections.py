@@ -16,7 +16,7 @@ from typing import Any, Generic, TypeVar
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def get_size_of(obj: Any, seen: set | None = None) -> int:
@@ -43,7 +43,7 @@ def get_size_of(obj: Any, seen: set | None = None) -> int:
     elif isinstance(obj, list | tuple | set | frozenset):
         for item in obj:
             size += get_size_of(item, seen)
-    elif hasattr(obj, '__dict__'):
+    elif hasattr(obj, "__dict__"):
         size += get_size_of(obj.__dict__, seen)
 
     return size
@@ -52,6 +52,7 @@ def get_size_of(obj: Any, seen: set | None = None) -> int:
 @dataclass
 class MemoryStats:
     """Memory usage statistics."""
+
     current_size_bytes: int
     max_size_bytes: int
     items_count: int
@@ -68,8 +69,12 @@ class MemoryStats:
 class MemoryAwareDeque(Generic[T]):
     """Memory-aware deque that monitors and limits memory usage."""
 
-    def __init__(self, maxlen: int, max_memory_mb: float = 100.0,
-                 eviction_callback: Callable[[T], None] | None = None):
+    def __init__(
+        self,
+        maxlen: int,
+        max_memory_mb: float = 100.0,
+        eviction_callback: Callable[[T], None] | None = None,
+    ):
         """Initialize memory-aware deque.
 
         Args:
@@ -96,8 +101,7 @@ class MemoryAwareDeque(Generic[T]):
             item_size = get_size_of(item)
 
             # Check if we need to make room
-            while (self._current_size + item_size > self.max_memory_bytes and
-                   len(self.deque) > 0):
+            while self._current_size + item_size > self.max_memory_bytes and len(self.deque) > 0:
                 self._evict_oldest()
 
             # Check if item is too large by itself
@@ -126,8 +130,7 @@ class MemoryAwareDeque(Generic[T]):
             item_size = get_size_of(item)
 
             # Check if we need to make room
-            while (self._current_size + item_size > self.max_memory_bytes and
-                   len(self.deque) > 0):
+            while self._current_size + item_size > self.max_memory_bytes and len(self.deque) > 0:
                 self._evict_newest()
 
             # Check if item is too large by itself
@@ -198,7 +201,7 @@ class MemoryAwareDeque(Generic[T]):
                 current_size_bytes=self._current_size,
                 max_size_bytes=self.max_memory_bytes,
                 items_count=len(self.deque),
-                items_evicted=self._items_evicted
+                items_evicted=self._items_evicted,
             )
 
     def is_memory_pressure_high(self) -> bool:
@@ -230,8 +233,9 @@ class MemoryAwareDeque(Generic[T]):
 class BoundedCache(Generic[T]):
     """Memory and time bounded cache using weak references."""
 
-    def __init__(self, max_size: int = 1000, max_memory_mb: float = 50.0,
-                 ttl_seconds: float | None = None):
+    def __init__(
+        self, max_size: int = 1000, max_memory_mb: float = 50.0, ttl_seconds: float | None = None
+    ):
         """Initialize bounded cache.
 
         Args:
@@ -245,6 +249,7 @@ class BoundedCache(Generic[T]):
 
         # Use OrderedDict to maintain insertion order for LRU
         from collections import OrderedDict
+
         self._cache: OrderedDict[str, weakref.ref] = OrderedDict()
         self._timestamps: dict[str, float] = {}
         self._sizes: dict[str, int] = {}
@@ -308,8 +313,10 @@ class BoundedCache(Generic[T]):
                 return
 
             # Evict items if necessary
-            while ((self._current_size + size > self.max_memory_bytes or
-                    len(self._cache) >= self.max_size) and self._cache):
+            while (
+                self._current_size + size > self.max_memory_bytes
+                or len(self._cache) >= self.max_size
+            ) and self._cache:
                 self._evict_lru()
 
             # Add to cache
@@ -363,5 +370,5 @@ class BoundedCache(Generic[T]):
                 "hits": self._hits,
                 "misses": self._misses,
                 "evictions": self._evictions,
-                "hit_rate": hit_rate
+                "hit_rate": hit_rate,
             }

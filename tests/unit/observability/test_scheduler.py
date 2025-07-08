@@ -224,7 +224,7 @@ class TestPeriodicTaskScheduler:
         # Calculate intervals between executions
         intervals = []
         for i in range(1, len(execution_times)):
-            intervals.append(execution_times[i] - execution_times[i-1])
+            intervals.append(execution_times[i] - execution_times[i - 1])
 
         # Average interval should be close to 0.1
         if intervals:
@@ -290,6 +290,7 @@ class TestPeriodicTaskScheduler:
 
     def test_get_task_info(self, scheduler):
         """Test getting information about scheduled tasks."""
+
         def task1():
             pass
 

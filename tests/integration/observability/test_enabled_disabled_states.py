@@ -33,24 +33,19 @@ class TestObservabilityEnabledDisabledStates:
                 "tracing.enabled": "true",
                 "health.enabled": "true",
                 "error_tracking.enabled": "true",
-                "profiling.enabled": "true"
+                "profiling.enabled": "true",
             }
 
         config_lines = [
             "[observability]",
-            f'enabled = {str(observability_enabled).lower()}',
-            f'storage_path = "{os.path.join(temp_dir, "observability")}"'
+            f"enabled = {str(observability_enabled).lower()}",
+            f'storage_path = "{os.path.join(temp_dir, "observability")}"',
         ]
 
         for key, value in component_config.items():
             config_lines.append(f"{key} = {value}")
 
-        config_lines.extend([
-            "",
-            "[provider.mock]",
-            'type = "mock"',
-            'model_name = "mock-smart"'
-        ])
+        config_lines.extend(["", "[provider.mock]", 'type = "mock"', 'model_name = "mock-smart"'])
 
         config_path.write_text("\n".join(config_lines))
 
@@ -62,6 +57,7 @@ class TestObservabilityEnabledDisabledStates:
         """Capture stdout output from a function."""
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
         try:
@@ -110,7 +106,7 @@ class TestObservabilityEnabledDisabledStates:
         assert all(status["components"].values())
 
         # Test with CLI
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -148,7 +144,7 @@ class TestObservabilityEnabledDisabledStates:
         obs_manager.track_token_usage("mock", 100, 50, 0.01)
 
         # Test with CLI
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
 
@@ -164,10 +160,12 @@ class TestObservabilityEnabledDisabledStates:
             "tracing.enabled": "false",
             "health.enabled": "true",
             "error_tracking.enabled": "false",
-            "profiling.enabled": "false"
+            "profiling.enabled": "false",
         }
 
-        config = self.create_config(temp_dir, observability_enabled=True, component_config=component_config)
+        config = self.create_config(
+            temp_dir, observability_enabled=True, component_config=component_config
+        )
         obs_manager = ObservabilityManager(config)
 
         # Verify only specified components are enabled
@@ -190,7 +188,7 @@ class TestObservabilityEnabledDisabledStates:
         obs_manager.track_error(Exception("Should not track"), {})
 
         # Test CLI behavior
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -233,7 +231,9 @@ class TestObservabilityEnabledDisabledStates:
 
         # When disabled, operations should be significantly faster (near zero overhead)
         # Allow some variance but disabled should be at least 50% faster
-        assert time_disabled < time_enabled * 0.5, f"Disabled time {time_disabled} not significantly faster than enabled {time_enabled}"
+        assert time_disabled < time_enabled * 0.5, (
+            f"Disabled time {time_disabled} not significantly faster than enabled {time_enabled}"
+        )
 
     def test_dynamic_component_toggling(self, temp_dir):
         """Test behavior when components are toggled during runtime."""
@@ -263,10 +263,12 @@ class TestObservabilityEnabledDisabledStates:
             "tracing.enabled": "false",
             "health.enabled": "false",
             "error_tracking.enabled": "true",
-            "profiling.enabled": "false"
+            "profiling.enabled": "false",
         }
 
-        config = self.create_config(temp_dir, observability_enabled=True, component_config=component_config)
+        config = self.create_config(
+            temp_dir, observability_enabled=True, component_config=component_config
+        )
         obs_manager = ObservabilityManager(config)
 
         # Error tracking should work
@@ -278,7 +280,7 @@ class TestObservabilityEnabledDisabledStates:
             pass
 
         # CLI should handle gracefully
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli._observability_manager = obs_manager
@@ -312,15 +314,19 @@ class TestObservabilityEnabledDisabledStates:
         # Test with enabled observability but various provider states
         config = self.create_config(temp_dir, observability_enabled=True)
 
-        with patch('coda.cli.interactive_cli.ConfigManager', return_value=config):
+        with patch("coda.cli.interactive_cli.ConfigManager", return_value=config):
             cli = InteractiveCLI()
             cli.config_manager = config
             cli.provider = MockProvider({"model": "mock-smart"})
             cli._observability_manager = ObservabilityManager(config)
 
             # Simulate provider operations
-            cli._observability_manager.track_provider_request("mock", 0.05, True, {"model": "mock-smart"})
-            cli._observability_manager.track_provider_request("mock", 0.08, False, {"error": "timeout"})
+            cli._observability_manager.track_provider_request(
+                "mock", 0.05, True, {"model": "mock-smart"}
+            )
+            cli._observability_manager.track_provider_request(
+                "mock", 0.08, False, {"error": "timeout"}
+            )
 
             # Check health should reflect provider status
             output = self.capture_output(cli._cmd_observability, "health")
@@ -331,7 +337,10 @@ class TestObservabilityEnabledDisabledStates:
         config = self.create_config(temp_dir, observability_enabled=True)
 
         # Create manager with mocked component that fails
-        with patch('coda.observability.metrics.MetricsCollector.__init__', side_effect=Exception("Init failed")):
+        with patch(
+            "coda.observability.metrics.MetricsCollector.__init__",
+            side_effect=Exception("Init failed"),
+        ):
             obs_manager = ObservabilityManager(config)
 
             # Manager should initialize but metrics should be None
