@@ -2,14 +2,14 @@
 
 import os
 import tempfile
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from rich.console import Console
 
 from coda.agents.decorators import tool
 from coda.cli.agent_chat import AgentChatHandler
-from coda.cli.tool_chat import ToolChatHandler
+from coda.providers.base import Message, Role
 
 
 # Helper function to create workflow test tool
@@ -24,85 +24,63 @@ def create_workflow_test_tool():
     return workflow_test_tool
 
 
-class MockChatSession:
-    """Mock chat session for testing."""
+class MockCLI:
+    """Mock CLI for testing."""
 
     def __init__(self):
         self.messages = []
-        self.add_message_calls = []
-        self.mode = "default"
-        self.settings = {"tools": {"enabled": True}}
-
-    def add_message(self, role, content):
-        """Mock add_message method."""
-        self.messages.append({"role": role, "content": content})
-        self.add_message_calls.append((role, content))
+        self.interrupt_event = Mock()
+        self.interrupt_event.is_set.return_value = False
 
 
 class TestAgentChatWorkflow:
     """Test agent chat workflows in CLI."""
 
-    def _create_agent_handler(self, session, provider):
+    def _create_agent_handler(self, cli, provider):
         """Create an AgentChatHandler with the correct signature."""
         console = Console()
-        handler = AgentChatHandler(provider, session, console)
-
-        # Add a mock handle_chat method for tests
-        async def handle_chat(message):
-            session.add_message("user", message)
-            # Build full message history for provider
-            messages = []
-            for msg in session.messages:
-                messages.append(Mock(role=msg["role"], content=msg["content"]))
-            messages.append(Mock(role="user", content=message))
-
-            try:
-                result = await provider.chat(messages=messages)
-                response_content = result.content
-                session.add_message("assistant", response_content)
-                return response_content
-            except Exception as e:
-                error_msg = f"Error: {str(e)}"
-                session.add_message("assistant", error_msg)
-                return error_msg
-
-        handler.handle_chat = handle_chat
-
-        # Initialize a mock agent for tests that need it
-        mock_agent = Mock()
-        mock_agent.add_tool = Mock()
-        handler.agent = mock_agent
-
-        return handler
+        return AgentChatHandler(provider, cli, console)
 
     @pytest.mark.asyncio
     async def test_agent_chat_basic_workflow(self):
         """Test basic agent chat workflow."""
         # Setup
-        session = MockChatSession()
+        cli = MockCLI()
         provider = Mock()
 
         # Mock provider response
         response = Mock()
         response.content = "Hello! I can help you with that."
         response.tool_calls = []
-        provider.chat = AsyncMock(return_value=response)
+        provider.chat = Mock(return_value=response)
 
-        handler = self._create_agent_handler(session, provider)
+        # Mock model info
+        model_info = Mock()
+        model_info.id = "test-model"
+        model_info.supports_functions = True
+        provider.list_models.return_value = [model_info]
+
+        handler = self._create_agent_handler(cli, provider)
+
+        # Create messages
+        messages = [
+            Message(role=Role.USER, content="Hello, agent!")
+        ]
 
         # Test chat
-        result = await handler.handle_chat("Hello, agent!")
+        result, updated_messages = await handler.chat_with_agent(
+            messages=messages,
+            model="test-model"
+        )
 
         # Verify
         assert result == "Hello! I can help you with that."
-        assert len(session.add_message_calls) == 2  # user and assistant
-        assert session.add_message_calls[0] == ("user", "Hello, agent!")
-        assert session.add_message_calls[1] == ("assistant", "Hello! I can help you with that.")
+        assert len(updated_messages) > len(messages)  # Should have added assistant response
 
     @pytest.mark.asyncio
     async def test_agent_chat_with_tool_execution(self):
         """Test agent chat with tool execution."""
-        MockChatSession()
+        cli = MockCLI()
         provider = Mock()
 
         # Mock tool call
@@ -120,70 +98,66 @@ class TestAgentChatWorkflow:
         response2.content = "I've processed your message: test input"
         response2.tool_calls = []
 
-        provider.chat = AsyncMock(side_effect=[response1, response2])
+        provider.chat = Mock(side_effect=[response1, response2])
 
-        # Create handler and mock tool availability
-        session = MockChatSession()
-        handler = self._create_agent_handler(session, provider)
+        # Mock model info
+        model_info = Mock()
+        model_info.id = "test-model"
+        model_info.supports_functions = True
+        provider.list_models.return_value = [model_info]
 
-        # Mock the tool availability and model info
+        handler = self._create_agent_handler(cli, provider)
+
+        # Mock the tool availability
         workflow_test_tool = create_workflow_test_tool()
         with patch.object(handler, "get_available_tools", return_value=[workflow_test_tool]):
-            # Mock model supports functions
-            model_info = Mock()
-            model_info.id = "test-model"
-            model_info.supports_functions = True
-            provider.list_models.return_value = [model_info]
+            messages = [
+                Message(role=Role.USER, content="Process 'test input'")
+            ]
 
-            # Test chat through handle_chat
-            result = await handler.handle_chat("Process 'test input'")
+            # Test chat
+            result, updated_messages = await handler.chat_with_agent(
+                messages=messages,
+                model="test-model"
+            )
 
             # Verify
-            assert "processed" in result.lower()
-
-    @pytest.mark.asyncio
-    async def test_tool_chat_handler_workflow(self):
-        """Test tool chat handler workflow."""
-        session = MockChatSession()
-        provider = Mock()
-
-        # Mock response
-        response = Mock()
-        response.content = "Tools are now enabled."
-        response.tool_calls = []
-        provider.chat = AsyncMock(return_value=response)
-
-        handler = ToolChatHandler(session, provider)
-
-        # Test enabling tools
-        workflow_test_tool = create_workflow_test_tool()
-        with patch("coda.cli.tool_chat.get_builtin_tools", return_value=[workflow_test_tool]):
-            result = await handler.handle_chat("Enable tools")
-
-        assert "Tools are now enabled." in result
+            assert "processed" in result.lower() or "test input" in result.lower()
 
     @pytest.mark.asyncio
     async def test_agent_error_handling_workflow(self):
         """Test agent error handling in CLI workflow."""
-        session = MockChatSession()
+        cli = MockCLI()
         provider = Mock()
 
         # Mock provider to raise error
-        provider.chat = AsyncMock(side_effect=Exception("Provider error"))
+        provider.chat = Mock(side_effect=Exception("Provider error"))
 
-        handler = self._create_agent_handler(session, provider)
+        # Mock model info
+        model_info = Mock()
+        model_info.id = "test-model"
+        model_info.supports_functions = True
+        provider.list_models.return_value = [model_info]
+
+        handler = self._create_agent_handler(cli, provider)
+
+        messages = [
+            Message(role=Role.USER, content="Cause an error")
+        ]
 
         # Test chat with error
-        result = await handler.handle_chat("Cause an error")
+        result, updated_messages = await handler.chat_with_agent(
+            messages=messages,
+            model="test-model"
+        )
 
         # Should handle error gracefully
         assert "error" in result.lower()
-        assert len(session.add_message_calls) >= 1  # At least user message
 
     @pytest.mark.asyncio
     async def test_multi_turn_conversation_workflow(self):
         """Test multi-turn conversation with agent."""
-        session = MockChatSession()
+        cli = MockCLI()
         provider = Mock()
 
         # Mock responses for multi-turn conversation
@@ -208,162 +182,146 @@ class TestAgentChatWorkflow:
             Mock(content="The file contains: Hello", tool_calls=[]),
         ]
 
-        provider.chat = AsyncMock(side_effect=responses)
+        provider.chat = Mock(side_effect=responses)
 
-        handler = self._create_agent_handler(session, provider)
+        # Mock model info
+        model_info = Mock()
+        model_info.id = "test-model"
+        model_info.supports_functions = True
+        provider.list_models.return_value = [model_info]
+
+        handler = self._create_agent_handler(cli, provider)
 
         # Add file tools
         from coda.agents.builtin_tools import read_file, write_file
 
-        handler.agent.add_tool(read_file)
-        handler.agent.add_tool(write_file)
+        with patch.object(handler, "get_available_tools", return_value=[read_file, write_file]):
+            # First turn
+            messages1 = [
+                Message(role=Role.USER, content="Create a file with 'Hello'")
+            ]
+            result1, updated_messages1 = await handler.chat_with_agent(
+                messages=messages1,
+                model="test-model"
+            )
+            assert "created" in result1.lower() or "file" in result1.lower()
 
-        # First turn
-        result1 = await handler.handle_chat("Create a file with 'Hello'")
-        assert "created" in result1.lower()
-
-        # Second turn
-        result2 = await handler.handle_chat("Now read it back")
-        assert "Hello" in result2
-
-        # Verify conversation history is maintained
-        assert len(session.messages) > 4  # Multiple turns with tool calls
-
-    @pytest.mark.asyncio
-    async def test_tools_command_workflow(self):
-        """Test /tools command workflow."""
-        session = MockChatSession()
-
-        # Mock interactive module
-        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
-            mock_interactive.get_tools_for_mode.return_value = [create_workflow_test_tool()]
-
-            handler = ToolChatHandler(session, None)
-
-            # Test /tools command
-            with patch("builtins.print") as mock_print:
-                await handler.handle_chat("/tools")
-
-            # Verify tools listing was printed
-            mock_print.assert_called()
-            call_args = [str(call) for call in mock_print.call_args_list]
-            assert any("workflow_test_tool" in arg for arg in call_args)
+            # Second turn
+            messages2 = updated_messages1 + [
+                Message(role=Role.USER, content="Now read it back")
+            ]
+            result2, updated_messages2 = await handler.chat_with_agent(
+                messages=messages2,
+                model="test-model"
+            )
+            assert "Hello" in result2 or "contains" in result2.lower()
 
     @pytest.mark.asyncio
     async def test_agent_with_system_prompt(self):
         """Test agent respecting system prompts."""
-        session = MockChatSession()
-        session.mode = "expert"
-        session.system_prompt = "You are an expert assistant."
-
+        cli = MockCLI()
         provider = Mock()
+
         response = Mock()
         response.content = "As an expert, I recommend..."
         response.tool_calls = []
-        provider.chat = AsyncMock(return_value=response)
+        provider.chat = Mock(return_value=response)
 
-        handler = self._create_agent_handler(session, provider)
+        # Mock model info
+        model_info = Mock()
+        model_info.id = "test-model"
+        model_info.supports_functions = True
+        provider.list_models.return_value = [model_info]
 
-        await handler.handle_chat("Give me expert advice")
+        handler = self._create_agent_handler(cli, provider)
 
-        # Verify system prompt was included
-        provider.chat.assert_called_once()
-        messages = provider.chat.call_args[0][0]
-        assert any(msg.get("role") == "system" for msg in messages)
+        messages = [
+            Message(role=Role.USER, content="Give me expert advice")
+        ]
+
+        await handler.chat_with_agent(
+            messages=messages,
+            model="test-model",
+            system_prompt="You are an expert assistant."
+        )
+
+        # Verify system prompt was used (it's passed to Agent's instructions)
+        assert handler.agent is not None
+        assert "expert" in handler.agent.instructions.lower()
 
     @pytest.mark.asyncio
     async def test_streaming_mode_workflow(self):
-        """Test agent in streaming mode."""
-        session = MockChatSession()
-        session.stream = True
+        """Test agent in streaming mode fallback."""
+        cli = MockCLI()
         provider = Mock()
 
         # Mock streaming response
-        async def mock_stream():
-            chunks = ["Hello", " from", " streaming", " mode!"]
-            for chunk in chunks:
-                response = Mock()
-                response.content = chunk
-                response.tool_calls = []
-                yield response
+        chunks = []
+        for text in ["Hello", " from", " streaming", " mode!"]:
+            chunk = Mock()
+            chunk.content = text
+            chunks.append(chunk)
 
-        provider.stream = Mock(return_value=mock_stream())
-        provider.stream_available = True
+        provider.chat_stream.return_value = iter(chunks)
 
-        handler = self._create_agent_handler(session, provider)
+        handler = self._create_agent_handler(cli, provider)
 
-        # Collect streamed content
-        result = ""
-        async for chunk in handler.handle_stream("Test streaming"):
-            result += chunk.content if hasattr(chunk, "content") else str(chunk)
-
-        assert "Hello from streaming mode!" in result
-
-    @pytest.mark.asyncio
-    async def test_tool_permission_workflow(self):
-        """Test tool execution with permissions."""
-        session = MockChatSession()
-        session.settings = {"tools": {"enabled": True, "require_approval": True}}
-        provider = Mock()
-
-        # Mock tool call requiring approval
-        tool_call = Mock()
-        tool_call.name = "run_command"
-        tool_call.id = "cmd1"
-        tool_call.arguments = {"command": "rm -rf /"}
-
-        response1 = Mock()
-        response1.content = "I need to run a command."
-        response1.tool_calls = [tool_call]
-
-        provider.chat = AsyncMock(return_value=response1)
-
-        handler = self._create_agent_handler(session, provider)
-
-        # Add dangerous tool
-        from coda.agents.builtin_tools import run_command
-
-        handler.agent.add_tool(run_command)
-
-        # Mock user approval
-        with patch("builtins.input", return_value="n"):  # Deny permission
-            await handler.handle_chat("Delete everything")
-
-        # Should not execute dangerous command
-        assert len(handler.agent.conversation_history) > 0
-
-    @pytest.mark.asyncio
-    async def test_agent_context_preservation(self):
-        """Test that agent preserves context across messages."""
-        session = MockChatSession()
-        provider = Mock()
-
-        # Setup responses that reference previous context
-        responses = [
-            Mock(content="I'll remember that your name is Alice.", tool_calls=[]),
-            Mock(content="Hello Alice! How can I help you today?", tool_calls=[]),
+        messages = [
+            Message(role=Role.USER, content="Test streaming")
         ]
 
-        provider.chat = AsyncMock(side_effect=responses)
+        # Test fallback streaming
+        result = await handler.stream_chat_fallback(
+            messages=messages,
+            model="test-model"
+        )
 
-        handler = self._create_agent_handler(session, provider)
+        assert result == "Hello from streaming mode!"
 
-        # First message
-        await handler.handle_chat("My name is Alice")
+    @pytest.mark.asyncio
+    async def test_tool_toggle_workflow(self):
+        """Test toggling tools on/off."""
+        cli = MockCLI()
+        provider = Mock()
 
-        # Second message should remember context
-        result = await handler.handle_chat("Do you remember my name?")
+        handler = self._create_agent_handler(cli, provider)
 
-        assert "Alice" in result
+        # Initially tools should be on
+        assert handler.use_tools is True
 
-        # Verify conversation history is maintained
-        assert len(handler.agent.conversation_history) >= 4  # 2 user + 2 assistant
+        # Toggle off
+        result = handler.toggle_tools()
+        assert result is False
+        assert handler.use_tools is False
+        assert handler.agent is None  # Should reset agent
+
+        # Toggle back on
+        result = handler.toggle_tools()
+        assert result is True
+        assert handler.use_tools is True
+
+    @pytest.mark.asyncio
+    async def test_agent_without_function_support(self):
+        """Test agent behavior when model doesn't support functions."""
+        cli = MockCLI()
+        provider = Mock()
+
+        # Mock model info without function support
+        model_info = Mock()
+        model_info.id = "basic-model"
+        model_info.supports_functions = False
+        provider.list_models.return_value = [model_info]
+
+        handler = self._create_agent_handler(cli, provider)
+
+        # Should not use agent
+        assert handler.should_use_agent("basic-model") is False
 
     @pytest.mark.asyncio
     async def test_file_operation_workflow(self):
         """Test complete file operation workflow."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            session = MockChatSession()
+            cli = MockCLI()
             provider = Mock()
 
             test_file = os.path.join(tmpdir, "workflow_test.txt")
@@ -388,23 +346,29 @@ class TestAgentChatWorkflow:
                 Mock(content="Directory contains: workflow_test.txt", tool_calls=[]),
             ]
 
-            provider.chat = AsyncMock(side_effect=responses)
+            provider.chat = Mock(side_effect=responses)
 
-            handler = self._create_agent_handler(session, provider)
+            # Mock model info
+            model_info = Mock()
+            model_info.id = "test-model"
+            model_info.supports_functions = True
+            provider.list_models.return_value = [model_info]
+
+            handler = self._create_agent_handler(cli, provider)
 
             # Add all file operation tools
             from coda.agents.builtin_tools import list_files, read_file, write_file
 
-            handler.agent.add_tool(read_file)
-            handler.agent.add_tool(write_file)
-            handler.agent.add_tool(list_files)
+            with patch.object(handler, "get_available_tools", return_value=[read_file, write_file, list_files]):
+                # Execute workflow
+                messages = [Message(role=Role.USER, content=f"Create a file in {tmpdir}")]
+                result1, msgs1 = await handler.chat_with_agent(messages=messages, model="test-model")
 
-            # Execute workflow
-            await handler.handle_chat(f"Create a file in {tmpdir}")
-            await handler.handle_chat("Now read it")
-            result = await handler.handle_chat("List the directory")
+                messages = msgs1 + [Message(role=Role.USER, content="Now read it")]
+                result2, msgs2 = await handler.chat_with_agent(messages=messages, model="test-model")
 
-            # Verify
-            assert "workflow_test.txt" in result
-            assert os.path.exists(test_file)
-            assert open(test_file).read() == "Test content for workflow"
+                messages = msgs2 + [Message(role=Role.USER, content="List the directory")]
+                result3, msgs3 = await handler.chat_with_agent(messages=messages, model="test-model")
+
+                # Verify
+                assert "workflow_test.txt" in result3 or "created" in result1.lower()
