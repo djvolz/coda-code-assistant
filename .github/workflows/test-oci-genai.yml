@@ -41,6 +41,7 @@ jobs:
     
     - name: Run tests with coverage
       run: |
+        rm -f .coverage* coverage.xml
         uv run python -m pytest tests/test_oci_genai_basic.py \
           --cov=coda.providers.oci_genai \
           --cov-report=term-missing \
