@@ -404,6 +404,33 @@ None currently - all bugs have been resolved!
 
 **Deliverable**: Create a comparison document highlighting best practices and innovative approaches that could enhance our implementation
 
+### 4.8 OpenRouter Integration for Enhanced Model Access
+
+**Note**: While we have LiteLLM support that includes OpenRouter as one of its providers, direct OpenRouter integration offers unique advantages.
+
+- [ ] **Native OpenRouter Provider Implementation**
+  - [ ] Direct API integration without LiteLLM intermediary
+  - [ ] Support for OpenRouter-specific features (model routing, fallbacks)
+  - [ ] Cost tracking and budget management via OpenRouter API
+  - [ ] Model preference and routing configuration
+  - [ ] Access to exclusive models not available through standard LiteLLM
+
+- [ ] **Enhanced Features**
+  - [ ] Automatic model selection based on task complexity
+  - [ ] Cost-optimized routing (balance performance vs price)
+  - [ ] Fallback chains for reliability
+  - [ ] Usage analytics and reporting
+  - [ ] Custom model routing rules
+
+- [ ] **Integration Benefits**
+  - [ ] Access to 100+ models through single API key
+  - [ ] Unified billing across all providers
+  - [ ] Built-in rate limit handling across providers
+  - [ ] Model comparison and A/B testing capabilities
+  - [ ] Provider-agnostic tool calling support
+
+**Timeline**: After Phase 4.7 comparative analysis completion
+
 ### 4.4 AI-to-Tool Integration (Critical for Phase 5 tools)
 - [x] Function calling protocol for OCI provider (Cohere models support this) ✅
 - [x] Parse AI responses for tool requests ✅
@@ -676,6 +703,91 @@ None currently - all bugs have been resolved!
   - [ ] Changelog generator (VCS-agnostic, hash-to-hash)
   - [ ] Automated changelog detection from commits
   - [ ] Git workflow optimization tools
+
+## Phase 13: Plugin System Architecture
+
+### 13.1 Core Plugin Infrastructure
+
+**Inspiration**: Implement a plugin system similar to [simonw/llm](https://github.com/simonw/llm) for maximum extensibility.
+
+- [ ] **Plugin Discovery & Loading**
+  - [ ] Entry point-based plugin discovery (using Python entry points)
+  - [ ] Dynamic plugin loading at runtime
+  - [ ] Plugin dependency resolution
+  - [ ] Version compatibility checking
+  - [ ] Hot-reload support for development
+
+- [ ] **Plugin Types**
+  - [ ] **Provider Plugins**: Add new LLM providers
+  - [ ] **Tool Plugins**: Add new MCP tools and capabilities
+  - [ ] **Mode Plugins**: Add custom developer modes
+  - [ ] **Export Plugins**: Add new export formats
+  - [ ] **Storage Plugins**: Alternative session storage backends
+  - [ ] **Theme Plugins**: Custom UI themes and styles
+
+### 13.2 Plugin Development Kit
+
+- [ ] **Plugin Template & Scaffolding**
+  - [ ] Cookiecutter template for new plugins
+  - [ ] Example plugins for each type
+  - [ ] Plugin development guide
+  - [ ] Testing utilities for plugin developers
+
+- [ ] **Plugin API**
+  - [ ] Well-defined plugin interfaces (ABCs)
+  - [ ] Hook system for extending core functionality
+  - [ ] Event system for plugin communication
+  - [ ] Configuration management for plugins
+  - [ ] Resource access controls
+
+### 13.3 Plugin Management
+
+- [ ] **CLI Commands**
+  - [ ] `coda plugins list` - List installed plugins
+  - [ ] `coda plugins install <name>` - Install from PyPI
+  - [ ] `coda plugins uninstall <name>` - Remove plugin
+  - [ ] `coda plugins enable/disable <name>` - Toggle plugins
+  - [ ] `coda plugins info <name>` - Show plugin details
+  - [ ] `coda plugins search <query>` - Search available plugins
+
+- [ ] **Plugin Registry**
+  - [ ] Central plugin registry (similar to npm/pypi)
+  - [ ] Plugin metadata and descriptions
+  - [ ] Compatibility matrix with coda versions
+  - [ ] Download statistics and ratings
+  - [ ] Security scanning for plugins
+
+### 13.4 Plugin Examples
+
+- [ ] **Example Provider Plugin**: Anthropic Claude direct integration
+- [ ] **Example Tool Plugin**: Database query tool
+- [ ] **Example Mode Plugin**: SQL-specific assistant mode
+- [ ] **Example Export Plugin**: Jupyter notebook export
+- [ ] **Example Storage Plugin**: PostgreSQL session backend
+- [ ] **Example Theme Plugin**: High contrast accessibility theme
+
+### 13.5 Security & Isolation
+
+- [ ] **Plugin Sandboxing**
+  - [ ] Resource usage limits
+  - [ ] File system access controls
+  - [ ] Network request filtering
+  - [ ] API rate limiting per plugin
+
+- [ ] **Plugin Verification**
+  - [ ] Code signing for official plugins
+  - [ ] Security audit requirements
+  - [ ] Automated vulnerability scanning
+  - [ ] User permission system for plugin capabilities
+
+**Benefits**:
+- Community can extend Coda without modifying core
+- Easy distribution of custom functionality
+- Maintains clean separation of concerns
+- Enables domain-specific extensions
+- Facilitates experimentation with new features
+
+**Timeline**: After Phase 12, as this provides the foundation for future extensibility
 
 ## Technical Decisions
 
