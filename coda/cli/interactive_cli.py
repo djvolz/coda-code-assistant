@@ -630,11 +630,12 @@ class InteractiveCLI(CommandHandler):
         """Manage observability and telemetry settings."""
         from ..observability.manager import ObservabilityManager
         from ..observability.commands import ObservabilityCommands
-        from ..configuration import ConfigManager
+        from ..configuration import ConfigManager, get_config_manager
         
         # Initialize observability manager if not already available
         if not hasattr(self, 'observability_manager'):
-            config_manager = ConfigManager()
+            # Get the global ConfigManager instance which has loaded the config files
+            config_manager = get_config_manager()
             self.observability_manager = ObservabilityManager(config_manager)
         
         # Initialize observability commands
