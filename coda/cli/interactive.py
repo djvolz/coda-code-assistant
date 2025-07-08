@@ -265,7 +265,7 @@ async def _handle_chat_interaction(
                 agent_handler = AgentChatHandler(provider_instance, cli, console)
 
                 # Get system prompt from mode
-                system_prompt_for_agent = cli.get_system_prompt()
+                system_prompt_for_agent = _get_system_prompt_for_mode(cli.current_mode)
 
                 # Don't stop status - pass it to agent handler to keep it running
                 # status.stop()  # Removed to keep spinner running

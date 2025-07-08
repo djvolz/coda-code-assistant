@@ -339,6 +339,71 @@ None currently - all bugs have been resolved!
 
 **Timeline**: Complete before merging Phase 5
 
+### 4.7 Comparative Analysis of Agent Execution in Code Companions (Research)
+
+**Note**: As we finish up Phase 4, conduct a thorough analysis of how other major open source code companions handle their agent execution:
+
+- [ ] **Aider**
+  - [ ] How does aider handle agent-based interactions?
+  - [ ] Tool calling mechanisms and protocols
+  - [ ] Context management for long conversations
+  - [ ] Error handling and recovery strategies
+
+- [ ] **Continue.dev**
+  - [ ] Agent architecture and execution model
+  - [ ] Integration with various LLM providers
+  - [ ] Tool/action system implementation
+  - [ ] Session and context persistence
+
+- [ ] **Cursor**
+  - [ ] Agent conversation flow (if open source components available)
+  - [ ] Multi-turn interaction handling
+  - [ ] Code modification strategies
+
+- [ ] **Open Interpreter**
+  - [ ] Code execution sandboxing approach
+  - [ ] Agent safety mechanisms
+  - [ ] Tool integration patterns
+
+- [ ] **GPT Engineer**
+  - [ ] Agent planning and execution phases
+  - [ ] File system interaction patterns
+  - [ ] Project structure understanding
+
+- [ ] **Cody (Sourcegraph)**
+  - [ ] Context fetching and management
+  - [ ] Agent memory and persistence
+  - [ ] Multi-file operation handling
+
+- [ ] **Gemini CLI**
+  - [ ] Token usage tracking and reporting
+  - [ ] Conversation flow and state management
+  - [ ] Multi-modal input handling
+  - [ ] Cost tracking mechanisms
+
+- [ ] **Cline**
+  - [ ] VSCode extension architecture patterns
+  - [ ] Agent-based file editing approach
+  - [ ] Task planning and execution flow
+  - [ ] User approval workflows
+
+- [ ] **Codex CLI**
+  - [ ] Command generation and execution patterns
+  - [ ] Shell integration approaches
+  - [ ] Safety mechanisms for command execution
+  - [ ] Context awareness in terminal environments
+
+**Key Areas to Analyze**:
+- Agent conversation state management
+- Tool/function calling implementations
+- Error recovery and retry mechanisms
+- Context window optimization strategies
+- Security and sandboxing approaches
+- Performance optimization techniques
+- User interaction patterns (confirmations, interruptions, etc.)
+
+**Deliverable**: Create a comparison document highlighting best practices and innovative approaches that could enhance our implementation
+
 ### 4.4 AI-to-Tool Integration (Critical for Phase 5 tools)
 - [x] Function calling protocol for OCI provider (Cohere models support this) ✅
 - [x] Parse AI responses for tool requests ✅
