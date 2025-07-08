@@ -65,6 +65,7 @@ markers = [
     "integration: Integration tests (requires OCI credentials)",
     "functional: Functional/E2E tests (requires full setup)",
     "slow: Slow running tests",
+    "asyncio: Asynchronous tests",
 ]
 
 [tool.coverage.run]
