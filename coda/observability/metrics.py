@@ -304,7 +304,7 @@ class MetricsCollector(ObservabilityComponent):
         with self._lock:
             return {
                 "running": self._running,
-                "flush_interval": self.flush_interval,
+                "flush_interval": self.get_flush_interval(),
                 "metrics_file": str(self.metrics_file),
                 "session_count": len(self.session_metrics),
                 "provider_count": len(self.provider_metrics),
