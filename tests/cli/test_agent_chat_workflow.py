@@ -12,11 +12,15 @@ from coda.agents.builtin_tools import get_builtin_tools
 from coda.agents.decorators import tool
 
 
-# Test tools for CLI workflow testing
-@tool
-def workflow_test_tool(message: str) -> str:
-    """Test tool for workflow testing."""
-    return f"Processed: {message}"
+# Helper function to create workflow test tool
+def create_workflow_test_tool():
+    """Create test tool for workflow testing."""
+    @tool
+    def workflow_test_tool(message: str) -> str:
+        """Test tool for workflow testing."""
+        return f"Processed: {message}"
+    
+    return workflow_test_tool
 
 
 class MockChatSession:
@@ -84,17 +88,26 @@ class TestAgentChatWorkflow:
         
         provider.chat = AsyncMock(side_effect=[response1, response2])
         
-        # Create handler with tool
-        handler = AgentChatHandler(session, provider)
-        handler.agent.add_tool(workflow_test_tool)
+        # Create handler and mock tool availability
+        console = Mock()
+        cli = Mock()
+        handler = AgentChatHandler(provider, cli, console)
         
-        # Test chat
-        result = await handler.handle_chat("Process 'test input'")
-        
-        # Verify
-        assert "processed" in result.lower()
-        # Should have user message, assistant response, tool result, and final response
-        assert len(session.messages) >= 3
+        # Mock the tool availability and model info
+        workflow_test_tool = create_workflow_test_tool()
+        with patch.object(handler, 'get_available_tools', return_value=[workflow_test_tool]):
+            # Mock model supports functions
+            model_info = Mock()
+            model_info.id = "test-model"
+            model_info.supports_functions = True
+            provider.list_models.return_value = [model_info]
+            
+            # Test chat - need to call the actual method
+            messages = [Mock(role="user", content="Process 'test input'")]
+            result, _ = await handler.chat_with_agent(messages, "test-model")
+            
+            # Verify
+            assert "processed" in result.lower()
     
     @pytest.mark.asyncio
     async def test_tool_chat_handler_workflow(self):
@@ -111,6 +124,7 @@ class TestAgentChatWorkflow:
         handler = ToolChatHandler(session, provider)
         
         # Test enabling tools
+        workflow_test_tool = create_workflow_test_tool()
         with patch('coda.cli.tool_chat.get_builtin_tools', return_value=[workflow_test_tool]):
             result = await handler.handle_chat("Enable tools")
             

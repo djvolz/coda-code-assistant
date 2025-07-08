@@ -9,10 +9,15 @@ from coda.agents.decorators import tool
 from coda.agents.builtin_tools import get_builtin_tools
 
 
-@tool
-def test_custom_tool(input: str) -> str:
-    """Custom tool for testing."""
-    return f"Custom: {input}"
+# Create test tool at module level to avoid pytest fixture confusion
+def _create_test_custom_tool():
+    @tool
+    def test_custom_tool(input: str) -> str:
+        """Custom tool for testing."""
+        return f"Custom: {input}"
+    return test_custom_tool
+
+test_custom_tool = _create_test_custom_tool()
 
 
 class MockSession:
