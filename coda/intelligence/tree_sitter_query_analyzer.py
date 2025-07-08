@@ -484,7 +484,8 @@ class TreeSitterQueryAnalyzer:
     
     def analyze_directory(self, directory: Union[str, Path], 
                          recursive: bool = True,
-                         file_patterns: Optional[List[str]] = None) -> Dict[str, FileAnalysis]:
+                         file_patterns: Optional[List[str]] = None,
+                         progress_callback: Optional[callable] = None) -> Dict[str, FileAnalysis]:
         """
         Analyze all matching files in a directory.
         
@@ -492,6 +493,7 @@ class TreeSitterQueryAnalyzer:
             directory: Directory to analyze
             recursive: Whether to search recursively
             file_patterns: List of glob patterns to match (e.g., ['*.py', '*.js'])
+            progress_callback: Optional callback function(current, total, filename) for progress updates
             
         Returns:
             Dictionary mapping file paths to FileAnalysis objects
@@ -514,12 +516,19 @@ class TreeSitterQueryAnalyzer:
                 pattern = '**/' + pattern
             files.update(directory.glob(pattern))
         
+        # Filter to only files with known extensions
+        supported_extensions = set(self._get_extension_map().keys())
+        files = [f for f in files if f.is_file() and f.suffix.lower() in supported_extensions]
+        total_files = len(files)
+        
         # Analyze each file
-        for file_path in files:
-            if file_path.is_file():
-                analysis = self.analyze_file(file_path)
-                if analysis.language != 'unknown':
-                    results[str(file_path)] = analysis
+        for idx, file_path in enumerate(files):
+            if progress_callback:
+                progress_callback(idx + 1, total_files, file_path.name)
+            
+            analysis = self.analyze_file(file_path)
+            if analysis.language != 'unknown':
+                results[str(file_path)] = analysis
         
         return results
     
