@@ -49,6 +49,7 @@ class TestInteractiveCLI:
             "theme",
             "export",
             "tools",
+            "search",
             "clear",
             "exit",
         ]
@@ -604,3 +605,36 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Theme changed to" in str(call) for call in calls)
         assert not any("preference saved" in str(call) for call in calls)
+    
+    def test_search_command(self, cli):
+        """Test search command basic functionality."""
+        # Test without args (should show help)
+        cli._cmd_search("")
+        
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Semantic Search" in str(call) for call in calls)
+        assert any("Available subcommands" in str(call) for call in calls)
+        
+        # Should list available subcommands
+        assert any("semantic" in str(call) for call in calls)
+        assert any("code" in str(call) for call in calls)
+        assert any("index" in str(call) for call in calls)
+        assert any("status" in str(call) for call in calls)
+        
+    def test_search_command_with_subcommand(self, cli):
+        """Test search command with subcommand delegation."""
+        # Mock command registry
+        mock_registry = Mock()
+        mock_registry.run_command = AsyncMock(return_value="Search completed")
+        
+        with patch("coda.cli.interactive_cli.CommandRegistry", return_value=mock_registry):
+            # Create new CLI instance to use mocked registry
+            new_cli = InteractiveCLI(cli.console)
+            
+            # Test semantic search subcommand
+            new_cli._cmd_search("semantic test query")
+            
+            # Should delegate to command registry
+            mock_registry.run_command.assert_called_with(
+                "search", ["semantic", "test", "query"]
+            )

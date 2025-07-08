@@ -7,7 +7,8 @@ useful for testing without external dependencies.
 
 import hashlib
 import numpy as np
-from typing import List
+from typing import List, Dict, Any
+import asyncio
 
 from .base import BaseEmbeddingProvider, EmbeddingResult
 
@@ -15,14 +16,17 @@ from .base import BaseEmbeddingProvider, EmbeddingResult
 class MockEmbeddingProvider(BaseEmbeddingProvider):
     """Mock embedding provider that generates deterministic embeddings."""
     
-    def __init__(self, dimension: int = 768):
+    def __init__(self, dimension: int = 768, model_id: str = None, delay: float = 0.0):
         """Initialize mock provider.
         
         Args:
             dimension: Embedding dimension (default: 768)
+            model_id: Optional model ID (default: mock-{dimension}d)
+            delay: Optional delay in seconds to simulate API latency
         """
         self.dimension = dimension
-        self.model_id = f"mock-{dimension}d"
+        self.delay = delay
+        super().__init__(model_id or f"mock-{dimension}d")
         
     async def embed_text(self, text: str) -> EmbeddingResult:
         """Generate a mock embedding for text.
@@ -44,6 +48,10 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
         embedding = np.random.randn(self.dimension)
         embedding = embedding / np.linalg.norm(embedding)
         
+        # Simulate API delay if configured
+        if self.delay > 0:
+            await asyncio.sleep(self.delay)
+        
         return EmbeddingResult(
             text=text,
             embedding=embedding,
@@ -54,35 +62,24 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
             }
         )
         
-    async def embed_batch(self, texts: List[str]) -> List[EmbeddingResult]:
-        """Generate mock embeddings for multiple texts.
+    # embed_batch is inherited from base class
         
-        Args:
-            texts: List of texts to embed
-            
-        Returns:
-            List of EmbeddingResults
-        """
-        results = []
-        for text in texts:
-            result = await self.embed_text(text)
-            results.append(result)
-        return results
-        
-    def get_model_info(self) -> dict:
+    def get_model_info(self) -> Dict[str, Any]:
         """Get information about the mock model.
         
         Returns:
             Dictionary with model information
         """
         return {
-            "model_id": self.model_id,
-            "dimension": self.dimension,
+            "id": self.model_id,
+            "dimensions": self.dimension,
             "provider": "mock",
-            "description": "Mock embedding provider for testing"
+            "description": "Mock embedding provider for testing",
+            "max_tokens": 8192,  # Arbitrary large value for testing
+            "languages": ["any"]
         }
         
-    async def list_models(self) -> List[dict]:
+    async def list_models(self) -> List[Dict[str, Any]]:
         """List available mock models.
         
         Returns:
@@ -90,13 +87,24 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
         """
         return [
             {
-                "model_id": "mock-768d",
-                "dimension": 768,
-                "description": "Mock 768-dimensional embeddings"
+                "id": "mock-384d",
+                "dimensions": 384,
+                "description": "Mock 384-dimensional embeddings (lightweight)",
+                "max_tokens": 8192,
+                "languages": ["any"]
             },
             {
-                "model_id": "mock-1024d", 
-                "dimension": 1024,
-                "description": "Mock 1024-dimensional embeddings"
+                "id": "mock-768d",
+                "dimensions": 768,
+                "description": "Mock 768-dimensional embeddings (standard)",
+                "max_tokens": 8192,
+                "languages": ["any"]
+            },
+            {
+                "id": "mock-1024d", 
+                "dimensions": 1024,
+                "description": "Mock 1024-dimensional embeddings (high-quality)",
+                "max_tokens": 8192,
+                "languages": ["any"]
             }
         ]

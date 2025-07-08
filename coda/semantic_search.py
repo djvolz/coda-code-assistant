@@ -45,7 +45,7 @@ class SemanticSearchManager:
         if vector_store is None:
             # Get dimension from embedding provider
             model_info = self.embedding_provider.get_model_info()
-            dimension = model_info.get("dimension", 768)
+            dimension = model_info.get("dimensions", model_info.get("dimension", 768))
             
             # Default to FAISS
             self.vector_store = FAISSVectorStore(dimension=dimension)
@@ -270,7 +270,7 @@ class SemanticSearchManager:
         return {
             "vector_count": vector_count,
             "embedding_model": model_info.get("id"),
-            "embedding_dimension": model_info.get("dimension"),
+            "embedding_dimension": model_info.get("dimensions", model_info.get("dimension")),
             "vector_store_type": self.vector_store.__class__.__name__,
             "index_type": getattr(self.vector_store, "index_type", "unknown"),
         }

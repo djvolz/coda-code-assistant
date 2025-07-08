@@ -9,7 +9,7 @@ from typing import Optional
 from pathlib import Path
 
 from .semantic_search import SemanticSearchManager
-from .embeddings.oci_coda import create_oci_embedding_provider
+from .embeddings import create_oci_provider_from_coda_config
 from .configuration import CodaConfig, get_config
 from .constants import get_cache_dir
 
@@ -38,8 +38,9 @@ def create_semantic_search_manager(
     
     # Try OCI first
     try:
-        embedding_provider = create_oci_embedding_provider(model_id, config)
-    except ValueError as e:
+        config_dict = config.config_dict if hasattr(config, 'config_dict') else config
+        embedding_provider = create_oci_provider_from_coda_config(config_dict, model_id)
+    except Exception as e:
         error_messages.append(f"OCI: {str(e)}")
     
     # TODO: Try other providers (sentence-transformers, Ollama, etc.)
