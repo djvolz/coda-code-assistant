@@ -10,6 +10,14 @@ from .basic_commands import BasicCommandProcessor
 from .shared import DeveloperMode
 from .shared.modes import get_system_prompt
 
+# Optional agent imports for tool support
+try:
+    from .agent_chat import AgentChatHandler
+
+    AGENT_SUPPORT = True
+except ImportError:
+    AGENT_SUPPORT = False
+
 
 class ChatSession:
     """Manages chat sessions for both one-shot and interactive modes."""
@@ -49,10 +57,52 @@ class ChatSession:
         """Stream a response from the provider and return the full text."""
         full_response = ""
         params = self.get_chat_parameters()
+        current_model = model or self.model
 
+        # Check if we should use agent-based chat with tools
+        if AGENT_SUPPORT and self._should_use_tools(current_model):
+            try:
+                import asyncio
+
+                # Use agent chat handler for tool support
+                agent_handler = AgentChatHandler(self.provider, self, self.console)
+
+                # Run with agent system (handle async call)
+                try:
+                    # Try to get the current event loop
+                    asyncio.get_running_loop()
+                    # If we're in an async context, we need to handle this differently
+                    # For now, fall back to regular streaming to avoid complications
+                    self.console.print(
+                        "[yellow]Tool support requires async context, falling back to regular mode[/yellow]\n"
+                    )
+                except RuntimeError:
+                    # No event loop running, we can create one
+                    response_content, _ = asyncio.run(
+                        agent_handler.chat_with_agent(
+                            messages=messages,  # Pass all messages, let agent handler extract user input
+                            model=current_model,
+                            **params,
+                        )
+                    )
+
+                    # Print the response (agent handler doesn't auto-print in some cases)
+                    if response_content:
+                        self.console.print(response_content, end="")
+                        full_response = response_content
+
+                    return full_response
+
+            except Exception as e:
+                # Fall back to regular streaming if agent fails
+                self.console.print(
+                    f"\n[yellow]Tool support failed ({e}), falling back to regular mode[/yellow]\n"
+                )
+
+        # Regular streaming without tools
         try:
             for chunk in self.provider.chat_stream(
-                messages=messages, model=model or self.model, **params
+                messages=messages, model=current_model, **params
             ):
                 self.console.print(chunk.content, end="")
                 full_response += chunk.content
@@ -62,6 +112,12 @@ class ChatSession:
 
         return full_response
 
+    def _should_use_tools(self, model: str) -> bool:
+        """Check if we should use tools for the given model."""
+        # Find the model info
+        model_info = next((m for m in self.provider.list_models() if m.id == model), None)
+        return model_info and model_info.supports_functions
+
     def run_one_shot(self, prompt: str):
         """Execute a single prompt and exit."""
         from coda.themes import get_console_theme
@@ -69,6 +125,17 @@ class ChatSession:
         theme = get_console_theme()
 
         self.console.print(f"\n[{theme.user_message}]User:[/{theme.user_message}] {prompt}")
+
+        # Check if this is a slash command
+        if prompt.startswith("/"):
+            cmd_result = self.cmd_processor.process_command(prompt)
+            if cmd_result == "exit":
+                return
+            elif cmd_result == "continue":
+                return
+            # If command was handled, don't send to AI
+            return
+
         self.console.print(
             f"\n[{theme.assistant_message}]Assistant:[/{theme.assistant_message}] ", end=""
         )

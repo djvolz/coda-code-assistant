@@ -87,9 +87,9 @@ class TestSharedHelp:
         assert any("/session" in str(call) for call in calls)
         assert any("/export" in str(call) for call in calls)
         assert any("Advanced" in str(call) for call in calls)
-        assert any("/tools" in str(call) for call in calls)
         assert any("/theme" in str(call) for call in calls)
         assert any("Interactive mode only" in str(call) for call in calls)
+        # /tools is NOT in interactive-only commands - it's a global command
 
     def test_command_aliases_shown(self, mock_console):
         """Test that command aliases are shown in help."""

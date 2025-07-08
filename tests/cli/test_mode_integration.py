@@ -47,8 +47,6 @@ class TestBasicModeIntegration:
 
     def test_basic_mode_switching(self, processor):
         """Test mode switching in basic mode."""
-        from coda.cli.shared.modes import get_system_prompt
-
         # Switch to code mode
         result = processor.process_command("/mode code")
 
@@ -56,6 +54,8 @@ class TestBasicModeIntegration:
         assert processor.current_mode == DeveloperMode.CODE
 
         # Get system prompt
+        from coda.cli.shared.modes import get_system_prompt
+
         prompt = get_system_prompt(processor.current_mode)
         assert "coding assistant" in prompt
 
@@ -176,8 +176,8 @@ class TestInteractiveModeIntegration:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Already using oci_genai" in str(call) for call in calls)
 
-    def test_interactive_coming_soon_commands(self, cli):
-        """Test that implemented and coming soon commands work correctly."""
+    def test_interactive_implemented_commands(self, cli):
+        """Test that implemented commands work correctly."""
         # Mock session commands to avoid console output issues
         cli.session_commands.handle_session_command = Mock(return_value="Session help")
 
@@ -187,12 +187,19 @@ class TestInteractiveModeIntegration:
         # Session commands are now implemented, should show help
         assert any("Session help" in str(call) for call in calls)
 
+        # Theme command - now implemented (shows current theme)
+        cli.console.reset_mock()
+        import asyncio
+
+        asyncio.run(cli._cmd_theme("current"))  # Use async call properly
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Current theme:" in str(call) for call in calls)
+
         # Tools command - still coming soon
         cli.console.reset_mock()
         cli._cmd_tools("")
         calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("MCP Tools Management" in str(call) for call in calls)
-        assert any("Coming soon" in str(call) for call in calls)
+        assert any("🔧 Coda Tools System" in str(call) for call in calls)
 
     def test_interactive_exit_command(self, cli):
         """Test exit command in interactive mode."""

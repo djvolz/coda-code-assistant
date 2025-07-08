@@ -107,10 +107,14 @@ class TestSessionEndToEnd:
             test_msg = Message(role=Role.USER, content="What were we discussing about decorators?")
             no_memory_response = provider.chat([test_msg], "mock-echo")
 
-            has_memory = any(word in no_memory_response.lower() for word in ["python", "decorator"])
-            assert not has_memory, f"AI should have no memory after clear: {no_memory_response}"
+            has_memory = any(
+                word in no_memory_response.content.lower() for word in ["python", "decorator"]
+            )
+            assert (
+                not has_memory
+            ), f"AI should have no memory after clear: {no_memory_response.content}"
 
-            print(f"  ✓ AI has no memory: '{no_memory_response[:50]}...'")
+            print(f"  ✓ AI has no memory: '{no_memory_response.content[:50]}...'")
 
             # === STEP 4: Load session (restore memory) ===
             print("\n📂 STEP 4: Loading session (AI regains memory)")
@@ -153,18 +157,19 @@ class TestSessionEndToEnd:
             memory_response = provider.chat(cli_messages, "mock-echo")
 
             has_context = any(
-                word in memory_response.lower() for word in ["python", "decorator", "function"]
+                word in memory_response.content.lower()
+                for word in ["python", "decorator", "function"]
             )
-            assert has_context, f"AI should remember context after load: {memory_response}"
+            assert has_context, f"AI should remember context after load: {memory_response.content}"
 
-            print(f"  ✓ AI remembers context: '{memory_response[:50]}...'")
+            print(f"  ✓ AI remembers context: '{memory_response.content[:50]}...'")
 
             # === STEP 6: Continue conversation naturally ===
             print("\n💬 STEP 6: Continuing conversation naturally")
 
             # Remove test message, add AI response
             cli_messages.pop()
-            cli_messages.append(Message(role=Role.ASSISTANT, content=memory_response))
+            cli_messages.append(Message(role=Role.ASSISTANT, content=memory_response.content))
 
             # Ask follow-up question
             followup = Message(role=Role.USER, content="Can you show me a decorator example?")
@@ -174,11 +179,11 @@ class TestSessionEndToEnd:
 
             # Should continue conversation about decorators
             continues_topic = any(
-                word in followup_response.lower() for word in ["decorator", "python", "@"]
+                word in followup_response.content.lower() for word in ["decorator", "python", "@"]
             )
-            assert continues_topic, f"Should continue decorator topic: {followup_response}"
+            assert continues_topic, f"Should continue decorator topic: {followup_response.content}"
 
-            print(f"  ✓ Conversation continues: '{followup_response[:50]}...'")
+            print(f"  ✓ Conversation continues: '{followup_response.content[:50]}...'")
 
             # === STEP 7: Verify session integrity ===
             print("\n🔍 STEP 7: Verifying session integrity")
@@ -253,8 +258,8 @@ class TestSessionEndToEnd:
             response = provider.chat(messages, "mock-echo")
 
             # Should focus on Python (not JavaScript)
-            assert "python" in response.lower()
-            assert "javascript" not in response.lower()
+            assert "python" in response.content.lower()
+            assert "javascript" not in response.content.lower()
 
         finally:
             db.close()
@@ -266,7 +271,7 @@ class TestSessionEndToEnd:
         # Test topic recognition
         messages = [Message(role=Role.USER, content="Tell me about Python")]
         response = provider.chat(messages, "mock-echo")
-        assert "python" in response.lower() and "programming" in response.lower()
+        assert "python" in response.content.lower() and "programming" in response.content.lower()
 
         # Test memory questions
         conversation = [
@@ -278,7 +283,7 @@ class TestSessionEndToEnd:
         ]
 
         memory_response = provider.chat(conversation, "mock-echo")
-        assert any(word in memory_response.lower() for word in ["python", "decorator"])
+        assert any(word in memory_response.content.lower() for word in ["python", "decorator"])
 
         # Test context building
         assert provider.conversation_history == conversation
