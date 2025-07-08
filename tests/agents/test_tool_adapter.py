@@ -294,17 +294,17 @@ class TestMCPToolAdapter:
                 return self._execute_result
 
         mcp_tool = ArgumentRecordingTool()
-        
+
         # Add parameters to the tool so they get passed through
         mcp_tool._params = {
             "key1": ToolParameter(type=ToolParameterType.STRING, description="Key 1"),
             "key2": ToolParameter(type=ToolParameterType.INTEGER, description="Key 2")
         }
-        
+
         func_tool = MCPToolAdapter.convert_mcp_tool(mcp_tool)
 
         test_args = {"key1": "value1", "key2": 42}
-        result = await func_tool.execute(test_args)
+        await func_tool.execute(test_args)
 
         assert mcp_tool.received_args == test_args
 

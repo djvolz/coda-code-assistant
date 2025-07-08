@@ -90,7 +90,7 @@ class MockProvider:
         response.content = "No more responses"
         response.tool_calls = []
         return response
-    
+
     def list_models(self):
         """Mock list_models method."""
         model = Mock()
