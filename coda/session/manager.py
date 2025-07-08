@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import and_, desc, text
+from sqlalchemy import and_, desc, or_, text
 from sqlalchemy.orm import Session as DBSession
 
 from .context import ContextManager
@@ -621,3 +621,91 @@ class SessionManager:
 </body>
 </html>"""
         return html
+
+    def get_tool_history(self, session_id: str) -> list[dict[str, Any]]:
+        """Get tool call history for a session.
+
+        Args:
+            session_id: Session ID
+
+        Returns:
+            List of tool calls with their results
+        """
+        with self.db.get_session() as db:
+            # Get all messages with tool calls or tool results
+            messages = (
+                db.query(Message)
+                .filter(
+                    and_(
+                        Message.session_id == session_id,
+                        or_(
+                            Message.tool_calls.isnot(None),
+                            Message.role == "tool"
+                        )
+                    )
+                )
+                .order_by(Message.sequence)
+                .all()
+            )
+
+            tool_history = []
+            for msg in messages:
+                if msg.tool_calls:
+                    # Message contains tool calls
+                    tool_history.append({
+                        "type": "call",
+                        "sequence": msg.sequence,
+                        "created_at": msg.created_at,
+                        "role": msg.role,
+                        "content": msg.content,
+                        "tool_calls": msg.tool_calls,
+                    })
+                elif msg.role == "tool":
+                    # Tool result message
+                    tool_history.append({
+                        "type": "result",
+                        "sequence": msg.sequence,
+                        "created_at": msg.created_at,
+                        "content": msg.content,
+                        "tool_call_id": msg.message_metadata.get("tool_call_id") if msg.message_metadata else None,
+                    })
+
+            return tool_history
+
+    def get_session_tools_summary(self, session_id: str) -> dict[str, Any]:
+        """Get summary of tools used in a session.
+
+        Args:
+            session_id: Session ID
+
+        Returns:
+            Dictionary with tool usage statistics
+        """
+        with self.db.get_session() as db:
+            messages = (
+                db.query(Message)
+                .filter(
+                    and_(
+                        Message.session_id == session_id,
+                        Message.tool_calls.isnot(None)
+                    )
+                )
+                .all()
+            )
+
+            tool_counts = {}
+            total_calls = 0
+
+            for msg in messages:
+                if msg.tool_calls:
+                    for call in msg.tool_calls:
+                        tool_name = call.get("name", "unknown")
+                        tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+                        total_calls += 1
+
+            return {
+                "total_tool_calls": total_calls,
+                "unique_tools": len(tool_counts),
+                "tool_counts": tool_counts,
+                "most_used": max(tool_counts.items(), key=lambda x: x[1])[0] if tool_counts else None,
+            }

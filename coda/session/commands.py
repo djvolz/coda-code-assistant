@@ -73,6 +73,8 @@ class SessionCommands:
             return self._search_sessions(args[1:])
         elif subcommand in ["rename", "r"]:
             return self._rename_session(args[1:])
+        elif subcommand in ["tools", "t"]:
+            return self._show_session_tools(args[1:])
         else:
             return f"Unknown session subcommand: {subcommand}. Use /session help for options."
 
@@ -98,8 +100,9 @@ class SessionCommands:
 [cyan]/session info [id][/cyan] - Show session details
 [cyan]/session search <query>[/cyan] - Search sessions
 [cyan]/session rename [id] <new_name>[/cyan] - Rename a session
+[cyan]/session tools [id][/cyan] - Show tool usage for a session
 
-[dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r[/dim]
+[dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r, tools→t[/dim]
 """
 
         from ..themes import get_console_theme
@@ -566,6 +569,82 @@ class SessionCommands:
             return f"Deleted {deleted_count} session(s), {failed_count} failed."
         else:
             return f"Successfully deleted {deleted_count} {session_type} session(s)."
+
+    def _show_session_tools(self, args: list[str]) -> str:
+        """Show tool usage for a session."""
+        # Get session ID
+        if args:
+            session_id = args[0]
+            session = self._find_session(session_id)
+            if not session:
+                return f"Session not found: {session_id}"
+            session_id = session.id
+        elif self.current_session_id:
+            session_id = self.current_session_id
+        else:
+            return "No session specified or loaded. Use: /session tools <id>"
+
+        # Get tool history
+        tool_history = self.manager.get_tool_history(session_id)
+        if not tool_history:
+            return "No tool usage found in this session."
+
+        # Get summary
+        summary = self.manager.get_session_tools_summary(session_id)
+
+        # Create display
+        from rich.panel import Panel
+        from rich.table import Table
+
+        # Summary panel
+        summary_text = f"""[bold]Tool Usage Summary[/bold]
+
+Total tool calls: [cyan]{summary['total_tool_calls']}[/cyan]
+Unique tools used: [cyan]{summary['unique_tools']}[/cyan]
+Most used tool: [cyan]{summary['most_used'] or 'N/A'}[/cyan]
+
+[bold]Tool Counts:[/bold]"""
+
+        for tool, count in sorted(summary['tool_counts'].items(), key=lambda x: x[1], reverse=True):
+            summary_text += f"\n  • {tool}: {count} call{'s' if count > 1 else ''}"
+
+        self.console.print(Panel(summary_text, title="Tool Usage", border_style="cyan"))
+
+        # Detailed history table
+        if len(tool_history) <= 20:  # Show all if reasonable number
+            table = Table(title="Tool Call History", show_header=True, header_style="bold cyan")
+            table.add_column("Seq", style="dim", width=4)
+            table.add_column("Type", style="bold", width=8)
+            table.add_column("Tool/Result", style="cyan")
+            table.add_column("Time", style="green")
+
+            for entry in tool_history:
+                if entry["type"] == "call":
+                    tool_info = ", ".join(
+                        f"{call['name']}({call.get('id', 'no-id')[:8]})"
+                        for call in entry["tool_calls"]
+                    )
+                    table.add_row(
+                        str(entry["sequence"]),
+                        "CALL",
+                        tool_info,
+                        entry["created_at"].strftime("%H:%M:%S")
+                    )
+                else:  # result
+                    result_preview = entry["content"][:50] + "..." if len(entry["content"]) > 50 else entry["content"]
+                    result_preview = result_preview.replace("\n", " ")
+                    table.add_row(
+                        str(entry["sequence"]),
+                        "RESULT",
+                        result_preview,
+                        entry["created_at"].strftime("%H:%M:%S")
+                    )
+
+            self.console.print(table)
+        else:
+            self.console.print(f"\n[dim]Full history contains {len(tool_history)} entries. Showing summary only.[/dim]")
+
+        return None
 
     def _find_session(self, session_ref: str) -> Session | None:
         """Find session by ID or name."""
