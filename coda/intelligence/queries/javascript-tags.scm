@@ -45,17 +45,17 @@
     (arrow_function)
   ]) @definition.method
 
-;; Variable declarations
+;; Variable declarations (excluding functions)
 (variable_declarator
   name: (identifier) @name.definition.variable
-  value: (_)
-  (#not-match? @definition.variable "^(function|arrow_function)$")) @definition.variable
+  value: (_) @value
+  (#not-match? @value "^(function_expression|arrow_function)$")) @definition.variable
 
 ;; Const declarations
 (lexical_declaration
+  kind: "const"
   (variable_declarator
     name: (identifier) @name.definition.constant)) @definition.constant
-  (#eq? @definition.constant "const")
 
 ;; Import statements
 (import_statement

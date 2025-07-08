@@ -238,6 +238,9 @@ class TreeSitterQueryAnalyzer:
                 name = None
                 if tag.startswith("name."):
                     name = node_text
+                    # Clean up string literals for imports (e.g., Go imports)
+                    if tag == "name.import" and name.startswith('"') and name.endswith('"'):
+                        name = name[1:-1]  # Remove quotes
                 elif tag in ["import", "definition.variable", "definition.constant"]:
                     # For these, the node itself is the name
                     name = node_text.strip()

@@ -4,6 +4,10 @@
 (method_declaration
   name: (identifier) @name.definition.method) @definition.method
 
+; Methods can also be considered functions for consistency
+(method_declaration
+  name: (identifier) @name.definition.function) @definition.function
+
 (method_invocation
   name: (identifier) @name.reference.method
   arguments: (argument_list) @reference.call)
@@ -18,3 +22,12 @@
   type: (type_identifier) @name.reference.class) @reference.class
 
 (superclass (type_identifier) @name.reference.class) @reference.class
+
+(import_declaration
+  (scoped_identifier) @name.import) @import
+
+(import_declaration
+  (identifier) @name.import) @import
+
+(package_declaration
+  (scoped_identifier) @name.definition.module) @definition.module
