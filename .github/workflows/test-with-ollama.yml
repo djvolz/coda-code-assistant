@@ -69,6 +69,16 @@ jobs:
           --tb=short \
           -m "integration"
 
+    - name: Run Docker entrypoint tests
+      run: |
+        uv run pytest tests/integration/test_docker_entrypoints.py -v \
+          --tb=short
+
+    - name: Run shell script tests
+      run: |
+        uv run pytest tests/integration/test_shell_scripts.py -v \
+          --tb=short
+
     - name: Run full LLM tests
       env:
         OLLAMA_HOST: http://localhost:11434
@@ -80,6 +90,18 @@ jobs:
           --tb=short \
           -m "llm" \
           --maxfail=3
+
+    - name: Run functional CLI workflow tests
+      env:
+        OLLAMA_HOST: http://localhost:11434
+      run: |
+        uv run pytest tests/functional/test_cli_workflows.py -v \
+          --tb=short
+
+    - name: Run Docker Compose tests
+      run: |
+        uv run pytest tests/functional/test_docker_compose.py -v \
+          --tb=short
 
     - name: Test CLI with real model
       env:
