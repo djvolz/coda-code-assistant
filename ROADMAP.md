@@ -652,6 +652,14 @@ None currently - all bugs have been resolved!
   - [ ] Performance monitoring (response times, token usage)
   - [ ] Error tracking and alerting
   - [ ] Provider health monitoring
+  - [ ] **Grafana Docker Container Setup**
+    - [ ] Deploy Grafana with OpenTelemetry data source
+    - [ ] Pre-configured dashboards for Coda metrics
+    - [ ] Integration with Coda's OTLP exporter
+    - [ ] Docker Compose configuration for observability stack
+    - [ ] Prometheus backend for metrics storage
+    - [ ] Jaeger/Tempo integration for distributed tracing
+    - [ ] Custom Coda performance dashboards
 
 - [ ] **Debugging & Profiling**
   - [ ] Pyroscope integration for performance profiling
@@ -668,6 +676,12 @@ None currently - all bugs have been resolved!
   - [ ] Docker compose setup for development
   - [ ] Multi-architecture container builds
   - [ ] Container optimization for size and performance
+  - [ ] **Observability Stack Integration**
+    - [ ] Docker Compose profile for full observability stack
+    - [ ] Grafana + Prometheus + Jaeger containers
+    - [ ] Pre-configured data sources and dashboards
+    - [ ] Integration with Phase 11 OpenTelemetry features
+    - [ ] Development and production configurations
 
 ### 12.2 Development Workflow
 
