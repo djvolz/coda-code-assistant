@@ -5,36 +5,34 @@ This module provides wrappers and utilities that integrate the self-contained
 semantic search components with Coda's configuration system.
 """
 
-from typing import Optional, Dict, Any
-from pathlib import Path
 import logging
 
-from .semantic_search import SemanticSearchManager
-from .embeddings import create_oci_provider_from_coda_config
-from .embeddings.factory import create_embedding_provider
 from .configuration import CodaConfig, get_config
 from .constants import get_cache_dir
+from .embeddings import create_oci_provider_from_coda_config
+from .embeddings.factory import create_embedding_provider
+from .semantic_search import SemanticSearchManager
 
 logger = logging.getLogger(__name__)
 
 
 def create_semantic_search_manager(
-    config: Optional[CodaConfig] = None,
-    provider_type: Optional[str] = None,
-    model_id: Optional[str] = None,
+    config: CodaConfig | None = None,
+    provider_type: str | None = None,
+    model_id: str | None = None,
     **provider_kwargs
 ) -> SemanticSearchManager:
     """Create a semantic search manager from Coda configuration.
-    
+
     Args:
         config: Coda configuration object
         provider_type: Type of embedding provider (oci, mock, sentence-transformers, ollama)
         model_id: Embedding model to use (provider-specific)
         **provider_kwargs: Additional provider-specific arguments
-        
+
     Returns:
         Configured SemanticSearchManager instance
-        
+
     Raises:
         ValueError: If no embedding provider can be created
     """
@@ -46,18 +44,18 @@ def create_semantic_search_manager(
         config_dict = config.__dict__
     else:
         config_dict = config
-    
+
     # Try to create embedding provider
     embedding_provider = None
     error_messages = []
-    
+
     # If provider type is specified, use it directly
     if provider_type:
         try:
             if provider_type == "oci":
                 # Use Coda-specific OCI config
                 embedding_provider = create_oci_provider_from_coda_config(
-                    config_dict, 
+                    config_dict,
                     model_id or "multilingual-e5"
                 )
             else:
@@ -71,7 +69,7 @@ def create_semantic_search_manager(
             error_messages.append(f"{provider_type}: {str(e)}")
     else:
         # Try providers in order of preference based on config
-        
+
         # 1. Try OCI if configured
         if config_dict.get("oci_genai", {}).get("compartment_id"):
             try:
@@ -82,7 +80,7 @@ def create_semantic_search_manager(
                 logger.info("Using OCI embedding provider")
             except Exception as e:
                 error_messages.append(f"OCI: {str(e)}")
-        
+
         # 2. Try Ollama if running
         if embedding_provider is None:
             try:
@@ -93,7 +91,7 @@ def create_semantic_search_manager(
                 logger.info("Using Ollama embedding provider")
             except Exception as e:
                 error_messages.append(f"Ollama: {str(e)}")
-        
+
         # 3. Try sentence-transformers as fallback
         if embedding_provider is None:
             try:
@@ -104,7 +102,7 @@ def create_semantic_search_manager(
                 logger.info("Using sentence-transformers embedding provider")
             except Exception as e:
                 error_messages.append(f"Sentence-transformers: {str(e)}")
-        
+
         # 4. Use mock as last resort
         if embedding_provider is None:
             try:
@@ -115,16 +113,16 @@ def create_semantic_search_manager(
                 logger.warning("Using mock embedding provider (for testing only)")
             except Exception as e:
                 error_messages.append(f"Mock: {str(e)}")
-    
+
     if embedding_provider is None:
         raise ValueError(
             "No embedding provider available. "
             f"Errors: {'; '.join(error_messages)}"
         )
-    
+
     # Use Coda's cache directory for indexes
     index_dir = get_cache_dir() / "semantic_search"
-    
+
     return SemanticSearchManager(
         embedding_provider=embedding_provider,
         index_dir=index_dir

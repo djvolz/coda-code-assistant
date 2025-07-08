@@ -22,27 +22,27 @@ async def main():
     """Run code indexing example."""
     print("📁 Code File Indexing Example")
     print("=" * 40)
-    
+
     try:
         # Initialize semantic search
         print("Initializing semantic search...")
         manager = create_semantic_search_manager(model_id="cohere-embed")
         print("✓ Manager initialized")
-        
+
         # Find Python files in the project
         python_files = list(Path("coda").glob("**/*.py"))[:10]  # Limit to first 10 files
-        
+
         if not python_files:
             print("❌ No Python files found in coda/ directory")
             return
-        
+
         print(f"\nFound {len(python_files)} Python files")
-        
+
         # Index the code files
         print("Indexing code files...")
         file_ids = await manager.index_code_files(python_files)
         print(f"✓ Indexed {len(file_ids)} code files")
-        
+
         # Search for specific code patterns
         code_queries = [
             "async function or method",
@@ -51,13 +51,13 @@ async def main():
             "database or storage operations",
             "API endpoints or routes"
         ]
-        
+
         print("\nSearching code files:")
-        
+
         for query in code_queries:
             print(f"\nQuery: '{query}'")
             results = await manager.search(query, k=3)
-            
+
             for i, result in enumerate(results, 1):
                 file_path = result.metadata.get("file_path", "unknown")
                 file_name = Path(file_path).name
@@ -66,9 +66,9 @@ async def main():
                 snippet = snippet.replace("\n", " ")
                 print(f"  {i}. {file_name} (Score: {result.score:.3f})")
                 print(f"     {snippet}")
-        
+
         print("\n✓ Code indexing completed successfully!")
-        
+
     except Exception as e:
         print(f"\n❌ Error: {str(e)}")
         print("\nMake sure:")
