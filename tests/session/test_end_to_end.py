@@ -110,9 +110,9 @@ class TestSessionEndToEnd:
             has_memory = any(
                 word in no_memory_response.content.lower() for word in ["python", "decorator"]
             )
-            assert (
-                not has_memory
-            ), f"AI should have no memory after clear: {no_memory_response.content}"
+            assert not has_memory, (
+                f"AI should have no memory after clear: {no_memory_response.content}"
+            )
 
             print(f"  ✓ AI has no memory: '{no_memory_response.content[:50]}...'")
 

@@ -2,11 +2,15 @@
 
 import asyncio
 import sys
+from typing import TYPE_CHECKING
 
 import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
+
+if TYPE_CHECKING:
+    from ..providers import ProviderFactory
 
 from .agent_chat import AgentChatHandler
 from .interactive_cli import DeveloperMode, InteractiveCLI

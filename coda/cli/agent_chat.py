@@ -61,7 +61,7 @@ class AgentChatHandler:
                 provider=self.provider,
                 model=model,
                 instructions=system_prompt
-                or """You are a helpful AI assistant with access to various tools. 
+                or """You are a helpful AI assistant with access to various tools.
 
 IMPORTANT: Only use tools when they are necessary to complete the user's request. Many requests can be answered directly without tools:
 - Writing (poems, stories, jokes, explanations)
@@ -92,7 +92,7 @@ Each user request should be evaluated independently. Previous tool usage does no
             # Update status if provided
             if status:
                 status.update("[bold cyan]Processing request...[/bold cyan]")
-            
+
             response_content, updated_messages = await self.agent.run_async_streaming(
                 input=user_input,
                 messages=messages[:-1] if messages else None,  # Exclude last user message
