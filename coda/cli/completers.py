@@ -189,7 +189,7 @@ class DynamicValueCompleter(BaseCompleter):
 
         # Check if we're completing a value for the main command
         if main_cmd.completion_type and text.startswith(f"/{main_cmd_name} "):
-            value_part = text[len(f"/{main_cmd_name} "):]
+            value_part = text[len(f"/{main_cmd_name} ") :]
             yield from self._complete_value(main_cmd.completion_type, value_part)
             return
 
@@ -207,7 +207,7 @@ class DynamicValueCompleter(BaseCompleter):
                 # We're completing the value after the subcommand
                 prefix = f"/{main_cmd_name} {subcommand_name} "
                 if text.startswith(prefix):
-                    value_part = text[len(prefix):]
+                    value_part = text[len(prefix) :]
                     yield from self._complete_value(subcommand.completion_type, value_part)
 
     def _complete_value(self, completion_type: str, value_part: str):
