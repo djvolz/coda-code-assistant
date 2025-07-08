@@ -122,7 +122,28 @@ class IntelligenceCommands:
             return f"Directory not found: {directory}"
         
         try:
-            analyses = self.analyzer.analyze_directory(directory)
+            import sys
+            
+            # Progress tracking
+            last_progress = [0]  # Using list to modify in closure
+            
+            def show_progress(current, total, filename):
+                # Update progress every 10% or on last file
+                progress = int((current / total) * 100)
+                if progress >= last_progress[0] + 10 or current == total:
+                    sys.stdout.write(f"\rScanning: {progress}% ({current}/{total} files) - {filename[:50]:<50}")
+                    sys.stdout.flush()
+                    last_progress[0] = progress
+            
+            # Clear the line before starting
+            sys.stdout.write("\r" + " " * 80 + "\r")
+            sys.stdout.flush()
+            
+            analyses = self.analyzer.analyze_directory(directory, progress_callback=show_progress)
+            
+            # Clear the progress line
+            sys.stdout.write("\r" + " " * 80 + "\r")
+            sys.stdout.flush()
             
             if not analyses:
                 return "No supported files found in directory."
