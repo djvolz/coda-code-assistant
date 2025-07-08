@@ -662,10 +662,10 @@ None currently - all bugs have been resolved!
     - [ ] Custom Coda performance dashboards
 
 - [ ] **Debugging & Profiling**
-  - [ ] Pyroscope integration for performance profiling
   - [ ] Debug mode enhancements
   - [ ] Memory usage tracking
   - [ ] Bottleneck identification
+  - [ ] Performance analysis tools integration
 
 ## Phase 12: DevOps & Automation
 
@@ -682,6 +682,12 @@ None currently - all bugs have been resolved!
     - [ ] Pre-configured data sources and dashboards
     - [ ] Integration with Phase 11 OpenTelemetry features
     - [ ] Development and production configurations
+    - [ ] **Pyroscope Profiling Container**
+      - [ ] Deploy Pyroscope for continuous performance profiling
+      - [ ] Integration with Coda application for flame graphs
+      - [ ] Memory and CPU profiling dashboards
+      - [ ] Automatic profiling data retention policies
+      - [ ] Docker Compose profile for profiling stack
 
 ### 12.2 Development Workflow
 
