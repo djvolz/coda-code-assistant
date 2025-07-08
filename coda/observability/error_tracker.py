@@ -102,7 +102,7 @@ class ErrorTracker(ObservabilityComponent):
     def __init__(self, export_directory: Path, config_manager: ConfigManager,
                  storage_backend=None, scheduler=None):
         """Initialize the error tracker.
-        
+
         Args:
             export_directory: Directory to export error data
             config_manager: Configuration manager instance
@@ -182,7 +182,7 @@ class ErrorTracker(ObservabilityComponent):
         provider: str | None = None
     ) -> str:
         """Track an error event.
-        
+
         Args:
             error: The exception that occurred
             category: Error category for classification
@@ -190,7 +190,7 @@ class ErrorTracker(ObservabilityComponent):
             context: Additional context information
             session_id: Associated session ID (if any)
             provider: Associated provider (if any)
-        
+
         Returns:
             Generated error ID
         """
@@ -273,7 +273,7 @@ class ErrorTracker(ObservabilityComponent):
 
     def register_alert_callback(self, callback: Callable[[ErrorEvent, ErrorPattern], None]):
         """Register a callback for error alerts.
-        
+
         Args:
             callback: Function to call when an alert is triggered
         """
@@ -281,7 +281,7 @@ class ErrorTracker(ObservabilityComponent):
 
     def add_error_pattern(self, pattern: ErrorPattern):
         """Add a custom error pattern for monitoring.
-        
+
         Args:
             pattern: Error pattern to monitor
         """
@@ -336,10 +336,10 @@ class ErrorTracker(ObservabilityComponent):
 
     def get_error_summary(self, days: int = 7) -> dict[str, Any]:
         """Get error summary for the last N days.
-        
+
         Args:
             days: Number of days to include in summary
-        
+
         Returns:
             Error summary statistics
         """
@@ -381,10 +381,10 @@ class ErrorTracker(ObservabilityComponent):
 
     def get_recent_errors(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get recent error events.
-        
+
         Args:
             limit: Maximum number of errors to return
-        
+
         Returns:
             List of recent error events
         """
@@ -394,7 +394,7 @@ class ErrorTracker(ObservabilityComponent):
 
     def get_error_patterns(self) -> dict[str, dict[str, Any]]:
         """Get all error patterns.
-        
+
         Returns:
             Dictionary of error patterns
         """
@@ -417,7 +417,7 @@ class ErrorTracker(ObservabilityComponent):
 
     def resolve_error(self, error_id: str, resolution_notes: str):
         """Mark an error as resolved.
-        
+
         Args:
             error_id: ID of the error to resolve
             resolution_notes: Notes about the resolution

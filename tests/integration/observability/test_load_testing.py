@@ -434,7 +434,7 @@ class TestObservabilityLoadTesting:
                         "timestamp": time.time()
                     })
                     batch_success += 1
-                except:
+                except Exception:
                     batch_dropped += 1
 
                 # Break if taking too long
@@ -485,7 +485,7 @@ class TestObservabilityLoadTesting:
                         "process": process_id,
                         "index": i
                     })
-                except:
+                except Exception:
                     errors += 1
 
             duration = time.time() - start_time

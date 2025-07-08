@@ -204,7 +204,7 @@ api_base = "http://localhost:11434"
         # Simulate streaming response metrics
         chunks = 0
         start_time = time.time()
-        for chunk in mock_ollama_provider.chat_stream(["Stream test"]):
+        for _ in mock_ollama_provider.chat_stream(["Stream test"]):
             chunks += 1
         stream_duration = time.time() - start_time
 

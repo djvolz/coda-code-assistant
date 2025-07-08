@@ -22,7 +22,7 @@ class ObservabilityCommands:
 
     def __init__(self, observability_manager: ObservabilityManager, console: Console):
         """Initialize observability commands.
-        
+
         Args:
             observability_manager: Observability manager instance
             console: Rich console for output
@@ -72,7 +72,7 @@ class ObservabilityCommands:
 
     def show_metrics(self, detailed: bool = False):
         """Show metrics summary.
-        
+
         Args:
             detailed: Whether to show detailed metrics
         """
@@ -175,7 +175,7 @@ class ObservabilityCommands:
 
     def show_health(self, component: str | None = None):
         """Show health status.
-        
+
         Args:
             component: Specific component to show (optional)
         """
@@ -260,7 +260,7 @@ class ObservabilityCommands:
 
     def show_traces(self, limit: int = 10):
         """Show recent traces.
-        
+
         Args:
             limit: Number of traces to show
         """
@@ -309,7 +309,7 @@ class ObservabilityCommands:
 
     def export_data(self, format: str = "json", output_file: str | None = None):
         """Export observability data.
-        
+
         Args:
             format: Export format (json, summary)
             output_file: Output file path (optional)
@@ -407,7 +407,7 @@ class ObservabilityCommands:
 
     def show_errors(self, limit: int = 20, days: int = 7):
         """Show recent errors and error analysis.
-        
+
         Args:
             limit: Number of recent errors to show
             days: Number of days for error summary
@@ -415,8 +415,6 @@ class ObservabilityCommands:
         if not self.obs_manager.enabled or not self.obs_manager.error_tracker:
             self.console.print("[yellow]Error tracking is not enabled[/yellow]")
             return
-
-        error_tracker = self.obs_manager.error_tracker
 
         # Get error summary
         error_summary = self.obs_manager.get_error_summary(days)
@@ -491,7 +489,7 @@ class ObservabilityCommands:
                     from datetime import datetime
                     timestamp = datetime.fromisoformat(error["timestamp"])
                     time_str = timestamp.strftime("%H:%M:%S")
-                except:
+                except Exception:
                     time_str = "Unknown"
 
                 severity = error["severity"]
@@ -519,7 +517,7 @@ class ObservabilityCommands:
 
     def show_performance(self, limit: int = 20):
         """Show performance profiling data.
-        
+
         Args:
             limit: Number of functions to show
         """

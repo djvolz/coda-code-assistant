@@ -21,7 +21,7 @@ T = TypeVar('T')
 
 def get_size_of(obj: Any, seen: set | None = None) -> int:
     """Calculate the approximate memory size of an object in bytes.
-    
+
     This recursively calculates size for containers, but has a depth limit
     to avoid infinite recursion.
     """
@@ -40,7 +40,7 @@ def get_size_of(obj: Any, seen: set | None = None) -> int:
         for key, value in obj.items():
             size += get_size_of(key, seen)
             size += get_size_of(value, seen)
-    elif isinstance(obj, (list, tuple, set, frozenset)):
+    elif isinstance(obj, list | tuple | set | frozenset):
         for item in obj:
             size += get_size_of(item, seen)
     elif hasattr(obj, '__dict__'):
@@ -71,7 +71,7 @@ class MemoryAwareDeque(Generic[T]):
     def __init__(self, maxlen: int, max_memory_mb: float = 100.0,
                  eviction_callback: Callable[[T], None] | None = None):
         """Initialize memory-aware deque.
-        
+
         Args:
             maxlen: Maximum number of items
             max_memory_mb: Maximum memory usage in megabytes
@@ -233,7 +233,7 @@ class BoundedCache(Generic[T]):
     def __init__(self, max_size: int = 1000, max_memory_mb: float = 50.0,
                  ttl_seconds: float | None = None):
         """Initialize bounded cache.
-        
+
         Args:
             max_size: Maximum number of items to cache
             max_memory_mb: Maximum memory usage in megabytes

@@ -69,7 +69,7 @@ class HealthMonitor(ObservabilityComponent):
     def __init__(self, export_directory: Path, config_manager: ConfigManager,
                  storage_backend=None, scheduler=None):
         """Initialize the health monitor.
-        
+
         Args:
             export_directory: Directory to export health data
             config_manager: Configuration manager instance
@@ -221,7 +221,7 @@ class HealthMonitor(ObservabilityComponent):
 
     def register_health_check(self, name: str, checker: Callable[[], HealthCheck]):
         """Register a new health check function.
-        
+
         Args:
             name: Name of the health check
             checker: Function that returns a HealthCheck result
@@ -242,7 +242,7 @@ class HealthMonitor(ObservabilityComponent):
 
     def register_provider_health_check(self, provider_name: str, provider_instance):
         """Register a health check for a specific provider.
-        
+
         Args:
             provider_name: Name of the provider
             provider_instance: Provider instance for health checking
@@ -254,11 +254,11 @@ class HealthMonitor(ObservabilityComponent):
 
     def _check_provider_health(self, provider_name: str, provider_instance) -> HealthCheck:
         """Check health of a specific provider.
-        
+
         Args:
             provider_name: Name of the provider
             provider_instance: Provider instance to check
-        
+
         Returns:
             HealthCheck result
         """

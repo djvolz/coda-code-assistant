@@ -43,7 +43,7 @@ class FileStorageBackend:
 
     def __init__(self, base_path: Path):
         """Initialize file storage backend.
-        
+
         Args:
             base_path: Base directory for storing files
         """
@@ -167,7 +167,7 @@ class BatchWriter:
                  batch_size: int = 100,
                  batch_timeout: float = 5.0):
         """Initialize batch writer.
-        
+
         Args:
             storage_backend: Backend to write to
             batch_size: Maximum items before automatic flush
