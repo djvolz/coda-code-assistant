@@ -12,6 +12,14 @@ help:
 	@echo "make test-llm      - Run LLM tests with Ollama"
 	@echo "make test-cov      - Run tests with coverage report"
 	@echo "make test-fast     - Run fast smoke tests"
+	@echo "make test-new      - Run all new tests added for container automation"
+	@echo "make test-cli-input - Run CLI input handling tests"
+	@echo "make test-completion - Run CLI completion tests"
+	@echo "make test-interrupt - Run CLI interrupt handling tests"
+	@echo "make test-docker   - Run Docker entrypoint tests"
+	@echo "make test-shell    - Run shell script tests"
+	@echo "make test-workflows - Run functional CLI workflow tests"
+	@echo "make test-compose  - Run Docker Compose tests"
 	@echo "make lint          - Run linters (ruff, mypy)"
 	@echo "make format        - Auto-format code"
 	@echo "make clean         - Clean generated files"
@@ -71,6 +79,38 @@ test-cov:
 # Run fast smoke tests
 test-fast:
 	uv run pytest tests/test_smoke.py -v
+
+# Run CLI input tests
+test-cli-input:
+	uv run pytest tests/cli/test_interactive_cli_input.py -v --tb=short
+
+# Run CLI completion tests
+test-completion:
+	uv run pytest tests/cli/test_cli_completion.py -v --tb=short
+
+# Run CLI interrupt tests  
+test-interrupt:
+	uv run pytest tests/cli/test_cli_interrupt.py -v --tb=short
+
+# Run Docker entrypoint tests
+test-docker:
+	uv run pytest tests/integration/test_docker_entrypoints.py -v --tb=short
+
+# Run shell script tests
+test-shell:
+	uv run pytest tests/integration/test_shell_scripts.py -v --tb=short
+
+# Run functional workflow tests
+test-workflows:
+	uv run pytest tests/functional/test_cli_workflows.py -v --tb=short
+
+# Run Docker Compose tests
+test-compose:
+	uv run pytest tests/functional/test_docker_compose.py -v --tb=short
+
+# Run all new tests
+test-new: test-cli-input test-completion test-interrupt test-docker test-shell test-workflows test-compose
+	@echo "All new tests completed ✓"
 
 # Lint code
 lint:
