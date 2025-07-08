@@ -96,8 +96,10 @@ class TestIntelligenceCommands:
     
     def test_scan_command_no_args(self):
         """Test scan command without arguments."""
-        result = self.intel_commands.handle_command("scan", [])
-        # Should scan current directory
+        # Create a test file in temp directory and scan that instead
+        self.create_test_file("test.py", "def test(): pass")
+        result = self.intel_commands.handle_command("scan", [str(self.temp_dir)])
+        # Should scan the temp directory
         assert "Scanned" in result or "No supported files" in result
     
     def test_scan_command_with_directory(self):
