@@ -60,7 +60,7 @@ class TestBuiltinTools:
         # Create test file
         test_file = tmp_path / "test.txt"
         test_content = "Hello\nWorld\n🚀"
-        test_file.write_text(test_content, encoding='utf-8')
+        test_file.write_text(test_content, encoding="utf-8")
 
         # Test successful read
         content = read_file(str(test_file))
@@ -72,7 +72,7 @@ class TestBuiltinTools:
 
         # Test reading binary file (should fail gracefully)
         binary_file = tmp_path / "binary.bin"
-        binary_file.write_bytes(b'\x00\x01\x02\x03')
+        binary_file.write_bytes(b"\x00\x01\x02\x03")
         result = read_file(str(binary_file))
         # Should either read with some encoding issues or error
         assert isinstance(result, str)
@@ -102,7 +102,7 @@ class TestBuiltinTools:
         unicode_file = tmp_path / "unicode.txt"
         result = write_file(str(unicode_file), unicode_content)
         assert "Successfully wrote to" in result
-        assert unicode_file.read_text(encoding='utf-8') == unicode_content
+        assert unicode_file.read_text(encoding="utf-8") == unicode_content
 
     def test_run_command(self):
         """Test executing shell commands."""
@@ -125,7 +125,7 @@ class TestBuiltinTools:
         assert "stderr" in result["stderr"]
 
         # Test timeout
-        with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('cmd', 30)):
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("cmd", 30)):
             result = run_command("sleep 60")
             assert result["success"] is False
             assert "timed out" in result["stderr"]
@@ -144,7 +144,7 @@ class TestBuiltinTools:
         assert before <= parsed <= after
 
         # Check format
-        assert 'T' in result  # ISO format includes T separator
+        assert "T" in result  # ISO format includes T separator
         assert len(result) > 15  # Should include date and time
 
     def test_parse_json(self):
@@ -185,12 +185,12 @@ class TestBuiltinTools:
 
         # Test with custom indent
         result_indent4 = format_json(data, indent=4)
-        assert result_indent4.count(' ' * 4) > 0
+        assert result_indent4.count(" " * 4) > 0
 
         # Test sorting keys
         data_unsorted = {"z": 1, "a": 2, "m": 3}
         result = format_json(data_unsorted)
-        lines = result.strip().split('\n')
+        lines = result.strip().split("\n")
         # Check that 'a' comes before 'z' in the output
         a_index = next(i for i, line in enumerate(lines) if '"a"' in line)
         z_index = next(i for i, line in enumerate(lines) if '"z"' in line)
@@ -240,15 +240,15 @@ class TestBuiltinTools:
             get_datetime,
             parse_json,
             format_json,
-            fetch_data
+            fetch_data,
         }
         assert set(tools) == expected_tools
 
         # Check all tools have the required attributes
         for tool in tools:
-            assert hasattr(tool, '_is_tool')
-            assert hasattr(tool, '_tool_name')
-            assert hasattr(tool, '_tool_description')
+            assert hasattr(tool, "_is_tool")
+            assert hasattr(tool, "_tool_name")
+            assert hasattr(tool, "_tool_description")
             assert tool._is_tool is True
 
     def test_tool_decorations(self):
@@ -257,12 +257,12 @@ class TestBuiltinTools:
 
         for tool in tools:
             # Check tool attributes
-            assert hasattr(tool, '_is_tool')
+            assert hasattr(tool, "_is_tool")
             assert tool._is_tool is True
 
             # Check tool has name and description
-            assert hasattr(tool, '_tool_name')
-            assert hasattr(tool, '_tool_description')
+            assert hasattr(tool, "_tool_name")
+            assert hasattr(tool, "_tool_description")
             assert tool._tool_name
             assert tool._tool_description
 
@@ -294,22 +294,19 @@ class TestBuiltinTools:
         assert "test" in result["stdout"]
 
         # Test JSON with nested structures
-        nested_data = {
-            "level1": {
-                "level2": {
-                    "level3": [1, 2, 3]
-                }
-            }
-        }
+        nested_data = {"level1": {"level2": {"level3": [1, 2, 3]}}}
         formatted = format_json(nested_data)
         assert "level3" in formatted
 
-    @pytest.mark.parametrize("command,expected_success", [
-        ("true", True),
-        ("false", False),
-        ("exit 0", True),
-        ("exit 1", False),
-    ])
+    @pytest.mark.parametrize(
+        "command,expected_success",
+        [
+            ("true", True),
+            ("false", False),
+            ("exit 0", True),
+            ("exit 1", False),
+        ],
+    )
     def test_run_command_exit_codes(self, command, expected_success):
         """Test various command exit codes."""
         result = run_command(command)

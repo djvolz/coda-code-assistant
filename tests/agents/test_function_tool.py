@@ -14,6 +14,7 @@ class TestFunctionTool:
 
     def test_from_callable_with_decorated_function(self):
         """Test creating FunctionTool from a decorated function."""
+
         @tool
         def sample_tool(name: str, count: int = 5):
             """A sample tool for testing."""
@@ -35,6 +36,7 @@ class TestFunctionTool:
 
     def test_from_callable_without_decorator_raises_error(self):
         """Test that non-decorated functions raise ValueError."""
+
         def regular_function():
             return "not a tool"
 
@@ -43,6 +45,7 @@ class TestFunctionTool:
 
     def test_execute_sync_function(self):
         """Test executing synchronous functions."""
+
         @tool
         def multiply(x: int, y: int):
             """Multiply two numbers."""
@@ -54,6 +57,7 @@ class TestFunctionTool:
 
     def test_execute_async_function(self):
         """Test executing asynchronous functions."""
+
         @tool
         async def async_multiply(x: int, y: int):
             """Multiply two numbers asynchronously."""
@@ -66,6 +70,7 @@ class TestFunctionTool:
 
     def test_parameter_schema_generation(self):
         """Test JSON schema generation for various parameter types."""
+
         @tool
         def complex_params(
             text: str,
@@ -75,7 +80,7 @@ class TestFunctionTool:
             items: list,
             mapping: dict,
             optional: str | None = None,
-            default_val: int = 42
+            default_val: int = 42,
         ):
             """Function with various parameter types."""
             return locals()
@@ -104,6 +109,7 @@ class TestFunctionTool:
 
     def test_prepare_arguments(self):
         """Test argument preparation and cleaning."""
+
         @tool
         def test_func(arg1: str, arg2: int):
             return f"{arg1}-{arg2}"
@@ -115,16 +121,15 @@ class TestFunctionTool:
         assert cleaned == {"arg1": "test", "arg2": 123}
 
         # Test with extra colons and whitespace
-        cleaned = func_tool._prepare_arguments({
-            "arg1:": "test",
-            "arg2  :": 123,
-            "extra": "ignored"
-        })
+        cleaned = func_tool._prepare_arguments(
+            {"arg1:": "test", "arg2  :": 123, "extra": "ignored"}
+        )
         assert cleaned == {"arg1": "test", "arg2": 123}
         assert "extra" not in cleaned
 
     def test_to_dict(self):
         """Test dictionary conversion."""
+
         @tool(name="custom_name", description="Custom description")
         def sample_func(x: int):
             return x * 2
@@ -139,6 +144,7 @@ class TestFunctionTool:
 
     def test_equality(self):
         """Test FunctionTool equality comparison."""
+
         @tool
         def func1(x: int):
             return x
@@ -162,6 +168,7 @@ class TestFunctionTool:
 
     def test_function_with_no_parameters(self):
         """Test function without parameters."""
+
         @tool
         def no_params():
             """Function with no parameters."""
@@ -176,6 +183,7 @@ class TestFunctionTool:
 
     def test_function_with_self_parameter(self):
         """Test that self parameter is ignored in schema."""
+
         class MyClass:
             @tool
             def method_with_self(self, value: str):
@@ -191,6 +199,7 @@ class TestFunctionTool:
 
     def test_function_with_agent_parameter(self):
         """Test that agent parameter is ignored in schema."""
+
         @tool
         def func_with_agent(agent, value: str):
             """Function that takes agent parameter."""
@@ -204,6 +213,7 @@ class TestFunctionTool:
 
     def test_error_handling_in_parameter_schema(self):
         """Test that schema building handles errors gracefully."""
+
         # Create a function with problematic signature
         @tool
         def problematic_func(*args, **kwargs):
@@ -221,6 +231,7 @@ class TestFunctionTool:
 
     def test_function_returning_various_types(self):
         """Test functions returning different types."""
+
         @tool
         def return_list() -> list[int]:
             return [1, 2, 3]
@@ -250,6 +261,7 @@ class TestFunctionTool:
 
     def test_function_with_type_annotations_without_hints(self):
         """Test function with annotations but no type hints."""
+
         @tool
         def func_no_hints(param):
             """Function without type hints."""
@@ -263,6 +275,7 @@ class TestFunctionTool:
 
     def test_custom_tool_metadata(self):
         """Test creating FunctionTool with custom metadata."""
+
         @tool(name="my_custom_tool", description="This is a custom tool")
         def custom_func(value: str):
             return value.upper()

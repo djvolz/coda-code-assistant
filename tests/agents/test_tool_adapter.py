@@ -17,10 +17,7 @@ class MockMCPTool(BaseTool):
         self.name = name
         self._params = params or {}
         self._execute_result = ToolResult(
-            success=True,
-            result={"message": "Success"},
-            tool=name,
-            server="mock"
+            success=True, result={"message": "Success"}, tool=name, server="mock"
         )
         super().__init__()
 
@@ -30,7 +27,7 @@ class MockMCPTool(BaseTool):
             description=f"Mock tool {self.name}",
             category="test",
             server="mock",
-            parameters=self._params
+            parameters=self._params,
         )
 
     async def execute(self, arguments: dict) -> ToolResult:
@@ -62,16 +59,11 @@ class TestMCPToolAdapter:
         # Create MCP tool with parameters
         params = {
             "text": ToolParameter(
-                type=ToolParameterType.STRING,
-                description="Input text",
-                required=True
+                type=ToolParameterType.STRING, description="Input text", required=True
             ),
             "count": ToolParameter(
-                type=ToolParameterType.INTEGER,
-                description="Count value",
-                required=False,
-                default=1
-            )
+                type=ToolParameterType.INTEGER, description="Count value", required=False, default=1
+            ),
         }
         mcp_tool = MockMCPTool("param_tool", params)
 
@@ -94,21 +86,21 @@ class TestMCPToolAdapter:
                 description="Limited string",
                 minLength=5,
                 maxLength=20,
-                required=True
+                required=True,
             ),
             "limited_number": ToolParameter(
                 type=ToolParameterType.NUMBER,
                 description="Limited number",
                 minimum=0,
                 maximum=100,
-                required=True
+                required=True,
             ),
             "choice": ToolParameter(
                 type=ToolParameterType.STRING,
                 description="Choice parameter",
                 enum=["option1", "option2", "option3"],
-                required=True
-            )
+                required=True,
+            ),
         }
         mcp_tool = MockMCPTool("constrained_tool", params)
 
@@ -130,12 +122,9 @@ class TestMCPToolAdapter:
     async def test_wrapper_execution_success(self):
         """Test successful execution through wrapper."""
         mcp_tool = MockMCPTool("exec_tool")
-        mcp_tool.set_result(ToolResult(
-            success=True,
-            result={"data": "test_value"},
-            tool="exec_tool",
-            server="mock"
-        ))
+        mcp_tool.set_result(
+            ToolResult(success=True, result={"data": "test_value"}, tool="exec_tool", server="mock")
+        )
 
         func_tool = MCPToolAdapter.convert_mcp_tool(mcp_tool)
 
@@ -151,12 +140,11 @@ class TestMCPToolAdapter:
     async def test_wrapper_execution_string_result(self):
         """Test execution with string result."""
         mcp_tool = MockMCPTool("string_tool")
-        mcp_tool.set_result(ToolResult(
-            success=True,
-            result="Simple string result",
-            tool="string_tool",
-            server="mock"
-        ))
+        mcp_tool.set_result(
+            ToolResult(
+                success=True, result="Simple string result", tool="string_tool", server="mock"
+            )
+        )
 
         func_tool = MCPToolAdapter.convert_mcp_tool(mcp_tool)
         result = await func_tool.execute({})
@@ -167,12 +155,11 @@ class TestMCPToolAdapter:
     async def test_wrapper_execution_error(self):
         """Test execution with error."""
         mcp_tool = MockMCPTool("error_tool")
-        mcp_tool.set_result(ToolResult(
-            success=False,
-            error="Something went wrong",
-            tool="error_tool",
-            server="mock"
-        ))
+        mcp_tool.set_result(
+            ToolResult(
+                success=False, error="Something went wrong", tool="error_tool", server="mock"
+            )
+        )
 
         func_tool = MCPToolAdapter.convert_mcp_tool(mcp_tool)
         result = await func_tool.execute({})
@@ -183,12 +170,14 @@ class TestMCPToolAdapter:
     async def test_wrapper_execution_non_json_result(self):
         """Test execution with non-JSON-serializable result."""
         mcp_tool = MockMCPTool("object_tool")
-        mcp_tool.set_result(ToolResult(
-            success=True,
-            result=12345,  # Integer result
-            tool="object_tool",
-            server="mock"
-        ))
+        mcp_tool.set_result(
+            ToolResult(
+                success=True,
+                result=12345,  # Integer result
+                tool="object_tool",
+                server="mock",
+            )
+        )
 
         func_tool = MCPToolAdapter.convert_mcp_tool(mcp_tool)
         result = await func_tool.execute({})
@@ -219,7 +208,7 @@ class TestMCPToolAdapter:
 
     def test_get_all_tools_empty_registry(self):
         """Test getting all tools with empty registry."""
-        with patch('coda.agents.tool_adapter.tool_registry') as mock_registry:
+        with patch("coda.agents.tool_adapter.tool_registry") as mock_registry:
             mock_registry.tools = {}
 
             tools = MCPToolAdapter.get_all_tools()
@@ -230,10 +219,10 @@ class TestMCPToolAdapter:
         mock_tools = {
             "tool1": MockMCPTool("tool1"),
             "tool2": MockMCPTool("tool2"),
-            "tool3": MockMCPTool("tool3")
+            "tool3": MockMCPTool("tool3"),
         }
 
-        with patch('coda.agents.tool_adapter.tool_registry') as mock_registry:
+        with patch("coda.agents.tool_adapter.tool_registry") as mock_registry:
             mock_registry.tools = mock_tools
 
             tools = MCPToolAdapter.get_all_tools()
@@ -252,10 +241,10 @@ class TestMCPToolAdapter:
         mock_tools = {
             "good_tool": MockMCPTool("good_tool"),
             "bad_tool": bad_tool,
-            "another_good": MockMCPTool("another_good")
+            "another_good": MockMCPTool("another_good"),
         }
 
-        with patch('coda.agents.tool_adapter.tool_registry') as mock_registry:
+        with patch("coda.agents.tool_adapter.tool_registry") as mock_registry:
             mock_registry.tools = mock_tools
 
             tools = MCPToolAdapter.get_all_tools()
@@ -275,7 +264,7 @@ class TestMCPToolAdapter:
         func_tool = MCPToolAdapter.convert_mcp_tool(mcp_tool)
 
         # Check that callable has tool metadata
-        assert hasattr(func_tool.callable, '_is_tool')
+        assert hasattr(func_tool.callable, "_is_tool")
         assert func_tool.callable._is_tool is True
         assert func_tool.callable._tool_name == "metadata_tool"
         assert func_tool.callable._tool_description == "Mock tool metadata_tool"
@@ -283,6 +272,7 @@ class TestMCPToolAdapter:
     @pytest.mark.asyncio
     async def test_wrapper_passes_arguments_correctly(self):
         """Test that wrapper passes arguments to MCP tool correctly."""
+
         # Create a custom MCP tool that records arguments
         class ArgumentRecordingTool(MockMCPTool):
             def __init__(self):
@@ -298,7 +288,7 @@ class TestMCPToolAdapter:
         # Add parameters to the tool so they get passed through
         mcp_tool._params = {
             "key1": ToolParameter(type=ToolParameterType.STRING, description="Key 1"),
-            "key2": ToolParameter(type=ToolParameterType.INTEGER, description="Key 2")
+            "key2": ToolParameter(type=ToolParameterType.INTEGER, description="Key 2"),
         }
 
         func_tool = MCPToolAdapter.convert_mcp_tool(mcp_tool)
@@ -312,15 +302,11 @@ class TestMCPToolAdapter:
         """Test conversion of complex nested parameter structures."""
         params = {
             "config": ToolParameter(
-                type=ToolParameterType.OBJECT,
-                description="Configuration object",
-                required=True
+                type=ToolParameterType.OBJECT, description="Configuration object", required=True
             ),
             "items": ToolParameter(
-                type=ToolParameterType.ARRAY,
-                description="Array of items",
-                required=False
-            )
+                type=ToolParameterType.ARRAY, description="Array of items", required=False
+            ),
         }
 
         mcp_tool = MockMCPTool("complex_tool", params)

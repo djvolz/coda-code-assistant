@@ -42,18 +42,14 @@ def create_test_tools():
     @tool
     def test_complex_return() -> dict:
         """Tool that returns complex data structure."""
-        return {
-            "status": "ok",
-            "data": [1, 2, 3],
-            "nested": {"key": "value"}
-        }
+        return {"status": "ok", "data": [1, 2, 3], "nested": {"key": "value"}}
 
     return {
-        'test_add': test_add,
-        'test_multiply': test_multiply,
-        'test_async_operation': test_async_operation,
-        'test_error_tool': test_error_tool,
-        'test_complex_return': test_complex_return
+        "test_add": test_add,
+        "test_multiply": test_multiply,
+        "test_async_operation": test_async_operation,
+        "test_error_tool": test_error_tool,
+        "test_complex_return": test_complex_return,
     }
 
 
@@ -74,11 +70,7 @@ class MockProvider:
 
     def chat(self, messages, tools=None, **kwargs):
         """Mock chat method."""
-        self.called_with.append({
-            "messages": messages,
-            "tools": tools,
-            "kwargs": kwargs
-        })
+        self.called_with.append({"messages": messages, "tools": tools, "kwargs": kwargs})
 
         if self.current_response < len(self.chat_responses):
             response = self.chat_responses[self.current_response]
@@ -110,7 +102,7 @@ class TestAgentToolIntegration:
     async def test_single_tool_execution(self):
         """Test agent executing a single tool."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_add']])
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools["test_add"]])
 
         # Mock provider response with tool call
         tool_call = Mock()
@@ -133,10 +125,11 @@ class TestAgentToolIntegration:
     async def test_multiple_tool_calls(self):
         """Test agent executing multiple tools in sequence."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[
-            self.tools['test_add'],
-            self.tools['test_multiply']
-        ])
+        agent = Agent(
+            provider=provider,
+            model="test-model",
+            tools=[self.tools["test_add"], self.tools["test_multiply"]],
+        )
 
         # Mock provider responses
         tool_call1 = Mock()
@@ -165,7 +158,9 @@ class TestAgentToolIntegration:
     async def test_async_tool_execution(self):
         """Test agent executing async tools."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_async_operation']])
+        agent = Agent(
+            provider=provider, model="test-model", tools=[self.tools["test_async_operation"]]
+        )
 
         # Mock provider response
         tool_call = Mock()
@@ -185,7 +180,7 @@ class TestAgentToolIntegration:
     async def test_tool_error_handling(self):
         """Test agent handling tool execution errors."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_error_tool']])
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools["test_error_tool"]])
 
         # Mock provider response
         tool_call = Mock()
@@ -205,7 +200,9 @@ class TestAgentToolIntegration:
     async def test_complex_data_handling(self):
         """Test agent handling complex return values."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_complex_return']])
+        agent = Agent(
+            provider=provider, model="test-model", tools=[self.tools["test_complex_return"]]
+        )
 
         # Mock provider response
         tool_call = Mock()
@@ -246,7 +243,10 @@ class TestAgentToolIntegration:
         provider = MockProvider()
         # Add file tools
         from coda.agents.builtin_tools import list_files, read_file, write_file
-        agent = Agent(provider=provider, model="test-model", tools=[read_file, write_file, list_files])
+
+        agent = Agent(
+            provider=provider, model="test-model", tools=[read_file, write_file, list_files]
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Test write operation
@@ -255,7 +255,7 @@ class TestAgentToolIntegration:
             write_call.id = "write_1"
             write_call.arguments = {
                 "file_path": os.path.join(tmpdir, "test.txt"),
-                "content": "Hello, World!"
+                "content": "Hello, World!",
             }
 
             # Test read operation
@@ -269,7 +269,9 @@ class TestAgentToolIntegration:
             provider.add_response("File operations completed.")
 
             # Run agent
-            response = await agent.run_async(f"Write 'Hello, World!' to {tmpdir}/test.txt then read it back")
+            response = await agent.run_async(
+                f"Write 'Hello, World!' to {tmpdir}/test.txt then read it back"
+            )
 
             # Check operations completed
             assert "completed" in response.content or "file" in response.content.lower()
@@ -302,7 +304,7 @@ class TestAgentToolIntegration:
     async def test_invalid_arguments(self):
         """Test agent handling invalid tool arguments."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_add']])
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools["test_add"]])
 
         # Mock provider response with invalid arguments
         tool_call = Mock()
@@ -322,7 +324,7 @@ class TestAgentToolIntegration:
     async def test_conversation_history_with_tools(self):
         """Test that tool results are included in conversation history."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_add']])
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools["test_add"]])
 
         # First interaction
         tool_call1 = Mock()
@@ -356,17 +358,21 @@ class TestAgentToolIntegration:
     async def test_parallel_tool_execution(self):
         """Test agent executing multiple tools in parallel."""
         provider = MockProvider()
-        agent = Agent(provider=provider, model="test-model", tools=[
-            self.tools['test_add'],
-            self.tools['test_multiply'],
-            self.tools['test_async_operation']
-        ])
+        agent = Agent(
+            provider=provider,
+            model="test-model",
+            tools=[
+                self.tools["test_add"],
+                self.tools["test_multiply"],
+                self.tools["test_async_operation"],
+            ],
+        )
 
         # Mock provider response with multiple tool calls
         calls = [
             Mock(name="test_add", id="c1", arguments={"a": 1, "b": 2}),
             Mock(name="test_multiply", id="c2", arguments={"x": 3, "y": 4}),
-            Mock(name="test_async_operation", id="c3", arguments={"value": "test"})
+            Mock(name="test_async_operation", id="c3", arguments={"value": "test"}),
         ]
 
         provider.add_response("Executing multiple operations.", calls)
