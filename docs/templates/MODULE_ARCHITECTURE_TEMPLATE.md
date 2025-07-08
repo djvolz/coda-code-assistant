@@ -3,7 +3,9 @@
 <!-- This is a DESIGN DOCUMENT describing the architecture and design decisions of this module -->
 
 <!-- TEMPLATE INSTRUCTIONS:
-1. Follow the naming convention: Architecture-{Component}.md when creating files
+1. Follow the naming convention: 
+   - Overview: Architecture.md
+   - Modules: Architecture-{#}-{Module}.md (e.g., Architecture-1-CLI.md)
 2. Link all file references to GitHub: https://github.com/djvolz/coda-code-assistant/blob/main/{path}
 3. Hide specific line numbers in HTML comments - they drift quickly
 4. Focus on design decisions and architecture, not implementation details

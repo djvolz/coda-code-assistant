@@ -54,28 +54,29 @@ The module architecture template is maintained in `docs/templates/MODULE_ARCHITE
 
 ### 1.1.2 Wiki File Naming Convention
 To ensure proper wiki navigation and URLs:
-- Architecture files should use prefix pattern: `Architecture-{Component}.md` (e.g., `Architecture-CLI.md`)
-- The overview page is named `Architecture-Overview.md`
-- This prefix groups all architecture docs together in wiki navigation
+- Overview page: `Architecture.md` (no suffix ensures it sorts first)
+- Module pages: `Architecture-{#}-{Module}.md` (e.g., `Architecture-1-CLI.md`)
+- Numbers control display order in wiki sidebar (1=CLI, 2=Agents, etc.)
+- This pattern groups all architecture docs together while maintaining order
 - Avoid using `README.md` in wiki as it creates confusing URLs
 - Verify wiki URLs after each push to ensure proper linking
 
 ### 1.1.3 Documentation Structure in Wiki
 ```
 architecture/
-├── Architecture-Overview.md
-├── Architecture-CLI.md
-├── Architecture-Agents.md
-├── Architecture-Providers.md
-├── Architecture-Tools.md
-├── Architecture-Session.md
+├── Architecture.md              # Overview (sorts first)
+├── Architecture-1-CLI.md        # CLI module
+├── Architecture-2-Agents.md     # Agents module
+├── Architecture-3-Providers.md  # Providers module
+├── Architecture-4-Tools.md      # Tools module
+├── Architecture-5-Session.md    # Session module
 └── integration/
     ├── Provider-Integration.md
     ├── Tool-Development.md
     └── Agent-Creation.md
 ```
 
-Note: GitHub Wiki recognizes pages as subpages when they're in the same directory. The "Architecture-" prefix ensures all architecture docs are grouped together and appear under the Architecture section in the wiki sidebar.
+Note: GitHub Wiki sorts pages alphabetically in the sidebar. Using `Architecture.md` for the overview ensures it appears first, followed by numbered module pages in logical order.
 
 Every architecture document must include:
 ```markdown
