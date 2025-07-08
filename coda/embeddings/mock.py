@@ -72,7 +72,8 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
         """
         return {
             "id": self.model_id,
-            "dimensions": self.dimension,
+            "dimension": self.dimension,  # Fixed: was "dimensions"
+            "dimensions": self.dimension,  # Keep for backward compatibility
             "provider": "mock",
             "description": "Mock embedding provider for testing",
             "max_tokens": 8192,  # Arbitrary large value for testing
