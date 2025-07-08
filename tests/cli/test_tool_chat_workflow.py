@@ -15,13 +15,16 @@ def _create_test_custom_tool():
     def test_custom_tool(input: str) -> str:
         """Custom tool for testing."""
         return f"Custom: {input}"
+
     return test_custom_tool
+
 
 test_custom_tool = _create_test_custom_tool()
 
 
 class MockSession:
     """Mock session for testing."""
+
     def __init__(self):
         self.messages = []
         self.mode = "default"
@@ -41,12 +44,12 @@ class TestToolChatWorkflow:
         session = MockSession()
         handler = ToolChatHandler(session, None)
 
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             # Mock available tools
             mock_tools = [test_custom_tool] + get_builtin_tools()[:3]
             mock_interactive.get_tools_for_mode.return_value = mock_tools
 
-            with patch('builtins.print') as mock_print:
+            with patch("builtins.print") as mock_print:
                 result = await handler.handle_chat("/tools")
 
             # Verify output
@@ -54,7 +57,7 @@ class TestToolChatWorkflow:
 
             # Check that tools were listed
             print_calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
-            tools_output = '\n'.join(str(c) for c in print_calls)
+            tools_output = "\n".join(str(c) for c in print_calls)
 
             assert "Available Tools" in tools_output
             assert "test_custom_tool" in tools_output
@@ -105,15 +108,17 @@ class TestToolChatWorkflow:
         session = MockSession()
         handler = ToolChatHandler(session, None)
 
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             # Mock the tool
             mock_interactive.get_tools_for_mode.return_value = [test_custom_tool]
 
-            with patch('builtins.print') as mock_print:
+            with patch("builtins.print") as mock_print:
                 await handler.handle_chat("/tools help test_custom_tool")
 
             # Verify help was shown
-            print_output = '\n'.join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
+            print_output = "\n".join(
+                str(call[0][0]) for call in mock_print.call_args_list if call[0]
+            )
             assert "test_custom_tool" in print_output
             assert "Custom tool for testing" in print_output
             assert "Parameters:" in print_output
@@ -125,7 +130,7 @@ class TestToolChatWorkflow:
         session = MockSession()
         handler = ToolChatHandler(session, None)
 
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             mock_interactive.get_tools_for_mode.return_value = []
 
             result = await handler.handle_chat("/tools help nonexistent_tool")
@@ -138,18 +143,24 @@ class TestToolChatWorkflow:
         session = MockSession()
         handler = ToolChatHandler(session, None)
 
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             # Mock tools with various names
             from coda.agents.builtin_tools import list_files, read_file, write_file
+
             mock_interactive.get_tools_for_mode.return_value = [
-                read_file, write_file, list_files, test_custom_tool
+                read_file,
+                write_file,
+                list_files,
+                test_custom_tool,
             ]
 
-            with patch('builtins.print') as mock_print:
+            with patch("builtins.print") as mock_print:
                 await handler.handle_chat("/tools search file")
 
             # Verify search results
-            print_output = '\n'.join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
+            print_output = "\n".join(
+                str(call[0][0]) for call in mock_print.call_args_list if call[0]
+            )
             assert "read_file" in print_output
             assert "write_file" in print_output
             assert "list_files" in print_output
@@ -161,7 +172,7 @@ class TestToolChatWorkflow:
         session = MockSession()
         handler = ToolChatHandler(session, None)
 
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             # Create tools with different categories
             file_tool = Mock()
             file_tool._tool_name = "file_tool"
@@ -174,13 +185,17 @@ class TestToolChatWorkflow:
             web_tool._tool_category = "web"
 
             mock_interactive.get_tools_for_mode.return_value = [
-                file_tool, web_tool, test_custom_tool
+                file_tool,
+                web_tool,
+                test_custom_tool,
             ]
 
-            with patch('builtins.print') as mock_print:
+            with patch("builtins.print") as mock_print:
                 await handler.handle_chat("/tools categories")
 
-            print_output = '\n'.join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
+            print_output = "\n".join(
+                str(call[0][0]) for call in mock_print.call_args_list if call[0]
+            )
             assert "filesystem" in print_output
             assert "web" in print_output
 
@@ -212,7 +227,7 @@ class TestToolChatWorkflow:
         handler = ToolChatHandler(session, provider)
 
         # Add custom tool to agent
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             mock_interactive.get_tools_for_mode.return_value = [test_custom_tool]
 
             # Initialize agent with tools
@@ -234,13 +249,13 @@ class TestToolChatWorkflow:
             "enabled": True,
             "require_approval": True,
             "allowed_tools": ["read_file", "write_file"],
-            "blocked_tools": ["run_command"]
+            "blocked_tools": ["run_command"],
         }
 
-        with patch('builtins.print') as mock_print:
+        with patch("builtins.print") as mock_print:
             await handler.handle_chat("/tools permissions")
 
-        print_output = '\n'.join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
+        print_output = "\n".join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
         assert "Tool Permissions" in print_output
         assert "Require approval: True" in print_output
         assert "Allowed tools:" in print_output
@@ -263,10 +278,7 @@ class TestToolChatWorkflow:
     async def test_tools_execution_with_approval(self):
         """Test tool execution requiring approval."""
         session = MockSession()
-        session.settings["tools"] = {
-            "enabled": True,
-            "require_approval": True
-        }
+        session.settings["tools"] = {"enabled": True, "require_approval": True}
         provider = Mock()
 
         # Mock dangerous tool call
@@ -284,9 +296,10 @@ class TestToolChatWorkflow:
         handler = ToolChatHandler(session, provider)
 
         # Mock user approval
-        with patch('builtins.input', return_value='y'):  # Approve
-            with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("builtins.input", return_value="y"):  # Approve
+            with patch("coda.cli.tool_chat.interactive") as mock_interactive:
                 from coda.agents.builtin_tools import run_command
+
                 mock_interactive.get_tools_for_mode.return_value = [run_command]
 
                 handler._ensure_agent()
@@ -304,18 +317,14 @@ class TestToolChatWorkflow:
         # Mock tool execution history
         handler.tool_stats = {
             "executions": 10,
-            "by_tool": {
-                "read_file": 5,
-                "write_file": 3,
-                "list_files": 2
-            },
-            "errors": 1
+            "by_tool": {"read_file": 5, "write_file": 3, "list_files": 2},
+            "errors": 1,
         }
 
-        with patch('builtins.print') as mock_print:
+        with patch("builtins.print") as mock_print:
             await handler.handle_chat("/tools stats")
 
-        print_output = '\n'.join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
+        print_output = "\n".join(str(call[0][0]) for call in mock_print.call_args_list if call[0])
         assert "Tool Usage Statistics" in print_output
         assert "Total executions: 10" in print_output
         assert "read_file: 5" in print_output
@@ -346,10 +355,10 @@ class TestToolChatWorkflow:
         session = MockSession()
         handler = ToolChatHandler(session, None)
 
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             mock_interactive.get_tools_for_mode.return_value = [test_custom_tool]
 
-            with patch('builtins.open', create=True) as mock_open:
+            with patch("builtins.open", create=True) as mock_open:
                 mock_file = Mock()
                 mock_open.return_value.__enter__.return_value = mock_file
 

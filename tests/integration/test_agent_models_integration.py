@@ -36,12 +36,7 @@ def string_length(text: str) -> int:
 
 async def test_model(provider, model: str, console: Console) -> dict:
     """Test a specific model with agent functionality."""
-    results = {
-        "model": model,
-        "supports_tools": False,
-        "tool_test": "N/A",
-        "error": None
-    }
+    results = {"model": model, "supports_tools": False, "tool_test": "N/A", "error": None}
 
     try:
         # Check if model supports tools
@@ -107,11 +102,13 @@ async def main():
     console = Console()
 
     # Header
-    console.print(Panel.fit(
-        "[bold cyan]Coda Agent Model Testing[/bold cyan]\n"
-        "Testing tool calling capabilities across OCI models",
-        border_style="cyan"
-    ))
+    console.print(
+        Panel.fit(
+            "[bold cyan]Coda Agent Model Testing[/bold cyan]\n"
+            "Testing tool calling capabilities across OCI models",
+            border_style="cyan",
+        )
+    )
 
     # Load configuration
     config = get_config()
@@ -168,12 +165,7 @@ async def main():
                 test_status = "[red]FAILED[/red]"
 
             notes = result["error"] or ""
-            table.add_row(
-                result["model"],
-                supports,
-                test_status,
-                notes
-            )
+            table.add_row(result["model"], supports, test_status, notes)
 
         console.print(table)
 

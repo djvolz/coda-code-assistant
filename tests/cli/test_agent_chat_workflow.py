@@ -14,6 +14,7 @@ from coda.cli.tool_chat import ToolChatHandler
 # Helper function to create workflow test tool
 def create_workflow_test_tool():
     """Create test tool for workflow testing."""
+
     @tool
     def workflow_test_tool(message: str) -> str:
         """Test tool for workflow testing."""
@@ -94,7 +95,7 @@ class TestAgentChatWorkflow:
 
         # Mock the tool availability and model info
         workflow_test_tool = create_workflow_test_tool()
-        with patch.object(handler, 'get_available_tools', return_value=[workflow_test_tool]):
+        with patch.object(handler, "get_available_tools", return_value=[workflow_test_tool]):
             # Mock model supports functions
             model_info = Mock()
             model_info.id = "test-model"
@@ -124,7 +125,7 @@ class TestAgentChatWorkflow:
 
         # Test enabling tools
         workflow_test_tool = create_workflow_test_tool()
-        with patch('coda.cli.tool_chat.get_builtin_tools', return_value=[workflow_test_tool]):
+        with patch("coda.cli.tool_chat.get_builtin_tools", return_value=[workflow_test_tool]):
             result = await handler.handle_chat("Enable tools")
 
         assert "Tools are now enabled." in result
@@ -155,19 +156,24 @@ class TestAgentChatWorkflow:
 
         # Mock responses for multi-turn conversation
         responses = [
-            Mock(content="I'll help you create a file.", tool_calls=[
-                Mock(name="write_file", id="w1", arguments={
-                    "file_path": "/tmp/test.txt",
-                    "content": "Hello"
-                })
-            ]),
+            Mock(
+                content="I'll help you create a file.",
+                tool_calls=[
+                    Mock(
+                        name="write_file",
+                        id="w1",
+                        arguments={"file_path": "/tmp/test.txt", "content": "Hello"},
+                    )
+                ],
+            ),
             Mock(content="File created successfully.", tool_calls=[]),
-            Mock(content="Now I'll read it back.", tool_calls=[
-                Mock(name="read_file", id="r1", arguments={
-                    "file_path": "/tmp/test.txt"
-                })
-            ]),
-            Mock(content="The file contains: Hello", tool_calls=[])
+            Mock(
+                content="Now I'll read it back.",
+                tool_calls=[
+                    Mock(name="read_file", id="r1", arguments={"file_path": "/tmp/test.txt"})
+                ],
+            ),
+            Mock(content="The file contains: Hello", tool_calls=[]),
         ]
 
         provider.chat = AsyncMock(side_effect=responses)
@@ -176,6 +182,7 @@ class TestAgentChatWorkflow:
 
         # Add file tools
         from coda.agents.builtin_tools import read_file, write_file
+
         handler.agent.add_tool(read_file)
         handler.agent.add_tool(write_file)
 
@@ -196,13 +203,13 @@ class TestAgentChatWorkflow:
         session = MockChatSession()
 
         # Mock interactive module
-        with patch('coda.cli.tool_chat.interactive') as mock_interactive:
+        with patch("coda.cli.tool_chat.interactive") as mock_interactive:
             mock_interactive.get_tools_for_mode.return_value = [create_workflow_test_tool()]
 
             handler = ToolChatHandler(session, None)
 
             # Test /tools command
-            with patch('builtins.print') as mock_print:
+            with patch("builtins.print") as mock_print:
                 await handler.handle_chat("/tools")
 
             # Verify tools listing was printed
@@ -256,7 +263,7 @@ class TestAgentChatWorkflow:
         # Collect streamed content
         result = ""
         async for chunk in handler.handle_stream("Test streaming"):
-            result += chunk.content if hasattr(chunk, 'content') else str(chunk)
+            result += chunk.content if hasattr(chunk, "content") else str(chunk)
 
         assert "Hello from streaming mode!" in result
 
@@ -264,12 +271,7 @@ class TestAgentChatWorkflow:
     async def test_tool_permission_workflow(self):
         """Test tool execution with permissions."""
         session = MockChatSession()
-        session.settings = {
-            "tools": {
-                "enabled": True,
-                "require_approval": True
-            }
-        }
+        session.settings = {"tools": {"enabled": True, "require_approval": True}}
         provider = Mock()
 
         # Mock tool call requiring approval
@@ -288,10 +290,11 @@ class TestAgentChatWorkflow:
 
         # Add dangerous tool
         from coda.agents.builtin_tools import run_command
+
         handler.agent.add_tool(run_command)
 
         # Mock user approval
-        with patch('builtins.input', return_value='n'):  # Deny permission
+        with patch("builtins.input", return_value="n"):  # Deny permission
             await handler.handle_chat("Delete everything")
 
         # Should not execute dangerous command
@@ -306,7 +309,7 @@ class TestAgentChatWorkflow:
         # Setup responses that reference previous context
         responses = [
             Mock(content="I'll remember that your name is Alice.", tool_calls=[]),
-            Mock(content="Hello Alice! How can I help you today?", tool_calls=[])
+            Mock(content="Hello Alice! How can I help you today?", tool_calls=[]),
         ]
 
         provider.chat = AsyncMock(side_effect=responses)
@@ -334,18 +337,15 @@ class TestAgentChatWorkflow:
             test_file = os.path.join(tmpdir, "workflow_test.txt")
 
             # Mock responses for file operations
-            write_call = Mock(name="write_file", id="w1", arguments={
-                "file_path": test_file,
-                "content": "Test content for workflow"
-            })
+            write_call = Mock(
+                name="write_file",
+                id="w1",
+                arguments={"file_path": test_file, "content": "Test content for workflow"},
+            )
 
-            read_call = Mock(name="read_file", id="r1", arguments={
-                "file_path": test_file
-            })
+            read_call = Mock(name="read_file", id="r1", arguments={"file_path": test_file})
 
-            list_call = Mock(name="list_files", id="l1", arguments={
-                "directory": tmpdir
-            })
+            list_call = Mock(name="list_files", id="l1", arguments={"directory": tmpdir})
 
             responses = [
                 Mock(content="Creating file...", tool_calls=[write_call]),
@@ -353,7 +353,7 @@ class TestAgentChatWorkflow:
                 Mock(content="Reading file...", tool_calls=[read_call]),
                 Mock(content="File contains: Test content for workflow", tool_calls=[]),
                 Mock(content="Listing directory...", tool_calls=[list_call]),
-                Mock(content="Directory contains: workflow_test.txt", tool_calls=[])
+                Mock(content="Directory contains: workflow_test.txt", tool_calls=[]),
             ]
 
             provider.chat = AsyncMock(side_effect=responses)
@@ -362,6 +362,7 @@ class TestAgentChatWorkflow:
 
             # Add all file operation tools
             from coda.agents.builtin_tools import list_files, read_file, write_file
+
             handler.agent.add_tool(read_file)
             handler.agent.add_tool(write_file)
             handler.agent.add_tool(list_files)
