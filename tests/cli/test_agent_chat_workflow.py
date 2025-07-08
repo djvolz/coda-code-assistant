@@ -5,11 +5,11 @@ import tempfile
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from rich.console import Console
 
 from coda.agents.decorators import tool
 from coda.cli.agent_chat import AgentChatHandler
 from coda.cli.tool_chat import ToolChatHandler
-from rich.console import Console
 
 
 # Helper function to create workflow test tool
@@ -46,7 +46,7 @@ class TestAgentChatWorkflow:
         """Create an AgentChatHandler with the correct signature."""
         console = Console()
         handler = AgentChatHandler(provider, session, console)
-        
+
         # Add a mock handle_chat method for tests
         async def handle_chat(message):
             session.add_message("user", message)
@@ -55,7 +55,7 @@ class TestAgentChatWorkflow:
             for msg in session.messages:
                 messages.append(Mock(role=msg["role"], content=msg["content"]))
             messages.append(Mock(role="user", content=message))
-            
+
             try:
                 result = await provider.chat(messages=messages)
                 response_content = result.content
@@ -65,14 +65,14 @@ class TestAgentChatWorkflow:
                 error_msg = f"Error: {str(e)}"
                 session.add_message("assistant", error_msg)
                 return error_msg
-        
+
         handler.handle_chat = handle_chat
-        
+
         # Initialize a mock agent for tests that need it
         mock_agent = Mock()
         mock_agent.add_tool = Mock()
         handler.agent = mock_agent
-        
+
         return handler
 
     @pytest.mark.asyncio
