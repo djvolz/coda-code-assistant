@@ -619,7 +619,7 @@ class InteractiveCLI(CommandHandler):
         result = self.handle_tools_command(args)
         return result
     
-    def _cmd_search(self, args: str):
+    async def _cmd_search(self, args: str):
         """Semantic search commands."""
         parts = args.split(maxsplit=1)
         subcommand = parts[0] if parts else ""
@@ -661,8 +661,7 @@ class InteractiveCLI(CommandHandler):
             
             self.console.print(f"[cyan]Searching for: '{query}'[/cyan]")
             try:
-                import asyncio
-                results = asyncio.run(manager.search(query, k=5))
+                results = await manager.search(query, k=5)
                 if results:
                     self.console.print("\n[green]Search Results:[/green]")
                     for i, result in enumerate(results, 1):
@@ -701,8 +700,7 @@ class InteractiveCLI(CommandHandler):
                     "FastAPI is great for building Python APIs"
                 ]
                 try:
-                    import asyncio
-                    doc_ids = asyncio.run(manager.index_content(demo_docs))
+                    doc_ids = await manager.index_content(demo_docs)
                     self.console.print(f"[green]Indexed {len(doc_ids)} demo documents[/green]")
                 except Exception as e:
                     self.console.print(f"[red]Indexing error: {e}[/red]")
@@ -714,8 +712,7 @@ class InteractiveCLI(CommandHandler):
         
         elif subcommand == "status":
             try:
-                import asyncio
-                stats = asyncio.run(manager.get_stats())
+                stats = await manager.get_stats()
                 self.console.print("\n[cyan]Semantic Search Index Status:[/cyan]")
                 self.console.print(f"  Vector count: {stats['vector_count']}")
                 self.console.print(f"  Embedding model: {stats['embedding_model']}")
