@@ -259,7 +259,8 @@ class TestToolChatWorkflow:
 
         # Test with non-Cohere model (no tools)
         result, updated_messages = await handler.chat_with_tools(
-            messages=messages, model="gpt-4"  # Non-Cohere model
+            messages=messages,
+            model="gpt-4",  # Non-Cohere model
         )
 
         assert result == "Streaming response here"
@@ -283,7 +284,8 @@ class TestToolChatWorkflow:
         messages = [Message(role=Role.USER, content="Test interrupt")]
 
         result, _ = await handler.chat_with_tools(
-            messages=messages, model="gpt-4"  # Non-Cohere for streaming test
+            messages=messages,
+            model="gpt-4",  # Non-Cohere for streaming test
         )
 
         # Should only have Part 1
