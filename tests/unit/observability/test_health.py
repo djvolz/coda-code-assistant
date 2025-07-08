@@ -1,9 +1,9 @@
 """Unit tests for health monitor."""
 
 import tempfile
+from enum import Enum
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
-from enum import Enum
 
 import pytest
 

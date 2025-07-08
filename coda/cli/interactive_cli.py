@@ -628,46 +628,46 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_observability(self, args: str):
         """Manage observability and telemetry settings."""
-        from ..observability.manager import ObservabilityManager
+        from ..configuration import get_config_manager
         from ..observability.commands import ObservabilityCommands
-        from ..configuration import ConfigManager, get_config_manager
-        
+        from ..observability.manager import ObservabilityManager
+
         # Initialize observability manager if not already available
         if not hasattr(self, 'observability_manager'):
             # Get the global ConfigManager instance which has loaded the config files
             config_manager = get_config_manager()
             self.observability_manager = ObservabilityManager(config_manager)
-        
+
         # Initialize observability commands
         obs_commands = ObservabilityCommands(self.observability_manager, self.console)
-        
+
         # Parse command and arguments
         args = args.strip()
         if not args:
             # Show status if no arguments
             obs_commands.show_status()
             return
-        
+
         parts = args.split(None, 1)
         subcommand = parts[0].lower()
         sub_args = parts[1] if len(parts) > 1 else ""
-        
+
         try:
             if subcommand in ["status", "stat"]:
                 obs_commands.show_status()
-            
+
             elif subcommand in ["metrics", "metric"]:
                 # Check for --detailed flag
                 detailed = "--detailed" in sub_args or "-d" in sub_args
                 obs_commands.show_metrics(detailed=detailed)
-            
+
             elif subcommand in ["health"]:
                 # Extract component name if provided
                 component = None
                 if sub_args and not sub_args.startswith("--"):
                     component = sub_args.split()[0]
                 obs_commands.show_health(component=component)
-            
+
             elif subcommand in ["traces", "trace"]:
                 # Parse limit parameter
                 limit = 10  # default
@@ -680,12 +680,12 @@ class InteractiveCLI(CommandHandler):
                         self.console.print("[red]Invalid limit value[/red]")
                         return
                 obs_commands.show_traces(limit=limit)
-            
+
             elif subcommand in ["export"]:
                 # Parse export parameters
                 format_type = "json"
                 output_file = None
-                
+
                 if "--format" in sub_args:
                     try:
                         format_parts = sub_args.split("--format")
@@ -693,7 +693,7 @@ class InteractiveCLI(CommandHandler):
                             format_type = format_parts[1].strip().split()[0]
                     except IndexError:
                         pass
-                
+
                 if "--output" in sub_args:
                     try:
                         output_parts = sub_args.split("--output")
@@ -701,14 +701,14 @@ class InteractiveCLI(CommandHandler):
                             output_file = output_parts[1].strip().split()[0]
                     except IndexError:
                         pass
-                
+
                 obs_commands.export_data(format=format_type, output_file=output_file)
-            
+
             elif subcommand in ["errors", "error"]:
                 # Parse error command parameters
                 limit = 20  # default
                 days = 7   # default
-                
+
                 if "--limit" in sub_args:
                     try:
                         limit_parts = sub_args.split("--limit")
@@ -717,7 +717,7 @@ class InteractiveCLI(CommandHandler):
                     except (ValueError, IndexError):
                         self.console.print("[red]Invalid limit value[/red]")
                         return
-                
+
                 if "--days" in sub_args:
                     try:
                         days_parts = sub_args.split("--days")
@@ -726,13 +726,13 @@ class InteractiveCLI(CommandHandler):
                     except (ValueError, IndexError):
                         self.console.print("[red]Invalid days value[/red]")
                         return
-                
+
                 obs_commands.show_errors(limit=limit, days=days)
-            
+
             elif subcommand in ["performance", "perf", "profile"]:
                 # Parse performance command parameters
                 limit = 20  # default
-                
+
                 if "--limit" in sub_args:
                     try:
                         limit_parts = sub_args.split("--limit")
@@ -741,14 +741,14 @@ class InteractiveCLI(CommandHandler):
                     except (ValueError, IndexError):
                         self.console.print("[red]Invalid limit value[/red]")
                         return
-                
+
                 obs_commands.show_performance(limit=limit)
-            
+
             else:
                 self.console.print(f"[red]Unknown observability subcommand: {subcommand}[/red]")
                 self.console.print("Available subcommands: status, metrics, health, traces, export, errors, performance")
                 self.console.print("Use [cyan]/help observability[/cyan] for more details")
-        
+
         except Exception as e:
             self.console.print(f"[red]Error executing observability command: {e}[/red]")
 
