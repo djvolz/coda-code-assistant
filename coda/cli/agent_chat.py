@@ -92,7 +92,7 @@ Each user request should be evaluated independently. Previous tool usage does no
             # Update status if provided
             if status:
                 status.update("[bold cyan]Processing request...[/bold cyan]")
-            
+
             response_content, updated_messages = await self.agent.run_async_streaming(
                 input=user_input,
                 messages=messages[:-1] if messages else None,  # Exclude last user message

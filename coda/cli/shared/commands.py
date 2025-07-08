@@ -172,7 +172,7 @@ class CommandHandler(ABC):
                 get_tool_categories,
                 get_tool_info,
                 get_tool_stats,
-                list_tools_by_category
+                list_tools_by_category,
             )
         except ImportError:
             self.console.print("[red]Tools system not available. Please check installation.[/red]")
@@ -208,13 +208,13 @@ class CommandHandler(ABC):
         from coda.tools import get_tool_stats
 
         stats = get_tool_stats()
-        
+
         self.console.print("\n[bold]🔧 Coda Tools System[/bold]")
         self.console.print(f"Total tools: [cyan]{stats['total_tools']}[/cyan]")
         self.console.print(f"Categories: [cyan]{stats['categories']}[/cyan]")
-        if stats['dangerous_tools'] > 0:
+        if stats["dangerous_tools"] > 0:
             self.console.print(f"Dangerous tools: [yellow]{stats['dangerous_tools']}[/yellow]")
-        
+
         self.console.print("\n[bold]Available commands:[/bold]")
         self.console.print("  [cyan]/tools list[/cyan]       - List all available tools")
         self.console.print("  [cyan]/tools list <category>[/cyan] - List tools in a category")
@@ -222,8 +222,10 @@ class CommandHandler(ABC):
         self.console.print("  [cyan]/tools categories[/cyan]     - Show all tool categories")
         self.console.print("  [cyan]/tools stats[/cyan]          - Show tool statistics")
         self.console.print("  [cyan]/tools help[/cyan]           - Show detailed help")
-        
-        self.console.print("\n[dim]Use AI to call tools in conversation (tools currently read-only)[/dim]")
+
+        self.console.print(
+            "\n[dim]Use AI to call tools in conversation (tools currently read-only)[/dim]"
+        )
 
     def _show_tools_list(self, category: str = None):
         """Show list of tools, optionally filtered by category."""
@@ -237,7 +239,7 @@ class CommandHandler(ABC):
                 self.console.print(f"[red]Category '{category}' not found.[/red]")
                 self.console.print(f"Available categories: {', '.join(available_categories)}")
                 return
-            
+
             self.console.print(f"\n[bold]Tools in '{category}' category:[/bold]")
             for tool in tools:
                 danger_indicator = " ⚠️" if tool.dangerous else ""
@@ -245,18 +247,20 @@ class CommandHandler(ABC):
                 self.console.print(f"    {tool.description}")
         else:
             # List all tools grouped by category
-            from coda.tools import list_tools_by_category, get_tool_info
-            
+            from coda.tools import get_tool_info, list_tools_by_category
+
             tools_by_cat = list_tools_by_category()
-            
+
             self.console.print("\n[bold]Available Tools by Category:[/bold]")
             for cat, tool_names in tools_by_cat.items():
                 self.console.print(f"\n[yellow]{cat.title()}:[/yellow]")
                 for tool_name in tool_names:
                     tool_info = get_tool_info(tool_name)
                     if tool_info:
-                        danger_indicator = " ⚠️" if tool_info.get('dangerous', False) else ""
-                        self.console.print(f"  [cyan]{tool_name}[/cyan]{danger_indicator} - {tool_info['description']}")
+                        danger_indicator = " ⚠️" if tool_info.get("dangerous", False) else ""
+                        self.console.print(
+                            f"  [cyan]{tool_name}[/cyan]{danger_indicator} - {tool_info['description']}"
+                        )
 
     def _show_tool_info(self, tool_name: str):
         """Show detailed information about a specific tool."""
@@ -266,7 +270,7 @@ class CommandHandler(ABC):
             return
 
         from coda.tools import get_tool_info
-        
+
         tool_info = get_tool_info(tool_name)
         if not tool_info:
             self.console.print(f"[red]Tool '{tool_name}' not found.[/red]")
@@ -275,19 +279,25 @@ class CommandHandler(ABC):
         self.console.print(f"\n[bold]Tool: {tool_info['name']}[/bold]")
         self.console.print(f"Category: [cyan]{tool_info['category']}[/cyan]")
         self.console.print(f"Server: [cyan]{tool_info['server']}[/cyan]")
-        if tool_info['dangerous']:
+        if tool_info["dangerous"]:
             self.console.print("⚠️  [yellow]This tool requires special permissions[/yellow]")
-        
-        self.console.print(f"\n[bold]Description:[/bold]")
+
+        self.console.print("\n[bold]Description:[/bold]")
         self.console.print(f"  {tool_info['description']}")
-        
-        if tool_info['parameters']:
-            self.console.print(f"\n[bold]Parameters:[/bold]")
-            for param_name, param_info in tool_info['parameters'].items():
-                required_str = " (required)" if param_info['required'] else " (optional)"
-                default_str = f" [default: {param_info['default']}]" if param_info.get('default') is not None else ""
-                
-                self.console.print(f"  [cyan]{param_name}[/cyan] ({param_info['type']}){required_str}{default_str}")
+
+        if tool_info["parameters"]:
+            self.console.print("\n[bold]Parameters:[/bold]")
+            for param_name, param_info in tool_info["parameters"].items():
+                required_str = " (required)" if param_info["required"] else " (optional)"
+                default_str = (
+                    f" [default: {param_info['default']}]"
+                    if param_info.get("default") is not None
+                    else ""
+                )
+
+                self.console.print(
+                    f"  [cyan]{param_name}[/cyan] ({param_info['type']}){required_str}{default_str}"
+                )
                 self.console.print(f"    {param_info['description']}")
         else:
             self.console.print("\n[dim]No parameters required[/dim]")
@@ -295,10 +305,10 @@ class CommandHandler(ABC):
     def _show_tool_categories(self):
         """Show all tool categories."""
         from coda.tools import get_tool_categories, list_tools_by_category
-        
+
         categories = get_tool_categories()
         tools_by_cat = list_tools_by_category()
-        
+
         self.console.print("\n[bold]Tool Categories:[/bold]")
         for category in sorted(categories):
             tool_count = len(tools_by_cat.get(category, []))
@@ -307,46 +317,46 @@ class CommandHandler(ABC):
     def _show_tool_stats(self):
         """Show tool statistics."""
         from coda.tools import get_tool_stats
-        
+
         stats = get_tool_stats()
-        
+
         self.console.print("\n[bold]Tool System Statistics:[/bold]")
         self.console.print(f"Total tools: [cyan]{stats['total_tools']}[/cyan]")
         self.console.print(f"Categories: [cyan]{stats['categories']}[/cyan]")
         self.console.print(f"Dangerous tools: [yellow]{stats['dangerous_tools']}[/yellow]")
-        
-        self.console.print(f"\n[bold]Tools by category:[/bold]")
-        for category, count in stats['tools_by_category'].items():
+
+        self.console.print("\n[bold]Tools by category:[/bold]")
+        for category, count in stats["tools_by_category"].items():
             self.console.print(f"  [cyan]{category}[/cyan]: {count}")
-        
-        if stats['dangerous_tool_names']:
-            self.console.print(f"\n[bold]Dangerous tools:[/bold]")
-            for tool_name in stats['dangerous_tool_names']:
+
+        if stats["dangerous_tool_names"]:
+            self.console.print("\n[bold]Dangerous tools:[/bold]")
+            for tool_name in stats["dangerous_tool_names"]:
                 self.console.print(f"  [yellow]{tool_name}[/yellow] ⚠️")
 
     def _show_tools_help(self):
         """Show detailed tools help."""
         self.console.print("\n[bold]🔧 Coda Tools System Help[/bold]")
-        
+
         self.console.print("\n[bold]What are tools?[/bold]")
         self.console.print("Tools are functions that AI can call to perform specific tasks like:")
         self.console.print("  • File operations (read, write, edit)")
         self.console.print("  • Shell command execution")
         self.console.print("  • Web searches and content fetching")
         self.console.print("  • Git operations")
-        
+
         self.console.print("\n[bold]How to use tools:[/bold]")
         self.console.print("1. Tools are automatically available to the AI")
         self.console.print("2. Simply ask the AI to perform tasks that require tools")
         self.console.print("3. The AI will call appropriate tools automatically")
         self.console.print("4. You can see tool results in the conversation")
-        
+
         self.console.print("\n[bold]Safety features:[/bold]")
         self.console.print("• Dangerous tools (⚠️) require explicit approval")
         self.console.print("• Shell commands are filtered for security")
         self.console.print("• File operations use safe paths")
         self.console.print("• All tool calls are logged")
-        
+
         self.console.print("\n[bold]Available commands:[/bold]")
         self.console.print("  [cyan]/tools[/cyan]                 - Show tools overview")
         self.console.print("  [cyan]/tools list[/cyan]             - List all tools")
