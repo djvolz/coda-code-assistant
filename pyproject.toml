@@ -32,7 +32,7 @@ coda = "coda.cli.main:main"
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
+    "pytest-asyncio>=0.21.0,<1.0",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
@@ -67,6 +67,7 @@ markers = [
     "slow: Slow running tests",
     "asyncio: Asynchronous tests",
 ]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["coda"]
