@@ -263,8 +263,8 @@ class TestRepoMapIntegration:
         
         # Verify dependencies
         assert "src/utils.py" in dependencies.get("src/main.py", [])
-        # TODO: Fix JavaScript import parsing - currently not capturing imports correctly  
-        # assert "frontend/components.js" in dependencies.get("frontend/app.js", [])
+        # JavaScript import parsing should now work correctly
+        assert "frontend/components.js" in dependencies.get("frontend/app.js", [])
     
     def test_repo_summary_with_definitions(self):
         """Test generating repository summary with definition counts."""
