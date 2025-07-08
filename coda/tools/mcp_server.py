@@ -246,9 +246,9 @@ class MCPServer:
                 "content": [
                     {
                         "type": "text",
-                        "text": str(result.result)
-                        if result.result
-                        else (result.error or "No output"),
+                        "text": (
+                            str(result.result) if result.result else (result.error or "No output")
+                        ),
                     }
                 ],
                 "isError": not result.success,

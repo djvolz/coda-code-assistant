@@ -291,18 +291,22 @@ async def _handle_chat_interaction(
                 # Skip the first message (user) since it was already saved above
                 for msg in updated_messages[1:]:
                     tool_calls_data = None
-                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
                         tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
 
                     cli.session_commands.add_message(
-                        role=msg.role.value if hasattr(msg.role, 'value') else str(msg.role),
+                        role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
                         content=msg.content,
                         tool_calls=tool_calls_data,
                         metadata={
                             "mode": cli.current_mode.value,
-                            "provider": provider_instance.name if hasattr(provider_instance, "name") else "unknown",
+                            "provider": (
+                                provider_instance.name
+                                if hasattr(provider_instance, "name")
+                                else "unknown"
+                            ),
                             "model": cli.current_model,
-                            "tool_call_id": getattr(msg, 'tool_call_id', None),
+                            "tool_call_id": getattr(msg, "tool_call_id", None),
                         },
                     )
         else:

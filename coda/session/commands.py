@@ -605,7 +605,7 @@ Most used tool: [cyan]{summary['most_used'] or 'N/A'}[/cyan]
 
 [bold]Tool Counts:[/bold]"""
 
-        for tool, count in sorted(summary['tool_counts'].items(), key=lambda x: x[1], reverse=True):
+        for tool, count in sorted(summary["tool_counts"].items(), key=lambda x: x[1], reverse=True):
             summary_text += f"\n  • {tool}: {count} call{'s' if count > 1 else ''}"
 
         self.console.print(Panel(summary_text, title="Tool Usage", border_style="cyan"))
@@ -628,21 +628,27 @@ Most used tool: [cyan]{summary['most_used'] or 'N/A'}[/cyan]
                         str(entry["sequence"]),
                         "CALL",
                         tool_info,
-                        entry["created_at"].strftime("%H:%M:%S")
+                        entry["created_at"].strftime("%H:%M:%S"),
                     )
                 else:  # result
-                    result_preview = entry["content"][:50] + "..." if len(entry["content"]) > 50 else entry["content"]
+                    result_preview = (
+                        entry["content"][:50] + "..."
+                        if len(entry["content"]) > 50
+                        else entry["content"]
+                    )
                     result_preview = result_preview.replace("\n", " ")
                     table.add_row(
                         str(entry["sequence"]),
                         "RESULT",
                         result_preview,
-                        entry["created_at"].strftime("%H:%M:%S")
+                        entry["created_at"].strftime("%H:%M:%S"),
                     )
 
             self.console.print(table)
         else:
-            self.console.print(f"\n[dim]Full history contains {len(tool_history)} entries. Showing summary only.[/dim]")
+            self.console.print(
+                f"\n[dim]Full history contains {len(tool_history)} entries. Showing summary only.[/dim]"
+            )
 
         return None
 

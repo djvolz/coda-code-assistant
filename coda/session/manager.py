@@ -638,10 +638,7 @@ class SessionManager:
                 .filter(
                     and_(
                         Message.session_id == session_id,
-                        or_(
-                            Message.tool_calls.isnot(None),
-                            Message.role == "tool"
-                        )
+                        or_(Message.tool_calls.isnot(None), Message.role == "tool"),
                     )
                 )
                 .order_by(Message.sequence)
@@ -652,23 +649,31 @@ class SessionManager:
             for msg in messages:
                 if msg.tool_calls:
                     # Message contains tool calls
-                    tool_history.append({
-                        "type": "call",
-                        "sequence": msg.sequence,
-                        "created_at": msg.created_at,
-                        "role": msg.role,
-                        "content": msg.content,
-                        "tool_calls": msg.tool_calls,
-                    })
+                    tool_history.append(
+                        {
+                            "type": "call",
+                            "sequence": msg.sequence,
+                            "created_at": msg.created_at,
+                            "role": msg.role,
+                            "content": msg.content,
+                            "tool_calls": msg.tool_calls,
+                        }
+                    )
                 elif msg.role == "tool":
                     # Tool result message
-                    tool_history.append({
-                        "type": "result",
-                        "sequence": msg.sequence,
-                        "created_at": msg.created_at,
-                        "content": msg.content,
-                        "tool_call_id": msg.message_metadata.get("tool_call_id") if msg.message_metadata else None,
-                    })
+                    tool_history.append(
+                        {
+                            "type": "result",
+                            "sequence": msg.sequence,
+                            "created_at": msg.created_at,
+                            "content": msg.content,
+                            "tool_call_id": (
+                                msg.message_metadata.get("tool_call_id")
+                                if msg.message_metadata
+                                else None
+                            ),
+                        }
+                    )
 
             return tool_history
 
@@ -684,12 +689,7 @@ class SessionManager:
         with self.db.get_session() as db:
             messages = (
                 db.query(Message)
-                .filter(
-                    and_(
-                        Message.session_id == session_id,
-                        Message.tool_calls.isnot(None)
-                    )
-                )
+                .filter(and_(Message.session_id == session_id, Message.tool_calls.isnot(None)))
                 .all()
             )
 
@@ -707,5 +707,7 @@ class SessionManager:
                 "total_tool_calls": total_calls,
                 "unique_tools": len(tool_counts),
                 "tool_counts": tool_counts,
-                "most_used": max(tool_counts.items(), key=lambda x: x[1])[0] if tool_counts else None,
+                "most_used": (
+                    max(tool_counts.items(), key=lambda x: x[1])[0] if tool_counts else None
+                ),
             }

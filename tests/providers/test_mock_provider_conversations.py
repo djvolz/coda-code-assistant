@@ -39,9 +39,9 @@ class TestMockProviderConversations:
         messages.append(Message(role=Role.USER, content="What's my name?"))
         response2 = provider.chat(messages, "mock-echo")
 
-        assert "alice" in response2.content.lower(), (
-            "MockProvider should remember the name from context"
-        )
+        assert (
+            "alice" in response2.content.lower()
+        ), "MockProvider should remember the name from context"
 
     def test_python_context_awareness(self):
         """Test MockProvider's Python-specific context awareness."""
@@ -71,9 +71,9 @@ class TestMockProviderConversations:
         messages.append(Message(role=Role.USER, content="Can you show me an example?"))
         response3 = provider.chat(messages, "mock-echo")
 
-        assert "@" in response3.content or "decorator" in response3.content.lower(), (
-            "Should provide decorator example"
-        )
+        assert (
+            "@" in response3.content or "decorator" in response3.content.lower()
+        ), "Should provide decorator example"
 
     def test_conversation_context_switching(self):
         """Test switching between different conversation topics."""
@@ -178,9 +178,9 @@ class TestMockProviderConversations:
             response = provider.chat(messages, "mock-echo")
 
             # Should mention the expected keyword
-            assert expected_keyword in response.content.lower(), (
-                f"Response to '{question}' should mention '{expected_keyword}'"
-            )
+            assert (
+                expected_keyword in response.content.lower()
+            ), f"Response to '{question}' should mention '{expected_keyword}'"
 
     def test_code_generation_requests(self):
         """Test handling of code generation requests."""
@@ -216,6 +216,6 @@ class TestMockProviderConversations:
         assert "javascript" in response2.content.lower()
 
         # Responses should be different
-        assert response1.content != response2.content, (
-            "Different branches should yield different responses"
-        )
+        assert (
+            response1.content != response2.content
+        ), "Different branches should yield different responses"
