@@ -28,6 +28,7 @@ class MCPToolAdapter:
         @tool(name=schema.name, description=schema.description)
         async def mcp_wrapper(**kwargs) -> str:
             """Execute the MCP tool."""
+            # Debug: print(f"mcp_wrapper called with kwargs: {kwargs}")
             result = await mcp_tool.execute(kwargs)
 
             if result.success:
