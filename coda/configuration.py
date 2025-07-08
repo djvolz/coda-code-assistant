@@ -59,6 +59,9 @@ class CodaConfig:
 
     # Debug settings
     debug: bool = False
+    
+    # Observability settings
+    observability: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CodaConfig":
@@ -73,6 +76,7 @@ class CodaConfig:
             "session": self.session,
             "ui": self.ui,
             "debug": self.debug,
+            "observability": self.observability,
         }
 
     def merge(self, other: dict[str, Any]) -> None:
@@ -94,6 +98,9 @@ class CodaConfig:
 
         if "debug" in other:
             self.debug = other["debug"]
+        
+        if "observability" in other:
+            self.observability.update(other["observability"])
 
 
 class ConfigManager:
@@ -351,6 +358,14 @@ def get_provider_config(provider: str) -> dict[str, Any]:
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager.get_provider_config(provider)
+
+
+def get_config_manager() -> ConfigManager:
+    """Get the global configuration manager instance."""
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = ConfigManager()
+    return _config_manager
 
 
 def save_config() -> None:

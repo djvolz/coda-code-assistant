@@ -341,7 +341,12 @@ class CommandRegistry:
 
         for cmd in cls.COMMANDS:
             if cmd.subcommands:
-                options[cmd.name] = [sub.to_autocomplete_tuple() for sub in cmd.subcommands]
+                subcommand_tuples = [sub.to_autocomplete_tuple() for sub in cmd.subcommands]
+                # Add options for the main command name
+                options[cmd.name] = subcommand_tuples
+                # Also add options for each alias
+                for alias in cmd.aliases:
+                    options[alias] = subcommand_tuples
 
         return options
 
