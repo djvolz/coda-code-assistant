@@ -15,6 +15,13 @@
     (function_definition
       name: (identifier) @name.definition.method))) @definition.method
 
+;; Decorated methods inside classes
+(class_definition
+  body: (block
+    (decorated_definition
+      (function_definition
+        name: (identifier) @name.definition.method)))) @definition.method
+
 ;; Decorated definitions
 (decorated_definition
   (decorator) @decorator

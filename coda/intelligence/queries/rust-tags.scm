@@ -58,3 +58,21 @@
 (impl_item
     type: (type_identifier) @name.reference.implementation
     !trait) @reference.implementation
+
+; imports
+
+(use_declaration
+    argument: (scoped_identifier
+        name: (identifier) @name.import)) @import
+
+(use_declaration
+    argument: (identifier) @name.import) @import
+
+(use_declaration
+    argument: (use_list
+        (identifier) @name.import)) @import
+
+(use_declaration
+    argument: (scoped_use_list
+        list: (use_list
+            (identifier) @name.import))) @import

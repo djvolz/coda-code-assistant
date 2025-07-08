@@ -35,7 +35,9 @@
 
 (type_declaration (type_spec name: (type_identifier) @name.definition.class type: (struct_type)))
 
-(import_declaration (import_spec) @name.reference.module)
+(import_declaration
+  (import_spec
+    path: (interpreted_string_literal) @name.import)) @import
 
 (var_declaration (var_spec name: (identifier) @name.definition.variable))
 
