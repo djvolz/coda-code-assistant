@@ -7,14 +7,14 @@ This package provides comprehensive observability features including:
 - Error tracking and alerting
 """
 
+from .health import HealthMonitor
 from .manager import ObservabilityManager
 from .metrics import MetricsCollector
 from .tracing import TracingManager
-from .health import HealthMonitor
 
 __all__ = [
     "ObservabilityManager",
-    "MetricsCollector", 
+    "MetricsCollector",
     "TracingManager",
     "HealthMonitor",
 ]
