@@ -41,7 +41,7 @@ The command registry pattern is implemented in `coda/cli/command_registry.py:45-
 - Create verification checklist template for all documentation
 
 ### 1.1.1 Documentation Template
-Every architecture document must include:
+The module architecture template is maintained in `docs/templates/MODULE_ARCHITECTURE_TEMPLATE.md`. Every architecture document must include:
 ```markdown
 # [Module Name] Architecture
 
