@@ -12,12 +12,19 @@ from .oci import (
     create_standalone_oci_provider,
 )
 from .mock import MockEmbeddingProvider
+from .sentence_transformers import SentenceTransformersProvider
+from .ollama import OllamaEmbeddingProvider
+from .factory import EmbeddingProviderFactory, create_embedding_provider
 
 __all__ = [
     "BaseEmbeddingProvider",
     "EmbeddingResult",
     "OCIEmbeddingProvider",
     "MockEmbeddingProvider",
+    "SentenceTransformersProvider",
+    "OllamaEmbeddingProvider",
+    "EmbeddingProviderFactory",
+    "create_embedding_provider",
     "create_oci_provider_from_coda_config",
     "create_standalone_oci_provider",
 ]
