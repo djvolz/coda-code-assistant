@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines a comprehensive plan for creating and maintaining architecture documentation for the Coda Wiki codebase. The documentation will be integrated directly into the wiki submodule, utilizing PlantUML and Mermaid diagrams extensively to enhance understanding. The plan includes automated validation to ensure documentation stays current with code evolution.
+This document outlines a comprehensive plan for creating and maintaining architecture documentation for the Coda Code Assistant codebase. The documentation will be integrated directly into the wiki submodule, utilizing PlantUML and Mermaid diagrams extensively to enhance understanding. The plan includes automated validation to ensure documentation stays current with code evolution.
 
 ## Goals
 
