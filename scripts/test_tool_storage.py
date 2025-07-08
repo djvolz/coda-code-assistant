@@ -24,10 +24,7 @@ async def test_tool_storage():
 
         # Create a session
         session = manager.create_session(
-            name="Manual Tool Test",
-            provider="cohere",
-            model="cohere.command-r-plus",
-            mode="code"
+            name="Manual Tool Test", provider="cohere", model="cohere.command-r-plus", mode="code"
         )
         commands.current_session_id = session.id
 
@@ -47,7 +44,7 @@ async def test_tool_storage():
             "I'll examine your source files.",
             tool_calls=formatted_calls,
             model="cohere.command-r-plus",
-            provider="cohere"
+            provider="cohere",
         )
 
         print("✓ Added assistant message with 2 tool calls")
@@ -57,35 +54,36 @@ async def test_tool_storage():
             session.id,
             "tool",
             "# main.py\n\ndef main():\n    print('Hello, World!')",
-            metadata={"tool_call_id": "call_001"}
+            metadata={"tool_call_id": "call_001"},
         )
 
         manager.add_message(
             session.id,
             "tool",
             "Files: main.py, utils.py, test_main.py",
-            metadata={"tool_call_id": "call_002"}
+            metadata={"tool_call_id": "call_002"},
         )
 
         print("✓ Added tool results")
 
         # Add another round of tool usage
         tool_calls2 = [
-            {"id": "call_003", "name": "write_file", "arguments": {"path": "/src/utils.py", "content": "# utils"}},
+            {
+                "id": "call_003",
+                "name": "write_file",
+                "arguments": {"path": "/src/utils.py", "content": "# utils"},
+            },
         ]
 
         manager.add_message(
             session.id,
             "assistant",
             "I'll create a utils module.",
-            tool_calls=format_tool_calls_for_storage(tool_calls2)
+            tool_calls=format_tool_calls_for_storage(tool_calls2),
         )
 
         manager.add_message(
-            session.id,
-            "tool",
-            "File written successfully",
-            metadata={"tool_call_id": "call_003"}
+            session.id, "tool", "File written successfully", metadata={"tool_call_id": "call_003"}
         )
 
         print("✓ Added second round of tool usage")
@@ -125,4 +123,3 @@ async def test_tool_storage():
 
 if __name__ == "__main__":
     asyncio.run(test_tool_storage())
-

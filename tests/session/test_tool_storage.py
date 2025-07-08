@@ -1,6 +1,5 @@
 """Test tool call storage in sessions."""
 
-
 import pytest
 
 from coda.session.database import SessionDatabase
@@ -20,6 +19,7 @@ class TestToolStorage:
 
     def test_format_tool_calls_object(self):
         """Test formatting tool calls from objects."""
+
         # Mock tool call object
         class MockToolCall:
             def __init__(self, id, name, arguments):
@@ -59,6 +59,7 @@ class TestToolStorage:
 
     def test_format_tool_result(self):
         """Test formatting tool results."""
+
         # Object result
         class MockResult:
             def __init__(self, tool_call_id, content, is_error=False):
@@ -164,13 +165,11 @@ class TestToolStorage:
         )
 
         session_manager.add_message(
-            session.id, "tool", "file1.py\nfile2.py\nmain.py",
-            metadata={"tool_call_id": "t1"}
+            session.id, "tool", "file1.py\nfile2.py\nmain.py", metadata={"tool_call_id": "t1"}
         )
 
         session_manager.add_message(
-            session.id, "tool", "def main():\n    pass",
-            metadata={"tool_call_id": "t2"}
+            session.id, "tool", "def main():\n    pass", metadata={"tool_call_id": "t2"}
         )
 
         # Get tool history

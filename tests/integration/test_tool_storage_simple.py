@@ -1,6 +1,5 @@
 """Simple integration test for tool call storage."""
 
-
 import pytest
 
 from coda.session.database import SessionDatabase
@@ -21,16 +20,17 @@ class TestToolStorageSimple:
 
         # Create a session
         session = manager.create_session(
-            name="Tool Test",
-            provider="test",
-            model="test-model",
-            mode="code"
+            name="Tool Test", provider="test", model="test-model", mode="code"
         )
 
         # Add a message with tool calls
         tool_calls = [
             {"id": "tc1", "name": "read_file", "arguments": {"path": "test.py"}},
-            {"id": "tc2", "name": "write_file", "arguments": {"path": "out.txt", "content": "test"}}
+            {
+                "id": "tc2",
+                "name": "write_file",
+                "arguments": {"path": "out.txt", "content": "test"},
+            },
         ]
 
         # Format tool calls for storage
@@ -41,7 +41,7 @@ class TestToolStorageSimple:
             session_id=session.id,
             role="assistant",
             content="I'll help you with those files.",
-            tool_calls=formatted_calls
+            tool_calls=formatted_calls,
         )
 
         # Add tool results
@@ -49,14 +49,14 @@ class TestToolStorageSimple:
             session_id=session.id,
             role="tool",
             content="File content: print('hello')",
-            metadata={"tool_call_id": "tc1"}
+            metadata={"tool_call_id": "tc1"},
         )
 
         manager.add_message(
             session_id=session.id,
             role="tool",
             content="File written successfully",
-            metadata={"tool_call_id": "tc2"}
+            metadata={"tool_call_id": "tc2"},
         )
 
         # Test retrieval
@@ -89,18 +89,12 @@ class TestToolStorageSimple:
 
         # Create a session
         session = manager.create_session(
-            name="Tool Object Test",
-            provider="test",
-            model="test-model"
+            name="Tool Object Test", provider="test", model="test-model"
         )
 
         # Create tool call objects
         tool_calls = [
-            SimpleNamespace(
-                id="obj_tc1",
-                name="list_files",
-                arguments={"directory": "/home/user"}
-            )
+            SimpleNamespace(id="obj_tc1", name="list_files", arguments={"directory": "/home/user"})
         ]
 
         # Format and store
@@ -110,7 +104,7 @@ class TestToolStorageSimple:
             session_id=session.id,
             role="assistant",
             content="Listing files...",
-            tool_calls=formatted_calls
+            tool_calls=formatted_calls,
         )
 
         # Verify
@@ -135,9 +129,7 @@ class TestToolStorageSimple:
 
         # Create a session with tool usage
         session = manager.create_session(
-            name="Tool Command Test",
-            provider="test",
-            model="test-model"
+            name="Tool Command Test", provider="test", model="test-model"
         )
 
         commands.current_session_id = session.id
@@ -150,17 +142,14 @@ class TestToolStorageSimple:
             tool_calls=[
                 {"id": "t1", "name": "search", "arguments": {"query": "test"}},
                 {"id": "t2", "name": "search", "arguments": {"query": "demo"}},
-                {"id": "t3", "name": "read", "arguments": {"file": "test.py"}}
-            ]
+                {"id": "t3", "name": "read", "arguments": {"file": "test.py"}},
+            ],
         )
 
         # Add results
         for tid in ["t1", "t2", "t3"]:
             manager.add_message(
-                session.id,
-                "tool",
-                f"Result for {tid}",
-                metadata={"tool_call_id": tid}
+                session.id, "tool", f"Result for {tid}", metadata={"tool_call_id": tid}
             )
 
         # Test command - should not return error
@@ -174,4 +163,3 @@ class TestToolStorageSimple:
         assert summary["tool_counts"]["search"] == 2
         assert summary["tool_counts"]["read"] == 1
         assert summary["most_used"] == "search"
-

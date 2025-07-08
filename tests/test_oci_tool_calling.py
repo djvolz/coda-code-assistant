@@ -241,12 +241,14 @@ def create_oci_tool_debug_recorder():
             self.cohere_responses.append(
                 {
                     "text": getattr(response, "text", None),
-                    "tool_calls": [
-                        {"name": tc.name, "parameters": tc.parameters}
-                        for tc in getattr(response, "tool_calls", [])
-                    ]
-                    if hasattr(response, "tool_calls") and response.tool_calls
-                    else None,
+                    "tool_calls": (
+                        [
+                            {"name": tc.name, "parameters": tc.parameters}
+                            for tc in getattr(response, "tool_calls", [])
+                        ]
+                        if hasattr(response, "tool_calls") and response.tool_calls
+                        else None
+                    ),
                     "finish_reason": getattr(response, "finish_reason", None),
                 }
             )

@@ -237,9 +237,9 @@ class GitLogTool(BaseTool):
                 tool="git_log",
                 metadata={
                     "repo_path": str(path),
-                    "commit_count": len(log_output.strip().split("\n"))
-                    if log_output.strip()
-                    else 0,
+                    "commit_count": (
+                        len(log_output.strip().split("\n")) if log_output.strip() else 0
+                    ),
                     "filters": {"since": since, "author": author, "grep": grep_pattern},
                 },
             )
