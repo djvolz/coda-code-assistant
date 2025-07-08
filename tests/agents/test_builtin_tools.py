@@ -6,6 +6,7 @@ import os
 import json
 import tempfile
 import shutil
+import subprocess
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 from coda.agents.builtin_tools import (

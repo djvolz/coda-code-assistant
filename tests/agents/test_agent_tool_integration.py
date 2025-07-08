@@ -13,37 +13,48 @@ from coda.agents.builtin_tools import get_builtin_tools
 from coda.agents.types import RequiredAction, PerformedAction, FunctionCall, RunResponse
 
 
-# Test tools for integration testing
-@tool
-def test_add(a: int, b: int) -> int:
-    """Add two numbers."""
-    return a + b
+# Helper function to create test tools
+def create_test_tools():
+    """Create test tools for integration testing."""
+    
+    @tool
+    def test_add(a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
 
-@tool
-def test_multiply(x: int, y: int) -> int:
-    """Multiply two numbers."""
-    return x * y
+    @tool
+    def test_multiply(x: int, y: int) -> int:
+        """Multiply two numbers."""
+        return x * y
 
-@tool
-async def test_async_operation(value: str) -> str:
-    """Async operation that processes a string."""
-    await asyncio.sleep(0.01)
-    return f"Processed: {value.upper()}"
+    @tool
+    async def test_async_operation(value: str) -> str:
+        """Async operation that processes a string."""
+        await asyncio.sleep(0.01)
+        return f"Processed: {value.upper()}"
 
-@tool
-def test_error_tool(should_fail: bool = True) -> str:
-    """Tool that can raise errors for testing."""
-    if should_fail:
-        raise ValueError("Intentional test error")
-    return "Success"
+    @tool
+    def test_error_tool(should_fail: bool = True) -> str:
+        """Tool that can raise errors for testing."""
+        if should_fail:
+            raise ValueError("Intentional test error")
+        return "Success"
 
-@tool
-def test_complex_return() -> dict:
-    """Tool that returns complex data structure."""
+    @tool
+    def test_complex_return() -> dict:
+        """Tool that returns complex data structure."""
+        return {
+            "status": "ok",
+            "data": [1, 2, 3],
+            "nested": {"key": "value"}
+        }
+    
     return {
-        "status": "ok",
-        "data": [1, 2, 3],
-        "nested": {"key": "value"}
+        'test_add': test_add,
+        'test_multiply': test_multiply,
+        'test_async_operation': test_async_operation,
+        'test_error_tool': test_error_tool,
+        'test_complex_return': test_complex_return
     }
 
 
@@ -85,14 +96,15 @@ class MockProvider:
 class TestAgentToolIntegration:
     """Test agent-tool integration scenarios."""
     
+    def setup_method(self):
+        """Set up test tools for each test."""
+        self.tools = create_test_tools()
+    
     @pytest.mark.asyncio
     async def test_single_tool_execution(self):
         """Test agent executing a single tool."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        # Add test tool
-        agent.add_tool(test_add)
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_add']])
         
         # Mock provider response with tool call
         tool_call = Mock()
@@ -115,11 +127,10 @@ class TestAgentToolIntegration:
     async def test_multiple_tool_calls(self):
         """Test agent executing multiple tools in sequence."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        # Add test tools
-        agent.add_tool(test_add)
-        agent.add_tool(test_multiply)
+        agent = Agent(provider=provider, model="test-model", tools=[
+            self.tools['test_add'],
+            self.tools['test_multiply']
+        ])
         
         # Mock provider responses
         tool_call1 = Mock()
@@ -149,10 +160,7 @@ class TestAgentToolIntegration:
     async def test_async_tool_execution(self):
         """Test agent executing async tools."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        # Add async tool
-        agent.add_tool(test_async_operation)
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_async_operation']])
         
         # Mock provider response
         tool_call = Mock()
@@ -172,10 +180,7 @@ class TestAgentToolIntegration:
     async def test_tool_error_handling(self):
         """Test agent handling tool execution errors."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        # Add error-prone tool
-        agent.add_tool(test_error_tool)
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_error_tool']])
         
         # Mock provider response
         tool_call = Mock()
@@ -197,10 +202,7 @@ class TestAgentToolIntegration:
     async def test_complex_data_handling(self):
         """Test agent handling complex return values."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        # Add complex return tool
-        agent.add_tool(test_complex_return)
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_complex_return']])
         
         # Mock provider response
         tool_call = Mock()
@@ -224,11 +226,7 @@ class TestAgentToolIntegration:
     async def test_builtin_tools_integration(self):
         """Test integration with built-in tools."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        # Add all built-in tools
-        for tool in get_builtin_tools():
-            agent.add_tool(tool)
+        agent = Agent(provider=provider, model="test-model", tools=get_builtin_tools())
         
         # Test get_datetime tool
         tool_call = Mock()
@@ -250,13 +248,9 @@ class TestAgentToolIntegration:
     async def test_file_operations_integration(self):
         """Test file operation tools integration."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
         # Add file tools
         from coda.agents.builtin_tools import read_file, write_file, list_files
-        agent.add_tool(read_file)
-        agent.add_tool(write_file)
-        agent.add_tool(list_files)
+        agent = Agent(provider=provider, model="test-model", tools=[read_file, write_file, list_files])
         
         with tempfile.TemporaryDirectory() as tmpdir:
             # Test write operation
@@ -290,7 +284,7 @@ class TestAgentToolIntegration:
     async def test_tool_not_found(self):
         """Test agent handling unknown tool calls."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
+        agent = Agent(provider=provider, model="test-model")
         
         # No tools added
         
@@ -313,9 +307,7 @@ class TestAgentToolIntegration:
     async def test_invalid_arguments(self):
         """Test agent handling invalid tool arguments."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        agent.add_tool(test_add)
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_add']])
         
         # Mock provider response with invalid arguments
         tool_call = Mock()
@@ -336,9 +328,7 @@ class TestAgentToolIntegration:
     async def test_conversation_history_with_tools(self):
         """Test that tool results are included in conversation history."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        agent.add_tool(test_add)
+        agent = Agent(provider=provider, model="test-model", tools=[self.tools['test_add']])
         
         # First interaction
         tool_call1 = Mock()
@@ -372,12 +362,11 @@ class TestAgentToolIntegration:
     async def test_parallel_tool_execution(self):
         """Test agent executing multiple tools in parallel."""
         provider = MockProvider()
-        agent = Agent(provider=provider)
-        
-        # Add multiple tools
-        agent.add_tool(test_add)
-        agent.add_tool(test_multiply)
-        agent.add_tool(test_async_operation)
+        agent = Agent(provider=provider, model="test-model", tools=[
+            self.tools['test_add'],
+            self.tools['test_multiply'],
+            self.tools['test_async_operation']
+        ])
         
         # Mock provider response with multiple tool calls
         calls = [
