@@ -639,6 +639,7 @@ class InteractiveCLI(CommandHandler):
             table.add_row("/search code <query>", "Search code files with language-aware formatting")
             table.add_row("/search index [path]", "Index files or directories for search")
             table.add_row("/search status", "Show search index statistics")
+            table.add_row("/search reset", "Reset search manager and clear index")
 
             self.console.print()
             self.console.print(table)
@@ -665,8 +666,9 @@ class InteractiveCLI(CommandHandler):
         result_display = SearchResultDisplay(self.console)
         indexing_progress = IndexingProgress(self.console)
 
-        # Initialize search manager once (singleton pattern)
-        if self._search_manager is None:
+        # Initialize search manager once (singleton pattern) or reinitialize if needed
+        force_reinit = False
+        if self._search_manager is None or force_reinit:
             try:
                 # Try to use configured provider first
                 self._search_manager = create_semantic_search_manager()
@@ -822,6 +824,11 @@ class InteractiveCLI(CommandHandler):
                 create_search_stats_display(stats, self.console)
             except Exception as e:
                 self.console.print(f"[red]Error getting status: {e}[/red]")
+        
+        elif subcommand == "reset":
+            # Reset the search manager
+            self._search_manager = None
+            self.console.print("[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]")
 
         else:
             self.console.print(f"[red]Unknown search subcommand: {subcommand}[/red]")
