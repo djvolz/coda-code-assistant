@@ -75,7 +75,7 @@ class PerformanceProfiler(ObservabilityComponent):
     def __init__(self, export_directory: Path, config_manager: ConfigManager,
                  storage_backend=None, scheduler=None):
         """Initialize the performance profiler.
-        
+
         Args:
             export_directory: Directory to export profiling data
             config_manager: Configuration manager instance
@@ -147,10 +147,10 @@ class PerformanceProfiler(ObservabilityComponent):
 
     def is_profiling_enabled(self, debug_mode: bool = False) -> bool:
         """Check if profiling should be enabled.
-        
+
         Args:
             debug_mode: Whether debug mode is currently active
-        
+
         Returns:
             True if profiling should be enabled
         """
@@ -180,7 +180,7 @@ class PerformanceProfiler(ObservabilityComponent):
         args_hash: str = ""
     ):
         """Record a function call for profiling.
-        
+
         Args:
             function_name: Name of the function
             module_name: Module containing the function
@@ -217,10 +217,10 @@ class PerformanceProfiler(ObservabilityComponent):
 
     def get_function_stats(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get function statistics sorted by total time.
-        
+
         Args:
             limit: Maximum number of functions to return
-        
+
         Returns:
             List of function statistics
         """
@@ -236,10 +236,10 @@ class PerformanceProfiler(ObservabilityComponent):
 
     def get_slow_functions(self, min_avg_time_ms: float = 10.0) -> list[dict[str, Any]]:
         """Get functions with high average execution times.
-        
+
         Args:
             min_avg_time_ms: Minimum average time to include
-        
+
         Returns:
             List of slow functions
         """
@@ -254,10 +254,10 @@ class PerformanceProfiler(ObservabilityComponent):
 
     def get_recent_calls(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent function calls.
-        
+
         Args:
             limit: Maximum number of calls to return
-        
+
         Returns:
             List of recent function calls
         """
@@ -267,10 +267,10 @@ class PerformanceProfiler(ObservabilityComponent):
 
     def get_hotspots(self, time_window_minutes: int = 10) -> list[dict[str, Any]]:
         """Get performance hotspots in a recent time window.
-        
+
         Args:
             time_window_minutes: Time window in minutes
-        
+
         Returns:
             List of performance hotspots
         """
@@ -394,7 +394,7 @@ class PerformanceProfiler(ObservabilityComponent):
 
 def profile(profiler: PerformanceProfiler | None = None, debug_mode: bool = False):
     """Decorator to profile function execution times.
-    
+
     Args:
         profiler: Performance profiler instance (optional)
         debug_mode: Whether debug mode is active

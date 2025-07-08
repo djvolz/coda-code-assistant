@@ -59,7 +59,7 @@ class DataSanitizer:
     def __init__(self, custom_patterns: list[Pattern] | None = None,
                  additional_sensitive_keys: list[str] | None = None):
         """Initialize the sanitizer.
-        
+
         Args:
             custom_patterns: Additional regex patterns to match sensitive data
             additional_sensitive_keys: Additional key names to consider sensitive
@@ -74,11 +74,11 @@ class DataSanitizer:
 
     def sanitize_string(self, text: str, placeholder: str = "***REDACTED***") -> str:
         """Sanitize a string by replacing sensitive patterns.
-        
+
         Args:
             text: String to sanitize
             placeholder: Replacement text for sensitive data
-            
+
         Returns:
             Sanitized string
         """
@@ -109,11 +109,11 @@ class DataSanitizer:
 
     def sanitize_dict(self, data: dict[str, Any], placeholder: str = "***REDACTED***") -> dict[str, Any]:
         """Recursively sanitize a dictionary.
-        
+
         Args:
             data: Dictionary to sanitize
             placeholder: Replacement text for sensitive data
-            
+
         Returns:
             Sanitized dictionary
         """
@@ -139,11 +139,11 @@ class DataSanitizer:
 
     def sanitize_list(self, data: list[Any], placeholder: str = "***REDACTED***") -> list[Any]:
         """Recursively sanitize a list.
-        
+
         Args:
             data: List to sanitize
             placeholder: Replacement text for sensitive data
-            
+
         Returns:
             Sanitized list
         """
@@ -166,11 +166,11 @@ class DataSanitizer:
 
     def sanitize_stack_trace(self, stack_trace: str, placeholder: str = "***REDACTED***") -> str:
         """Sanitize a stack trace while preserving structure.
-        
+
         Args:
             stack_trace: Stack trace string
             placeholder: Replacement text for sensitive data
-            
+
         Returns:
             Sanitized stack trace
         """
@@ -191,11 +191,11 @@ class DataSanitizer:
     def sanitize(self, data: str | dict | list | Any,
                  placeholder: str = "***REDACTED***") -> str | dict | list | Any:
         """Sanitize any supported data type.
-        
+
         Args:
             data: Data to sanitize
             placeholder: Replacement text for sensitive data
-            
+
         Returns:
             Sanitized data
         """
@@ -211,7 +211,7 @@ class DataSanitizer:
 
     def add_pattern(self, pattern: str | Pattern) -> None:
         """Add a custom pattern for sanitization.
-        
+
         Args:
             pattern: Regex pattern (string or compiled pattern)
         """
@@ -221,7 +221,7 @@ class DataSanitizer:
 
     def add_sensitive_key(self, key: str) -> None:
         """Add a key name to be considered sensitive.
-        
+
         Args:
             key: Key name to add
         """

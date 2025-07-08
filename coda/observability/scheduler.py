@@ -50,7 +50,7 @@ class PeriodicTaskScheduler:
 
     def __init__(self, max_workers: int = 2, tick_interval: float = 1.0):
         """Initialize the scheduler.
-        
+
         Args:
             max_workers: Maximum number of concurrent task workers
             tick_interval: How often to check for tasks to run (seconds)
@@ -67,7 +67,7 @@ class PeriodicTaskScheduler:
 
     def schedule(self, name: str, func: Callable[[], None], interval: float) -> None:
         """Schedule a periodic task.
-        
+
         Args:
             name: Unique name for the task
             func: Function to execute periodically
@@ -92,7 +92,7 @@ class PeriodicTaskScheduler:
 
     def unschedule(self, name: str) -> None:
         """Remove a scheduled task.
-        
+
         Args:
             name: Name of the task to remove
         """
@@ -131,7 +131,7 @@ class PeriodicTaskScheduler:
 
     def stop(self, wait: bool = True, timeout: float = 10.0) -> None:
         """Stop the scheduler.
-        
+
         Args:
             wait: Whether to wait for running tasks to complete
             timeout: Maximum time to wait for shutdown
@@ -238,10 +238,10 @@ class PeriodicTaskScheduler:
 
     def force_run(self, name: str) -> bool:
         """Force immediate execution of a task.
-        
+
         Args:
             name: Name of the task to run
-            
+
         Returns:
             True if task was submitted, False if not found or already running
         """

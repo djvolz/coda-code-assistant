@@ -92,7 +92,7 @@ class MetricsCollector(ObservabilityComponent):
     def __init__(self, export_directory: Path, config_manager: ConfigManager,
                  storage_backend=None, scheduler=None):
         """Initialize the metrics collector.
-        
+
         Args:
             export_directory: Directory to export metrics data
             config_manager: Configuration manager instance

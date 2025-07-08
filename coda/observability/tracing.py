@@ -131,7 +131,7 @@ class TracingManager(ObservabilityComponent):
     def __init__(self, export_directory: Path, config_manager: ConfigManager,
                  storage_backend=None, scheduler=None):
         """Initialize the tracing manager.
-        
+
         Args:
             export_directory: Directory to export trace data
             config_manager: Configuration manager instance
@@ -212,13 +212,13 @@ class TracingManager(ObservabilityComponent):
     def create_span(self, operation_name: str, parent_span_id: str | None = None,
                    trace_id: str | None = None, **tags) -> SpanContext:
         """Create a new span.
-        
+
         Args:
             operation_name: Name of the operation being traced
             parent_span_id: ID of parent span (if any)
             trace_id: Trace ID (generates new if not provided)
             **tags: Additional tags to add to the span
-        
+
         Returns:
             SpanContext for the new span
         """

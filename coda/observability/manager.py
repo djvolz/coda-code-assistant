@@ -23,7 +23,7 @@ class ObservabilityManager:
 
     def __init__(self, config_manager: ConfigManager):
         """Initialize the observability manager.
-        
+
         Args:
             config_manager: Configuration manager instance
         """
@@ -275,7 +275,7 @@ class ObservabilityManager:
 
     def register_provider_health_check(self, provider_name: str, provider_instance):
         """Register a provider for health monitoring.
-        
+
         Args:
             provider_name: Name of the provider
             provider_instance: Provider instance to monitor
@@ -288,7 +288,7 @@ class ObservabilityManager:
 
     def register_error_alert_callback(self, callback):
         """Register a callback for error alerts.
-        
+
         Args:
             callback: Function to call when error alerts are triggered
         """

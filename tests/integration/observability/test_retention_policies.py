@@ -49,7 +49,7 @@ class TestObservabilityRetentionPolicies:
 
     def test_retention_policy_initialization(self, config_with_retention):
         """Test that retention policies are properly initialized."""
-        obs_manager = ObservabilityManager(config_with_retention)
+        ObservabilityManager(config_with_retention)  # Initialize to test retention loading
 
         # Check retention settings are loaded
         retention_days = config_with_retention.get_int("observability.retention.days", default=30)
@@ -122,7 +122,7 @@ class TestObservabilityRetentionPolicies:
 
     def test_component_specific_retention(self, config_with_retention):
         """Test different retention periods for different components."""
-        obs_manager = ObservabilityManager(config_with_retention)
+        ObservabilityManager(config_with_retention)  # Initialize to test retention loading
 
         # Components have different retention periods
         metrics_retention = config_with_retention.get_int("observability.metrics.retention_days", default=7)
@@ -135,7 +135,7 @@ class TestObservabilityRetentionPolicies:
 
     def test_archive_old_data(self, config_with_retention, temp_dir):
         """Test archiving of old data instead of deletion."""
-        obs_manager = ObservabilityManager(config_with_retention)
+        ObservabilityManager(config_with_retention)  # Initialize to test retention loading
         storage_path = Path(temp_dir) / "observability"
         archive_path = storage_path / "archive"
 
@@ -225,7 +225,7 @@ class TestObservabilityRetentionPolicies:
             try:
                 obs_manager.track_event(f"quota_test_{i}", {"data": large_data})
                 events_before_quota += 1
-            except:
+            except Exception:
                 # Quota exceeded
                 break
 

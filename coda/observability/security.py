@@ -32,14 +32,14 @@ class PathValidator:
     @staticmethod
     def validate_export_path(path: Path, allowed_base: Path) -> Path:
         """Validate export path is within allowed directory.
-        
+
         Args:
             path: Path to validate
             allowed_base: Base directory that path must be within
-            
+
         Returns:
             Resolved absolute path
-            
+
         Raises:
             PathTraversalError: If path traversal is detected
         """
@@ -69,19 +69,19 @@ class PathValidator:
             # relative_to raises ValueError if path is not relative to base
             raise PathTraversalError(
                 f"Path '{path}' is not within allowed directory '{allowed_base}'"
-            )
+            ) from None
 
     @staticmethod
     def validate_filename(filename: str, allowed_extensions: list[str] | None = None) -> str:
         """Validate a filename for security.
-        
+
         Args:
             filename: Filename to validate
             allowed_extensions: Optional list of allowed file extensions
-            
+
         Returns:
             Validated filename
-            
+
         Raises:
             SecurityError: If filename is invalid
         """
@@ -118,11 +118,11 @@ class PathValidator:
     @staticmethod
     def ensure_secure_permissions(path: Path, required_mode: int = 0o600) -> None:
         """Ensure file has secure permissions.
-        
+
         Args:
             path: Path to check/update
             required_mode: Required permission mode (default: 0o600 - owner read/write only)
-            
+
         Raises:
             PermissionError: If permissions cannot be set
         """
@@ -147,7 +147,7 @@ class PathValidator:
                 except OSError as e:
                     raise PermissionError(
                         f"Failed to set secure permissions on {path}: {e}"
-                    )
+                    ) from e
 
         except OSError as e:
             logger.error(f"Failed to check permissions on {path}: {e}")
@@ -155,11 +155,11 @@ class PathValidator:
     @staticmethod
     def validate_json_size(json_str: str, max_size_mb: float = 10.0) -> None:
         """Validate JSON string size to prevent DoS.
-        
+
         Args:
             json_str: JSON string to validate
             max_size_mb: Maximum allowed size in megabytes
-            
+
         Raises:
             SecurityError: If JSON is too large
         """
@@ -178,7 +178,7 @@ class SecureFileOperations:
     @staticmethod
     def secure_write(path: Path, content: str, mode: int = 0o600) -> None:
         """Write file securely with atomic operation and permission setting.
-        
+
         Args:
             path: Path to write to
             content: Content to write
@@ -217,14 +217,14 @@ class SecureFileOperations:
     @staticmethod
     def secure_read(path: Path, max_size_mb: float = 10.0) -> str:
         """Read file securely with size validation.
-        
+
         Args:
             path: Path to read from
             max_size_mb: Maximum file size to read
-            
+
         Returns:
             File contents
-            
+
         Raises:
             SecurityError: If file is too large
         """
@@ -244,7 +244,7 @@ class SecureFileOperations:
     @staticmethod
     def secure_delete(path: Path, overwrite: bool = False) -> None:
         """Securely delete a file.
-        
+
         Args:
             path: Path to delete
             overwrite: Whether to overwrite file contents before deletion

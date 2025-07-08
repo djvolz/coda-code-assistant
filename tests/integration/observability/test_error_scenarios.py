@@ -371,7 +371,7 @@ tracing.sample_rate = 2.0  # Invalid rate > 1.0
             for i in range(5, 10):
                 try:
                     obs_manager.track_event(f"partial_event_{i}", {"index": i})
-                except:
+                except Exception:
                     pass
 
         # Should be able to export successfully tracked data

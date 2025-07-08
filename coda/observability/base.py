@@ -20,7 +20,7 @@ class ObservabilityComponent(ABC):
                  storage_backend: StorageBackend | None = None,
                  scheduler: PeriodicTaskScheduler | None = None):
         """Initialize the base observability component.
-        
+
         Args:
             export_directory: Directory for exporting data
             config_manager: Configuration manager instance

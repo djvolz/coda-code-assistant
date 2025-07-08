@@ -356,7 +356,7 @@ class TestObservabilityThreadSafety:
 
         def writer_thread(thread_id):
             """Periodically update configuration."""
-            for i in range(20):
+            for _ in range(20):
                 try:
                     # Simulate config updates
                     new_buffer_size = random.randint(500, 2000)
@@ -397,7 +397,7 @@ class TestObservabilityThreadSafety:
         increments_per_thread = 1000
 
         def increment_and_read(thread_id):
-            for i in range(increments_per_thread):
+            for _ in range(increments_per_thread):
                 # These operations should be atomic
                 obs_manager.track_event("atomic_increment", {"value": 1})
 

@@ -102,7 +102,7 @@ class TestObservabilityMemoryLimits:
         obs_manager = ObservabilityManager(config_with_memory_limits)
 
         # Set small buffer for testing
-        small_buffer_size = 10
+        # small_buffer_size = 10  # Not used directly
 
         # Track events with access patterns
         for i in range(20):
