@@ -23,7 +23,7 @@ class CommandDefinition:
     subcommands: list["CommandDefinition"] = field(default_factory=list)
     examples: list[str] = field(default_factory=list)
     type: CommandType = CommandType.MAIN
-    completion_type: Optional[str] = None  # e.g., "session_name", "model_name", "theme_name"
+    completion_type: str | None = None  # e.g., "session_name", "model_name", "theme_name"
 
     def get_all_names(self) -> list[str]:
         """Get all names including aliases."""

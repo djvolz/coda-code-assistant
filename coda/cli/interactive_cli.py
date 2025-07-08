@@ -83,7 +83,7 @@ class InteractiveCLI(CommandHandler):
         from coda.themes import THEMES
 
         return THEMES
-        
+
     def _get_available_models(self):
         """Get available model names from current provider."""
         provider = self._get_current_provider()

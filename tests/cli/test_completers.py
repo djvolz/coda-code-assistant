@@ -136,7 +136,7 @@ class TestDynamicValueCompleter:
         completer = DynamicValueCompleter(get_provider_func=lambda: provider)
 
         # Need to mock the command registry
-        with patch('coda.cli.command_registry.CommandRegistry') as mock_registry:
+        with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
             mock_cmd.completion_type = "model_name"
             mock_cmd.subcommands = []
@@ -153,7 +153,7 @@ class TestDynamicValueCompleter:
         """Test no completions when provider is None."""
         completer = DynamicValueCompleter(get_provider_func=lambda: None)
 
-        with patch('coda.cli.command_registry.CommandRegistry') as mock_registry:
+        with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
             mock_cmd.completion_type = "model_name"
             mock_cmd.subcommands = []
@@ -169,7 +169,7 @@ class TestDynamicValueCompleter:
         provider = self.MockProvider()
         completer = DynamicValueCompleter(get_provider_func=lambda: provider)
 
-        with patch('coda.cli.command_registry.CommandRegistry') as mock_registry:
+        with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
             mock_cmd.completion_type = "model_name"
             mock_cmd.subcommands = []
@@ -200,7 +200,7 @@ class TestSessionCompletion:
         session_cmds = self.MockSessionCommands()
         completer = DynamicValueCompleter(session_commands=session_cmds)
 
-        with patch('coda.cli.command_registry.CommandRegistry') as mock_registry:
+        with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             # Mock main command
             mock_cmd = Mock()
             mock_cmd.completion_type = None
@@ -226,7 +226,7 @@ class TestSessionCompletion:
         session_cmds = self.MockSessionCommands()
         completer = DynamicValueCompleter(session_commands=session_cmds)
 
-        with patch('coda.cli.command_registry.CommandRegistry') as mock_registry:
+        with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
             mock_cmd.completion_type = None
 
@@ -248,7 +248,7 @@ class TestSessionCompletion:
         session_cmds = self.MockSessionCommands()
         completer = DynamicValueCompleter(session_commands=session_cmds)
 
-        with patch('coda.cli.command_registry.CommandRegistry') as mock_registry:
+        with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
             mock_cmd.completion_type = None
 
@@ -264,7 +264,6 @@ class TestSessionCompletion:
 
             assert len(completions) == 1
             assert completions[0].text == "feature-planning"
-
 
 
 class TestEnhancedCompleter:
