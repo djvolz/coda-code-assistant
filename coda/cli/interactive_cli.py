@@ -5,7 +5,6 @@ from collections.abc import Callable
 from threading import Event
 
 from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
@@ -17,6 +16,7 @@ from coda.session import SessionCommands
 from ..constants import (
     HISTORY_FILE_PATH,
 )
+from .completers import EnhancedCompleter
 from .shared import CommandHandler, CommandResult, DeveloperMode
 
 
@@ -28,117 +28,17 @@ class SlashCommand:
         self.handler = handler
         self.help_text = help_text
         self.aliases = aliases or []
+        self._autocomplete_options = None
 
+    def get_autocomplete_options(self) -> list[str]:
+        """Get autocomplete options for this command."""
+        if self._autocomplete_options is None:
+            # Load options from command registry
+            from coda.cli.command_registry import CommandRegistry
 
-class SlashCommandCompleter(Completer):
-    """Custom completer for slash commands."""
-
-    def __init__(self, commands: dict[str, SlashCommand]):
-        self.commands = commands
-        self.command_options = self._load_command_options()
-
-    def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
-        """Load command options from the command registry."""
-        from coda.cli.command_registry import CommandRegistry
-
-        # Get autocomplete options from the registry
-        # This currently only includes commands with subcommands
-        return CommandRegistry.get_autocomplete_options()
-
-    def get_completions(self, document, complete_event):
-        # Get the current text
-        text = document.text_before_cursor
-
-        # If we just typed '/', show all commands immediately
-        if text == "/":
-            yield from self._complete_all_commands()
-        elif text.startswith("/"):
-            # Check if we have a complete command with a space
-            parts = text.split(" ", 1)
-
-            if len(parts) == 2:  # We have a command and possibly partial argument
-                yield from self._complete_command_arguments(parts[0][1:], parts[1])
-            else:
-                # Complete the command itself
-                yield from self._complete_command_names(text)
-
-    def _complete_all_commands(self):
-        """Yield completions for all available commands."""
-        for cmd_name, cmd in self.commands.items():
-            yield Completion(
-                "/" + cmd_name,  # Include the slash
-                start_position=-1,  # Replace just the '/'
-                display_meta=cmd.help_text,
-            )
-
-    def _complete_command_arguments(self, cmd_part: str, arg_part: str):
-        """Yield completions for command arguments."""
-        if cmd_part not in self.command_options:
-            return
-
-        options = self.command_options[cmd_part]
-
-        if not arg_part:  # Just typed space, show all options
-            for option, description in options:
-                yield Completion(option, start_position=0, display_meta=description)
-        else:  # Partial argument typed
-            for option, description in options:
-                if option.startswith(arg_part):
-                    yield Completion(
-                        option, start_position=-len(arg_part), display_meta=description
-                    )
-
-    def _complete_command_names(self, text: str):
-        """Yield completions for command names and aliases."""
-        word = text[1:]  # Get the part after '/'
-
-        for cmd_name, cmd in self.commands.items():
-            if cmd_name.startswith(word):
-                yield Completion(
-                    "/" + cmd_name,  # Include the slash in completion
-                    start_position=-len(text),  # Replace entire text including '/'
-                    display_meta=cmd.help_text,
-                )
-            # Also complete aliases
-            for alias in cmd.aliases:
-                if alias.startswith(word):
-                    yield Completion(
-                        "/" + alias,  # Include the slash in completion
-                        start_position=-len(text),  # Replace entire text including '/'
-                        display_meta=f"Alias for /{cmd_name}",
-                    )
-
-
-class EnhancedCompleter(Completer):
-    """Combined completer for slash commands and file paths."""
-
-    def __init__(self, slash_commands: dict[str, SlashCommand]):
-        self.slash_completer = SlashCommandCompleter(slash_commands)
-        self.path_completer = PathCompleter(expanduser=True)
-
-    def get_completions(self, document, complete_event):
-        text = document.text_before_cursor
-
-        # If line starts with /, use slash completer
-        if text.startswith("/"):
-            yield from self.slash_completer.get_completions(document, complete_event)
-        # If empty or just whitespace, show available slash commands
-        elif not text.strip():
-            # Show all slash commands
-            for cmd_name, cmd in self.slash_completer.commands.items():
-                yield Completion(
-                    f"/{cmd_name}",
-                    start_position=0,
-                    display_meta=cmd.help_text,
-                    style="fg:cyan",
-                )
-        # Only show path completions if text contains / or ~ (indicating a path)
-        elif "/" in text or text.startswith("~"):
-            yield from self.path_completer.get_completions(document, complete_event)
-        # Otherwise, no completions for regular text
-        else:
-            # Explicitly return nothing - no completions for regular text
-            return
+            options = CommandRegistry.get_autocomplete_options()
+            self._autocomplete_options = [opt[0] for opt in options.get(self.name, [])]
+        return self._autocomplete_options
 
 
 class InteractiveCLI(CommandHandler):
@@ -171,6 +71,28 @@ class InteractiveCLI(CommandHandler):
 
         # Initialize session with all features
         self._init_session()
+
+    def _get_current_provider(self):
+        """Get current provider for model completion."""
+        if hasattr(self, "config") and self.config:
+            return self.config.get_provider()
+        return None
+
+    def _get_available_themes(self):
+        """Get available theme names."""
+        from coda.themes import THEMES
+
+        return THEMES
+        
+    def _get_available_models(self):
+        """Get available model names from current provider."""
+        provider = self._get_current_provider()
+        if not provider:
+            return []
+        try:
+            return provider.list_models()
+        except Exception:
+            return []
 
     def _init_commands(self) -> dict[str, SlashCommand]:
         """Initialize slash commands from the command registry."""
@@ -252,10 +174,18 @@ class InteractiveCLI(CommandHandler):
         # Note: We handle interrupts via signal handler during AI responses
         # Double escape is not reliable with prompt-toolkit during streaming
 
+        # Create enhanced completer with all features
+        completer = EnhancedCompleter(
+            slash_commands=self.commands,
+            get_provider_func=self._get_current_provider,
+            session_commands=self.session_commands,
+            get_themes_func=self._get_available_themes,
+        )
+
         self.session = PromptSession(
             history=FileHistory(str(HISTORY_FILE_PATH)),
             auto_suggest=None,  # Disable auto-suggestions from history
-            completer=EnhancedCompleter(self.commands),
+            completer=completer,
             style=self.style,
             multiline=False,  # We'll handle multiline manually
             enable_history_search=True,

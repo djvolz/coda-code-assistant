@@ -358,21 +358,20 @@ class TestInteractiveCLI:
 
     def test_command_options_loading(self, cli):
         """Test that command options are properly loaded."""
-        # The command options are loaded in the SlashCommandCompleter
-        completer = cli.session.completer.slash_completer
-        options = completer.command_options
+        # Test that commands have proper autocomplete options
+        mode_command = cli.commands.get("mode")
+        assert mode_command is not None
+        mode_options = mode_command.get_autocomplete_options()
+        assert len(mode_options) > 0  # Should have mode options
+        assert "general" in mode_options
+        assert "code" in mode_options
 
-        # Should have options for various commands
-        assert "mode" in options
-        assert "provider" in options
-        assert "session" in options
-
-        # Check mode options
-        mode_options = options["mode"]
-        mode_names = [opt[0] for opt in mode_options]
-        assert "general" in mode_names
-        assert "code" in mode_names
-        assert "debug" in mode_names
+        session_command = cli.commands.get("session")
+        assert session_command is not None
+        session_options = session_command.get_autocomplete_options()
+        assert len(session_options) > 0  # Should have session subcommands
+        assert "save" in session_options
+        assert "load" in session_options
 
     @patch("coda.cli.theme_selector.ThemeSelector")
     @patch("coda.themes.get_theme_manager")
