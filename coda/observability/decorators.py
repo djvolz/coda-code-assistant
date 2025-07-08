@@ -5,11 +5,11 @@ and error tracking to provider methods, session operations, and other components
 """
 
 import functools
-import time
 import inspect
-from typing import Any, Callable, Optional, Dict, TypeVar
-from datetime import datetime, timezone
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, TypeVar
 
 from .manager import ObservabilityManager
 
@@ -23,7 +23,7 @@ class InstrumentationContext:
     operation_name: str
     provider_name: str
     start_time: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
     def response_time_ms(self) -> float:
@@ -114,7 +114,7 @@ def _instrument_method(
 
 
 def instrument_provider_method(
-    operation_name: Optional[str] = None,
+    operation_name: str | None = None,
     record_tokens: bool = True,
     record_response_time: bool = True
 ) -> Callable[[T], T]:
@@ -299,7 +299,7 @@ def instrument_provider_method(
     return decorator
 
 
-def instrument_session_method(operation_name: Optional[str] = None):
+def instrument_session_method(operation_name: str | None = None):
     """Decorator to instrument session management methods.
 
     Args:
@@ -388,7 +388,7 @@ def instrument_session_method(operation_name: Optional[str] = None):
     return decorator
 
 
-def instrument_cli_command(command_name: Optional[str] = None):
+def instrument_cli_command(command_name: str | None = None):
     """Decorator to instrument CLI commands with observability.
 
     Args:
