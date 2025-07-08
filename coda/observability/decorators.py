@@ -410,7 +410,7 @@ def instrument_cli_command(command_name: Optional[str] = None):
                     from ..configuration import ConfigManager
                     config_manager = ConfigManager()
                     obs_manager = ObservabilityManager(config_manager)
-                except:
+                except Exception:
                     pass
 
             if not obs_manager or not obs_manager.enabled:
