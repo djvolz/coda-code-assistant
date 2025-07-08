@@ -311,13 +311,13 @@ class InteractiveCLI(CommandHandler):
 
     def _get_safe_terminal_width(self) -> int:
         """Get terminal width with minimum constraint to prevent squashing."""
-        MIN_WIDTH = 40  # Minimum width to prevent ugly squashing
-        MAX_WIDTH = 60  # Reduced max width for cleaner look
+        min_width = 40  # Minimum width to prevent ugly squashing
+        max_width = 60  # Reduced max width for cleaner look
 
         try:
             width = self.console.size.width
             # Clamp between min and max
-            return max(MIN_WIDTH, min(width, MAX_WIDTH))
+            return max(min_width, min(width, max_width))
         except Exception:
             # Fallback if console size detection fails
             return 60
