@@ -160,9 +160,7 @@ class TestThemeIntegration:
         # Mock the theme system to return our custom theme
         with patch("coda.themes.get_console_theme", return_value=custom_theme.console):
             # Call the chat interaction handler
-            await _handle_chat_interaction(
-                provider, cli, messages, console, mock_config
-            )
+            await _handle_chat_interaction(provider, cli, messages, console, mock_config)
 
         # Verify status was called with theme color
         console.status.assert_called_once()
