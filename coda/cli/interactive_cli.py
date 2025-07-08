@@ -168,6 +168,9 @@ class InteractiveCLI(CommandHandler):
 
         # Track terminal dimensions
         self._last_terminal_width = None
+        
+        # Initialize semantic search manager (singleton)
+        self._search_manager = None
 
         # Initialize session with all features
         self._init_session()
@@ -618,75 +621,113 @@ class InteractiveCLI(CommandHandler):
         # Use the shared command handler
         result = self.handle_tools_command(args)
         return result
-    
+
     async def _cmd_search(self, args: str):
         """Semantic search commands."""
         parts = args.split(maxsplit=1)
         subcommand = parts[0] if parts else ""
         query = parts[1] if len(parts) > 1 else ""
-        
+
         if not subcommand:
-            options = self.session.completer.slash_completer.command_options.get("search", [])
-            self.console.print("[cyan]Semantic Search Commands:[/cyan]")
-            self.console.print("  [white]/search semantic <query>[/white] - Search indexed content")
-            self.console.print("  [white]/search code <query>[/white] - Search code files")
-            self.console.print("  [white]/search index [path][/white] - Index files for search")
-            self.console.print("  [white]/search status[/white] - Show index status")
+            from rich.table import Table
+            table = Table(title="[bold cyan]Semantic Search Commands[/bold cyan]", box=None)
+            table.add_column("Command", style="white", no_wrap=True)
+            table.add_column("Description", style="dim")
+
+            table.add_row("/search semantic <query>", "Search indexed content using semantic similarity")
+            table.add_row("/search code <query>", "Search code files with language-aware formatting")
+            table.add_row("/search index [path]", "Index files or directories for search")
+            table.add_row("/search status", "Show search index statistics")
+
+            self.console.print()
+            self.console.print(table)
+            self.console.print("\n[dim]Tip: Try '/search index demo' to get started[/dim]")
             return
-        
+
         # Import semantic search components
         try:
-            from coda.semantic_search_coda import create_semantic_search_manager
             from coda.embeddings.mock import MockEmbeddingProvider
             from coda.semantic_search import SemanticSearchManager
+            from coda.semantic_search_coda import create_semantic_search_manager
+
+            from .search_display import (
+                IndexingProgress,
+                SearchResultDisplay,
+                create_search_stats_display,
+            )
         except ImportError as e:
             self.console.print(f"[red]Error loading semantic search: {e}[/red]")
             self.console.print("[yellow]Make sure to install: uv sync --extra embeddings[/yellow]")
             return
+
+        # Initialize display helpers
+        result_display = SearchResultDisplay(self.console)
+        indexing_progress = IndexingProgress(self.console)
+
+        # Initialize search manager once (singleton pattern)
+        if self._search_manager is None:
+            try:
+                # Try to use configured provider first
+                self._search_manager = create_semantic_search_manager()
+            except Exception:
+                # Fall back to mock provider
+                self.console.print("[yellow]Using mock embeddings (OCI not configured)[/yellow]")
+                provider = MockEmbeddingProvider(dimension=768)
+                self._search_manager = SemanticSearchManager(embedding_provider=provider)
         
-        # Use mock provider for now (until we have proper embedding config)
-        try:
-            # Try to use configured provider first
-            manager = create_semantic_search_manager()
-        except Exception:
-            # Fall back to mock provider
-            self.console.print("[yellow]Using mock embeddings (OCI not configured)[/yellow]")
-            provider = MockEmbeddingProvider(dimension=768)
-            manager = SemanticSearchManager(embedding_provider=provider)
-        
+        manager = self._search_manager
+
         if subcommand == "semantic":
             if not query:
                 self.console.print("[red]Please provide a search query[/red]")
                 return
-            
-            self.console.print(f"[cyan]Searching for: '{query}'[/cyan]")
+
             try:
-                results = await manager.search(query, k=5)
-                if results:
-                    self.console.print("\n[green]Search Results:[/green]")
-                    for i, result in enumerate(results, 1):
-                        self.console.print(f"{i}. [white]Score: {result.score:.3f}[/white]")
-                        self.console.print(f"   {result.text[:200]}...")
-                        if result.metadata:
-                            self.console.print(f"   [dim]Metadata: {result.metadata}[/dim]")
-                        self.console.print()
-                else:
-                    self.console.print("[yellow]No results found[/yellow]")
+                # Show searching indicator
+                with self.console.status(f"[cyan]Searching for: '{query}'...[/cyan]"):
+                    results = await manager.search(query, k=5)
+
+                # Display results with enhanced formatting
+                result_display.display_results(results, query)
+
             except Exception as e:
+                import traceback
                 self.console.print(f"[red]Search error: {e}[/red]")
-        
+                self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+
         elif subcommand == "code":
             if not query:
                 self.console.print("[red]Please provide a search query[/red]")
                 return
-            
-            self.console.print(f"[cyan]Searching code for: '{query}'[/cyan]")
-            self.console.print("[yellow]Code search not yet implemented[/yellow]")
-        
+
+            try:
+                # Show searching indicator
+                with self.console.status(f"[cyan]Searching code for: '{query}'...[/cyan]"):
+                    # Add code-specific metadata to results
+                    results = await manager.search(query, k=5)
+
+                    # Enhance results with code metadata (temporary until proper implementation)
+                    for result in results:
+                        if not result.metadata:
+                            result.metadata = {}
+                        result.metadata["type"] = "code"
+                        # Try to detect language from content
+                        if "python" in result.text.lower() or "def " in result.text:
+                            result.metadata["language"] = "python"
+                        elif "javascript" in result.text.lower() or "function " in result.text:
+                            result.metadata["language"] = "javascript"
+
+                # Display results with code formatting
+                result_display.display_results(results, query, show_metadata=True)
+
+            except Exception as e:
+                import traceback
+                self.console.print(f"[red]Code search error: {e}[/red]")
+                self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+
         elif subcommand == "index":
             if query == "demo":
-                # Index some demo content
-                self.console.print("[cyan]Indexing demo content...[/cyan]")
+                # Index some demo content with progress
                 demo_docs = [
                     "Python is great for data science and machine learning",
                     "JavaScript is the language of the web and runs in browsers",
@@ -699,9 +740,17 @@ class InteractiveCLI(CommandHandler):
                     "React is a popular frontend framework",
                     "FastAPI is great for building Python APIs"
                 ]
+
                 try:
-                    doc_ids = await manager.index_content(demo_docs)
-                    self.console.print(f"[green]Indexed {len(doc_ids)} demo documents[/green]")
+                    with indexing_progress.start_indexing(len(demo_docs)) as progress:
+                        indexed_ids = []
+                        for _i, doc in enumerate(demo_docs):
+                            # Index one at a time to show progress
+                            doc_id = await manager.index_content([doc])
+                            indexed_ids.extend(doc_id)
+                            progress.update(1, f"Indexing: {doc[:50]}...")
+
+                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} demo documents[/green]")
                 except Exception as e:
                     self.console.print(f"[red]Indexing error: {e}[/red]")
             else:
@@ -709,18 +758,14 @@ class InteractiveCLI(CommandHandler):
                 self.console.print(f"[cyan]Indexing files in: {path}[/cyan]")
                 self.console.print("[yellow]File indexing not yet implemented[/yellow]")
                 self.console.print("[dim]Try: /search index demo[/dim]")
-        
+
         elif subcommand == "status":
             try:
                 stats = await manager.get_stats()
-                self.console.print("\n[cyan]Semantic Search Index Status:[/cyan]")
-                self.console.print(f"  Vector count: {stats['vector_count']}")
-                self.console.print(f"  Embedding model: {stats['embedding_model']}")
-                self.console.print(f"  Embedding dimension: {stats['embedding_dimension']}")
-                self.console.print(f"  Vector store: {stats['vector_store_type']}")
+                create_search_stats_display(stats, self.console)
             except Exception as e:
                 self.console.print(f"[red]Error getting status: {e}[/red]")
-        
+
         else:
             self.console.print(f"[red]Unknown search subcommand: {subcommand}[/red]")
 

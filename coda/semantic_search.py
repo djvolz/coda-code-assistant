@@ -47,8 +47,12 @@ class SemanticSearchManager:
             model_info = self.embedding_provider.get_model_info()
             dimension = model_info.get("dimensions", model_info.get("dimension", 768))
             
-            # Default to FAISS
-            self.vector_store = FAISSVectorStore(dimension=dimension)
+            # Default to FAISS with flat index for simplicity
+            self.vector_store = FAISSVectorStore(
+                dimension=dimension, 
+                index_type="flat",  # Use flat index for immediate use without training
+                metric="cosine"
+            )
         else:
             self.vector_store = vector_store
             
