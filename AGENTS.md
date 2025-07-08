@@ -103,47 +103,36 @@ XDG directories:
 
 ## Commit Guidelines
 
-IMPORTANT: Use conventional commits for automated releases:
-```
-feat(providers): add OpenAI support     # Triggers release
-fix(cli): handle timeout errors         # Triggers release
-docs: update installation guide         # No release
-chore: update dependencies             # No release
+IMPORTANT: Use the standardized commit template for all commits:
+```bash
+git config --local commit.template .gitmessage
 ```
 
-Include AI metadata in commits:
-```
-feat: implement feature X
+The template includes:
+- Conventional commit format with release triggers
+- AI metadata sections (Prompt, Tools, Implementation details)
+- PII scrubbing reminders
+- Examples and guidelines
 
-AI Prompt: "user's actual request"
-AI Tools: Read, Write, Edit, Bash
-
-- Implementation details
-- Changes made
-```
-
-If AI modifies the user prompt, add "(edited by agent)":
-```
-AI Prompt: "implement session management" (edited by agent)
-```
-
-IMPORTANT: Always scrub PII from prompts:
-- Replace actual paths with generic ones (e.g., `/home/user/` not `/home/johndoe/`)
-- Remove API keys, tokens, or secrets
-- Replace specific company/project names if sensitive
-- Remove email addresses, usernames, or other identifying information
+See [`.gitmessage`](.gitmessage) for the complete template.
 
 ## Pull Request Requirements
 
-IMPORTANT: Never squash commits - preserve AI development history
+IMPORTANT: Use the standardized PR template for all pull requests.
 
-PR must include:
-1. Conventional commit messages
-2. AI Development Summary section
-3. Test results
-4. No merge until CI passes
+The GitHub PR template automatically includes:
+- AI Development Summary section
+- Conventional commit type indicators
+- Testing and code quality checklists
+- PII scrubbing reminders
+- Breaking change documentation
 
-See [PR #2](https://github.com/djvolz/coda-code-assistant/pull/2) for example.
+See [`.github/pull_request_template.md`](.github/pull_request_template.md) for the complete template.
+
+**Key Requirements:**
+- Never squash commits - preserve AI development history
+- All CI checks must pass before merge
+- Include test results and coverage information
 
 ## Current State & Priorities
 

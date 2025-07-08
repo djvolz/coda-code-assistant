@@ -11,7 +11,6 @@ from rich.table import Table
 from ..constants import (
     AUTO_SESSION_DATE_FORMAT,
     AUTO_SESSION_PREFIX,
-    PANEL_BORDER_STYLE,
     SESSION_DELETE_LIMIT,
     SESSION_INFO_LIMIT,
     SESSION_LAST_LIMIT,
@@ -103,7 +102,10 @@ class SessionCommands:
 [dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r[/dim]
 """
 
-        self.console.print(Panel(help_text, title="Session Help", border_style=PANEL_BORDER_STYLE))
+        from ..themes import get_console_theme
+
+        theme = get_console_theme()
+        self.console.print(Panel(help_text, title="Session Help", border_style=theme.panel_border))
         return None
 
     def _save_session(self, args: list[str]) -> str:
@@ -353,9 +355,12 @@ class SessionCommands:
             if parent:
                 info_lines.append(f"\n[bold]Branched from:[/bold] {parent.name}")
 
+        from ..themes import get_console_theme
+
+        theme = get_console_theme()
         self.console.print(
             Panel(
-                "\n".join(info_lines), title="Session Information", border_style=PANEL_BORDER_STYLE
+                "\n".join(info_lines), title="Session Information", border_style=theme.panel_border
             )
         )
         return None
@@ -660,7 +665,10 @@ class SessionCommands:
 [dim]If no session specified, exports current session[/dim]
 [dim]Files saved to: ~/Documents/coda_exports/[/dim]
 """
-        self.console.print(Panel(help_text, title="Export Help", border_style=PANEL_BORDER_STYLE))
+        from ..themes import get_console_theme
+
+        theme = get_console_theme()
+        self.console.print(Panel(help_text, title="Export Help", border_style=theme.panel_border))
         return None
 
     def add_message(self, role: str, content: str, metadata: dict[str, Any] | None = None):
@@ -686,7 +694,6 @@ class SessionCommands:
             and role == "assistant"
             and len(self.current_messages) >= 2
         ):  # At least user + assistant message
-
             # Auto-create session with timestamp name
             timestamp = datetime.now().strftime(AUTO_SESSION_DATE_FORMAT)
             auto_name = f"{AUTO_SESSION_PREFIX}{timestamp}"

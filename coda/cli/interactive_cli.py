@@ -614,13 +614,9 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("tools", [])
-            self._show_coming_soon_command(
-                "tools", "MCP Tools Management", options, "/tools <subcommand>"
-            )
-        else:
-            self.console.print(f"[yellow]Tools command '{args}' not implemented yet[/yellow]")
+        # Use the shared command handler
+        result = self.handle_tools_command(args)
+        return result
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
