@@ -551,8 +551,24 @@ None currently - all bugs have been resolved!
 - Created `/intel` CLI command with 7 subcommands (analyze, map, scan, stats, find, deps, graph)
 - Tree-sitter query-based extraction using .scm files
 - Support for Python, JavaScript, TypeScript, Rust, Go, Java, C/C++, Ruby, and 20+ more languages
-- Comprehensive test suite with 87 unit tests
+- Comprehensive test suite with 138 tests (including integration tests)
+- Progress indicators for long-running operations
 - MockProvider integration for AI-enhanced development
+
+**Enhancements TODO**:
+- [ ] **Intelligence as Tools** - Make intel commands available as AI tools
+  - [ ] Register intel commands with MCP tool system
+  - [ ] Enable AI to analyze code structure during conversations
+  - [ ] Allow AI to find definitions and dependencies automatically
+  - [ ] Provide semantic code search capabilities to AI
+
+- [ ] **Self-Contained API Module** - Make intelligence module fully independent
+  - [ ] Extract intelligence module as standalone Python package
+  - [ ] Create public API interface for external usage
+  - [ ] Document API methods and usage examples
+  - [ ] Support both CLI and programmatic access
+  - [ ] Ensure zero dependencies on Coda-specific code
+  - [ ] Publish as separate package (coda-intelligence)
 
 ### 9.2 Context Management
 
