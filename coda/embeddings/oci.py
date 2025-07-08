@@ -20,6 +20,7 @@ from oci.generative_ai_inference.models import (
 import oci
 
 from .base import BaseEmbeddingProvider, EmbeddingResult
+from .oci_constants import MODEL_MAPPING, MODEL_INFO, DEFAULT_MODEL, DEFAULT_COMPARTMENT_ID
 
 logger = logging.getLogger(__name__)
 
@@ -30,60 +31,52 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
     Supports multilingual-e5 and cohere-embed-multilingual-v3.0 models.
     """
     
-    # OCI embedding model mappings
-    MODEL_MAPPING = {
-        "multilingual-e5": "multilingual-e5-base",
+    # Additional model aliases for backward compatibility
+    ALIASES = {
+        "multilingual-e5": "cohere.embed-multilingual-v3.0",
         "cohere-embed": "cohere.embed-multilingual-v3.0",
         "cohere-embed-english": "cohere.embed-english-v3.0",
     }
     
-    # Model information
-    MODEL_INFO = {
-        "multilingual-e5-base": {
-            "dimension": 768,
-            "max_tokens": 512,
-            "multilingual": True,
-        },
-        "cohere.embed-multilingual-v3.0": {
-            "dimension": 1024,
-            "max_tokens": 512,
-            "multilingual": True,
-        },
-        "cohere.embed-english-v3.0": {
-            "dimension": 1024,
-            "max_tokens": 512,
-            "multilingual": False,
-        },
-    }
-    
     def __init__(
         self,
-        compartment_id: str,
-        model_id: str = "multilingual-e5",
+        compartment_id: Optional[str] = None,
+        model_id: Optional[str] = None,
         oci_config: Optional[Dict[str, Any]] = None,
         oci_config_file: Optional[Union[str, Path]] = None,
         oci_profile: str = "DEFAULT",
         region: Optional[str] = None,
+        service_endpoint: Optional[str] = None,
         cache_duration_hours: int = 24
     ):
         """Initialize OCI embedding provider.
         
         Args:
-            compartment_id: OCI compartment ID (required)
-            model_id: Short model name or full OCI model ID
+            compartment_id: OCI compartment ID (uses default if not provided)
+            model_id: Short model name or full OCI model ID (uses default if not provided)
             oci_config: OCI configuration dictionary (if not provided, uses config_file)
             oci_config_file: Path to OCI config file (default: ~/.oci/config)
             oci_profile: Profile to use from config file
             region: OCI region (if not provided, uses config file)
+            service_endpoint: OCI service endpoint (optional)
             cache_duration_hours: How long to cache model lists (default: 24)
         """
-        # Map short names to full model IDs
-        if model_id in self.MODEL_MAPPING:
-            model_id = self.MODEL_MAPPING[model_id]
+        # Use defaults if not provided
+        if compartment_id is None:
+            compartment_id = DEFAULT_COMPARTMENT_ID
+        if model_id is None:
+            model_id = DEFAULT_MODEL
+            
+        # Map short names and aliases to full model IDs
+        if model_id in self.ALIASES:
+            model_id = self.ALIASES[model_id]
+        elif model_id in MODEL_MAPPING:
+            model_id = MODEL_MAPPING[model_id]
             
         super().__init__(model_id)
         
         self.compartment_id = compartment_id
+        self.service_endpoint = service_endpoint
         self.cache_duration = timedelta(hours=cache_duration_hours)
         self._client = None
         self._models_cache = None
@@ -108,7 +101,10 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
     def client(self) -> GenerativeAiInferenceClient:
         """Get or create OCI client."""
         if self._client is None:
-            self._client = GenerativeAiInferenceClient(self._oci_config)
+            self._client = GenerativeAiInferenceClient(
+                self._oci_config,
+                service_endpoint=self.service_endpoint
+            )
         return self._client
         
     async def embed_text(self, text: str) -> EmbeddingResult:
@@ -160,7 +156,7 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
                     model=self.model_id,
                     metadata={
                         "provider": "oci",
-                        "truncated": len(text.split()) > self.MODEL_INFO.get(self.model_id, {}).get("max_tokens", 512)
+                        "truncated": len(text.split()) > MODEL_INFO.get(self.model_id, {}).get("max_tokens", 512)
                     }
                 ))
                 
@@ -181,18 +177,16 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
             if datetime.now() - self._cache_timestamp < self.cache_duration:
                 return self._models_cache
                 
-        # For now, return static list
-        # TODO: Query OCI API for dynamic model list when available
+        # Return all available models from constants
         models = []
-        for short_name, full_name in self.MODEL_MAPPING.items():
-            info = self.MODEL_INFO.get(full_name, {})
+        for model_id, info in MODEL_INFO.items():
             models.append({
-                "id": full_name,
-                "short_name": short_name,
+                "id": model_id,
                 "provider": "oci",
-                "dimension": info.get("dimension", 768),
+                "dimensions": info.get("dimensions", 768),
                 "max_tokens": info.get("max_tokens", 512),
-                "multilingual": info.get("multilingual", True),
+                "languages": info.get("languages", ["multilingual"]),
+                "description": info.get("description", "")
             })
             
         self._models_cache = models
@@ -206,11 +200,59 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
         Returns:
             Model information dictionary
         """
-        info = self.MODEL_INFO.get(self.model_id, {})
+        info = MODEL_INFO.get(self.model_id, {})
         return {
             "id": self.model_id,
             "provider": "oci",
-            "dimension": info.get("dimension", 768),
+            "dimensions": info.get("dimensions", 768),
             "max_tokens": info.get("max_tokens", 512),
-            "multilingual": info.get("multilingual", True),
+            "languages": info.get("languages", ["multilingual"]),
+            "description": info.get("description", "")
         }
+
+
+# Factory functions for easier instantiation
+def create_oci_provider_from_coda_config(
+    coda_config: Dict[str, Any],
+    model_id: Optional[str] = None
+) -> OCIEmbeddingProvider:
+    """Create OCI provider from Coda configuration.
+    
+    Args:
+        coda_config: Coda configuration dictionary
+        model_id: Optional model ID override
+        
+    Returns:
+        Configured OCIEmbeddingProvider instance
+    """
+    oci_config = coda_config.get("oci", {})
+    return OCIEmbeddingProvider(
+        compartment_id=oci_config.get("compartment_id"),
+        model_id=model_id or oci_config.get("embedding_model_id"),
+        oci_config_file=oci_config.get("config_file_path"),
+        oci_profile=oci_config.get("profile", "DEFAULT"),
+        region=oci_config.get("region"),
+        service_endpoint=oci_config.get("endpoint")
+    )
+
+
+def create_standalone_oci_provider(
+    compartment_id: Optional[str] = None,
+    model_id: Optional[str] = None,
+    **kwargs
+) -> OCIEmbeddingProvider:
+    """Create standalone OCI provider with minimal configuration.
+    
+    Args:
+        compartment_id: OCI compartment ID (uses default if not provided)
+        model_id: Model ID (uses default if not provided)
+        **kwargs: Additional arguments passed to OCIEmbeddingProvider
+        
+    Returns:
+        Configured OCIEmbeddingProvider instance
+    """
+    return OCIEmbeddingProvider(
+        compartment_id=compartment_id,
+        model_id=model_id,
+        **kwargs
+    )

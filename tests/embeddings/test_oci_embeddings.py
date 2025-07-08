@@ -37,7 +37,8 @@ class TestOCIEmbeddingProvider:
         """Test initialization with short model name."""
         with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
-            assert provider.model_id == "multilingual-e5-base"
+            # multilingual-e5 is now an alias for cohere.embed-multilingual-v3.0
+            assert provider.model_id == "cohere.embed-multilingual-v3.0"
         
     def test_init_with_full_name(self, compartment_id):
         """Test initialization with full model name."""
@@ -57,7 +58,7 @@ class TestOCIEmbeddingProvider:
             assert isinstance(result, EmbeddingResult)
             assert result.text == "Hello world"
             assert isinstance(result.embedding, np.ndarray)
-            assert result.model == "multilingual-e5-base"
+            assert result.model == "cohere.embed-multilingual-v3.0"
             assert result.metadata["provider"] == "oci"
         
     @pytest.mark.asyncio
@@ -84,13 +85,13 @@ class TestOCIEmbeddingProvider:
         models = await provider.list_models()
         
         assert len(models) > 0
-        assert any(m["short_name"] == "multilingual-e5" for m in models)
-        assert any(m["short_name"] == "cohere-embed" for m in models)
+        assert any(m["id"] == "cohere.embed-english-v3.0" for m in models)
+        assert any(m["id"] == "cohere.embed-multilingual-v3.0" for m in models)
         
         # Check model info
-        e5_model = next(m for m in models if m["short_name"] == "multilingual-e5")
-        assert e5_model["dimension"] == 768
-        assert e5_model["multilingual"] is True
+        multilingual_model = next(m for m in models if m["id"] == "cohere.embed-multilingual-v3.0")
+        assert multilingual_model["dimensions"] == 1024
+        assert multilingual_model["languages"] == ["multilingual"]
         
     def test_get_model_info(self, compartment_id):
         """Test getting current model info."""
@@ -99,11 +100,11 @@ class TestOCIEmbeddingProvider:
         
         info = provider.get_model_info()
         
-        assert info["id"] == "multilingual-e5-base"
+        assert info["id"] == "cohere.embed-multilingual-v3.0"
         assert info["provider"] == "oci"
-        assert info["dimension"] == 768
+        assert info["dimensions"] == 1024  # cohere.embed-multilingual-v3.0 has 1024 dimensions
         assert info["max_tokens"] == 512
-        assert info["multilingual"] is True
+        assert info["languages"] == ["multilingual"]
         
     def test_similarity_calculation(self, compartment_id):
         """Test cosine similarity calculation."""

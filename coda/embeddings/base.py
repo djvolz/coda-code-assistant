@@ -45,9 +45,11 @@ class BaseEmbeddingProvider(ABC):
         """
         pass
     
-    @abstractmethod
     async def embed_batch(self, texts: List[str]) -> List[EmbeddingResult]:
         """Embed a batch of texts.
+        
+        Default implementation processes texts sequentially.
+        Providers can override for optimized batch processing.
         
         Args:
             texts: List of texts to embed
@@ -55,7 +57,11 @@ class BaseEmbeddingProvider(ABC):
         Returns:
             List of EmbeddingResults
         """
-        pass
+        results = []
+        for text in texts:
+            result = await self.embed_text(text)
+            results.append(result)
+        return results
     
     @abstractmethod
     async def list_models(self) -> List[Dict[str, Any]]:
