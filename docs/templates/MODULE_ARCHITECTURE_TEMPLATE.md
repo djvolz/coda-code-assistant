@@ -1,4 +1,15 @@
-# [Module Name] Architecture
+# Architecture: [Module Name]
+
+<!-- This is a DESIGN DOCUMENT describing the architecture and design decisions of this module -->
+<!-- Follow the naming convention: Architecture-{Component}.md when creating files -->
+
+## Design Document Purpose
+
+This document describes the architectural design of the [Module Name] module, including:
+- High-level architecture and structure
+- Design decisions and rationale
+- Patterns and principles employed
+- Component relationships and interactions
 
 ## Code References
 <!-- List all primary files analyzed for this documentation -->
@@ -9,10 +20,10 @@
 - Related modules: `path/to/related.py`
 
 ## Overview
-<!-- Provide high-level description with specific code references -->
-<!-- REQUIREMENT: Every technical claim must reference specific code -->
+<!-- Provide high-level architectural description with specific code references -->
+<!-- REQUIREMENT: Every design claim must reference actual implementation -->
 
-The [Module Name] module is responsible for [purpose]. The main entry point is the `[ClassName]` class located in `path/to/file.py:line_start-line_end`.
+The [Module Name] module is responsible for [purpose]. The architecture centers around the `[ClassName]` class located in `path/to/file.py:line_start-line_end`.
 
 ## Module Structure
 
@@ -47,6 +58,8 @@ module_name/
 
 #### Pattern Name
 **Implementation**: `file.py:line_start-line_end`
+
+**Why this pattern**: [Explain the design rationale - why was this pattern chosen?]
 
 ```python
 # REQUIREMENT: Code snippet must be exact copy from source
@@ -120,6 +133,25 @@ result = function_name(value1, value2)
 **Methods**:
 - `__init__(self, ...)`: Constructor (line X)
 - `public_method(self, ...)`: [Purpose] (line Y)
+
+## Design Decisions
+
+### Key Architectural Choices
+
+#### Decision 1: [Design Choice Name]
+**Context**: [What problem or requirement led to this decision?]
+**Decision**: [What was decided?]
+**Rationale**: [Why was this chosen over alternatives?]
+**Trade-offs**: [What are the pros and cons?]
+**Implementation**: See `file.py:line_start-line_end`
+
+#### Decision 2: [Design Choice Name]
+[Continue pattern...]
+
+### Design Principles
+<!-- List the key principles that guided this module's design -->
+1. **Principle**: [Explanation of how it's applied]
+2. **Principle**: [Explanation of how it's applied]
 
 ## Configuration
 

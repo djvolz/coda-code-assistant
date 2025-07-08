@@ -1,24 +1,33 @@
-# Architecture Documentation Implementation Plan
+# Architecture Design Documentation Implementation Plan
 
 ## Executive Summary
 
-This document outlines a comprehensive plan for creating and maintaining architecture documentation for the Coda Code Assistant codebase. The documentation will be integrated directly into the wiki submodule, utilizing PlantUML and Mermaid diagrams extensively to enhance understanding. The plan includes automated validation to ensure documentation stays current with code evolution.
+This document outlines a comprehensive plan for creating and maintaining architecture design documentation for the Coda Code Assistant codebase. These design documents describe the system's architecture, design decisions, patterns, and structure. The documentation will be integrated directly into the wiki submodule, utilizing PlantUML and Mermaid diagrams extensively to enhance understanding. The plan includes automated validation to ensure design documentation stays current with code evolution.
 
 ## Goals
 
-1. **Comprehensive Understanding**: Enable developers to fully understand the codebase architecture
-2. **Visual Communication**: Use diverse diagram types (PlantUML/Mermaid) to illustrate concepts
-3. **Living Documentation**: Establish processes to keep documentation synchronized with code changes
-4. **Developer Experience**: Make documentation discoverable and actionable
-5. **Evidence-Based Documentation**: All documentation MUST be based on actual code with citations
+1. **Comprehensive Understanding**: Enable developers to fully understand the system design and architecture
+2. **Visual Communication**: Use diverse diagram types (PlantUML/Mermaid) to illustrate design concepts
+3. **Living Documentation**: Establish processes to keep design documentation synchronized with code evolution
+4. **Developer Experience**: Make design documentation discoverable and actionable
+5. **Evidence-Based Design**: All design documentation MUST be based on actual implementation with citations
+6. **Design Rationale**: Document the "why" behind architectural decisions, not just the "what"
 
 ## Documentation Principles
 
+### Design Documentation Philosophy
+These are **design documents**, not implementation guides. They should:
+- **Describe the architecture** and high-level structure
+- **Explain design decisions** and trade-offs
+- **Document patterns** and architectural principles
+- **Illustrate relationships** between components
+- **Provide context** for understanding the system
+
 ### Evidence-Based Approach
-- **Every statement must be verifiable** in the actual codebase
+- **Every design claim must be verifiable** in the actual codebase
 - **Include file paths and line numbers** as citations where applicable
-- **No speculative features** - only document what exists
-- **Regular verification** - re-check that documentation matches code reality
+- **No speculative features** - only document implemented designs
+- **Regular verification** - re-check that design docs match code reality
 
 ### Citation Format
 ```markdown
