@@ -3,11 +3,11 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from rich.console import Console
 
 from coda.agents.builtin_tools import get_builtin_tools
 from coda.agents.decorators import tool
 from coda.cli.tool_chat import ToolChatHandler
-from rich.console import Console
 
 
 # Create test tool at module level to avoid pytest fixture confusion
@@ -44,11 +44,11 @@ class TestToolChatWorkflow:
         console = Console()
         cli = session  # Use session as cli for these tests
         handler = ToolChatHandler(provider if provider else Mock(), cli, console)
-        
+
         # Add a mock handle_chat method for tests
         async def handle_chat(message):
             return f"Handled: {message}"
-        
+
         handler.handle_chat = handle_chat
         return handler
 
