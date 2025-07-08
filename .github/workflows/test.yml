@@ -55,6 +55,10 @@ jobs:
         rm -f .coverage* coverage.xml
         uv run python -m pytest tests/ -v -m "unit or not integration" --cov=coda --cov-report=xml --cov-report=term-missing
     
+    - name: Run agent tests
+      run: |
+        uv run python -m pytest tests/agents/ tests/tools/ -v --cov=coda --cov-append --cov-report=xml --cov-report=term-missing
+    
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       if: matrix.python-version == '3.11'
