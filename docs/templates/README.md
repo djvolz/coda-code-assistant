@@ -6,10 +6,12 @@ This directory contains templates for creating consistent documentation across t
 
 ### MODULE_ARCHITECTURE_TEMPLATE.md
 Template for documenting module architecture with:
-- Evidence-based approach requiring code citations
+- Design documentation focus (architecture, not implementation)
+- Evidence-based approach with GitHub-linked code references
+- Line numbers hidden in comments (due to code drift)
+- Architecture naming convention: `Architecture-{Component}.md`
 - Standardized sections for comprehensive coverage
-- Verification checklist to ensure accuracy
-- Required file paths and line number references
+- Hidden verification checklist for maintainers
 
 ## Usage
 

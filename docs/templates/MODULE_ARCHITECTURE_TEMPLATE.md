@@ -1,7 +1,14 @@
 # Architecture: [Module Name]
 
 <!-- This is a DESIGN DOCUMENT describing the architecture and design decisions of this module -->
-<!-- Follow the naming convention: Architecture-{Component}.md when creating files -->
+
+<!-- TEMPLATE INSTRUCTIONS:
+1. Follow the naming convention: Architecture-{Component}.md when creating files
+2. Link all file references to GitHub: https://github.com/djvolz/coda-code-assistant/blob/main/{path}
+3. Hide specific line numbers in HTML comments - they drift quickly
+4. Focus on design decisions and architecture, not implementation details
+5. Remove instruction comments before publishing
+-->
 
 ## Design Document Purpose
 
@@ -13,39 +20,45 @@ This document describes the architectural design of the [Module Name] module, in
 
 ## Code References
 <!-- List all primary files analyzed for this documentation -->
-<!-- REQUIREMENT: Every file listed here must exist in the codebase -->
-- Primary implementation: `path/to/main/file.py`
-- Tests: `tests/path/to/test_file.py`
-- Configuration: `path/to/config.py`
-- Related modules: `path/to/related.py`
+<!-- Link all files to https://github.com/djvolz/coda-code-assistant/blob/main/{path} -->
+- Primary implementation: [`path/to/main/file.py`](https://github.com/djvolz/coda-code-assistant/blob/main/path/to/main/file.py)
+- Tests: [`tests/path/to/test_file.py`](https://github.com/djvolz/coda-code-assistant/blob/main/tests/path/to/test_file.py)
+- Configuration: [`path/to/config.py`](https://github.com/djvolz/coda-code-assistant/blob/main/path/to/config.py)
+- Related modules: [`path/to/related.py`](https://github.com/djvolz/coda-code-assistant/blob/main/path/to/related.py)
 
 ## Overview
-<!-- Provide high-level architectural description with specific code references -->
-<!-- REQUIREMENT: Every design claim must reference actual implementation -->
+<!-- Provide high-level architectural description -->
+<!-- Include specific file references but not line numbers in visible text -->
 
-The [Module Name] module is responsible for [purpose]. The architecture centers around the `[ClassName]` class located in `path/to/file.py:line_start-line_end`.
+The [Module Name] module is responsible for [purpose]. The architecture centers around the `[ClassName]` class located in [`path/to/file.py`](https://github.com/djvolz/coda-code-assistant/blob/main/path/to/file.py).
+
+<!-- Line number references for maintainer use only - these are subject to drift:
+     Main class: path/to/file.py:45-89
+     Key method: path/to/file.py:92-120
+-->
 
 ## Module Structure
 
 ```
 module_name/
 ├── __init__.py          # Module initialization and exports
-├── main.py              # Primary implementation (verified to exist)
-├── models.py            # Data models (verified to exist)
-└── utils.py             # Helper functions (verified to exist)
+├── main.py              # Primary implementation
+├── models.py            # Data models
+└── utils.py             # Helper functions
 ```
 
 ## Key Components
 
 ### Component 1: [Name]
-<!-- REQUIREMENT: Include file path and line numbers -->
-**Location**: `path/to/component.py:line_start-line_end`
+**Location**: [`path/to/component.py`](https://github.com/djvolz/coda-code-assistant/blob/main/path/to/component.py)
 
 **Purpose**: [Description based on code analysis]
 
 **Key Classes/Functions**:
-- `ClassName` (lines X-Y): [Purpose from docstring/implementation]
-- `function_name()` (lines X-Y): [Purpose from docstring/implementation]
+- `ClassName`: [Purpose from docstring/implementation]
+- `function_name()`: [Purpose from docstring/implementation]
+
+<!-- Line references: component.py:45-89 for ClassName, component.py:92-120 for function_name -->
 
 ### Component 2: [Name]
 **Location**: `path/to/component.py:line_start-line_end`
@@ -57,17 +70,17 @@ module_name/
 ### Design Patterns Used
 
 #### Pattern Name
-**Implementation**: `file.py:line_start-line_end`
+**Implementation**: [`file.py`](https://github.com/djvolz/coda-code-assistant/blob/main/path/to/file.py)
 
 **Why this pattern**: [Explain the design rationale - why was this pattern chosen?]
 
 ```python
-# REQUIREMENT: Code snippet must be exact copy from source
-# Include line numbers as comments
-class ExampleClass:  # line 42
-    def example_method(self):  # line 43
-        pass  # line 44
+class ExampleClass:
+    def example_method(self):
+        pass
 ```
+
+<!-- Implementation at file.py:42-44 -->
 
 ### Data Flow
 
@@ -107,7 +120,7 @@ classDiagram
 ### Public Functions
 
 #### `function_name(param1: Type, param2: Type) -> ReturnType`
-**Location**: `file.py:line_number`
+**Location**: [`file.py`](https://github.com/djvolz/coda-code-assistant/blob/main/path/to/file.py)
 
 **Purpose**: [From docstring]
 
@@ -117,11 +130,11 @@ classDiagram
 
 **Returns**: [From docstring/implementation]
 
-**Example** (from tests or docstring):
+**Example**:
 ```python
-# From test_file.py:line_number
 result = function_name(value1, value2)
 ```
+<!-- Example from test_file.py:line_number -->
 
 ### Public Classes
 
@@ -252,8 +265,7 @@ result = instance.process(data)
 1. **Limitation**: [Description] (see `file.py:line` comment)
 2. **TODO**: [Pending feature] (marked in `file.py:line`)
 
-## Verification Checklist
-<!-- REQUIREMENT: Must be completed before documentation is considered done -->
+<!-- Verification Checklist for Maintainers
 - [ ] All file paths verified to exist
 - [ ] All line numbers checked for accuracy  
 - [ ] All class/function names validated
@@ -263,6 +275,8 @@ result = instance.process(data)
 - [ ] Cross-references to other modules verified
 - [ ] Configuration options match actual usage
 - [ ] Test references are accurate
+- [ ] GitHub links are correct
+-->
 
 ## References
 
