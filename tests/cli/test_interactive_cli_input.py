@@ -13,7 +13,7 @@ class TestInteractiveCLIInput:
     @pytest.fixture
     def cli(self):
         """Create an InteractiveCLI instance for testing."""
-        with patch('coda.cli.interactive_cli.ModelManager'):
+        with patch("coda.cli.interactive_cli.ModelManager"):
             cli = InteractiveCLI()
             cli.session_manager = Mock()
             cli.chat_session = Mock()
@@ -22,7 +22,7 @@ class TestInteractiveCLIInput:
     @pytest.fixture
     def mock_prompt_session(self):
         """Create a mock prompt session."""
-        with patch('coda.cli.interactive_cli.PromptSession') as mock:
+        with patch("coda.cli.interactive_cli.PromptSession") as mock:
             session = Mock()
             mock.return_value = session
             yield session
@@ -54,12 +54,7 @@ class TestInteractiveCLIInput:
 
     def test_get_input_multiline_mode_triggered(self, cli, mock_prompt_session):
         """Test multiline mode is triggered by triple backticks."""
-        mock_prompt_session.prompt.side_effect = [
-            "```",
-            "line 1",
-            "line 2",
-            "```"
-        ]
+        mock_prompt_session.prompt.side_effect = ["```", "line 1", "line 2", "```"]
 
         result = cli.get_input()
 
@@ -73,7 +68,7 @@ class TestInteractiveCLIInput:
             "```python",
             "def hello():",
             "    print('world')",
-            "```"
+            "```",
         ]
 
         result = cli.get_input()
@@ -115,13 +110,7 @@ class TestInteractiveCLIInput:
 
     def test_get_input_multiline_empty_lines(self, cli, mock_prompt_session):
         """Test multiline mode with empty lines."""
-        mock_prompt_session.prompt.side_effect = [
-            "```",
-            "line 1",
-            "",
-            "line 3",
-            "```"
-        ]
+        mock_prompt_session.prompt.side_effect = ["```", "line 1", "", "line 3", "```"]
 
         result = cli.get_input()
 
@@ -134,7 +123,7 @@ class TestInteractiveCLIInput:
             "```markdown",
             "Here's some code:",
             "`inline code`",
-            "```"
+            "```",
         ]
 
         result = cli.get_input()
@@ -163,16 +152,12 @@ class TestInteractiveCLIInput:
         # Verify prompt was called with appropriate styling
         mock_prompt_session.prompt.assert_called_once()
         call_kwargs = mock_prompt_session.prompt.call_args[1]
-        assert 'bottom_toolbar' in call_kwargs
-        assert 'style' in call_kwargs
+        assert "bottom_toolbar" in call_kwargs
+        assert "style" in call_kwargs
 
     def test_get_input_multiline_eof_during_input(self, cli, mock_prompt_session):
         """Test EOFError during multiline input."""
-        mock_prompt_session.prompt.side_effect = [
-            "```",
-            "line 1",
-            EOFError()
-        ]
+        mock_prompt_session.prompt.side_effect = ["```", "line 1", EOFError()]
 
         result = cli.get_input()
 
@@ -182,17 +167,13 @@ class TestInteractiveCLIInput:
 
     def test_get_input_multiline_keyboard_interrupt(self, cli, mock_prompt_session):
         """Test KeyboardInterrupt during multiline input."""
-        mock_prompt_session.prompt.side_effect = [
-            "```",
-            "line 1",
-            KeyboardInterrupt()
-        ]
+        mock_prompt_session.prompt.side_effect = ["```", "line 1", KeyboardInterrupt()]
 
         result = cli.get_input()
 
         assert result is None
 
-    @patch('coda.cli.interactive_cli.print')
+    @patch("coda.cli.interactive_cli.print")
     def test_get_input_exception_handling(self, mock_print, cli, mock_prompt_session):
         """Test general exception handling during input."""
         mock_prompt_session.prompt.side_effect = Exception("Test error")
@@ -214,10 +195,7 @@ class TestInteractiveCLIInput:
 
     def test_get_input_multiline_with_only_backticks(self, cli, mock_prompt_session):
         """Test multiline mode with only closing backticks."""
-        mock_prompt_session.prompt.side_effect = [
-            "```",
-            "```"
-        ]
+        mock_prompt_session.prompt.side_effect = ["```", "```"]
 
         result = cli.get_input()
 
@@ -241,24 +219,21 @@ class TestInteractiveCLIInput:
 
         assert cli.interrupted is False
 
-    @patch('coda.cli.interactive_cli.signal')
+    @patch("coda.cli.interactive_cli.signal")
     def test_start_interrupt_listener_registers_handler(self, mock_signal, cli):
         """Test interrupt listener registers signal handlers."""
         cli.start_interrupt_listener()
 
         mock_signal.signal.assert_called_with(mock_signal.SIGINT, cli._handle_interrupt)
 
-    @patch('coda.cli.interactive_cli.signal')
+    @patch("coda.cli.interactive_cli.signal")
     def test_stop_interrupt_listener_restores_handler(self, mock_signal, cli):
         """Test stopping interrupt listener restores default handler."""
         cli.original_sigint_handler = mock_signal.default_int_handler
 
         cli.stop_interrupt_listener()
 
-        mock_signal.signal.assert_called_with(
-            mock_signal.SIGINT,
-            mock_signal.default_int_handler
-        )
+        mock_signal.signal.assert_called_with(mock_signal.SIGINT, mock_signal.default_int_handler)
 
     def test_handle_interrupt_sets_flag(self, cli):
         """Test interrupt handler sets the interrupted flag."""
@@ -275,7 +250,7 @@ class TestInteractiveCLIInput:
         assert result == "test input"
         # Verify completer was passed to prompt
         call_kwargs = mock_prompt_session.prompt.call_args[1]
-        assert 'completer' in call_kwargs
+        assert "completer" in call_kwargs
 
     def test_get_input_multiline_preserves_indentation(self, cli, mock_prompt_session):
         """Test multiline mode preserves indentation."""
@@ -284,7 +259,7 @@ class TestInteractiveCLIInput:
             "def function():",
             "    if True:",
             "        return 42",
-            "```"
+            "```",
         ]
 
         result = cli.get_input()

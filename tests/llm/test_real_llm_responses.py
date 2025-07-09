@@ -25,10 +25,7 @@ def create_system_message(content: str) -> Message:
 
 @pytest.mark.llm
 @pytest.mark.ollama
-@pytest.mark.skipif(
-    not os.getenv("RUN_LLM_TESTS"),
-    reason="LLM tests require RUN_LLM_TESTS=true"
-)
+@pytest.mark.skipif(not os.getenv("RUN_LLM_TESTS"), reason="LLM tests require RUN_LLM_TESTS=true")
 class TestRealLLMResponses:
     """Test with real LLM responses using Ollama."""
 
@@ -68,7 +65,7 @@ class TestRealLLMResponses:
             messages=messages,
             model=provider_config["model"],
             max_tokens=50,
-            temperature=0.1  # Low temperature for deterministic responses
+            temperature=0.1,  # Low temperature for deterministic responses
         )
 
         assert response is not None
@@ -83,10 +80,7 @@ class TestRealLLMResponses:
 
         chunks = []
         async for chunk in ollama_provider.chat_stream(
-            messages=messages,
-            model=provider_config["model"],
-            max_tokens=30,
-            temperature=0.1
+            messages=messages, model=provider_config["model"], max_tokens=30, temperature=0.1
         ):
             chunks.append(chunk)
 
@@ -96,9 +90,7 @@ class TestRealLLMResponses:
 
         # Should contain numbers 1, 2, 3
         response_lower = full_response.lower()
-        numbers_found = sum(
-            char in response_lower for char in ["1", "2", "3"]
-        )
+        numbers_found = sum(char in response_lower for char in ["1", "2", "3"])
         assert numbers_found >= 2  # At least 2 out of 3 numbers
 
     @pytest.mark.asyncio
@@ -108,23 +100,19 @@ class TestRealLLMResponses:
         messages = [create_user_message("My name is TestUser. Remember this.")]
 
         response1 = await ollama_provider.chat(
-            messages=messages,
-            model=provider_config["model"],
-            max_tokens=50,
-            temperature=0.1
+            messages=messages, model=provider_config["model"], max_tokens=50, temperature=0.1
         )
 
         # Add AI response and ask follow-up
-        messages.extend([
-            Message(role=Role.ASSISTANT, content=response1),
-            create_user_message("What is my name?")
-        ])
+        messages.extend(
+            [
+                Message(role=Role.ASSISTANT, content=response1),
+                create_user_message("What is my name?"),
+            ]
+        )
 
         response2 = await ollama_provider.chat(
-            messages=messages,
-            model=provider_config["model"],
-            max_tokens=50,
-            temperature=0.1
+            messages=messages, model=provider_config["model"], max_tokens=50, temperature=0.1
         )
 
         assert response2 is not None
@@ -147,11 +135,11 @@ class TestRealLLMResponses:
         messages = [create_user_message("Test message")]
 
         # Test with non-existent model
-        with pytest.raises((ValueError, RuntimeError, ConnectionError)):  # Should raise some kind of error
+        with pytest.raises(
+            (ValueError, RuntimeError, ConnectionError)
+        ):  # Should raise some kind of error
             await ollama_provider.chat(
-                messages=messages,
-                model="nonexistent-model:999",
-                max_tokens=10
+                messages=messages, model="nonexistent-model:999", max_tokens=10
             )
 
     @pytest.mark.asyncio
@@ -163,10 +151,7 @@ class TestRealLLMResponses:
 
         start_time = time.time()
         response = await ollama_provider.chat(
-            messages=messages,
-            model=provider_config["model"],
-            max_tokens=10,
-            temperature=0.1
+            messages=messages, model=provider_config["model"], max_tokens=10, temperature=0.1
         )
         end_time = time.time()
 
@@ -177,10 +162,7 @@ class TestRealLLMResponses:
 
 
 @pytest.mark.llm
-@pytest.mark.skipif(
-    not os.getenv("RUN_LLM_TESTS"),
-    reason="LLM tests require RUN_LLM_TESTS=true"
-)
+@pytest.mark.skipif(not os.getenv("RUN_LLM_TESTS"), reason="LLM tests require RUN_LLM_TESTS=true")
 class TestLLMProviderComparison:
     """Compare responses across different providers."""
 
@@ -195,10 +177,7 @@ class TestLLMProviderComparison:
         mock_provider = registry.get_provider("mock")
 
         messages = [create_user_message(prompt)]
-        mock_response = await mock_provider.chat(
-            messages=messages,
-            model="mock-smart"
-        )
+        mock_response = await mock_provider.chat(messages=messages, model="mock-smart")
 
         assert mock_response is not None
         assert len(mock_response.strip()) > 0
@@ -213,7 +192,7 @@ class TestLLMProviderComparison:
                     messages=messages,
                     model=os.getenv("CODA_TEST_MODEL", "tinyllama:1.1b"),
                     max_tokens=10,
-                    temperature=0.1
+                    temperature=0.1,
                 )
 
                 # Both should respond
