@@ -7,6 +7,13 @@ from datetime import datetime
 from typing import Any
 
 from coda.agents.decorators import tool
+from coda.agents.intelligence_tools import (
+    analyze_code,
+    code_stats,
+    find_definition,
+    find_pattern,
+    get_dependencies,
+)
 
 
 @tool(description="Get the current working directory")
@@ -178,4 +185,10 @@ def get_builtin_tools():
         parse_json,
         format_json,
         fetch_data,
+        # Intelligence tools
+        find_definition,
+        analyze_code,
+        get_dependencies,
+        code_stats,
+        find_pattern,
     ]
