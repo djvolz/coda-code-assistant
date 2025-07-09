@@ -57,10 +57,7 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
             text=text,
             embedding=embedding,
             model=self.model_id,
-            metadata={
-                "provider": "mock",
-                "dimension": self.dimension
-            }
+            metadata={"provider": "mock", "dimension": self.dimension},
         )
 
     # embed_batch is inherited from base class
@@ -78,7 +75,7 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
             "provider": "mock",
             "description": "Mock embedding provider for testing",
             "max_tokens": 8192,  # Arbitrary large value for testing
-            "languages": ["any"]
+            "languages": ["any"],
         }
 
     async def list_models(self) -> list[dict[str, Any]]:
@@ -93,20 +90,20 @@ class MockEmbeddingProvider(BaseEmbeddingProvider):
                 "dimensions": 384,
                 "description": "Mock 384-dimensional embeddings (lightweight)",
                 "max_tokens": 8192,
-                "languages": ["any"]
+                "languages": ["any"],
             },
             {
                 "id": "mock-768d",
                 "dimensions": 768,
                 "description": "Mock 768-dimensional embeddings (standard)",
                 "max_tokens": 8192,
-                "languages": ["any"]
+                "languages": ["any"],
             },
             {
                 "id": "mock-1024d",
                 "dimensions": 1024,
                 "description": "Mock 1024-dimensional embeddings (high-quality)",
                 "max_tokens": 8192,
-                "languages": ["any"]
-            }
+                "languages": ["any"],
+            },
         ]

@@ -28,8 +28,8 @@ async def main():
             metadata={
                 "source": "docs/intro.md",
                 "type": "documentation",
-                "last_modified": "2025-07-07"
-            }
+                "last_modified": "2025-07-07",
+            },
         ),
         SearchResult(
             id="code-001",
@@ -39,8 +39,8 @@ async def main():
                 "source": "examples/fibonacci.py",
                 "type": "code",
                 "language": "python",
-                "lines": "10-18"
-            }
+                "lines": "10-18",
+            },
         ),
         SearchResult(
             id="blog-001",
@@ -49,17 +49,14 @@ async def main():
             metadata={
                 "source": "blog/python-vs-javascript.md",
                 "type": "article",
-                "author": "Jane Doe"
-            }
+                "author": "Jane Doe",
+            },
         ),
         SearchResult(
             id="doc-002",
             text="The Python Package Index (PyPI) is the official repository for Python packages. You can install packages using pip: pip install package_name",
             score=0.65,
-            metadata={
-                "source": "docs/package-management.md",
-                "type": "documentation"
-            }
+            metadata={"source": "docs/package-management.md", "type": "documentation"},
         ),
         SearchResult(
             id="tutorial-001",
@@ -68,9 +65,9 @@ async def main():
             metadata={
                 "source": "tutorials/async-python.md",
                 "type": "tutorial",
-                "difficulty": "intermediate"
-            }
-        )
+                "difficulty": "intermediate",
+            },
+        ),
     ]
 
     display.display_results(test_results, "python programming")
@@ -89,7 +86,7 @@ async def main():
         "src/utils.py",
         "src/models/user.py",
         "src/models/product.py",
-        "tests/test_main.py"
+        "tests/test_main.py",
     ]
 
     with progress.start_indexing(len(files)) as prog:
@@ -108,7 +105,7 @@ async def main():
         "embedding_dimension": 1024,
         "vector_store_type": "FAISS",
         "index_type": "IVF",
-        "memory_usage": 6291456  # 6MB
+        "memory_usage": 6291456,  # 6MB
     }
 
     create_search_stats_display(stats, console)
@@ -126,8 +123,8 @@ async def main():
                 "source": "src/api/users.js",
                 "type": "code",
                 "language": "javascript",
-                "lines": "45-54"
-            }
+                "lines": "45-54",
+            },
         ),
         SearchResult(
             id="py-001",
@@ -137,9 +134,9 @@ async def main():
                 "source": "utils/http.py",
                 "type": "code",
                 "language": "python",
-                "lines": "12-15"
-            }
-        )
+                "lines": "12-15",
+            },
+        ),
     ]
 
     display.display_results(code_results, "async function", show_metadata=True)

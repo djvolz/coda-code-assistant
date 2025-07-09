@@ -102,8 +102,9 @@ class SlashCommandCompleter(BaseCompleter):
     def _complete_all_commands(self):
         """Complete all available commands when no input given."""
         from coda.themes import get_console_theme
+
         theme = get_console_theme()
-        
+
         for cmd_name, cmd in sorted(self.commands.items()):
             yield Completion(
                 f"/{cmd_name}",
@@ -116,8 +117,10 @@ class SlashCommandCompleter(BaseCompleter):
     def _complete_subcommands(self, cmd_part: str, parts: list[str]):
         """Complete subcommands for the given command."""
         # Import here to avoid circular imports
-        from .command_registry import CommandRegistry
         from coda.themes import get_console_theme
+
+        from .command_registry import CommandRegistry
+
         theme = get_console_theme()
 
         cmd_def = CommandRegistry.get_command(cmd_part)
@@ -138,8 +141,9 @@ class SlashCommandCompleter(BaseCompleter):
     def _complete_command_names(self, cmd_part: str, text: str):
         """Complete command names with fuzzy matching."""
         from coda.themes import get_console_theme
+
         theme = get_console_theme()
-        
+
         completions = []
 
         # Check main commands only (no aliases)
@@ -203,13 +207,15 @@ class DynamicValueCompleter(BaseCompleter):
     def _get_command(self, cmd_name: str):
         """Get command definition from registry."""
         from .command_registry import CommandRegistry
+
         return CommandRegistry.get_command(cmd_name)
 
     def _complete_main_command_value(self, text: str, parts: list[str], main_cmd):
         """Complete values for main command."""
         from coda.themes import get_console_theme
+
         theme = get_console_theme()
-        
+
         if text.endswith(" ") and len(parts) == 1:
             # Command with no value yet - just typed space
             value_part = ""
@@ -222,8 +228,9 @@ class DynamicValueCompleter(BaseCompleter):
     def _complete_subcommand_value(self, text: str, parts: list[str], main_cmd):
         """Complete values for subcommands."""
         from coda.themes import get_console_theme
+
         theme = get_console_theme()
-        
+
         subcommand_name = parts[1]
         # Find the subcommand (including aliases)
         subcommand = None

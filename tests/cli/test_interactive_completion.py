@@ -1,16 +1,18 @@
 """Tests for interactive CLI tab completion integration."""
 
+from unittest.mock import Mock
+
 import pytest
-from unittest.mock import Mock, patch
 from prompt_toolkit.document import Document
 
-from coda.cli.interactive_cli import InteractiveCLI
 from coda.cli.completers import CodaCompleter
+from coda.cli.interactive_cli import InteractiveCLI
 from coda.providers.base import Model
 
 
 class MockCompleteEvent:
     """Mock completion event for testing."""
+
     pass
 
 
@@ -41,9 +43,9 @@ class TestInteractiveCLICompletion:
         """Test /model completion when provider is available."""
         completer = cli.session.completer
         doc = Document("/model ")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Should get model completions
         assert len(completions) == 3
         model_ids = [c.text for c in completions]
@@ -55,12 +57,12 @@ class TestInteractiveCLICompletion:
         """Test /model completion when provider is None."""
         cli = InteractiveCLI()
         cli.provider = None  # No provider
-        
+
         completer = cli.session.completer
         doc = Document("/model ")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Should get no completions
         assert len(completions) == 0
 
@@ -68,9 +70,9 @@ class TestInteractiveCLICompletion:
         """Test /export subcommand completion."""
         completer = cli.session.completer
         doc = Document("/export ")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Should get export format completions
         assert len(completions) == 4
         formats = [c.text for c in completions]
@@ -83,18 +85,18 @@ class TestInteractiveCLICompletion:
         """Test /theme completion includes theme names."""
         completer = cli.session.completer
         doc = Document("/theme ")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Should include theme names and commands
         assert len(completions) > 10  # Many themes + list/current/reset
         completion_texts = [c.text for c in completions]
-        
+
         # Check some themes
         assert "dark" in completion_texts
         assert "light" in completion_texts
         assert "monokai_dark" in completion_texts
-        
+
         # Check commands
         assert "list" in completion_texts
         assert "current" in completion_texts
@@ -108,12 +110,12 @@ class TestInteractiveCLICompletion:
             {"name": "bug-fix", "message_count": 5, "updated_at": "2024-01-02"},
         ]
         cli.session_commands.list_sessions = Mock(return_value=mock_sessions)
-        
+
         completer = cli.session.completer
         doc = Document("/session load ")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Should get session name completions
         assert len(completions) == 2
         names = [c.text for c in completions]
@@ -123,12 +125,12 @@ class TestInteractiveCLICompletion:
     def test_fuzzy_command_matching(self, cli):
         """Test fuzzy matching for commands."""
         completer = cli.session.completer
-        
+
         # Test fuzzy match /mdl -> /model
         doc = Document("/mdl")
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
         assert any(c.text == "/model" for c in completions)
-        
+
         # Test fuzzy match /ses -> /session
         doc = Document("/ses")
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
@@ -138,12 +140,12 @@ class TestInteractiveCLICompletion:
         """Test that empty input shows all commands."""
         completer = cli.session.completer
         doc = Document("")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Should show all commands
         assert len(completions) >= 10  # At least 10 commands
-        
+
         # Check some key commands
         command_texts = [c.text for c in completions]
         assert "/help" in command_texts
@@ -155,9 +157,9 @@ class TestInteractiveCLICompletion:
         """Test that regular text gets no completions."""
         completer = cli.session.completer
         doc = Document("hello world")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Should get no completions
         assert len(completions) == 0
 
@@ -165,12 +167,13 @@ class TestInteractiveCLICompletion:
         """Test that completions use theme colors."""
         completer = cli.session.completer
         doc = Document("/")
-        
+
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
-        
+
         # Check that completions have styles
         assert len(completions) > 0
         for completion in completions:
             assert completion.style is not None
             # Style should contain theme color
             assert "bold" in completion.style or "#" in completion.style
+

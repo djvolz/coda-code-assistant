@@ -31,11 +31,7 @@ class FAISSVectorStore(BaseVectorStore):
     """
 
     def __init__(
-        self,
-        dimension: int,
-        index_type: str = "flat",
-        metric: str = "cosine",
-        **index_params
+        self, dimension: int, index_type: str = "flat", metric: str = "cosine", **index_params
     ):
         """Initialize FAISS vector store.
 
@@ -46,9 +42,7 @@ class FAISSVectorStore(BaseVectorStore):
             **index_params: Additional parameters for index construction
         """
         if faiss is None:
-            raise ImportError(
-                "FAISS is not installed. Install with: pip install faiss-cpu"
-            )
+            raise ImportError("FAISS is not installed. Install with: pip install faiss-cpu")
 
         super().__init__(dimension, index_type)
         self.metric = metric
@@ -98,7 +92,7 @@ class FAISSVectorStore(BaseVectorStore):
 
     def _normalize_embeddings(self, embeddings: list[np.ndarray]) -> np.ndarray:
         """Normalize embeddings for cosine similarity."""
-        embeddings_array = np.array(embeddings).astype('float32')
+        embeddings_array = np.array(embeddings).astype("float32")
 
         if self.metric == "cosine":
             # Normalize for cosine similarity
@@ -112,7 +106,7 @@ class FAISSVectorStore(BaseVectorStore):
         texts: list[str],
         embeddings: list[np.ndarray],
         ids: list[str] | None = None,
-        metadata: list[dict[str, Any]] | None = None
+        metadata: list[dict[str, Any]] | None = None,
     ) -> list[str]:
         """Add vectors to the FAISS index."""
         if ids is None:
@@ -132,8 +126,7 @@ class FAISSVectorStore(BaseVectorStore):
 
         # Add to index
         await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: self.index.add_with_ids(embeddings_array, indices)
+            None, lambda: self.index.add_with_ids(embeddings_array, indices)
         )
 
         # Store associated data
@@ -147,10 +140,7 @@ class FAISSVectorStore(BaseVectorStore):
         return ids
 
     async def search(
-        self,
-        query_embedding: np.ndarray,
-        k: int = 10,
-        filter: dict[str, Any] | None = None
+        self, query_embedding: np.ndarray, k: int = 10, filter: dict[str, Any] | None = None
     ) -> list[SearchResult]:
         """Search for similar vectors in the index."""
         # Normalize query
@@ -158,8 +148,7 @@ class FAISSVectorStore(BaseVectorStore):
 
         # Search
         distances, indices = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: self.index.search(query_array, min(k * 2, self.index.ntotal))
+            None, lambda: self.index.search(query_array, min(k * 2, self.index.ntotal))
         )
 
         # Convert to results
@@ -186,12 +175,11 @@ class FAISSVectorStore(BaseVectorStore):
             else:
                 score = float(dist)
 
-            results.append(SearchResult(
-                id=id_,
-                text=self.texts[id_],
-                score=score,
-                metadata=self.metadata.get(id_)
-            ))
+            results.append(
+                SearchResult(
+                    id=id_, text=self.texts[id_], score=score, metadata=self.metadata.get(id_)
+                )
+            )
 
             if len(results) >= k:
                 break
@@ -233,7 +221,7 @@ class FAISSVectorStore(BaseVectorStore):
         ids: list[str],
         embeddings: list[np.ndarray] | None = None,
         texts: list[str] | None = None,
-        metadata: list[dict[str, Any]] | None = None
+        metadata: list[dict[str, Any]] | None = None,
     ) -> int:
         """Update existing vectors."""
         updated_count = 0
@@ -289,26 +277,25 @@ class FAISSVectorStore(BaseVectorStore):
         path_obj.parent.mkdir(parents=True, exist_ok=True)
 
         # Save FAISS index
-        index_path = str(path_obj.with_suffix('.faiss'))
+        index_path = str(path_obj.with_suffix(".faiss"))
         await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: faiss.write_index(self.index, index_path)
+            None, lambda: faiss.write_index(self.index, index_path)
         )
 
         # Save metadata
-        metadata_path = str(path_obj.with_suffix('.meta'))
+        metadata_path = str(path_obj.with_suffix(".meta"))
         metadata_dict = {
-            'texts': self.texts,
-            'metadata': self.metadata,
-            'id_to_idx': self.id_to_idx,
-            'idx_to_id': self.idx_to_id,
-            'dimension': self.dimension,
-            'index_type': self.index_type,
-            'metric': self.metric,
-            'index_params': self.index_params,
+            "texts": self.texts,
+            "metadata": self.metadata,
+            "id_to_idx": self.id_to_idx,
+            "idx_to_id": self.idx_to_id,
+            "dimension": self.dimension,
+            "index_type": self.index_type,
+            "metric": self.metric,
+            "index_params": self.index_params,
         }
 
-        with open(metadata_path, 'wb') as f:
+        with open(metadata_path, "wb") as f:
             pickle.dump(metadata_dict, f)
 
     async def load_index(self, path: str) -> None:
@@ -316,22 +303,21 @@ class FAISSVectorStore(BaseVectorStore):
         path_obj = Path(path)
 
         # Load FAISS index
-        index_path = str(path_obj.with_suffix('.faiss'))
+        index_path = str(path_obj.with_suffix(".faiss"))
         self.index = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: faiss.read_index(index_path)
+            None, lambda: faiss.read_index(index_path)
         )
 
         # Load metadata
-        metadata_path = str(path_obj.with_suffix('.meta'))
-        with open(metadata_path, 'rb') as f:
+        metadata_path = str(path_obj.with_suffix(".meta"))
+        with open(metadata_path, "rb") as f:
             metadata_dict = pickle.load(f)
 
-        self.texts = metadata_dict['texts']
-        self.metadata = metadata_dict['metadata']
-        self.id_to_idx = metadata_dict['id_to_idx']
-        self.idx_to_id = metadata_dict['idx_to_id']
-        self.dimension = metadata_dict['dimension']
-        self.index_type = metadata_dict['index_type']
-        self.metric = metadata_dict['metric']
-        self.index_params = metadata_dict['index_params']
+        self.texts = metadata_dict["texts"]
+        self.metadata = metadata_dict["metadata"]
+        self.id_to_idx = metadata_dict["id_to_idx"]
+        self.idx_to_id = metadata_dict["idx_to_id"]
+        self.dimension = metadata_dict["dimension"]
+        self.index_type = metadata_dict["index_type"]
+        self.metric = metadata_dict["metric"]
+        self.index_params = metadata_dict["index_params"]

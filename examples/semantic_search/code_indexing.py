@@ -49,7 +49,7 @@ async def main():
             "configuration management",
             "error handling and exceptions",
             "database or storage operations",
-            "API endpoints or routes"
+            "API endpoints or routes",
         ]
 
         print("\nSearching code files:")

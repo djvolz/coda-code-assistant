@@ -605,12 +605,17 @@ class InteractiveCLI(CommandHandler):
 
         if not subcommand:
             from rich.table import Table
+
             table = Table(title="[bold cyan]Semantic Search Commands[/bold cyan]", box=None)
             table.add_column("Command", style="white", no_wrap=True)
             table.add_column("Description", style="dim")
 
-            table.add_row("/search semantic <query>", "Search indexed content using semantic similarity")
-            table.add_row("/search code <query>", "Search code files with language-aware formatting")
+            table.add_row(
+                "/search semantic <query>", "Search indexed content using semantic similarity"
+            )
+            table.add_row(
+                "/search code <query>", "Search code files with language-aware formatting"
+            )
             table.add_row("/search index [path]", "Index files or directories for search")
             table.add_row("/search status", "Show search index statistics")
             table.add_row("/search reset", "Reset search manager and clear index")
@@ -648,10 +653,14 @@ class InteractiveCLI(CommandHandler):
                 self._search_manager = create_semantic_search_manager()
                 # Get provider info
                 provider_info = self._search_manager.embedding_provider.get_model_info()
-                self.console.print(f"[green]Using {provider_info.get('provider', 'configured')} embeddings[/green]")
+                self.console.print(
+                    f"[green]Using {provider_info.get('provider', 'configured')} embeddings[/green]"
+                )
             except Exception as e:
                 # Fall back to mock provider
-                self.console.print(f"[yellow]Failed to initialize configured provider: {str(e)}[/yellow]")
+                self.console.print(
+                    f"[yellow]Failed to initialize configured provider: {str(e)}[/yellow]"
+                )
                 self.console.print("[yellow]Using mock embeddings for demo purposes[/yellow]")
                 provider = MockEmbeddingProvider(dimension=768)
                 self._search_manager = SemanticSearchManager(embedding_provider=provider)
@@ -673,6 +682,7 @@ class InteractiveCLI(CommandHandler):
 
             except Exception as e:
                 import traceback
+
                 self.console.print(f"[red]Search error: {e}[/red]")
                 self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
@@ -703,6 +713,7 @@ class InteractiveCLI(CommandHandler):
 
             except Exception as e:
                 import traceback
+
                 self.console.print(f"[red]Code search error: {e}[/red]")
                 self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
@@ -719,7 +730,7 @@ class InteractiveCLI(CommandHandler):
                     "Kubernetes orchestrates containerized applications",
                     "Git is essential for version control",
                     "React is a popular frontend framework",
-                    "FastAPI is great for building Python APIs"
+                    "FastAPI is great for building Python APIs",
                 ]
 
                 try:
@@ -731,7 +742,9 @@ class InteractiveCLI(CommandHandler):
                             indexed_ids.extend(doc_id)
                             progress.update(1, f"Indexing: {doc[:50]}...")
 
-                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} demo documents[/green]")
+                    self.console.print(
+                        f"\n[green]✓ Successfully indexed {len(indexed_ids)} demo documents[/green]"
+                    )
                 except Exception as e:
                     self.console.print(f"[red]Indexing error: {e}[/red]")
             else:
@@ -750,12 +763,36 @@ class InteractiveCLI(CommandHandler):
 
                         # Common code file extensions
                         extensions = [
-                            "*.py", "*.js", "*.ts", "*.jsx", "*.tsx",
-                            "*.java", "*.cpp", "*.c", "*.h", "*.hpp",
-                            "*.go", "*.rs", "*.rb", "*.php", "*.swift",
-                            "*.kt", "*.scala", "*.r", "*.m", "*.cs",
-                            "*.sh", "*.bash", "*.zsh", "*.fish",
-                            "*.md", "*.txt", "*.json", "*.yaml", "*.yml", "*.toml"
+                            "*.py",
+                            "*.js",
+                            "*.ts",
+                            "*.jsx",
+                            "*.tsx",
+                            "*.java",
+                            "*.cpp",
+                            "*.c",
+                            "*.h",
+                            "*.hpp",
+                            "*.go",
+                            "*.rs",
+                            "*.rb",
+                            "*.php",
+                            "*.swift",
+                            "*.kt",
+                            "*.scala",
+                            "*.r",
+                            "*.m",
+                            "*.cs",
+                            "*.sh",
+                            "*.bash",
+                            "*.zsh",
+                            "*.fish",
+                            "*.md",
+                            "*.txt",
+                            "*.json",
+                            "*.yaml",
+                            "*.yml",
+                            "*.toml",
                         ]
 
                         files = []
@@ -770,25 +807,29 @@ class InteractiveCLI(CommandHandler):
                             self.console.print(f"[yellow]No code files found in {path}[/yellow]")
                             return
 
-                        self.console.print(f"[cyan]Found {len(files)} files to index in {path}[/cyan]")
+                        self.console.print(
+                            f"[cyan]Found {len(files)} files to index in {path}[/cyan]"
+                        )
 
                     # Index files with progress
                     with indexing_progress.start_indexing(len(files)) as progress:
                         indexed_ids = await manager.index_code_files(files)
                         for _i, file in enumerate(files):
-                            progress.update(
-                                1,
-                                f"Indexed: {file.name}"
-                            )
+                            progress.update(1, f"Indexed: {file.name}")
 
-                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} files[/green]")
+                    self.console.print(
+                        f"\n[green]✓ Successfully indexed {len(indexed_ids)} files[/green]"
+                    )
 
                     # Show some stats
                     stats = await manager.get_stats()
-                    self.console.print(f"[dim]Total vectors in index: {stats['vector_count']}[/dim]")
+                    self.console.print(
+                        f"[dim]Total vectors in index: {stats['vector_count']}[/dim]"
+                    )
 
                 except Exception as e:
                     import traceback
+
                     self.console.print(f"[red]Indexing error: {e}[/red]")
                     self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
@@ -798,11 +839,13 @@ class InteractiveCLI(CommandHandler):
                 create_search_stats_display(stats, self.console)
             except Exception as e:
                 self.console.print(f"[red]Error getting status: {e}[/red]")
-        
+
         elif subcommand == "reset":
             # Reset the search manager
             self._search_manager = None
-            self.console.print("[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]")
+            self.console.print(
+                "[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]"
+            )
 
         else:
             self.console.print(f"[red]Unknown search subcommand: {subcommand}[/red]")

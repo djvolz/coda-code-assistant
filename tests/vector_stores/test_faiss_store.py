@@ -33,7 +33,7 @@ class TestFAISSVectorStore:
 
         # Create random embeddings
         np.random.seed(42)
-        embeddings = [np.random.randn(128).astype('float32') for _ in texts]
+        embeddings = [np.random.randn(128).astype("float32") for _ in texts]
 
         # Normalize for cosine similarity
         embeddings = [e / np.linalg.norm(e) for e in embeddings]
@@ -56,10 +56,7 @@ class TestFAISSVectorStore:
         texts, embeddings, ids, metadata = sample_data
 
         result_ids = await vector_store.add_vectors(
-            texts=texts,
-            embeddings=embeddings,
-            ids=ids,
-            metadata=metadata
+            texts=texts, embeddings=embeddings, ids=ids, metadata=metadata
         )
 
         assert result_ids == ids
@@ -92,11 +89,7 @@ class TestFAISSVectorStore:
 
         # Search for ML-related content
         ml_embedding = embeddings[1]  # ML document
-        results = await vector_store.search(
-            ml_embedding,
-            k=5,
-            filter={"topic": "ml"}
-        )
+        results = await vector_store.search(ml_embedding, k=5, filter={"topic": "ml"})
 
         # Should only find the ML document
         assert len(results) == 1
@@ -126,10 +119,7 @@ class TestFAISSVectorStore:
 
         # Update metadata
         new_metadata = [{"topic": "updated", "version": 2}]
-        updated = await vector_store.update_vectors(
-            ids=["doc_0"],
-            metadata=new_metadata
-        )
+        updated = await vector_store.update_vectors(ids=["doc_0"], metadata=new_metadata)
 
         assert updated == 1
         assert vector_store.metadata["doc_0"]["topic"] == "updated"
@@ -186,27 +176,18 @@ class TestFAISSVectorStore:
     def test_different_index_types(self):
         """Test different index types."""
         # IVF index
-        store_ivf = FAISSVectorStore(
-            dimension=128,
-            index_type="ivf",
-            nlist=10
-        )
+        store_ivf = FAISSVectorStore(dimension=128, index_type="ivf", nlist=10)
         assert store_ivf.index_type == "ivf"
 
         # HNSW index
-        store_hnsw = FAISSVectorStore(
-            dimension=128,
-            index_type="hnsw",
-            M=16,
-            ef_construction=100
-        )
+        store_hnsw = FAISSVectorStore(dimension=128, index_type="hnsw", M=16, ef_construction=100)
         assert store_hnsw.index_type == "hnsw"
 
     @pytest.mark.asyncio
     async def test_auto_generated_ids(self, vector_store):
         """Test automatic ID generation."""
         texts = ["Test document"]
-        embeddings = [np.random.randn(128).astype('float32')]
+        embeddings = [np.random.randn(128).astype("float32")]
 
         # Add without IDs
         ids = await vector_store.add_vectors(texts, embeddings)

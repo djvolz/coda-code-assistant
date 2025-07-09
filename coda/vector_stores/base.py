@@ -12,6 +12,7 @@ import numpy as np
 @dataclass
 class SearchResult:
     """Result from a vector similarity search."""
+
     id: str
     text: str
     score: float
@@ -37,7 +38,7 @@ class BaseVectorStore(ABC):
         texts: list[str],
         embeddings: list[np.ndarray],
         ids: list[str] | None = None,
-        metadata: list[dict[str, Any]] | None = None
+        metadata: list[dict[str, Any]] | None = None,
     ) -> list[str]:
         """Add vectors to the store.
 
@@ -54,10 +55,7 @@ class BaseVectorStore(ABC):
 
     @abstractmethod
     async def search(
-        self,
-        query_embedding: np.ndarray,
-        k: int = 10,
-        filter: dict[str, Any] | None = None
+        self, query_embedding: np.ndarray, k: int = 10, filter: dict[str, Any] | None = None
     ) -> list[SearchResult]:
         """Search for similar vectors.
 
@@ -89,7 +87,7 @@ class BaseVectorStore(ABC):
         ids: list[str],
         embeddings: list[np.ndarray] | None = None,
         texts: list[str] | None = None,
-        metadata: list[dict[str, Any]] | None = None
+        metadata: list[dict[str, Any]] | None = None,
     ) -> int:
         """Update existing vectors.
 
@@ -147,7 +145,7 @@ class BaseVectorStore(ABC):
         k: int = 10,
         vector_weight: float = 0.7,
         keyword_weight: float = 0.3,
-        filter: dict[str, Any] | None = None
+        filter: dict[str, Any] | None = None,
     ) -> list[SearchResult]:
         """Perform hybrid search combining vector and keyword search.
 
