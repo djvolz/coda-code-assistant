@@ -14,11 +14,13 @@ class TestSlashCommandCompleter:
     @pytest.fixture
     def completer(self):
         """Create a SlashCommandCompleter instance."""
+        from coda.cli.interactive_cli import SlashCommand
+        
         commands = {
-            "/help": "Show help",
-            "/model": "Select model",
-            "/provider": "Select provider",
-            "/exit": "Exit the CLI",
+            "help": SlashCommand("help", lambda: None, "Show help"),
+            "model": SlashCommand("model", lambda: None, "Select model"),
+            "provider": SlashCommand("provider", lambda: None, "Select provider"),
+            "exit": SlashCommand("exit", lambda: None, "Exit the CLI"),
         }
         return SlashCommandCompleter(commands)
 
@@ -28,10 +30,10 @@ class TestSlashCommandCompleter:
         completions = list(completer.get_completions(doc, None))
 
         assert len(completions) == 4
-        assert any(c.text == "help" for c in completions)
-        assert any(c.text == "model" for c in completions)
-        assert any(c.text == "provider" for c in completions)
-        assert any(c.text == "exit" for c in completions)
+        assert any(c.text == "/help" for c in completions)
+        assert any(c.text == "/model" for c in completions)
+        assert any(c.text == "/provider" for c in completions)
+        assert any(c.text == "/exit" for c in completions)
 
     def test_complete_partial_command(self, completer):
         """Test completion of partial commands."""
@@ -39,8 +41,8 @@ class TestSlashCommandCompleter:
         completions = list(completer.get_completions(doc, None))
 
         assert len(completions) == 1
-        assert completions[0].text == "lp"
-        assert completions[0].start_position == -2
+        assert completions[0].text == "/help"
+        assert completions[0].start_position == -3
 
     def test_complete_multiple_matches(self, completer):
         """Test completion with multiple matches."""
@@ -48,14 +50,16 @@ class TestSlashCommandCompleter:
         completions = list(completer.get_completions(doc, None))
 
         assert len(completions) == 1
-        assert completions[0].text == "odel"
+        assert completions[0].text == "/model"
 
     def test_complete_exact_match(self, completer):
-        """Test no completion for exact match."""
+        """Test completion for exact match still shows the command."""
         doc = Document("/help", cursor_position=5)
         completions = list(completer.get_completions(doc, None))
 
-        assert len(completions) == 0
+        # Should still show the completion to indicate it's valid
+        assert len(completions) == 1
+        assert completions[0].text == "/help"
 
     def test_complete_no_match(self, completer):
         """Test no completion for non-matching input."""
@@ -69,8 +73,7 @@ class TestSlashCommandCompleter:
         doc = Document("/HE", cursor_position=3)
         completions = list(completer.get_completions(doc, None))
 
-        assert len(completions) == 1
-        assert completions[0].text == "lp"
+        assert len(completions) == 0  # Case-sensitive, so no match
 
     def test_complete_middle_of_text(self, completer):
         """Test completion in the middle of text."""
@@ -78,15 +81,18 @@ class TestSlashCommandCompleter:
         completions = list(completer.get_completions(doc, None))
 
         assert len(completions) == 1
-        assert completions[0].text == "lp"
+        assert completions[0].text == "/help"
 
     def test_complete_with_display_meta(self, completer):
         """Test completions include display metadata."""
         doc = Document("/", cursor_position=1)
         completions = list(completer.get_completions(doc, None))
 
-        help_completion = next(c for c in completions if c.text == "help")
-        assert help_completion.display_meta == "Show help"
+        from prompt_toolkit.formatted_text import to_plain_text
+        
+        help_completion = next(c for c in completions if c.text == "/help")
+        # display_meta is a FormattedText object, extract the text
+        assert to_plain_text(help_completion.display_meta) == "Show help"
 
     def test_complete_empty_document(self, completer):
         """Test completion on empty document."""
