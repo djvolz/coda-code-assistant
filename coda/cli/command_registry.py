@@ -253,6 +253,52 @@ class CommandRegistry:
         ),
     ]
 
+    # Observability subcommands
+    OBSERVABILITY_SUBCOMMANDS = [
+        CommandDefinition(
+            name="status",
+            description="Show observability status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs status"],
+        ),
+        CommandDefinition(
+            name="metrics",
+            description="Show metrics summary",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs metrics", "/obs metrics --detailed"],
+        ),
+        CommandDefinition(
+            name="health",
+            description="Show health status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs health", "/obs health database"],
+        ),
+        CommandDefinition(
+            name="traces",
+            description="Show recent traces",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs traces", "/obs traces --limit 20"],
+        ),
+        CommandDefinition(
+            name="export",
+            description="Export observability data",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs export", "/obs export --format json --output data.json"],
+        ),
+        CommandDefinition(
+            name="errors",
+            description="Show error analysis and recent errors",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs errors", "/obs errors --limit 50 --days 7"],
+        ),
+        CommandDefinition(
+            name="performance",
+            description="Show performance profiling data",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs performance", "/obs performance --limit 30"],
+        ),
+    ]
+
     # Main commands
     COMMANDS = [
         CommandDefinition(
@@ -325,6 +371,13 @@ class CommandRegistry:
             subcommands=SEARCH_SUBCOMMANDS,
             examples=["/search semantic 'query'", "/search code 'function'", "/search status"],
         ),
+        CommandDefinition(
+            name="observability",
+            description="View observability data",
+            aliases=["obs", "telemetry"],
+            subcommands=OBSERVABILITY_SUBCOMMANDS,
+            examples=["/obs", "/obs status", "/obs metrics"],
+        ),
     ]
 
     @classmethod
@@ -342,7 +395,12 @@ class CommandRegistry:
 
         for cmd in cls.COMMANDS:
             if cmd.subcommands:
-                options[cmd.name] = [sub.to_autocomplete_tuple() for sub in cmd.subcommands]
+                subcommand_tuples = [sub.to_autocomplete_tuple() for sub in cmd.subcommands]
+                # Add options for the main command name
+                options[cmd.name] = subcommand_tuples
+                # Also add options for each alias
+                for alias in cmd.aliases:
+                    options[alias] = subcommand_tuples
 
         return options
 
