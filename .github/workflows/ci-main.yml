@@ -41,7 +41,7 @@ jobs:
       run: uv python install 3.11
     
     - name: Install minimal dependencies
-      run: uv sync --no-extras
+      run: uv sync --no-extra
     
     - name: Run ruff lint
       id: lint
