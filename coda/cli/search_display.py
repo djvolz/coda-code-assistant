@@ -39,7 +39,7 @@ class SearchResultDisplay:
         results: list[SearchResult],
         query: str,
         max_preview_length: int = 300,
-        show_metadata: bool = True
+        show_metadata: bool = True,
     ) -> None:
         """Display search results with rich formatting."""
         if not results:
@@ -48,7 +48,7 @@ class SearchResultDisplay:
                     "[yellow]No results found[/yellow]\n\n"
                     "[dim]Try different search terms or index more content[/dim]",
                     title="[bold red]Search Results[/bold red]",
-                    border_style="red"
+                    border_style="red",
                 )
             )
             return
@@ -63,16 +63,14 @@ class SearchResultDisplay:
             Panel(
                 f"[bold cyan]Found {len(results)} results for:[/bold cyan] [white]{query}[/white]",
                 expand=False,
-                border_style="cyan"
+                border_style="cyan",
             )
         )
         self.console.print()
 
         # Display each result
         for i, result in enumerate(results, 1):
-            self._display_single_result(
-                result, i, highlighter, max_preview_length, show_metadata
-            )
+            self._display_single_result(result, i, highlighter, max_preview_length, show_metadata)
 
             # Add separator between results (except after last)
             if i < len(results):
@@ -84,7 +82,7 @@ class SearchResultDisplay:
         index: int,
         highlighter: SearchHighlighter,
         max_preview_length: int,
-        show_metadata: bool
+        show_metadata: bool,
     ) -> None:
         """Display a single search result with formatting."""
         # Create result header with score
@@ -110,7 +108,9 @@ class SearchResultDisplay:
 
                 # Add line numbers if chunk information is available
                 if "start_line" in result.metadata and "end_line" in result.metadata:
-                    source = f"{source}:{result.metadata['start_line']}-{result.metadata['end_line']}"
+                    source = (
+                        f"{source}:{result.metadata['start_line']}-{result.metadata['end_line']}"
+                    )
 
                 header += f"  [dim]Source:[/dim] [blue]{source}[/blue]"
 
@@ -134,10 +134,21 @@ class SearchResultDisplay:
                 elif "file_type" in result.metadata:
                     # Map file extensions to languages
                     ext_map = {
-                        ".py": "python", ".js": "javascript", ".ts": "typescript",
-                        ".java": "java", ".cpp": "cpp", ".c": "c", ".go": "go",
-                        ".rs": "rust", ".rb": "ruby", ".php": "php", ".swift": "swift",
-                        ".kt": "kotlin", ".scala": "scala", ".r": "r", ".cs": "csharp"
+                        ".py": "python",
+                        ".js": "javascript",
+                        ".ts": "typescript",
+                        ".java": "java",
+                        ".cpp": "cpp",
+                        ".c": "c",
+                        ".go": "go",
+                        ".rs": "rust",
+                        ".rb": "ruby",
+                        ".php": "php",
+                        ".swift": "swift",
+                        ".kt": "kotlin",
+                        ".scala": "scala",
+                        ".r": "r",
+                        ".cs": "csharp",
                     }
                     lang = ext_map.get(result.metadata["file_type"])
 
@@ -149,14 +160,10 @@ class SearchResultDisplay:
                     lang,
                     theme="monokai",
                     line_numbers=True,
-                    word_wrap=True
+                    word_wrap=True,
                 )
                 code_panel = Panel(
-                    syntax,
-                    title=header,
-                    title_align="left",
-                    border_style="green",
-                    padding=(0, 1)
+                    syntax, title=header, title_align="left", border_style="green", padding=(0, 1)
                 )
                 self.console.print(code_panel)
 
@@ -172,7 +179,7 @@ class SearchResultDisplay:
             title=header,
             title_align="left",
             border_style="blue",
-            padding=(0, 1)
+            padding=(0, 1),
         )
         self.console.print(content_panel)
 
@@ -200,7 +207,7 @@ class SearchResultDisplay:
         best_break = max(last_period, last_question, last_exclaim)
 
         if best_break > max_length * 0.7:  # If we found a good sentence break
-            return truncated[:best_break + 1]
+            return truncated[: best_break + 1]
 
         # Otherwise break at word boundary
         last_space = truncated.rfind(" ")
@@ -219,9 +226,27 @@ class SearchResultDisplay:
 
         # Simple heuristics for code detection
         code_indicators = [
-            "def ", "class ", "function ", "const ", "let ", "var ",
-            "import ", "from ", "return ", "if ", "for ", "while ",
-            "{", "}", "()", "[]", "=>", "==", "!=", "&&", "||"
+            "def ",
+            "class ",
+            "function ",
+            "const ",
+            "let ",
+            "var ",
+            "import ",
+            "from ",
+            "return ",
+            "if ",
+            "for ",
+            "while ",
+            "{",
+            "}",
+            "()",
+            "[]",
+            "=>",
+            "==",
+            "!=",
+            "&&",
+            "||",
         ]
 
         return any(indicator in text for indicator in code_indicators)
@@ -241,13 +266,19 @@ class SearchResultDisplay:
         """Display metadata in a formatted table."""
         # Filter out internal metadata and already displayed fields
         exclude_keys = {
-            "source", "language", "type", "file_path", "file_type",
-            "start_line", "end_line", "chunk_index", "dimension"
+            "source",
+            "language",
+            "type",
+            "file_path",
+            "file_type",
+            "start_line",
+            "end_line",
+            "chunk_index",
+            "dimension",
         }
 
         display_metadata = {
-            k: v for k, v in metadata.items()
-            if not k.startswith("_") and k not in exclude_keys
+            k: v for k, v in metadata.items() if not k.startswith("_") and k not in exclude_keys
         }
 
         # Add special formatting for certain fields
@@ -265,12 +296,7 @@ class SearchResultDisplay:
         if not formatted_items:
             return
 
-        table = Table(
-            show_header=False,
-            box=None,
-            padding=(0, 2),
-            style="dim"
-        )
+        table = Table(show_header=False, box=None, padding=(0, 2), style="dim")
         table.add_column("Key", style="cyan")
         table.add_column("Value")
 
@@ -310,14 +336,14 @@ class IndexingProgressContext:
                 BarColumn(),
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
                 TimeElapsedColumn(),
-                console=self.console
+                console=self.console,
             )
         else:
             self.progress = Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
                 TimeElapsedColumn(),
-                console=self.console
+                console=self.console,
             )
 
         self.progress.start()
@@ -357,7 +383,7 @@ def create_search_stats_display(stats: dict, console: Console) -> None:
     table = Table(
         title="[bold cyan]Semantic Search Index Statistics[/bold cyan]",
         show_header=True,
-        header_style="bold magenta"
+        header_style="bold magenta",
     )
 
     table.add_column("Metric", style="cyan", no_wrap=True)
@@ -365,15 +391,15 @@ def create_search_stats_display(stats: dict, console: Console) -> None:
 
     # Add rows
     table.add_row("Vector Count", f"{stats.get('vector_count', 0):,}")
-    table.add_row("Embedding Model", stats.get('embedding_model', 'N/A'))
-    table.add_row("Embedding Dimension", str(stats.get('embedding_dimension', 'N/A')))
-    table.add_row("Vector Store Type", stats.get('vector_store_type', 'N/A'))
+    table.add_row("Embedding Model", stats.get("embedding_model", "N/A"))
+    table.add_row("Embedding Dimension", str(stats.get("embedding_dimension", "N/A")))
+    table.add_row("Vector Store Type", stats.get("vector_store_type", "N/A"))
 
-    if 'index_type' in stats:
-        table.add_row("Index Type", stats['index_type'])
+    if "index_type" in stats:
+        table.add_row("Index Type", stats["index_type"])
 
-    if 'memory_usage' in stats:
-        mb = stats['memory_usage'] / (1024 * 1024)
+    if "memory_usage" in stats:
+        mb = stats["memory_usage"] / (1024 * 1024)
         table.add_row("Memory Usage", f"{mb:.2f} MB")
 
     console.print()

@@ -26,30 +26,24 @@ class TestSemanticSearchManager:
         provider.get_model_info.return_value = {
             "id": "test-model",
             "dimension": 128,
-            "provider": "mock"
+            "provider": "mock",
         }
 
         # Mock embed_text
         async def mock_embed_text(text):
-            embedding = np.random.randn(128).astype('float32')
-            return EmbeddingResult(
-                text=text,
-                embedding=embedding,
-                model="test-model"
-            )
+            embedding = np.random.randn(128).astype("float32")
+            return EmbeddingResult(text=text, embedding=embedding, model="test-model")
+
         provider.embed_text = mock_embed_text
 
         # Mock embed_batch
         async def mock_embed_batch(texts):
             results = []
             for text in texts:
-                embedding = np.random.randn(128).astype('float32')
-                results.append(EmbeddingResult(
-                    text=text,
-                    embedding=embedding,
-                    model="test-model"
-                ))
+                embedding = np.random.randn(128).astype("float32")
+                results.append(EmbeddingResult(text=text, embedding=embedding, model="test-model"))
             return results
+
         provider.embed_batch = mock_embed_batch
 
         return provider
@@ -72,11 +66,12 @@ class TestSemanticSearchManager:
                 store._vectors[id_] = {
                     "text": text,
                     "embedding": embedding,
-                    "metadata": metadata[i] if metadata else {}
+                    "metadata": metadata[i] if metadata else {},
                 }
 
             store._counter += len(texts)
             return ids
+
         store.add_vectors = mock_add_vectors
 
         # Mock search
@@ -90,27 +85,29 @@ class TestSemanticSearchManager:
 
                 # Simple similarity: random score
                 score = np.random.random()
-                results.append(SearchResult(
-                    id=id_,
-                    text=data["text"],
-                    score=score,
-                    metadata=data.get("metadata")
-                ))
+                results.append(
+                    SearchResult(
+                        id=id_, text=data["text"], score=score, metadata=data.get("metadata")
+                    )
+                )
 
             # Sort by score and limit
             results.sort(key=lambda x: x.score, reverse=True)
             return results[:k]
+
         store.search = mock_search
 
         # Mock other methods
         async def mock_get_vector_count():
             return len(store._vectors)
+
         store.get_vector_count = mock_get_vector_count
 
         async def mock_clear():
             count = len(store._vectors)
             store._vectors.clear()
             return count
+
         store.clear = mock_clear
 
         store.save_index = AsyncMock()
@@ -122,8 +119,7 @@ class TestSemanticSearchManager:
     def search_manager(self, mock_embedding_provider, mock_vector_store):
         """Create search manager with mocks."""
         return SemanticSearchManager(
-            embedding_provider=mock_embedding_provider,
-            vector_store=mock_vector_store
+            embedding_provider=mock_embedding_provider, vector_store=mock_vector_store
         )
 
     @pytest.mark.asyncio
@@ -132,7 +128,7 @@ class TestSemanticSearchManager:
         contents = [
             "Python programming guide",
             "Machine learning tutorial",
-            "Database optimization tips"
+            "Database optimization tips",
         ]
 
         ids = await search_manager.index_content(contents)
@@ -146,10 +142,7 @@ class TestSemanticSearchManager:
         contents = ["Test document"]
         metadata = [{"category": "test", "version": 1}]
 
-        ids = await search_manager.index_content(
-            contents=contents,
-            metadata=metadata
-        )
+        ids = await search_manager.index_content(contents=contents, metadata=metadata)
 
         assert len(ids) == 1
         # Verify metadata was stored
@@ -163,7 +156,7 @@ class TestSemanticSearchManager:
         contents = [
             "Python programming guide",
             "Machine learning with Python",
-            "Web development tutorial"
+            "Web development tutorial",
         ]
         await search_manager.index_content(contents)
 
@@ -178,19 +171,11 @@ class TestSemanticSearchManager:
         """Test searching with metadata filter."""
         # Index content with metadata
         contents = ["Doc 1", "Doc 2", "Doc 3"]
-        metadata = [
-            {"type": "guide"},
-            {"type": "tutorial"},
-            {"type": "guide"}
-        ]
+        metadata = [{"type": "guide"}, {"type": "tutorial"}, {"type": "guide"}]
         await search_manager.index_content(contents, metadata=metadata)
 
         # Search with filter
-        results = await search_manager.search(
-            "document",
-            k=10,
-            filter={"type": "guide"}
-        )
+        results = await search_manager.search("document", k=10, filter={"type": "guide"})
 
         # Should only return guides
         for result in results:
@@ -202,7 +187,8 @@ class TestSemanticSearchManager:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create test files with enough content to create chunks
             file1 = Path(tmpdir) / "test1.py"
-            file1.write_text("""def hello():
+            file1.write_text(
+                """def hello():
     \"\"\"Say hello to the world.\"\"\"
     print("Hello, world!")
     return 'world'
@@ -211,10 +197,12 @@ def goodbye():
     \"\"\"Say goodbye.\"\"\"
     print("Goodbye!")
     return 'bye'
-""")
+"""
+            )
 
             file2 = Path(tmpdir) / "test2.py"
-            file2.write_text("""class MyClass:
+            file2.write_text(
+                """class MyClass:
     \"\"\"A sample class for testing.\"\"\"
     
     def __init__(self):
@@ -222,7 +210,8 @@ def goodbye():
     
     def get_value(self):
         return self.value
-""")
+"""
+            )
 
             # Index files
             ids = await search_manager.index_code_files([file1, file2])
@@ -242,7 +231,7 @@ def goodbye():
         messages = [
             {"role": "user", "content": "Hello"},
             {"role": "assistant", "content": "Hi there!"},
-            {"role": "user", "content": "How are you?"}
+            {"role": "user", "content": "How are you?"},
         ]
         session_id = "test-session"
 
@@ -271,7 +260,7 @@ def goodbye():
         search_manager.vector_store.save_index.assert_called_once()
 
         # Mock the file exists check for load
-        with patch('pathlib.Path.exists', return_value=True):
+        with patch("pathlib.Path.exists", return_value=True):
             # Load
             await search_manager.load_index("test_index")
 

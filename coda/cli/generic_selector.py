@@ -1,6 +1,5 @@
 """Generic selector for CLI commands with options."""
 
-
 from prompt_toolkit import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import (
@@ -169,5 +168,3 @@ class ModeSelector(GenericSelector):
             ("plan", "Planning mode"),
         ]
         super().__init__("Select Developer Mode", options, console)
-
-

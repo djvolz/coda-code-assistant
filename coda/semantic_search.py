@@ -29,7 +29,7 @@ class SemanticSearchManager:
         self,
         embedding_provider: BaseEmbeddingProvider,
         vector_store: BaseVectorStore | None = None,
-        index_dir: str | Path | None = None
+        index_dir: str | Path | None = None,
     ):
         """Initialize semantic search manager.
 
@@ -50,7 +50,7 @@ class SemanticSearchManager:
             self.vector_store = FAISSVectorStore(
                 dimension=dimension,
                 index_type="flat",  # Use flat index for immediate use without training
-                metric="cosine"
+                metric="cosine",
             )
         else:
             self.vector_store = vector_store
@@ -69,7 +69,7 @@ class SemanticSearchManager:
         contents: list[str],
         ids: list[str] | None = None,
         metadata: list[dict[str, Any]] | None = None,
-        batch_size: int = 32
+        batch_size: int = 32,
     ) -> list[str]:
         """Index content for semantic search.
 
@@ -86,9 +86,9 @@ class SemanticSearchManager:
 
         # Process in batches
         for i in range(0, len(contents), batch_size):
-            batch_contents = contents[i:i + batch_size]
-            batch_ids = ids[i:i + batch_size] if ids else None
-            batch_metadata = metadata[i:i + batch_size] if metadata else None
+            batch_contents = contents[i : i + batch_size]
+            batch_ids = ids[i : i + batch_size] if ids else None
+            batch_metadata = metadata[i : i + batch_size] if metadata else None
 
             # Generate embeddings
             embedding_results = await self.embedding_provider.embed_batch(batch_contents)
@@ -96,10 +96,7 @@ class SemanticSearchManager:
 
             # Add to vector store
             batch_result_ids = await self.vector_store.add_vectors(
-                texts=batch_contents,
-                embeddings=embeddings,
-                ids=batch_ids,
-                metadata=batch_metadata
+                texts=batch_contents, embeddings=embeddings, ids=batch_ids, metadata=batch_metadata
             )
 
             all_ids.extend(batch_result_ids)
@@ -108,10 +105,7 @@ class SemanticSearchManager:
         return all_ids
 
     async def search(
-        self,
-        query: str,
-        k: int = 10,
-        filter: dict[str, Any] | None = None
+        self, query: str, k: int = 10, filter: dict[str, Any] | None = None
     ) -> list[SearchResult]:
         """Search for similar content using semantic search.
 
@@ -128,9 +122,7 @@ class SemanticSearchManager:
 
         # Search vector store
         results = await self.vector_store.search(
-            query_embedding=query_result.embedding,
-            k=k,
-            filter=filter
+            query_embedding=query_result.embedding, k=k, filter=filter
         )
 
         return results
@@ -140,7 +132,7 @@ class SemanticSearchManager:
         file_paths: list[str | Path],
         batch_size: int = 32,
         chunk_size: int = 1000,
-        chunk_overlap: int = 200
+        chunk_overlap: int = 200,
     ) -> list[str]:
         """Index code files for semantic search.
 
@@ -167,13 +159,11 @@ class SemanticSearchManager:
 
             try:
                 # Read file content
-                content = path.read_text(encoding='utf-8')
+                content = path.read_text(encoding="utf-8")
 
                 # Create appropriate chunker for the file type
                 chunker = create_chunker(
-                    file_path=path,
-                    chunk_size=chunk_size,
-                    chunk_overlap=chunk_overlap
+                    file_path=path, chunk_size=chunk_size, chunk_overlap=chunk_overlap
                 )
 
                 # Get chunks
@@ -211,17 +201,11 @@ class SemanticSearchManager:
 
         # Index all chunks
         return await self.index_content(
-            contents=contents,
-            ids=ids,
-            metadata=metadata_list,
-            batch_size=batch_size
+            contents=contents, ids=ids, metadata=metadata_list, batch_size=batch_size
         )
 
     async def index_session_messages(
-        self,
-        messages: list[dict[str, Any]],
-        session_id: str,
-        batch_size: int = 32
+        self, messages: list[dict[str, Any]], session_id: str, batch_size: int = 32
     ) -> list[str]:
         """Index session messages for semantic search.
 
@@ -243,18 +227,17 @@ class SemanticSearchManager:
 
             contents.append(content)
             ids.append(f"{session_id}_msg_{i}")
-            metadata_list.append({
-                "session_id": session_id,
-                "message_index": i,
-                "role": message.get('role'),
-                "timestamp": message.get('timestamp'),
-            })
+            metadata_list.append(
+                {
+                    "session_id": session_id,
+                    "message_index": i,
+                    "role": message.get("role"),
+                    "timestamp": message.get("timestamp"),
+                }
+            )
 
         return await self.index_content(
-            contents=contents,
-            ids=ids,
-            metadata=metadata_list,
-            batch_size=batch_size
+            contents=contents, ids=ids, metadata=metadata_list, batch_size=batch_size
         )
 
     async def save_index(self, name: str = "default") -> None:
@@ -274,7 +257,7 @@ class SemanticSearchManager:
             name: Name of the index to load
         """
         index_path = self.index_dir / name
-        if not index_path.with_suffix('.faiss').exists():
+        if not index_path.with_suffix(".faiss").exists():
             raise FileNotFoundError(f"Index not found: {index_path}")
 
         await self.vector_store.load_index(str(index_path))

@@ -20,7 +20,7 @@ def create_semantic_search_manager(
     config: CodaConfig | None = None,
     provider_type: str | None = None,
     model_id: str | None = None,
-    **provider_kwargs
+    **provider_kwargs,
 ) -> SemanticSearchManager:
     """Create a semantic search manager from Coda configuration.
 
@@ -38,9 +38,9 @@ def create_semantic_search_manager(
     """
     config = config or get_config()
     # Handle both CodaConfig objects and plain dicts
-    if hasattr(config, 'config_dict'):
+    if hasattr(config, "config_dict"):
         config_dict = config.config_dict
-    elif hasattr(config, '__dict__'):
+    elif hasattr(config, "__dict__"):
         config_dict = config.__dict__
     else:
         config_dict = config
@@ -55,15 +55,12 @@ def create_semantic_search_manager(
             if provider_type == "oci":
                 # Use Coda-specific OCI config
                 embedding_provider = create_oci_provider_from_coda_config(
-                    config_dict,
-                    model_id or "multilingual-e5"
+                    config_dict, model_id or "multilingual-e5"
                 )
             else:
                 # Use factory for other providers
                 embedding_provider = create_embedding_provider(
-                    provider_type=provider_type,
-                    model_id=model_id,
-                    **provider_kwargs
+                    provider_type=provider_type, model_id=model_id, **provider_kwargs
                 )
         except Exception as e:
             error_messages.append(f"{provider_type}: {str(e)}")
@@ -74,8 +71,7 @@ def create_semantic_search_manager(
         if config_dict.get("oci_genai", {}).get("compartment_id"):
             try:
                 embedding_provider = create_oci_provider_from_coda_config(
-                    config_dict,
-                    model_id or "multilingual-e5"
+                    config_dict, model_id or "multilingual-e5"
                 )
                 logger.info("Using OCI embedding provider")
             except Exception as e:
@@ -85,8 +81,7 @@ def create_semantic_search_manager(
         if embedding_provider is None:
             try:
                 embedding_provider = create_embedding_provider(
-                    provider_type="sentence-transformers",
-                    model_id=model_id or "all-MiniLM-L6-v2"
+                    provider_type="sentence-transformers", model_id=model_id or "all-MiniLM-L6-v2"
                 )
                 logger.info("Using sentence-transformers embedding provider")
             except Exception as e:
@@ -97,15 +92,15 @@ def create_semantic_search_manager(
             try:
                 # Quick check if Ollama is available
                 import httpx
+
                 try:
                     with httpx.Client(timeout=1.0) as client:
                         response = client.get("http://localhost:11434/api/version")
                         response.raise_for_status()
-                    
+
                     # Ollama is running, try to create provider
                     embedding_provider = create_embedding_provider(
-                        provider_type="ollama",
-                        model_id=model_id or "mxbai-embed-large"
+                        provider_type="ollama", model_id=model_id or "mxbai-embed-large"
                     )
                     logger.info("Using Ollama embedding provider")
                 except (httpx.ConnectError, httpx.TimeoutException):
@@ -118,23 +113,16 @@ def create_semantic_search_manager(
         if embedding_provider is None:
             try:
                 embedding_provider = create_embedding_provider(
-                    provider_type="mock",
-                    model_id=model_id or "mock-768d"
+                    provider_type="mock", model_id=model_id or "mock-768d"
                 )
                 logger.warning("Using mock embedding provider (for testing only)")
             except Exception as e:
                 error_messages.append(f"Mock: {str(e)}")
 
     if embedding_provider is None:
-        raise ValueError(
-            "No embedding provider available. "
-            f"Errors: {'; '.join(error_messages)}"
-        )
+        raise ValueError("No embedding provider available. " f"Errors: {'; '.join(error_messages)}")
 
     # Use Coda's cache directory for indexes
     index_dir = get_cache_dir() / "semantic_search"
 
-    return SemanticSearchManager(
-        embedding_provider=embedding_provider,
-        index_dir=index_dir
-    )
+    return SemanticSearchManager(embedding_provider=embedding_provider, index_dir=index_dir)

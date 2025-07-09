@@ -6,8 +6,8 @@ import pytest
 from prompt_toolkit.document import Document
 
 from coda.cli.completers import (
-    DynamicValueCompleter,
     CodaCompleter,
+    DynamicValueCompleter,
     FuzzyMatcher,
     SlashCommandCompleter,
 )

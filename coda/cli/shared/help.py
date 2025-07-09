@@ -26,7 +26,9 @@ def print_command_help(console: Console, mode: str = ""):
 
     console.print(f"[{theme.bold}]AI Settings:[/{theme.bold}]")
     console.print(f"  [{theme.command}]/model[/{theme.command}] (/m) - Switch AI model")
-    console.print(f"  [{theme.command}]/provider[/{theme.command}] (/p) - Show provider information")
+    console.print(
+        f"  [{theme.command}]/provider[/{theme.command}] (/p) - Show provider information"
+    )
     console.print(f"  [{theme.command}]/mode[/{theme.command}] - Change developer mode")
     console.print()
 

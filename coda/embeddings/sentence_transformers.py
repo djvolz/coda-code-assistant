@@ -19,33 +19,33 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
         "all-MiniLM-L6-v2": {
             "dimension": 384,
             "description": "Fast and lightweight model, good for semantic search",
-            "max_tokens": 256
+            "max_tokens": 256,
         },
         "all-mpnet-base-v2": {
             "dimension": 768,
             "description": "High-quality model, best for semantic search quality",
-            "max_tokens": 384
+            "max_tokens": 384,
         },
         "all-MiniLM-L12-v2": {
             "dimension": 384,
             "description": "Balanced model between speed and quality",
-            "max_tokens": 256
+            "max_tokens": 256,
         },
         "multi-qa-mpnet-base-dot-v1": {
             "dimension": 768,
             "description": "Optimized for semantic search with dot-product",
-            "max_tokens": 512
+            "max_tokens": 512,
         },
         "all-distilroberta-v1": {
             "dimension": 768,
             "description": "RoBERTa-based model with good quality",
-            "max_tokens": 512
+            "max_tokens": 512,
         },
         "paraphrase-multilingual-mpnet-base-v2": {
             "dimension": 768,
             "description": "Multilingual model supporting 50+ languages",
-            "max_tokens": 128
-        }
+            "max_tokens": 128,
+        },
     }
 
     def __init__(
@@ -54,7 +54,7 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
         device: str | None = None,
         batch_size: int = 32,
         show_progress: bool = False,
-        normalize_embeddings: bool = True
+        normalize_embeddings: bool = True,
     ):
         """Initialize sentence-transformers provider.
 
@@ -71,11 +71,14 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
         self.show_progress = show_progress
         self.normalize_embeddings = normalize_embeddings
         self._model: Any = None  # Type: SentenceTransformer when loaded
-        self._model_info = self.MODELS.get(model_id, {
-            "dimension": None,  # Will be set after loading
-            "description": f"Custom model: {model_id}",
-            "max_tokens": 512
-        })
+        self._model_info = self.MODELS.get(
+            model_id,
+            {
+                "dimension": None,  # Will be set after loading
+                "description": f"Custom model: {model_id}",
+                "max_tokens": 512,
+            },
+        )
 
     def _ensure_model_loaded(self):
         """Lazy load the model on first use."""
@@ -89,18 +92,13 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
                 ) from None
 
             # Load model
-            self._model = SentenceTransformer(
-                self.model_id,
-                device=self.device
-            )
+            self._model = SentenceTransformer(self.model_id, device=self.device)
 
             # Update dimension if not known
             if self._model_info["dimension"] is None:
                 # Get dimension by encoding a test string
                 test_embedding = self._model.encode(
-                    "test",
-                    normalize_embeddings=self.normalize_embeddings,
-                    show_progress_bar=False
+                    "test", normalize_embeddings=self.normalize_embeddings, show_progress_bar=False
                 )
                 self._model_info["dimension"] = len(test_embedding)
 
@@ -123,8 +121,8 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
                 text,
                 normalize_embeddings=self.normalize_embeddings,
                 show_progress_bar=False,
-                convert_to_numpy=True
-            )
+                convert_to_numpy=True,
+            ),
         )
 
         return EmbeddingResult(
@@ -134,8 +132,8 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
             metadata={
                 "provider": "sentence-transformers",
                 "dimension": len(embedding),
-                "normalized": self.normalize_embeddings
-            }
+                "normalized": self.normalize_embeddings,
+            },
         )
 
     async def embed_batch(self, texts: list[str]) -> list[EmbeddingResult]:
@@ -158,23 +156,25 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
                 batch_size=self.batch_size,
                 normalize_embeddings=self.normalize_embeddings,
                 show_progress_bar=self.show_progress,
-                convert_to_numpy=True
-            )
+                convert_to_numpy=True,
+            ),
         )
 
         # Create results
         results = []
         for text, embedding in zip(texts, embeddings, strict=False):
-            results.append(EmbeddingResult(
-                text=text,
-                embedding=embedding,
-                model=self.model_id,
-                metadata={
-                    "provider": "sentence-transformers",
-                    "dimension": len(embedding),
-                    "normalized": self.normalize_embeddings
-                }
-            ))
+            results.append(
+                EmbeddingResult(
+                    text=text,
+                    embedding=embedding,
+                    model=self.model_id,
+                    metadata={
+                        "provider": "sentence-transformers",
+                        "dimension": len(embedding),
+                        "normalized": self.normalize_embeddings,
+                    },
+                )
+            )
 
         return results
 
@@ -193,7 +193,7 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
             "description": self._model_info["description"],
             "max_tokens": self._model_info.get("max_tokens", 512),
             "device": str(self._model.device) if self._model else self.device,
-            "normalize_embeddings": self.normalize_embeddings
+            "normalize_embeddings": self.normalize_embeddings,
         }
 
     async def list_models(self) -> list[dict[str, Any]]:
@@ -204,21 +204,25 @@ class SentenceTransformersProvider(BaseEmbeddingProvider):
         """
         models = []
         for model_id, info in self.MODELS.items():
-            models.append({
-                "id": model_id,
-                "provider": "sentence-transformers",
-                "dimension": info["dimension"],
-                "description": info["description"],
-                "max_tokens": info["max_tokens"]
-            })
+            models.append(
+                {
+                    "id": model_id,
+                    "provider": "sentence-transformers",
+                    "dimension": info["dimension"],
+                    "description": info["description"],
+                    "max_tokens": info["max_tokens"],
+                }
+            )
 
         # Add note about custom models
-        models.append({
-            "id": "custom",
-            "provider": "sentence-transformers",
-            "dimension": "varies",
-            "description": "Any model from https://huggingface.co/sentence-transformers",
-            "max_tokens": "varies"
-        })
+        models.append(
+            {
+                "id": "custom",
+                "provider": "sentence-transformers",
+                "dimension": "varies",
+                "description": "Any model from https://huggingface.co/sentence-transformers",
+                "max_tokens": "varies",
+            }
+        )
 
         return models

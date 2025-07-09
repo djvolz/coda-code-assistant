@@ -41,7 +41,7 @@ async def main():
             "Cloud computing provides scalable infrastructure for applications",
             "Version control systems like Git help manage code changes",
             "API design follows RESTful principles for web services",
-            "Containerization with Docker simplifies application deployment"
+            "Containerization with Docker simplifies application deployment",
         ]
 
         print(f"\nIndexing {len(documents)} documents...")
@@ -53,7 +53,7 @@ async def main():
             "web development frameworks",
             "artificial intelligence and ML",
             "software deployment tools",
-            "database performance"
+            "database performance",
         ]
 
         print("\nPerforming searches:")
