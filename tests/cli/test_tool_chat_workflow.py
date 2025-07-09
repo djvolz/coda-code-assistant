@@ -55,14 +55,11 @@ class TestToolChatWorkflow:
 
         handler = self._create_tool_handler(cli, provider)
 
-        messages = [
-            Message(role=Role.USER, content="Hello, can you help?")
-        ]
+        messages = [Message(role=Role.USER, content="Hello, can you help?")]
 
         # Test chat
         result, updated_messages = await handler.chat_with_tools(
-            messages=messages,
-            model="cohere.command"
+            messages=messages, model="cohere.command"
         )
 
         # Verify
@@ -105,9 +102,7 @@ class TestToolChatWorkflow:
 
         # Mock tool call
         tool_call = ToolCall(
-            id="test_call",
-            name="custom_tool_for_testing",
-            arguments={"input": "hello"}
+            id="test_call", name="custom_tool_for_testing", arguments={"input": "hello"}
         )
 
         # Mock provider responses
@@ -124,26 +119,23 @@ class TestToolChatWorkflow:
         handler = self._create_tool_handler(cli, provider)
 
         # Mock tool executor
-        mock_result = ToolResult(
-            tool_call_id="test_call",
-            content="Custom: hello",
-            is_error=False
-        )
+        mock_result = ToolResult(tool_call_id="test_call", content="Custom: hello", is_error=False)
         with patch.object(handler.executor, "execute_tool_call", return_value=mock_result):
-            with patch.object(handler.executor, "get_available_tools", return_value=[
-                Tool(
-                    name="custom_tool_for_testing",
-                    description="Custom tool for testing",
-                    parameters={"type": "object", "properties": {"input": {"type": "string"}}}
-                )
-            ]):
-                messages = [
-                    Message(role=Role.USER, content="Use the custom tool with 'hello'")
-                ]
+            with patch.object(
+                handler.executor,
+                "get_available_tools",
+                return_value=[
+                    Tool(
+                        name="custom_tool_for_testing",
+                        description="Custom tool for testing",
+                        parameters={"type": "object", "properties": {"input": {"type": "string"}}},
+                    )
+                ],
+            ):
+                messages = [Message(role=Role.USER, content="Use the custom tool with 'hello'")]
 
                 result, updated_messages = await handler.chat_with_tools(
-                    messages=messages,
-                    model="cohere.command"
+                    messages=messages, model="cohere.command"
                 )
 
                 assert "Custom: hello" in result
@@ -155,11 +147,7 @@ class TestToolChatWorkflow:
         provider = Mock()
 
         # Mock tool call
-        tool_call = ToolCall(
-            id="error_call",
-            name="failing_tool",
-            arguments={}
-        )
+        tool_call = ToolCall(id="error_call", name="failing_tool", arguments={})
 
         response1 = Mock()
         response1.content = "I'll try this tool."
@@ -175,19 +163,14 @@ class TestToolChatWorkflow:
 
         # Mock tool executor to return error
         mock_result = ToolResult(
-            tool_call_id="error_call",
-            content="Tool execution failed",
-            is_error=True
+            tool_call_id="error_call", content="Tool execution failed", is_error=True
         )
         with patch.object(handler.executor, "execute_tool_call", return_value=mock_result):
             with patch.object(handler.executor, "get_available_tools", return_value=[]):
-                messages = [
-                    Message(role=Role.USER, content="Try the failing tool")
-                ]
+                messages = [Message(role=Role.USER, content="Try the failing tool")]
 
                 result, updated_messages = await handler.chat_with_tools(
-                    messages=messages,
-                    model="cohere.command"
+                    messages=messages, model="cohere.command"
                 )
 
                 # Should handle error gracefully
@@ -224,13 +207,10 @@ class TestToolChatWorkflow:
         ]
         with patch.object(handler.executor, "execute_tool_call", side_effect=results):
             with patch.object(handler.executor, "get_available_tools", return_value=[]):
-                messages = [
-                    Message(role=Role.USER, content="Use multiple tools")
-                ]
+                messages = [Message(role=Role.USER, content="Use multiple tools")]
 
                 result, updated_messages = await handler.chat_with_tools(
-                    messages=messages,
-                    model="cohere.command"
+                    messages=messages, model="cohere.command"
                 )
 
                 assert "completed successfully" in result.lower()
@@ -248,14 +228,10 @@ class TestToolChatWorkflow:
 
         handler = self._create_tool_handler(cli, provider)
 
-        messages = [
-            Message(role=Role.USER, content="Test with system prompt")
-        ]
+        messages = [Message(role=Role.USER, content="Test with system prompt")]
 
         result, updated_messages = await handler.chat_with_tools(
-            messages=messages,
-            model="cohere.command",
-            system_prompt="You are a helpful assistant."
+            messages=messages, model="cohere.command", system_prompt="You are a helpful assistant."
         )
 
         # Verify system prompt was added
@@ -279,14 +255,12 @@ class TestToolChatWorkflow:
 
         handler = self._create_tool_handler(cli, provider)
 
-        messages = [
-            Message(role=Role.USER, content="Test streaming")
-        ]
+        messages = [Message(role=Role.USER, content="Test streaming")]
 
         # Test with non-Cohere model (no tools)
         result, updated_messages = await handler.chat_with_tools(
             messages=messages,
-            model="gpt-4"  # Non-Cohere model
+            model="gpt-4",  # Non-Cohere model
         )
 
         assert result == "Streaming response here"
@@ -307,13 +281,11 @@ class TestToolChatWorkflow:
 
         handler = self._create_tool_handler(cli, provider)
 
-        messages = [
-            Message(role=Role.USER, content="Test interrupt")
-        ]
+        messages = [Message(role=Role.USER, content="Test interrupt")]
 
         result, _ = await handler.chat_with_tools(
             messages=messages,
-            model="gpt-4"  # Non-Cohere for streaming test
+            model="gpt-4",  # Non-Cohere for streaming test
         )
 
         # Should only have Part 1
@@ -326,11 +298,7 @@ class TestToolChatWorkflow:
         provider = Mock()
 
         # Mock tool call with JSON result
-        tool_call = ToolCall(
-            id="json_call",
-            name="json_tool",
-            arguments={}
-        )
+        tool_call = ToolCall(id="json_call", name="json_tool", arguments={})
 
         response1 = Mock()
         response1.content = ""
@@ -347,23 +315,16 @@ class TestToolChatWorkflow:
         # Mock tool executor with JSON result
         json_data = {"status": "success", "data": {"value": 42}}
         mock_result = ToolResult(
-            tool_call_id="json_call",
-            content=json.dumps(json_data),
-            is_error=False
+            tool_call_id="json_call", content=json.dumps(json_data), is_error=False
         )
         with patch.object(handler.executor, "execute_tool_call", return_value=mock_result):
             with patch.object(handler.executor, "get_available_tools", return_value=[]):
-                messages = [
-                    Message(role=Role.USER, content="Get JSON data")
-                ]
+                messages = [Message(role=Role.USER, content="Get JSON data")]
 
                 result, updated_messages = await handler.chat_with_tools(
-                    messages=messages,
-                    model="cohere.command"
+                    messages=messages, model="cohere.command"
                 )
 
                 # Check that JSON was properly handled
-                tool_result_msg = next(
-                    msg for msg in updated_messages if msg.role == Role.TOOL
-                )
+                tool_result_msg = next(msg for msg in updated_messages if msg.role == Role.TOOL)
                 assert json.loads(tool_result_msg.content) == json_data

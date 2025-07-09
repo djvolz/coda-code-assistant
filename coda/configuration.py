@@ -60,6 +60,9 @@ class CodaConfig:
     # Debug settings
     debug: bool = False
 
+    # Observability settings
+    observability: dict[str, Any] = field(default_factory=dict)
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CodaConfig":
         """Create config from dictionary."""
@@ -73,6 +76,7 @@ class CodaConfig:
             "session": self.session,
             "ui": self.ui,
             "debug": self.debug,
+            "observability": self.observability,
         }
 
     def merge(self, other: dict[str, Any]) -> None:
@@ -94,6 +98,9 @@ class CodaConfig:
 
         if "debug" in other:
             self.debug = other["debug"]
+
+        if "observability" in other:
+            self.observability.update(other["observability"])
 
 
 class ConfigManager:
@@ -175,6 +182,128 @@ class ConfigManager:
         """Get configuration for a specific provider."""
         return self.config.providers.get(provider, {})
 
+    def get_bool(self, key: str, default: bool = False, env_var: str = None) -> bool:
+        """Get a boolean configuration value.
+
+        Args:
+            key: Configuration key (dot notation supported, e.g. 'observability.enabled')
+            default: Default value if key not found
+            env_var: Environment variable to check first
+
+        Returns:
+            Boolean configuration value
+        """
+        # Check environment variable first
+        if env_var and env_var in os.environ:
+            value = os.environ[env_var].lower()
+            return value in ("true", "1", "yes", "on")
+
+        # Navigate through nested dict using dot notation
+        value = self._get_nested_value(key, default)
+
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, str):
+            return value.lower() in ("true", "1", "yes", "on")
+        else:
+            return bool(value)
+
+    def get_int(self, key: str, default: int = 0, env_var: str = None) -> int:
+        """Get an integer configuration value.
+
+        Args:
+            key: Configuration key (dot notation supported)
+            default: Default value if key not found
+            env_var: Environment variable to check first
+
+        Returns:
+            Integer configuration value
+        """
+        # Check environment variable first
+        if env_var and env_var in os.environ:
+            try:
+                return int(os.environ[env_var])
+            except ValueError:
+                pass
+
+        value = self._get_nested_value(key, default)
+
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return default
+
+    def get_float(self, key: str, default: float = 0.0, env_var: str = None) -> float:
+        """Get a float configuration value.
+
+        Args:
+            key: Configuration key (dot notation supported)
+            default: Default value if key not found
+            env_var: Environment variable to check first
+
+        Returns:
+            Float configuration value
+        """
+        # Check environment variable first
+        if env_var and env_var in os.environ:
+            try:
+                return float(os.environ[env_var])
+            except ValueError:
+                pass
+
+        value = self._get_nested_value(key, default)
+
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return default
+
+    def get_string(self, key: str, default: str = "", env_var: str = None) -> str:
+        """Get a string configuration value.
+
+        Args:
+            key: Configuration key (dot notation supported)
+            default: Default value if key not found
+            env_var: Environment variable to check first
+
+        Returns:
+            String configuration value
+        """
+        # Check environment variable first
+        if env_var and env_var in os.environ:
+            return os.environ[env_var]
+
+        value = self._get_nested_value(key, default)
+        return str(value)
+
+    def get_config(self) -> dict[str, Any]:
+        """Get the full configuration as a dictionary.
+
+        Returns:
+            Complete configuration dictionary
+        """
+        return self.config.to_dict()
+
+    def _get_nested_value(self, key: str, default: Any = None) -> Any:
+        """Get a value from nested configuration using dot notation.
+
+        Args:
+            key: Dot-separated key (e.g., 'observability.metrics.enabled')
+            default: Default value if key not found
+
+        Returns:
+            Configuration value or default
+        """
+        keys = key.split(".")
+        value = self.config.to_dict()
+
+        try:
+            for k in keys:
+                value = value[k]
+            return value
+        except (KeyError, TypeError):
+            return default
+
     def save_user_config(self) -> None:
         """Save current config to user config file."""
         if not tomllib:
@@ -229,6 +358,14 @@ def get_provider_config(provider: str) -> dict[str, Any]:
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager.get_provider_config(provider)
+
+
+def get_config_manager() -> ConfigManager:
+    """Get the global configuration manager instance."""
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = ConfigManager()
+    return _config_manager
 
 
 def save_config() -> None:

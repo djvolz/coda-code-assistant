@@ -24,6 +24,11 @@ dependencies = [
     "pyyaml>=6.0.1",
     "tiktoken>=0.5.0",
     "tomli-w>=1.2.0",
+    # Observability dependencies
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-otlp>=1.20.0",
+    "opentelemetry-instrumentation>=0.41b0",
 ]
 
 [project.scripts]
