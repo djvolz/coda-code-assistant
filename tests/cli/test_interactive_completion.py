@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 from prompt_toolkit.document import Document
 
 from coda.cli.interactive_cli import InteractiveCLI
-from coda.cli.completers import EnhancedCompleter
+from coda.cli.completers import CodaCompleter
 from coda.providers.base import Model
 
 
@@ -35,7 +35,7 @@ class TestInteractiveCLICompletion:
         """Test that CLI initializes with a completer."""
         assert cli.session is not None
         assert cli.session.completer is not None
-        assert isinstance(cli.session.completer, EnhancedCompleter)
+        assert isinstance(cli.session.completer, CodaCompleter)
 
     def test_model_completion_with_provider(self, cli):
         """Test /model completion when provider is available."""

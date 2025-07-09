@@ -7,7 +7,7 @@ from prompt_toolkit.document import Document
 
 from coda.cli.completers import (
     DynamicValueCompleter,
-    EnhancedCompleter,
+    CodaCompleter,
     FuzzyMatcher,
     SlashCommandCompleter,
 )
@@ -147,6 +147,7 @@ class TestDynamicValueCompleter:
         # Need to mock the command registry
         with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
+            mock_cmd.name = "model"
             mock_cmd.completion_type = "model_name"
             mock_cmd.subcommands = []
             mock_registry.get_command.return_value = mock_cmd
@@ -164,6 +165,7 @@ class TestDynamicValueCompleter:
 
         with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
+            mock_cmd.name = "model"
             mock_cmd.completion_type = "model_name"
             mock_cmd.subcommands = []
             mock_registry.get_command.return_value = mock_cmd
@@ -180,6 +182,7 @@ class TestDynamicValueCompleter:
 
         with patch("coda.cli.command_registry.CommandRegistry") as mock_registry:
             mock_cmd = Mock()
+            mock_cmd.name = "model"
             mock_cmd.completion_type = "model_name"
             mock_cmd.subcommands = []
             mock_registry.get_command.return_value = mock_cmd
@@ -275,7 +278,7 @@ class TestSessionCompletion:
             assert completions[0].text == "feature-planning"
 
 
-class TestEnhancedCompleter:
+class TestCodaCompleter:
     """Test the main enhanced completer."""
 
     @pytest.fixture
@@ -288,7 +291,7 @@ class TestEnhancedCompleter:
 
     def test_slash_command_priority(self, commands):
         """Test that slash commands take priority."""
-        completer = EnhancedCompleter(commands)
+        completer = CodaCompleter(commands)
 
         doc = Document("/hel")
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
@@ -298,7 +301,7 @@ class TestEnhancedCompleter:
 
     def test_empty_shows_commands(self, commands):
         """Test empty input shows available commands."""
-        completer = EnhancedCompleter(commands)
+        completer = CodaCompleter(commands)
 
         doc = Document("")
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
@@ -309,7 +312,7 @@ class TestEnhancedCompleter:
 
     def test_path_completion(self, commands):
         """Test path completion for file paths."""
-        completer = EnhancedCompleter(commands)
+        completer = CodaCompleter(commands)
 
         # Path completion is delegated to PathCompleter
         # Just verify it doesn't crash
@@ -319,7 +322,7 @@ class TestEnhancedCompleter:
 
     def test_no_regular_text_completion(self, commands):
         """Test that regular text gets no completions."""
-        completer = EnhancedCompleter(commands)
+        completer = CodaCompleter(commands)
 
         doc = Document("hello world")
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
