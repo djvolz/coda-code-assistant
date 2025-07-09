@@ -1,21 +1,15 @@
 """Shared pytest fixtures for web UI tests."""
 
 import os
+import subprocess
 import sys
 import time
-import subprocess
-import pytest
 from unittest.mock import Mock, patch
-from typing import Generator, Dict, Any
-import streamlit as st
-from streamlit.testing.v1 import AppTest
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.firefox.service import Service as FirefoxService
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 
+import pytest
+import streamlit as st
+from selenium import webdriver
+from streamlit.testing.v1 import AppTest
 
 # Add project root to path for imports
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -27,7 +21,7 @@ def wait_for_server(url: str, timeout: int = 30) -> bool:
     """Wait for Streamlit server to be ready."""
     import requests
     start_time = time.time()
-    
+
     while time.time() - start_time < timeout:
         try:
             response = requests.get(url)
@@ -36,7 +30,7 @@ def wait_for_server(url: str, timeout: int = 30) -> bool:
         except requests.exceptions.ConnectionError:
             pass
         time.sleep(0.5)
-    
+
     return False
 
 
@@ -47,7 +41,7 @@ def mock_streamlit():
     with patch('streamlit') as mock_st:
         # Mock session state
         mock_st.session_state = {}
-        
+
         # Mock common components
         mock_st.write = Mock()
         mock_st.error = Mock()
@@ -59,7 +53,7 @@ def mock_streamlit():
         mock_st.container = Mock()
         mock_st.expander = Mock()
         mock_st.tabs = Mock(return_value=[Mock(), Mock()])
-        
+
         # Mock input components
         mock_st.text_input = Mock(return_value="")
         mock_st.text_area = Mock(return_value="")
@@ -71,20 +65,20 @@ def mock_streamlit():
         mock_st.radio = Mock(return_value=None)
         mock_st.button = Mock(return_value=False)
         mock_st.file_uploader = Mock(return_value=None)
-        
+
         # Mock layout components
         mock_st.set_page_config = Mock()
         mock_st.title = Mock()
         mock_st.header = Mock()
         mock_st.subheader = Mock()
         mock_st.markdown = Mock()
-        
+
         # Mock data display
         mock_st.dataframe = Mock()
         mock_st.table = Mock()
         mock_st.json = Mock()
         mock_st.code = Mock()
-        
+
         yield mock_st
 
 
@@ -97,11 +91,11 @@ def mock_provider_registry():
         mock_provider.name = "test-provider"
         mock_provider.chat = Mock(return_value=Mock(content="Test response"))
         mock_provider.stream_chat = Mock(return_value=iter(["Test", " response"]))
-        
+
         # Setup factory
         mock_factory.create = Mock(return_value=mock_provider)
         mock_factory.list_providers = Mock(return_value=["openai", "anthropic", "test-provider"])
-        
+
         yield mock_factory
 
 
@@ -165,7 +159,7 @@ def pytest_addoption(parser):
 def driver(request, browser_choice):
     """Create Selenium WebDriver instance."""
     headless = request.config.getoption("--headless")
-    
+
     if browser_choice == "chrome":
         options = webdriver.ChromeOptions()
         if headless:
@@ -181,12 +175,12 @@ def driver(request, browser_choice):
         driver = webdriver.Firefox(options=options)
     else:
         raise ValueError(f"Unsupported browser: {browser_choice}")
-    
+
     driver.set_window_size(1280, 720)
     driver.implicitly_wait(10)
-    
+
     yield driver
-    
+
     driver.quit()
 
 
@@ -197,7 +191,7 @@ def streamlit_server(unused_tcp_port):
     env = os.environ.copy()
     env["STREAMLIT_SERVER_PORT"] = str(port)
     env["STREAMLIT_SERVER_HEADLESS"] = "true"
-    
+
     # Start Streamlit process
     process = subprocess.Popen(
         [
@@ -212,15 +206,15 @@ def streamlit_server(unused_tcp_port):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    
+
     # Wait for server to start
     server_url = f"http://localhost:{port}"
     if not wait_for_server(server_url):
         process.terminate()
         raise RuntimeError("Streamlit server failed to start")
-    
+
     yield server_url
-    
+
     # Cleanup
     process.terminate()
     process.wait(timeout=5)
@@ -273,17 +267,17 @@ def benchmark_timer():
     class Timer:
         def __init__(self):
             self.times = []
-        
+
         def __enter__(self):
             self.start = time.time()
             return self
-        
+
         def __exit__(self, *args):
             self.times.append(time.time() - self.start)
-        
+
         def average(self):
             return sum(self.times) / len(self.times) if self.times else 0
-    
+
     return Timer()
 
 

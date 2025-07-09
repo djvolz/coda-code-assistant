@@ -5,52 +5,50 @@ import subprocess
 import sys
 import time
 import webbrowser
-import signal
-import os
 
 
 def test_web_ui_tabs():
     """Launch web UI and provide manual testing instructions."""
     print("🚀 Phase 7 Web UI - Manual Tab Verification")
     print("=" * 50)
-    
+
     port = 8530
     url = f"http://localhost:{port}"
-    
+
     print(f"🌐 Starting web UI on {url}")
-    
+
     # Start the web UI
     proc = subprocess.Popen(
         ['uv', 'run', 'coda', 'web', '--port', str(port)],
-        stdout=subprocess.PIPE, 
+        stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
     )
-    
+
     # Wait for startup
     print("⏳ Waiting for server to start...")
     time.sleep(8)
-    
+
     if proc.poll() is not None:
         stdout, stderr = proc.communicate()
-        print(f"❌ Failed to start web UI")
+        print("❌ Failed to start web UI")
         print(f"Error: {stderr}")
         return False
-    
-    print(f"✅ Web UI started successfully!")
+
+    print("✅ Web UI started successfully!")
     print(f"🌐 Opening browser to {url}")
-    
+
     # Open browser (if possible)
     try:
         webbrowser.open(url)
     except:
         pass
-    
+
     print("\n" + "="*60)
     print("📋 MANUAL VERIFICATION CHECKLIST")
     print("="*60)
     print("Please verify each tab works correctly:\n")
-    
+
     print("📊 DASHBOARD TAB:")
     print("  □ Page loads without errors")
     print("  □ Shows 'Quick Stats' metrics in sidebar")
@@ -58,7 +56,7 @@ def test_web_ui_tabs():
     print("  □ Shows pie chart for model distribution")
     print("  □ Shows line chart for usage trends")
     print("  □ Charts render without errors\n")
-    
+
     print("💬 CHAT TAB:")
     print("  □ Page loads without errors")
     print("  □ Provider dropdown shows options")
@@ -67,7 +65,7 @@ def test_web_ui_tabs():
     print("  □ 'Files' expander opens file upload widget")
     print("  □ 'Download' expander shows download options")
     print("  □ Clear Chat button is visible\n")
-    
+
     print("📁 SESSIONS TAB:")
     print("  □ Page loads without errors")
     print("  □ Shows search and filter controls")
@@ -75,7 +73,7 @@ def test_web_ui_tabs():
     print("  □ Session expandables show details")
     print("  □ Load/Export/Delete buttons present")
     print("  □ No errors in session listing\n")
-    
+
     print("⚙️ SETTINGS TAB:")
     print("  □ Page loads without errors")
     print("  □ Shows provider configuration tabs")
@@ -83,27 +81,27 @@ def test_web_ui_tabs():
     print("  □ Enable/disable checkboxes work")
     print("  □ Configuration forms show fields")
     print("  □ Save buttons are present\n")
-    
+
     print("🔄 NAVIGATION:")
     print("  □ Sidebar navigation between tabs works")
     print("  □ Page transitions are smooth")
     print("  □ No 404 errors or broken links")
     print("  □ Refresh button in sidebar works")
-    
+
     print("\n" + "="*60)
     print("⌨️  CONTROLS:")
     print("  Press ENTER when done testing")
     print("  Or Ctrl+C to stop immediately")
     print("="*60)
-    
+
     try:
         # Keep server running until user input
         input("\n🔍 Test each tab above, then press ENTER when finished...\n")
         print("✅ Manual testing completed!")
-        
+
     except KeyboardInterrupt:
         print("\n⚠️  Testing interrupted by user")
-    
+
     finally:
         # Clean shutdown
         print("\n🛑 Stopping web UI...")
@@ -114,7 +112,7 @@ def test_web_ui_tabs():
             proc.kill()
             proc.wait()
         print("✅ Web UI stopped")
-    
+
     return True
 
 
