@@ -185,9 +185,9 @@ class TestMockProviderModels:
 
             response = provider.chat(messages, model)
 
-            assert (
-                "alice" in response.content.lower()
-            ), f"Failed to remember name for model: {model}"
+            assert "alice" in response.content.lower(), (
+                f"Failed to remember name for model: {model}"
+            )
 
     def test_model_metadata_differences(self):
         """Test that models have different metadata but same behavior."""
@@ -272,9 +272,9 @@ class TestMockProviderModesAndModels:
                 response = provider.chat(messages, model)
 
                 assert response, f"No response for mode={mode}, model={model}"
-                assert (
-                    "python" in response.content.lower()
-                ), f"Python not mentioned for mode={mode}, model={model}"
+                assert "python" in response.content.lower(), (
+                    f"Python not mentioned for mode={mode}, model={model}"
+                )
 
     def test_mode_model_conversation_flow(self):
         """Test a complete conversation flow with mode and model changes."""
