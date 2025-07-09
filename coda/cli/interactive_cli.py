@@ -53,6 +53,7 @@ class InteractiveCLI(CommandHandler):
             super().__init__(get_themed_console())
         self.session = None
         self.config = None  # Will be set by interactive.py
+        self.provider = None  # Will be set by interactive.py
         self.commands = self._init_commands()
         self.style = self._create_style()
 
@@ -74,9 +75,7 @@ class InteractiveCLI(CommandHandler):
 
     def _get_current_provider(self):
         """Get current provider for model completion."""
-        if hasattr(self, "config") and self.config:
-            return self.config.get_provider()
-        return None
+        return self.provider
 
     def _get_available_themes(self):
         """Get available theme names."""
