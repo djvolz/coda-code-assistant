@@ -42,7 +42,7 @@ class TestFileStorageBackend:
     def test_initialization(self, temp_dir):
         """Test FileStorageBackend initialization."""
         storage = FileStorageBackend(temp_dir)
-        assert storage.base_dir == temp_dir
+        assert storage.base_path == temp_dir
 
     def test_save_and_load(self, temp_dir):
         """Test saving and loading data."""
@@ -154,13 +154,14 @@ class TestFileStorageBackend:
 
         assert loaded == test_data
 
-    @patch("pathlib.Path.write_text")
-    def test_save_error_handling(self, mock_write, temp_dir):
+    @patch("os.fdopen")
+    def test_save_error_handling(self, mock_fdopen, temp_dir):
         """Test error handling during save."""
-        mock_write.side_effect = OSError("Disk full")
+        mock_fdopen.side_effect = OSError("Disk full")
         storage = FileStorageBackend(temp_dir)
 
-        with pytest.raises(StorageError):
+        # FileStorageBackend doesn't wrap exceptions, so expect OSError
+        with pytest.raises(OSError):
             storage.save("test", {"data": "value"})
 
 
@@ -273,10 +274,10 @@ class TestMemoryStorageBackend:
         assert len(storage.list_keys()) == 500
 
 
-@pytest.mark.skip(reason="BatchWriter tests are incorrectly designed and cause hanging in CI")
 class TestBatchWriter:
     """Test the BatchWriter class."""
 
+    @pytest.mark.timeout(5)
     def test_basic_batching(self):
         """Test basic batch writing."""
         backend = MemoryStorageBackend()
@@ -284,38 +285,49 @@ class TestBatchWriter:
 
         try:
             # Write less than batch size
-            writer.write("key1", {"id": 1})
-            writer.write("key2", {"id": 2})
+            writer.write("test_key1", {"id": 1})
+            writer.write("test_key2", {"id": 2})
 
-            # Data should not be written yet
-            assert not backend.exists("key1")
-            assert not backend.exists("key2")
+            # Data should not be written yet (no batch files)
+            assert len(backend.list_keys()) == 0
 
             # Write one more to trigger batch
-            writer.write("key3", {"id": 3})
+            writer.write("test_key3", {"id": 3})
 
-            # All data should be written
-            assert backend.exists("key1")
-            assert backend.exists("key2")
-            assert backend.exists("key3")
+            # A batch file should be written
+            batch_keys = backend.list_keys(prefix="test_batch_")
+            assert len(batch_keys) == 1
+
+            # Verify batch content
+            batch_data = backend.load(batch_keys[0])
+            assert batch_data["prefix"] == "test"
+            assert batch_data["count"] == 3
+            assert len(batch_data["items"]) == 3
         finally:
             # Always clean up the writer
             writer.close()
 
+    @pytest.mark.timeout(5)
     def test_flush_on_close(self):
         """Test that remaining data is flushed on close."""
         backend = MemoryStorageBackend()
         writer = BatchWriter(backend, batch_size=10)
 
-        writer.write("key1", {"id": 1})
-        writer.write("key2", {"id": 2})
+        writer.write("test_key1", {"id": 1})
+        writer.write("test_key2", {"id": 2})
 
-        assert not backend.exists("key1")
+        # No batch files yet
+        assert len(backend.list_keys()) == 0
 
         writer.close()
 
-        assert backend.exists("key1")
-        assert backend.exists("key2")
+        # Batch file should be written on close
+        batch_keys = backend.list_keys(prefix="test_batch_")
+        assert len(batch_keys) == 1
+
+        # Verify batch content
+        batch_data = backend.load(batch_keys[0])
+        assert batch_data["count"] == 2
 
     @pytest.mark.timeout(5)
     def test_time_based_flush(self):
@@ -324,45 +336,87 @@ class TestBatchWriter:
         writer = BatchWriter(backend, batch_size=100, batch_timeout=0.1)
 
         try:
-            writer.write("key1", {"id": 1})
-            assert not backend.exists("key1")
+            writer.write("test_key1", {"id": 1})
+
+            # No batch files yet
+            assert len(backend.list_keys()) == 0
 
             # Wait for time-based flush
             time.sleep(0.2)
 
-            # Force a write to trigger the time check
-            writer.write("key2", {"id": 2})
+            # Check if batch was written by timer
+            batch_keys = backend.list_keys(prefix="test_batch_")
+            assert len(batch_keys) == 1
 
-            # Both should be written
-            assert backend.exists("key1")
-            assert backend.exists("key2")
+            # Verify batch content
+            batch_data = backend.load(batch_keys[0])
+            assert batch_data["count"] == 1
+            assert batch_data["items"][0]["key"] == "test_key1"
         finally:
             # Always clean up the writer to cancel timer threads
             writer.close()
 
+    @pytest.mark.timeout(5)
     def test_multiple_batches(self):
-        """Test writing multiple batches."""
+        """Test BatchWriter behavior with batch_size limit.
+
+        Note: BatchWriter flushes ALL pending items when total count reaches batch_size,
+        not just items from one prefix. This is the current design.
+        """
         backend = MemoryStorageBackend()
-        writer = BatchWriter(backend, batch_size=2)
+        writer = BatchWriter(backend, batch_size=10)  # High batch size to control flushing
 
-        for i in range(6):
-            writer.write(f"key{i}", {"id": i})
+        try:
+            # Write items and manually flush
+            writer.write("users_1", {"id": 1})
+            writer.write("users_2", {"id": 2})
+            writer.flush()  # Manual flush
 
-        writer.close()
+            writer.write("metrics_1", {"value": 100})
+            writer.write("metrics_2", {"value": 200})
+            writer.flush()  # Manual flush
 
-        # All items should be written
-        assert len(backend.list_keys()) == 6
+            writer.write("logs_1", {"message": "test"})
+            writer.write("logs_2", {"message": "test2"})
+            writer.close()  # Final flush
 
+            # Should have batch files
+            all_batch_keys = backend.list_keys()
+            batch_keys = [k for k in all_batch_keys if "_batch_" in k]
+
+            # Should have 3 batches (one per flush)
+            assert len(batch_keys) == 3
+
+            # Verify all items are saved
+            total_items = 0
+            for batch_key in batch_keys:
+                batch_data = backend.load(batch_key)
+                total_items += batch_data["count"]
+
+            # All 6 items should be saved
+            assert total_items == 6
+        finally:
+            if hasattr(writer, "_timer") and writer._timer:
+                writer._timer.cancel()
+
+    @pytest.mark.timeout(5)
     def test_error_handling(self):
         """Test error handling during batch write."""
         backend = Mock(spec=StorageBackend)
-        backend.save.side_effect = StorageError("Write failed")
+        backend.save.side_effect = Exception("Write failed")
 
         writer = BatchWriter(backend, batch_size=2)
 
-        # These writes should not raise immediately
-        writer.write("key1", {"id": 1})
-        writer.write("key2", {"id": 2})  # This triggers batch write
+        try:
+            # These writes should not raise immediately
+            writer.write("test_key1", {"id": 1})
+            writer.write("test_key2", {"id": 2})  # This triggers batch write
 
-        # The error should be logged but not raised
-        writer.close()
+            # The error should be logged but not raised
+            writer.close()
+
+            # Verify save was attempted
+            assert backend.save.called
+        finally:
+            if hasattr(writer, "_timer") and writer._timer:
+                writer._timer.cancel()

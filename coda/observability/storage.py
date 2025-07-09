@@ -119,6 +119,24 @@ class FileStorageBackend:
 
         return sorted(keys)
 
+    def clear(self) -> None:
+        """Clear all stored data."""
+        for file_path in self.base_path.glob("*.json"):
+            try:
+                file_path.unlink()
+            except Exception as e:
+                logger.error(f"Failed to delete file {file_path}: {e}")
+
+    def size(self) -> int:
+        """Get total size of stored data in bytes."""
+        total_size = 0
+        for file_path in self.base_path.glob("*.json"):
+            try:
+                total_size += file_path.stat().st_size
+            except Exception as e:
+                logger.error(f"Failed to get size of file {file_path}: {e}")
+        return total_size
+
 
 class MemoryStorageBackend:
     """In-memory storage implementation for testing."""
@@ -161,6 +179,26 @@ class MemoryStorageBackend:
 
         return sorted(keys)
 
+    def clear(self) -> None:
+        """Clear all stored data."""
+        self.data.clear()
+
+    def size(self) -> int:
+        """Get total size of stored data in bytes (estimated)."""
+        # Return 0 for empty storage
+        if not self.data:
+            return 0
+
+        # Estimate size by converting to JSON string
+        import json
+
+        try:
+            json_str = json.dumps(self.data)
+            return len(json_str.encode("utf-8"))
+        except Exception:
+            # Fallback: rough estimate based on number of items
+            return len(self.data) * 100
+
 
 class BatchWriter:
     """Batches write operations for improved performance."""
@@ -189,6 +227,8 @@ class BatchWriter:
 
     def write(self, key: str, data: dict[str, Any]) -> None:
         """Queue data for batch writing."""
+        should_flush = False
+
         with self._lock:
             # Extract prefix from key (e.g., "metrics_2024" -> "metrics")
             prefix = key.split("_")[0] if "_" in key else key
@@ -201,9 +241,13 @@ class BatchWriter:
             total_pending = sum(len(items) for items in self.pending.values())
 
             if total_pending >= self.batch_size:
-                self._flush()
+                should_flush = True
             elif not self._timer:
                 self._schedule_flush()
+
+        # Flush outside of lock to avoid deadlock
+        if should_flush:
+            self._flush()
 
     def _schedule_flush(self) -> None:
         """Schedule a timed flush."""
