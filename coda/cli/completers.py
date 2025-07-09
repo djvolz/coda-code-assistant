@@ -78,6 +78,7 @@ class SlashCommandCompleter(BaseCompleter):
 
         # Get theme for styling
         from coda.themes import get_console_theme
+
         theme = get_console_theme()
 
         # Handle empty input - show all commands
@@ -105,12 +106,12 @@ class SlashCommandCompleter(BaseCompleter):
         if has_space and cmd_part in self.commands:
             # Import here to avoid circular imports
             from .command_registry import CommandRegistry
-            
+
             cmd_def = CommandRegistry.get_command(cmd_part)
             if cmd_def and cmd_def.subcommands:
                 # We have subcommands to complete
                 subcommand_part = parts[1] if len(parts) > 1 else ""
-                
+
                 for sub in cmd_def.subcommands:
                     matches, score = FuzzyMatcher.fuzzy_match(subcommand_part, sub.name)
                     if matches:
@@ -168,8 +169,10 @@ class DynamicValueCompleter(BaseCompleter):
             return
 
         # Import here to avoid circular imports
-        from .command_registry import CommandRegistry
         from coda.themes import get_console_theme
+
+        from .command_registry import CommandRegistry
+
         theme = get_console_theme()
 
         # Parse command structure
@@ -225,7 +228,7 @@ class DynamicValueCompleter(BaseCompleter):
                 try:
                     models = provider.list_models()
                     # Extract model IDs from Model objects
-                    model_ids = [m.id if hasattr(m, 'id') else str(m) for m in models]
+                    model_ids = [m.id if hasattr(m, "id") else str(m) for m in models]
                     for model_id in sorted(model_ids):
                         matches, score = FuzzyMatcher.fuzzy_match(value_part, model_id)
                         if matches:
@@ -234,7 +237,11 @@ class DynamicValueCompleter(BaseCompleter):
                                 start_position=-len(value_part),
                                 display=model_id,
                                 display_meta="AI Model",
-                                style=theme.assistant_message + " bold" if score >= 0.9 else theme.assistant_message,
+                                style=(
+                                    theme.assistant_message + " bold"
+                                    if score >= 0.9
+                                    else theme.assistant_message
+                                ),
                             )
                 except Exception:
                     pass
@@ -301,18 +308,15 @@ class EnhancedCompleter(BaseCompleter):
         # 1. Slash commands always take priority
         if text.startswith("/"):
             # Try both slash command and dynamic completion
-            found_any = False
-            
+
             # First try slash command completion (for command names and subcommands)
             for completion in self.slash_completer.get_completions(document, complete_event):
-                found_any = True
                 yield completion
-            
+
             # Also try dynamic value completion (for model names, session names, etc.)
             for completion in self.dynamic_completer.get_completions(document, complete_event):
-                found_any = True
                 yield completion
-                
+
             return
 
         # 2. Empty input - show available slash commands

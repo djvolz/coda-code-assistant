@@ -130,6 +130,7 @@ class TestDynamicValueCompleter:
 
         def list_models(self):
             from unittest.mock import Mock
+
             # Return mock Model objects with id attributes
             models = []
             for model_id in ["gpt-4", "gpt-3.5-turbo", "claude-3-opus"]:

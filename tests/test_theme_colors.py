@@ -14,16 +14,16 @@ class TestThemeColors:
     def test_all_themes_have_conversation_colors(self):
         """Verify all themes define user_message and assistant_message colors."""
         for theme_name, theme in THEMES.items():
-            assert hasattr(theme.console, "user_message"), (
-                f"{theme_name} missing user_message color"
-            )
-            assert hasattr(theme.console, "assistant_message"), (
-                f"{theme_name} missing assistant_message color"
-            )
+            assert hasattr(
+                theme.console, "user_message"
+            ), f"{theme_name} missing user_message color"
+            assert hasattr(
+                theme.console, "assistant_message"
+            ), f"{theme_name} missing assistant_message color"
             assert theme.console.user_message, f"{theme_name} has empty user_message color"
-            assert theme.console.assistant_message, (
-                f"{theme_name} has empty assistant_message color"
-            )
+            assert (
+                theme.console.assistant_message
+            ), f"{theme_name} has empty assistant_message color"
 
     def test_all_themes_have_info_color(self):
         """Verify all themes define info color for status messages."""
@@ -38,12 +38,12 @@ class TestThemeColors:
         for theme_name in light_themes:
             theme = THEMES[theme_name]
             # Light themes should not use 'bright_' colors for main text
-            assert not theme.console.user_message.startswith("bright_"), (
-                f"{theme_name} uses bright color for user messages on light background"
-            )
-            assert not theme.console.assistant_message.startswith("bright_"), (
-                f"{theme_name} uses bright color for assistant messages on light background"
-            )
+            assert not theme.console.user_message.startswith(
+                "bright_"
+            ), f"{theme_name} uses bright color for user messages on light background"
+            assert not theme.console.assistant_message.startswith(
+                "bright_"
+            ), f"{theme_name} uses bright color for assistant messages on light background"
 
     def test_high_contrast_themes_use_bold(self):
         """Verify high contrast themes use bold text where appropriate."""
@@ -84,9 +84,9 @@ class TestThemeColors:
                 "assistant_message",
             ]:
                 color = getattr(theme.console, attr_name)
-                assert is_valid_color(color), (
-                    f"{theme_name}.console.{attr_name} has invalid color: {color}"
-                )
+                assert is_valid_color(
+                    color
+                ), f"{theme_name}.console.{attr_name} has invalid color: {color}"
 
     def test_get_console_theme_returns_current_theme(self):
         """Test that get_console_theme returns the current theme's console."""
@@ -135,6 +135,6 @@ class TestThemeColors:
             user_base = theme.console.user_message.split()[0]
             assistant_base = theme.console.assistant_message.split()[0]
 
-            assert user_base != assistant_base, (
-                f"{theme_name} uses same base color for user and assistant messages"
-            )
+            assert (
+                user_base != assistant_base
+            ), f"{theme_name} uses same base color for user and assistant messages"

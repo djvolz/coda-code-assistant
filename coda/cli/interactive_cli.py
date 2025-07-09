@@ -415,10 +415,10 @@ class InteractiveCLI(CommandHandler):
         if not args:
             # Show interactive mode selector
             from .generic_selector import ModeSelector
-            
+
             selector = ModeSelector(self.console)
             mode_choice = await selector.select_option_interactive()
-            
+
             if mode_choice:
                 self.switch_mode(mode_choice)
             else:
@@ -444,10 +444,10 @@ class InteractiveCLI(CommandHandler):
         if not args:
             # Show interactive session command selector
             from .generic_selector import SessionCommandSelector
-            
+
             selector = SessionCommandSelector(self.console)
             cmd_choice = await selector.select_option_interactive()
-            
+
             if cmd_choice:
                 # Execute selected command
                 result = self.session_commands.handle_session_command([cmd_choice])
@@ -569,10 +569,10 @@ class InteractiveCLI(CommandHandler):
         if not args:
             # Show interactive export format selector
             from .generic_selector import ExportSelector
-            
+
             selector = ExportSelector(self.console)
             format_choice = await selector.select_option_interactive()
-            
+
             if format_choice:
                 # Export with selected format
                 result = self.session_commands.handle_export_command([format_choice])

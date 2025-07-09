@@ -1,19 +1,14 @@
 """Generic selector for CLI commands with options."""
 
-from typing import Any
 
 from prompt_toolkit import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import (
-    ConditionalContainer,
-    HSplit,
     Layout,
-    VSplit,
     Window,
     WindowAlign,
 )
 from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.widgets import Label
 from rich.console import Console
 
 from ..themes import get_console_theme
@@ -25,7 +20,7 @@ class GenericSelector:
     def __init__(self, title: str, options: list[tuple[str, str]], console: Console = None):
         """
         Initialize the selector.
-        
+
         Args:
             title: Title to display (e.g., "Export Format", "Session Command")
             options: List of (value, description) tuples
@@ -36,7 +31,7 @@ class GenericSelector:
         self.console = console or Console()
         self.current_index = 0
         self.selected_option = None
-        
+
         # Get theme colors
         self.theme = get_console_theme()
 
@@ -71,10 +66,10 @@ class GenericSelector:
     def get_formatted_options(self) -> list:
         """Get formatted option list with current selection highlighted."""
         lines = []
-        
+
         # Add title
         lines.append(("class:title", f"\n{self.title}\n"))
-        
+
         for i, (value, description) in enumerate(self.options):
             if i == self.current_index:
                 # Highlighted option
@@ -83,19 +78,19 @@ class GenericSelector:
             else:
                 prefix = "  "
                 style = "class:option"
-            
+
             # Format as "value - description"
             lines.append((style, f"{prefix}{value:<15} {description}\n"))
-        
+
         # Add help text
         lines.append(("class:help", "\n[↑/↓ or j/k: Navigate] [Enter: Select] [Esc/q: Cancel]"))
-        
+
         return lines
 
     async def select_option_interactive(self) -> str | None:
         """Show interactive option selector and return selected value."""
         self.show_help = False
-        
+
         # Create the layout
         content = Window(
             content=FormattedTextControl(
@@ -104,9 +99,9 @@ class GenericSelector:
             ),
             align=WindowAlign.LEFT,
         )
-        
+
         layout = Layout(content)
-        
+
         # Define custom style based on theme
         style = {
             "title": f"{self.theme.info} bold",
@@ -114,7 +109,7 @@ class GenericSelector:
             "selected": f"{self.theme.success} bold",
             "help": self.theme.dim,
         }
-        
+
         # Create application
         app = Application(
             layout=layout,
@@ -123,16 +118,16 @@ class GenericSelector:
             mouse_support=False,
             full_screen=False,
         )
-        
+
         # Run the selector
         await app.run_async()
-        
+
         return self.selected_option
 
 
 class ExportSelector(GenericSelector):
     """Selector specifically for export formats."""
-    
+
     def __init__(self, console: Console = None):
         options = [
             ("json", "Export as JSON format"),
@@ -145,7 +140,7 @@ class ExportSelector(GenericSelector):
 
 class SessionCommandSelector(GenericSelector):
     """Selector for session commands."""
-    
+
     def __init__(self, console: Console = None):
         options = [
             ("save", "Save current conversation"),
@@ -162,7 +157,7 @@ class SessionCommandSelector(GenericSelector):
 
 class ModeSelector(GenericSelector):
     """Selector for developer modes."""
-    
+
     def __init__(self, console: Console = None):
         options = [
             ("general", "General conversational mode"),
@@ -178,7 +173,7 @@ class ModeSelector(GenericSelector):
 
 class ProviderSelector(GenericSelector):
     """Selector for AI providers."""
-    
+
     def __init__(self, console: Console = None):
         options = [
             ("oci_genai", "Oracle Cloud Infrastructure GenAI"),
