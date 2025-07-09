@@ -49,6 +49,7 @@ class TestInteractiveCLI:
             "theme",
             "export",
             "tools",
+            "search",
             "clear",
             "exit",
         ]
@@ -603,3 +604,52 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Theme changed to" in str(call) for call in calls)
         assert not any("preference saved" in str(call) for call in calls)
+
+    @pytest.mark.asyncio
+    async def test_search_command(self, cli):
+        """Test search command basic functionality."""
+        # Test without args (should show help)
+        await cli._cmd_search("")
+
+        # The table object is printed, so we need to check call count and content
+        assert cli.console.print.call_count >= 2  # Empty line + table + tip
+        
+        # Check that a table was printed (second call)
+        assert any("Table object" in str(call) for call in cli.console.print.call_args_list)
+        
+        # Check tip was printed
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("search index demo" in str(call) for call in calls)
+
+    @pytest.mark.asyncio
+    async def test_search_command_with_subcommand(self, cli):
+        """Test search command with subcommand handling."""
+        # Mock the semantic search manager
+        mock_manager = Mock()
+        mock_manager.search = AsyncMock(return_value=[])
+        mock_manager.embedding_provider = Mock()
+        mock_manager.embedding_provider.get_model_info = Mock(return_value={"model": "mock", "dimension": 384})
+        
+        # Mock console.status to support context manager
+        mock_status = Mock()
+        mock_status.__enter__ = Mock(return_value=mock_status)
+        mock_status.__exit__ = Mock(return_value=None)
+        cli.console.status = Mock(return_value=mock_status)
+        
+        # Set the mock manager directly
+        cli._search_manager = mock_manager
+        
+        # Test semantic search without query (should show error)
+        await cli._cmd_search("semantic")
+        
+        calls = [str(call) for call in cli.console.print.call_args_list]
+        assert any("Please provide a search query" in str(call) for call in calls)
+        
+        # Clear previous calls
+        cli.console.print.reset_mock()
+        
+        # Test with query
+        await cli._cmd_search("semantic test query")
+        
+        # Should have called search
+        mock_manager.search.assert_called_with("test query", k=5)
