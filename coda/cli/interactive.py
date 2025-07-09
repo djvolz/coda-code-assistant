@@ -412,6 +412,7 @@ async def run_interactive_session(
         # Set model info in CLI for /model command
         cli.current_model = model
         cli.available_models = unique_models
+        cli.provider = provider_instance
 
         # Interactive chat loop
         # Initialize messages - use loaded messages if available
