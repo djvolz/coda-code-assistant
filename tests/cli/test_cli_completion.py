@@ -3,7 +3,8 @@
 import pytest
 from prompt_toolkit.document import Document
 
-from coda.cli.completers import CodaCompleter as EnhancedCompleter, SlashCommandCompleter
+from coda.cli.completers import CodaCompleter as EnhancedCompleter
+from coda.cli.completers import SlashCommandCompleter
 
 
 class TestSlashCommandCompleter:
