@@ -16,7 +16,7 @@ from coda.session import SessionCommands
 from ..constants import (
     HISTORY_FILE_PATH,
 )
-from .completers import EnhancedCompleter
+from .completers import CodaCompleter
 from .shared import CommandHandler, CommandResult, DeveloperMode
 
 
@@ -174,7 +174,7 @@ class InteractiveCLI(CommandHandler):
         # Double escape is not reliable with prompt-toolkit during streaming
 
         # Create enhanced completer with all features
-        completer = EnhancedCompleter(
+        completer = CodaCompleter(
             slash_commands=self.commands,
             get_provider_func=self._get_current_provider,
             session_commands=self.session_commands,
