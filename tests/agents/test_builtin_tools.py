@@ -19,6 +19,13 @@ from coda.agents.builtin_tools import (
     run_command,
     write_file,
 )
+from coda.agents.intelligence_tools import (
+    analyze_code,
+    code_stats,
+    find_definition,
+    find_pattern,
+    get_dependencies,
+)
 
 
 class TestBuiltinTools:
@@ -228,7 +235,7 @@ class TestBuiltinTools:
         tools = get_builtin_tools()
 
         # Check we have the expected number of tools
-        assert len(tools) == 9
+        assert len(tools) == 14
 
         # Check all tools are included
         expected_tools = {
@@ -241,6 +248,11 @@ class TestBuiltinTools:
             parse_json,
             format_json,
             fetch_data,
+            find_definition,
+            analyze_code,
+            get_dependencies,
+            code_stats,
+            find_pattern,
         }
         assert set(tools) == expected_tools
 

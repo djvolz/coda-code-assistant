@@ -572,6 +572,9 @@ performance = [
     { name = "locust" },
     { name = "pytest-benchmark" },
 ]
+test-integration = [
+    { name = "psutil" },
+]
 test-web = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -606,6 +609,7 @@ requires-dist = [
     { name = "plotly", specifier = ">=5.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.5.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.0" },
+    { name = "psutil", marker = "extra == 'test-integration'", specifier = ">=5.9.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pygments", specifier = ">=2.19.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
@@ -632,7 +636,7 @@ requires-dist = [
     { name = "tomlkit", specifier = ">=0.12.0" },
     { name = "tree-sitter-language-pack", specifier = ">=0.8.0" },
 ]
-provides-extras = ["dev", "embeddings", "oracle", "performance", "test-web"]
+provides-extras = ["dev", "embeddings", "oracle", "performance", "test-integration", "test-web"]
 
 [[package]]
 name = "colorama"

@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import Callable, Dict, List, Optional, Union
 
 # Import tree-sitter components
 try:
@@ -59,12 +60,12 @@ class CodeElement:
     file_path: str
     language: str
     is_definition: bool = True
-    parent_scope: str | None = None
-    docstring: str | None = None
-    full_text: str | None = None
-    modifiers: list[str] | None = None
-    parameters: list[str] | None = None
-    return_type: str | None = None
+    parent_scope: Optional[str] = None
+    docstring: Optional[str] = None
+    full_text: Optional[str] = None
+    modifiers: Optional[List[str]] = None
+    parameters: Optional[List[str]] = None
+    return_type: Optional[str] = None
 
     def __post_init__(self):
         if self.modifiers is None:
@@ -89,10 +90,10 @@ class FileAnalysis:
 
     file_path: str
     language: str
-    definitions: list[CodeElement]
-    references: list[CodeElement]
-    imports: list[CodeElement]
-    errors: list[str]
+    definitions: List[CodeElement]
+    references: List[CodeElement]
+    imports: List[CodeElement]
+    errors: List[str]
 
     def __post_init__(self):
         if self.definitions is None:
@@ -113,7 +114,7 @@ class TreeSitterQueryAnalyzer:
     and extract semantic information using .scm query files.
     """
 
-    def __init__(self, query_dir: Path | None = None):
+    def __init__(self, query_dir: Optional[Path] = None):
         """
         Initialize the query-based analyzer.
 
@@ -133,7 +134,7 @@ class TreeSitterQueryAnalyzer:
         self._parser_cache = {}
         self._query_cache = {}
 
-    def analyze_file(self, file_path: str | Path) -> FileAnalysis:
+    def analyze_file(self, file_path: Union[str, Path]) -> FileAnalysis:
         """
         Analyze a single file using tree-sitter queries.
 
@@ -331,7 +332,7 @@ class TreeSitterQueryAnalyzer:
             logger.debug(f"Could not get parser for {language}: {e}")
             return None
 
-    def _load_query(self, language: str) -> str | None:
+    def _load_query(self, language: str) -> Optional[str]:
         """Load query file for language."""
         if language in self._query_cache:
             return self._query_cache[language]
@@ -437,7 +438,7 @@ class TreeSitterQueryAnalyzer:
 
     def _get_regex_patterns(
         self, language: str
-    ) -> dict[str, list[tuple[re.Pattern, DefinitionKind]]]:
+    ) -> Dict[str, List[tuple[re.Pattern, DefinitionKind]]]:
         """Get regex patterns for fallback analysis."""
         patterns = {
             "python": {
@@ -502,11 +503,11 @@ class TreeSitterQueryAnalyzer:
 
     def analyze_directory(
         self,
-        directory: str | Path,
+        directory: Union[str, Path],
         recursive: bool = True,
-        file_patterns: list[str] | None = None,
-        progress_callback: callable | None = None,
-    ) -> dict[str, FileAnalysis]:
+        file_patterns: Optional[List[str]] = None,
+        progress_callback: Optional[Callable] = None,
+    ) -> Dict[str, FileAnalysis]:
         """
         Analyze all matching files in a directory.
 
@@ -553,7 +554,7 @@ class TreeSitterQueryAnalyzer:
 
         return results
 
-    def get_file_dependencies(self, analysis: FileAnalysis) -> list[str]:
+    def get_file_dependencies(self, analysis: FileAnalysis) -> List[str]:
         """
         Extract dependencies (imports) from a file analysis.
 
@@ -568,9 +569,9 @@ class TreeSitterQueryAnalyzer:
     def find_definition(
         self,
         name: str,
-        analyses: str | dict[str, FileAnalysis],
-        kind: DefinitionKind | None = None,
-    ) -> list[CodeElement]:
+        analyses: Union[str, Dict[str, FileAnalysis]],
+        kind: Optional[DefinitionKind] = None,
+    ) -> List[CodeElement]:
         """
         Find all definitions matching a name across analyses.
 
@@ -595,12 +596,12 @@ class TreeSitterQueryAnalyzer:
 
         return matches
 
-    def get_language_from_path(self, file_path: str | Path) -> str | None:
+    def get_language_from_path(self, file_path: Union[str, Path]) -> Optional[str]:
         """Alias for detect_language for backward compatibility."""
         lang = self.detect_language(Path(file_path))
         return None if lang == "unknown" else lang
 
-    def get_structured_analysis(self, file_path: str | Path) -> dict:
+    def get_structured_analysis(self, file_path: Union[str, Path]) -> dict:
         """
         Get structured analysis results for a file.
 
@@ -704,7 +705,7 @@ class TreeSitterQueryAnalyzer:
             "errors": analysis.errors,
         }
 
-    def get_definitions_summary(self, analyses: dict[str, FileAnalysis]) -> dict[str, int]:
+    def get_definitions_summary(self, analyses: Dict[str, FileAnalysis]) -> Dict[str, int]:
         """
         Get summary counts of definitions by type.
 
@@ -723,7 +724,7 @@ class TreeSitterQueryAnalyzer:
 
         return summary
 
-    def get_supported_languages(self) -> list[str]:
+    def get_supported_languages(self) -> List[str]:
         """
         Get list of supported languages.
 
@@ -744,7 +745,7 @@ class TreeSitterQueryAnalyzer:
         all_langs = sorted(set(query_languages) | extension_langs)
         return all_langs
 
-    def get_language_extensions(self, language: str) -> list[str]:
+    def get_language_extensions(self, language: str) -> List[str]:
         """
         Get file extensions for a language.
 
@@ -760,7 +761,7 @@ class TreeSitterQueryAnalyzer:
                 extensions.append(ext)
         return extensions
 
-    def _get_extension_map(self) -> dict[str, str]:
+    def _get_extension_map(self) -> Dict[str, str]:
         """Get the extension to language mapping."""
         return {
             ".py": "python",

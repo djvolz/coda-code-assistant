@@ -3,7 +3,7 @@
 import pytest
 from prompt_toolkit.document import Document
 
-from coda.cli.interactive_cli import EnhancedCompleter, SlashCommandCompleter
+from coda.cli.completers import CodaCompleter as EnhancedCompleter, SlashCommandCompleter
 
 
 class TestSlashCommandCompleter:
@@ -71,7 +71,9 @@ class TestSlashCommandCompleter:
         doc = Document("/HE", cursor_position=3)
         completions = list(completer.get_completions(doc, None))
 
-        assert len(completions) == 0  # Case-sensitive, so no match
+        # Fuzzy matcher is case-insensitive, so this should match /help
+        assert len(completions) > 0
+        assert any(c.text == "/help" for c in completions)
 
     def test_complete_middle_of_text(self, completer):
         """Test completion in the middle of text."""
@@ -97,7 +99,13 @@ class TestSlashCommandCompleter:
         doc = Document("", cursor_position=0)
         completions = list(completer.get_completions(doc, None))
 
-        assert len(completions) == 0
+        # Empty document shows all available commands
+        assert len(completions) == 4  # help, model, provider, exit
+        command_texts = [c.text for c in completions]
+        assert "/help" in command_texts
+        assert "/model" in command_texts
+        assert "/provider" in command_texts
+        assert "/exit" in command_texts
 
     def test_complete_non_slash_start(self, completer):
         """Test no completion for non-slash commands."""
@@ -202,7 +210,9 @@ class TestEnhancedCompleter:
 
         # Check that completions have style
         if completions:
-            assert completions[0].style == "fg:cyan"
+            # Style uses theme colors now, just check it exists
+            assert completions[0].style is not None
+            assert isinstance(completions[0].style, str)
 
 
 # Removed TestInteractiveCLICompletion class as InteractiveCLI doesn't implement Completer interface

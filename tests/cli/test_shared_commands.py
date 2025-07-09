@@ -16,7 +16,7 @@ class MockModel:
         self.metadata = {}
 
 
-class TestCommandHandler(CommandHandler):
+class MockCommandHandler(CommandHandler):
     """Concrete implementation for testing."""
 
     def show_help(self) -> CommandResult:
@@ -31,7 +31,7 @@ class TestSharedCommands:
     def handler(self):
         """Create a command handler for testing."""
         console = Mock()
-        return TestCommandHandler(console)
+        return MockCommandHandler(console)
 
     def test_init(self, handler):
         """Test command handler initialization."""
