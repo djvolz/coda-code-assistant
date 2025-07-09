@@ -200,17 +200,35 @@ class TestSemanticSearchManager:
     async def test_index_code_files(self, search_manager):
         """Test indexing code files."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create test files
+            # Create test files with enough content to create chunks
             file1 = Path(tmpdir) / "test1.py"
-            file1.write_text("def hello(): return 'world'")
+            file1.write_text("""def hello():
+    \"\"\"Say hello to the world.\"\"\"
+    print("Hello, world!")
+    return 'world'
+
+def goodbye():
+    \"\"\"Say goodbye.\"\"\"
+    print("Goodbye!")
+    return 'bye'
+""")
 
             file2 = Path(tmpdir) / "test2.py"
-            file2.write_text("class MyClass: pass")
+            file2.write_text("""class MyClass:
+    \"\"\"A sample class for testing.\"\"\"
+    
+    def __init__(self):
+        self.value = 42
+    
+    def get_value(self):
+        return self.value
+""")
 
             # Index files
             ids = await search_manager.index_code_files([file1, file2])
 
-            assert len(ids) == 2
+            # With chunking, we might get more than 2 IDs
+            assert len(ids) >= 2
 
             # Verify metadata
             for id_ in ids:

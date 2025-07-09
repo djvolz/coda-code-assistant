@@ -49,7 +49,7 @@ class TestSentenceTransformersProvider:
         assert "Custom model" in provider._model_info["description"]
         assert provider._model_info["max_tokens"] == 512
     
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
+    @patch('sentence_transformers.SentenceTransformer')
     def test_ensure_model_loaded(self, mock_st_class):
         """Test lazy model loading."""
         mock_model = Mock()
@@ -66,17 +66,16 @@ class TestSentenceTransformersProvider:
         # Test dimension detection for unknown model
         assert provider._model_info["dimension"] == 384
     
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
-    def test_ensure_model_loaded_import_error(self, mock_st_class):
+    def test_ensure_model_loaded_import_error(self):
         """Test handling of missing sentence-transformers library."""
-        mock_st_class.side_effect = ImportError()
-        
-        provider = SentenceTransformersProvider()
-        with pytest.raises(ImportError, match="sentence-transformers is not installed"):
-            provider._ensure_model_loaded()
+        # Mock the import to fail
+        with patch.dict('sys.modules', {'sentence_transformers': None}):
+            provider = SentenceTransformersProvider()
+            with pytest.raises(ImportError, match="sentence-transformers is not installed"):
+                provider._ensure_model_loaded()
     
     @pytest.mark.asyncio
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
+    @patch('sentence_transformers.SentenceTransformer')
     async def test_embed_text(self, mock_st_class):
         """Test embedding a single text."""
         mock_model = Mock()
@@ -102,7 +101,7 @@ class TestSentenceTransformersProvider:
         assert call_args[1]["convert_to_numpy"] is True
     
     @pytest.mark.asyncio
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
+    @patch('sentence_transformers.SentenceTransformer')
     async def test_embed_batch(self, mock_st_class):
         """Test embedding a batch of texts."""
         mock_model = Mock()
@@ -138,7 +137,7 @@ class TestSentenceTransformersProvider:
     @pytest.mark.asyncio
     async def test_embed_empty_text(self):
         """Test embedding empty text."""
-        with patch('coda.embeddings.sentence_transformers.SentenceTransformer') as mock_st_class:
+        with patch('sentence_transformers.SentenceTransformer') as mock_st_class:
             mock_model = Mock()
             mock_model.encode.return_value = np.zeros(384)
             mock_st_class.return_value = mock_model
@@ -156,7 +155,7 @@ class TestSentenceTransformersProvider:
         results = await provider.embed_batch([])
         assert results == []
     
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
+    @patch('sentence_transformers.SentenceTransformer')
     def test_get_model_info(self, mock_st_class):
         """Test getting model information."""
         mock_model = Mock()
@@ -206,7 +205,7 @@ class TestSentenceTransformersProvider:
     
     @pytest.mark.asyncio
     @patch('asyncio.get_event_loop')
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
+    @patch('sentence_transformers.SentenceTransformer')
     async def test_async_execution(self, mock_st_class, mock_get_loop):
         """Test that encoding runs in executor for async compatibility."""
         mock_model = Mock()
@@ -214,9 +213,11 @@ class TestSentenceTransformersProvider:
         mock_st_class.return_value = mock_model
         
         mock_loop = Mock()
-        mock_future = AsyncMock()
-        mock_future.return_value = np.array([0.1, 0.2, 0.3])
-        mock_loop.run_in_executor.return_value = mock_future
+        # Create a future that will resolve to the numpy array
+        import asyncio
+        future = asyncio.Future()
+        future.set_result(np.array([0.1, 0.2, 0.3]))
+        mock_loop.run_in_executor.return_value = future
         mock_get_loop.return_value = mock_loop
         
         provider = SentenceTransformersProvider()
@@ -262,7 +263,7 @@ class TestSentenceTransformersIntegration:
     """Integration tests with mocked dependencies."""
     
     @pytest.mark.asyncio
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
+    @patch('sentence_transformers.SentenceTransformer')
     async def test_batch_processing_consistency(self, mock_st_class):
         """Test that batch processing gives same results as individual processing."""
         mock_model = Mock()
@@ -300,7 +301,7 @@ class TestSentenceTransformersIntegration:
         assert np.array_equal(result_b.embedding, batch_results[1].embedding)
     
     @pytest.mark.asyncio
-    @patch('coda.embeddings.sentence_transformers.SentenceTransformer')
+    @patch('sentence_transformers.SentenceTransformer')
     async def test_normalization_effect(self, mock_st_class):
         """Test that normalization setting is respected."""
         mock_model = Mock()
