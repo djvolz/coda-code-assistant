@@ -410,9 +410,22 @@ class InteractiveCLI(CommandHandler):
         """Switch provider."""
         self.show_provider_info(args)
 
-    def _cmd_mode(self, args: str):
+    async def _cmd_mode(self, args: str):
         """Change developer mode."""
-        self.switch_mode(args)
+        if not args:
+            # Show interactive mode selector
+            from .generic_selector import ModeSelector
+            
+            selector = ModeSelector(self.console)
+            mode_choice = await selector.select_option_interactive()
+            
+            if mode_choice:
+                self.switch_mode(mode_choice)
+            else:
+                # Show current mode if cancelled
+                self.console.print(f"[yellow]Current mode: {self.current_mode.value}[/yellow]")
+        else:
+            self.switch_mode(args)
 
     def _show_coming_soon_command(
         self, command_name: str, title: str, options: list[tuple[str, str]], usage: str
@@ -426,12 +439,28 @@ class InteractiveCLI(CommandHandler):
             self.console.print(f"  [cyan]{option}[/cyan] - {description}")
         self.console.print(f"\n[dim]Usage: {usage}[/dim]")
 
-    def _cmd_session(self, args: str):
+    async def _cmd_session(self, args: str):
         """Manage sessions."""
-        # Pass the arguments to session commands handler
-        result = self.session_commands.handle_session_command(args.split() if args else [])
-        if result:
-            self.console.print(result)
+        if not args:
+            # Show interactive session command selector
+            from .generic_selector import SessionCommandSelector
+            
+            selector = SessionCommandSelector(self.console)
+            cmd_choice = await selector.select_option_interactive()
+            
+            if cmd_choice:
+                # Execute selected command
+                result = self.session_commands.handle_session_command([cmd_choice])
+                if result:
+                    self.console.print(result)
+            else:
+                # Show available commands if cancelled
+                self.console.print("[yellow]Session command cancelled[/yellow]")
+        else:
+            # Pass the arguments to session commands handler
+            result = self.session_commands.handle_session_command(args.split() if args else [])
+            if result:
+                self.console.print(result)
 
     async def _cmd_theme(self, args: str):
         """Change UI theme."""
@@ -535,12 +564,27 @@ class InteractiveCLI(CommandHandler):
         except ValueError as e:
             self.console.print(f"[red]Error:[/] {e}")
 
-    def _cmd_export(self, args: str):
+    async def _cmd_export(self, args: str):
         """Export conversation."""
-        # Pass the arguments to session commands handler for export
-        result = self.session_commands.handle_export_command(args.split() if args else [])
-        if result:
-            self.console.print(result)
+        if not args:
+            # Show interactive export format selector
+            from .generic_selector import ExportSelector
+            
+            selector = ExportSelector(self.console)
+            format_choice = await selector.select_option_interactive()
+            
+            if format_choice:
+                # Export with selected format
+                result = self.session_commands.handle_export_command([format_choice])
+                if result:
+                    self.console.print(result)
+            else:
+                self.console.print("[yellow]Export cancelled[/yellow]")
+        else:
+            # Pass the arguments to session commands handler for export
+            result = self.session_commands.handle_export_command(args.split() if args else [])
+            if result:
+                self.console.print(result)
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
