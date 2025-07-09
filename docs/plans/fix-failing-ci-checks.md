@@ -83,3 +83,23 @@ gh workflow view "CI Pipeline"
 - All CI checks pass
 - No functional changes to code (only formatting and test fixes)
 - PR can be merged successfully
+
+## Additional Issues Found - Observability Storage
+
+### BatchWriter Test Issues
+The BatchWriter tests are incorrectly designed. They expect individual keys to exist after writes, but BatchWriter is designed to:
+1. Batch multiple writes together
+2. Save them as timestamped batch files (e.g., `metrics_batch_20241209_143023`)
+3. NOT save individual keys directly
+
+### Missing Storage Backend Methods
+The storage backends are missing methods that tests expect:
+1. `clear()` - Clear all stored data
+2. `size()` - Get total size of stored data
+3. `base_dir` attribute in FileStorageBackend (should be `base_path`)
+
+### Fix Strategy
+1. **Implement missing methods** in both FileStorageBackend and MemoryStorageBackend
+2. **Fix BatchWriter tests** to check for batch files instead of individual keys
+3. **Remove the skip decorator** once tests are fixed
+4. **Add proper cleanup** to ensure timer threads don't hang

@@ -9,6 +9,7 @@ from coda.__version__ import __version__, get_current_version
 
 
 @pytest.mark.unit
+@pytest.mark.fast
 class TestVersioning:
     """Test version formatting and generation."""
 
@@ -45,6 +46,7 @@ class TestVersioning:
         now = datetime.now(UTC)
         assert version.startswith(f"{now.year}.{now.month}.{now.day}.")
 
+    @pytest.mark.cli
     def test_cli_version(self):
         """Test that CLI shows version correctly."""
         import subprocess

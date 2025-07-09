@@ -7,6 +7,8 @@ import pytest
 from coda.chunking import Chunk, CodeChunker, TextChunker, create_chunker
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestChunk:
     """Test the Chunk dataclass."""
 
@@ -33,6 +35,8 @@ class TestChunk:
         assert chunk.chunk_type == "function"
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestTextChunker:
     """Test the base TextChunker class."""
 
@@ -108,6 +112,8 @@ class TestTextChunker:
         assert overlap <= len(lines)
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestCodeChunker:
     """Test the CodeChunker class."""
 
@@ -254,6 +260,8 @@ class MainClass:
             assert all(chunk.chunk_type == "text" for chunk in chunks)  # Falls back to text
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestCreateChunker:
     """Test the create_chunker factory function."""
 
@@ -309,6 +317,8 @@ class TestCreateChunker:
         assert isinstance(chunker, TextChunker)  # Falls back to text chunker
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
