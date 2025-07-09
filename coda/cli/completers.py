@@ -76,6 +76,10 @@ class SlashCommandCompleter(BaseCompleter):
     def get_completions(self, document: Document, complete_event: "CompleteEvent"):
         text = document.text_before_cursor
 
+        # Get theme for styling
+        from coda.themes import get_console_theme
+        theme = get_console_theme()
+
         # Handle empty input - show all commands
         if not text.strip():
             for cmd_name, cmd in sorted(self.commands.items()):
@@ -84,7 +88,7 @@ class SlashCommandCompleter(BaseCompleter):
                     start_position=0,
                     display=f"/{cmd_name}",
                     display_meta=cmd.help_text,
-                    style="fg:cyan bold",
+                    style=theme.info + " bold",
                 )
             return
 
@@ -93,68 +97,58 @@ class SlashCommandCompleter(BaseCompleter):
             return
 
         # Get the command part (before first space)
+        has_space = " " in text
         parts = text.split(maxsplit=1)
         cmd_part = parts[0][1:]  # Remove leading /
 
-        # If we have a space, we're completing subcommands
-        if len(parts) > 1 and cmd_part in self.commands:
-            cmd = self.commands[cmd_part]
-            if hasattr(cmd, "get_autocomplete_options"):
-                subcommand_part = parts[1]
-                options = cmd.get_autocomplete_options()
-
-                for option in sorted(options):
-                    matches, score = FuzzyMatcher.fuzzy_match(subcommand_part, option)
+        # If we have a space, check for subcommands
+        if has_space and cmd_part in self.commands:
+            # Import here to avoid circular imports
+            from .command_registry import CommandRegistry
+            
+            cmd_def = CommandRegistry.get_command(cmd_part)
+            if cmd_def and cmd_def.subcommands:
+                # We have subcommands to complete
+                subcommand_part = parts[1] if len(parts) > 1 else ""
+                
+                for sub in cmd_def.subcommands:
+                    matches, score = FuzzyMatcher.fuzzy_match(subcommand_part, sub.name)
                     if matches:
                         yield Completion(
-                            option,
+                            sub.name,
                             start_position=-len(subcommand_part),
-                            display=option,
-                            display_meta=f"Score: {score:.1%}" if score < 1.0 else None,
-                            style="fg:green" if score >= 0.9 else "fg:yellow",
+                            display=sub.name,
+                            display_meta=sub.description,
+                            style=theme.success if score >= 0.9 else theme.warning,
                         )
+            # Don't return anything if no subcommands - let DynamicValueCompleter handle it
             return
 
-        # Complete command names with fuzzy matching
-        completions = []
+        # Only complete command names if we don't have a space after the command
+        if not has_space:
+            # Complete command names with fuzzy matching (no aliases)
+            completions = []
 
-        # Check main commands
-        for cmd_name, cmd in self.commands.items():
-            matches, score = FuzzyMatcher.fuzzy_match(cmd_part, cmd_name)
-            if matches:
-                completions.append(
-                    (
-                        score,
-                        Completion(
-                            "/" + cmd_name,
-                            start_position=-len(text),
-                            display=f"/{cmd_name}",
-                            display_meta=cmd.help_text,
-                            style="fg:cyan bold" if score >= 0.9 else "fg:cyan",
-                        ),
-                    )
-                )
-
-            # Check aliases
-            for alias in cmd.aliases:
-                matches, score = FuzzyMatcher.fuzzy_match(cmd_part, alias)
+            # Check main commands only (no aliases)
+            for cmd_name, cmd in self.commands.items():
+                matches, score = FuzzyMatcher.fuzzy_match(cmd_part, cmd_name)
                 if matches:
                     completions.append(
                         (
-                            score * 0.95,  # Slightly lower priority for aliases
+                            score,
                             Completion(
-                                "/" + alias,
+                                "/" + cmd_name,
                                 start_position=-len(text),
-                                display=f"/{alias}",
-                                display_meta=f"→ /{cmd_name}",
-                                style="fg:blue italic",
+                                display=f"/{cmd_name}",
+                                display_meta=cmd.help_text,
+                                style=theme.info + " bold" if score >= 0.9 else theme.info,
                             ),
                         )
                     )
 
-        # Sort by score (highest first) and yield
-        for _score, completion in sorted(completions, key=lambda x: (-x[0], x[1].text)):
-            yield completion
+            # Sort by score (highest first) and yield
+            for _score, completion in sorted(completions, key=lambda x: (-x[0], x[1].text)):
+                yield completion
 
 
 class DynamicValueCompleter(BaseCompleter):
@@ -175,6 +169,8 @@ class DynamicValueCompleter(BaseCompleter):
 
         # Import here to avoid circular imports
         from .command_registry import CommandRegistry
+        from coda.themes import get_console_theme
+        theme = get_console_theme()
 
         # Parse command structure
         parts = text.split()
@@ -188,10 +184,17 @@ class DynamicValueCompleter(BaseCompleter):
             return
 
         # Check if we're completing a value for the main command
-        if main_cmd.completion_type and text.startswith(f"/{main_cmd_name} "):
-            value_part = text[len(f"/{main_cmd_name} ") :]
-            yield from self._complete_value(main_cmd.completion_type, value_part)
-            return
+        if main_cmd.completion_type:
+            if text.endswith(" ") and len(parts) == 1:
+                # Command with no value yet - just typed space
+                value_part = ""
+                yield from self._complete_value(main_cmd.completion_type, value_part, theme)
+                return
+            elif text.startswith(f"/{main_cmd_name} ") and len(parts) == 2:
+                # Already typing the value
+                value_part = parts[1]
+                yield from self._complete_value(main_cmd.completion_type, value_part, theme)
+                return
 
         # Check subcommands
         if main_cmd.subcommands and len(parts) >= 2:
@@ -204,28 +207,34 @@ class DynamicValueCompleter(BaseCompleter):
                     break
 
             if subcommand and subcommand.completion_type:
-                # We're completing the value after the subcommand
-                prefix = f"/{main_cmd_name} {subcommand_name} "
-                if text.startswith(prefix):
-                    value_part = text[len(prefix) :]
-                    yield from self._complete_value(subcommand.completion_type, value_part)
+                # Check if we're ready to complete the value
+                if len(parts) == 2 and text.endswith(" "):
+                    # Just typed space after subcommand
+                    value_part = ""
+                    yield from self._complete_value(subcommand.completion_type, value_part, theme)
+                elif len(parts) == 3:
+                    # Already typing the value
+                    value_part = parts[2]
+                    yield from self._complete_value(subcommand.completion_type, value_part, theme)
 
-    def _complete_value(self, completion_type: str, value_part: str):
+    def _complete_value(self, completion_type: str, value_part: str, theme):
         """Complete a value based on its type."""
         if completion_type == "model_name" and self.get_provider:
             provider = self.get_provider()
             if provider:
                 try:
                     models = provider.list_models()
-                    for model in sorted(models):
-                        matches, score = FuzzyMatcher.fuzzy_match(value_part, model)
+                    # Extract model IDs from Model objects
+                    model_ids = [m.id if hasattr(m, 'id') else str(m) for m in models]
+                    for model_id in sorted(model_ids):
+                        matches, score = FuzzyMatcher.fuzzy_match(value_part, model_id)
                         if matches:
                             yield Completion(
-                                model,
+                                model_id,
                                 start_position=-len(value_part),
-                                display=model,
-                                display_meta="Model",
-                                style="fg:magenta bold" if score >= 0.9 else "fg:magenta",
+                                display=model_id,
+                                display_meta="AI Model",
+                                style=theme.assistant_message + " bold" if score >= 0.9 else theme.assistant_message,
                             )
                 except Exception:
                     pass
@@ -239,14 +248,14 @@ class DynamicValueCompleter(BaseCompleter):
                     if matches:
                         msgs = session.get("message_count", 0)
                         date = session.get("updated_at", "Unknown")
-                        meta = f"{msgs} messages, {date}"
+                        meta = f"{msgs} msgs, {date}"
 
                         yield Completion(
                             name,
                             start_position=-len(value_part),
                             display=name,
                             display_meta=meta,
-                            style="fg:yellow bold" if score >= 0.9 else "fg:yellow",
+                            style=theme.warning + " bold" if score >= 0.9 else theme.warning,
                         )
             except Exception:
                 pass
@@ -261,7 +270,7 @@ class DynamicValueCompleter(BaseCompleter):
                         start_position=-len(value_part),
                         display=theme_name,
                         display_meta="Theme",
-                        style="fg:cyan bold" if score >= 0.9 else "fg:cyan",
+                        style=theme.user_message + " bold" if score >= 0.9 else theme.user_message,
                     )
 
 
@@ -291,14 +300,19 @@ class EnhancedCompleter(BaseCompleter):
 
         # 1. Slash commands always take priority
         if text.startswith("/"):
-            # First try slash command completion
-            slash_completions = list(self.slash_completer.get_completions(document, complete_event))
-            if slash_completions:
-                yield from slash_completions
-                return
-
-            # Then try dynamic value completion
-            yield from self.dynamic_completer.get_completions(document, complete_event)
+            # Try both slash command and dynamic completion
+            found_any = False
+            
+            # First try slash command completion (for command names and subcommands)
+            for completion in self.slash_completer.get_completions(document, complete_event):
+                found_any = True
+                yield completion
+            
+            # Also try dynamic value completion (for model names, session names, etc.)
+            for completion in self.dynamic_completer.get_completions(document, complete_event):
+                found_any = True
+                yield completion
+                
             return
 
         # 2. Empty input - show available slash commands

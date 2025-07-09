@@ -101,9 +101,10 @@ class TestSlashCommandCompleter:
         doc = Document("/h")
         completions = list(completer.get_completions(doc, MockCompleteEvent()))
 
-        # Should find both help and its alias
+        # Should find help command (aliases are not shown in completions)
         assert any(c.text == "/help" for c in completions)
-        assert any(c.text == "/h" for c in completions)
+        # Aliases are not shown as separate completions anymore
+        assert not any(c.text == "/h" for c in completions)
 
     def test_fuzzy_completion(self, completer):
         """Test fuzzy command completion."""
@@ -128,7 +129,14 @@ class TestDynamicValueCompleter:
         """Mock provider for testing."""
 
         def list_models(self):
-            return ["gpt-4", "gpt-3.5-turbo", "claude-3-opus"]
+            from unittest.mock import Mock
+            # Return mock Model objects with id attributes
+            models = []
+            for model_id in ["gpt-4", "gpt-3.5-turbo", "claude-3-opus"]:
+                model = Mock()
+                model.id = model_id
+                models.append(model)
+            return models
 
     def test_model_completion(self):
         """Test model name completion."""
@@ -219,7 +227,7 @@ class TestSessionCompletion:
 
             assert len(completions) == 1
             assert completions[0].text == "project-review"
-            assert "10 messages" in str(completions[0].display_meta)
+            assert "10 msgs" in str(completions[0].display_meta)
 
     def test_session_delete_completion(self):
         """Test session name completion for delete command."""
