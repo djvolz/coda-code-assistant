@@ -672,21 +672,139 @@ None currently - all bugs have been resolved!
 
 ## Phase 11: Observability & Performance
 
-### 11.1 Monitoring & Telemetry
+### 11.1 Real OpenTelemetry Integration 🚧 PENDING
 
-- [ ] **OpenTelemetry Integration**
-  - [ ] Metrics for daily active users and session statistics
-  - [ ] Performance monitoring (response times, token usage)
-  - [ ] Error tracking and alerting
-  - [ ] Provider health monitoring
+**Current State**: OpenTelemetry dependencies are included but not used. The current implementation uses a custom file-based solution.
+
+#### 11.1.1 OpenTelemetry SDK Integration
+
+- [ ] **Replace Custom Tracing with OpenTelemetry**
+  - [ ] Replace custom `Span` class with `opentelemetry.trace.Span`
+  - [ ] Replace `TracingManager` with `opentelemetry.trace.Tracer`
+  - [ ] Use OpenTelemetry context propagation
+  - [ ] Implement proper span attributes following semantic conventions
+  - [ ] Add span events and links support
+  - [ ] Implement baggage for cross-cutting concerns
+
+- [ ] **Replace Custom Metrics with OpenTelemetry**
+  - [ ] Replace `MetricsCollector` with OpenTelemetry metrics API
+  - [ ] Use proper metric instruments (Counter, Histogram, Gauge)
+  - [ ] Follow OpenTelemetry semantic conventions for metric names
+  - [ ] Implement metric views and aggregations
+  - [ ] Add exemplar support for metrics-to-traces correlation
+
+- [ ] **Implement OpenTelemetry Logging**
+  - [ ] Integrate Python logging with OpenTelemetry
+  - [ ] Add trace context to log records
+  - [ ] Implement log correlation with traces
+  - [ ] Support structured logging with attributes
+
+#### 11.1.2 OTLP Exporter Configuration
+
+- [ ] **OTLP Export Support**
+  - [ ] Configure OTLP/gRPC exporter for traces
+  - [ ] Configure OTLP/HTTP exporter option
+  - [ ] Add authentication support (headers, certificates)
+  - [ ] Implement retry and backoff policies
+  - [ ] Add batch processing configuration
+  - [ ] Support multiple export endpoints
+
+- [ ] **Configuration Management**
+  - [ ] Add OTLP endpoint configuration to settings
+  - [ ] Environment variable support (OTEL_EXPORTER_OTLP_ENDPOINT, etc.)
+  - [ ] Service name and resource attributes configuration
+  - [ ] Sampling configuration (TraceIdRatioBased, ParentBased)
+  - [ ] Export timeout and batch size settings
+
+#### 11.1.3 Backend Integrations
+
+- [ ] **Popular Observability Platforms**
+  - [ ] Jaeger integration guide and testing
+  - [ ] Zipkin compatibility testing
+  - [ ] Grafana Tempo configuration
+  - [ ] Datadog APM integration
+  - [ ] New Relic integration
+  - [ ] AWS X-Ray support via ADOT
+  - [ ] Google Cloud Trace integration
+  - [ ] Azure Monitor integration
+
+- [ ] **Local Development Support**
+  - [ ] Docker Compose setup with Jaeger
+  - [ ] Local Grafana stack (Tempo + Prometheus + Loki)
+  - [ ] OpenTelemetry Collector configuration
+  - [ ] Development environment documentation
+
+#### 11.1.4 Instrumentation Libraries
+
+- [ ] **Auto-Instrumentation**
+  - [ ] SQLAlchemy instrumentation for database queries
+  - [ ] HTTPX instrumentation for API calls
+  - [ ] aiohttp instrumentation for async HTTP
+  - [ ] Rich console instrumentation for CLI operations
+  - [ ] Custom instrumentation for AI provider calls
+
+- [ ] **Manual Instrumentation**
+  - [ ] Instrument all provider methods with proper spans
+  - [ ] Add metrics for token usage and costs
+  - [ ] Trace tool execution with detailed attributes
+  - [ ] Session operations tracing
+  - [ ] Add custom business metrics
+
+#### 11.1.5 Observability Standards
+
+- [ ] **Semantic Conventions**
+  - [ ] Follow OpenTelemetry semantic conventions for:
+    - [ ] HTTP requests (http.method, http.status_code, etc.)
+    - [ ] Database operations (db.system, db.operation, etc.)
+    - [ ] AI/ML operations (create custom conventions)
+    - [ ] Tool executions (custom conventions)
+  - [ ] Document custom attributes and conventions
+
+- [ ] **Resource Detection**
+  - [ ] Automatic service name detection
+  - [ ] Version information in resource attributes
+  - [ ] Deployment environment detection
+  - [ ] Container/K8s resource attributes
+  - [ ] Cloud provider resource detection
+
+#### 11.1.6 Migration Strategy
+
+- [ ] **Backward Compatibility**
+  - [ ] Keep file-based export as fallback option
+  - [ ] Configuration flag to switch between implementations
+  - [ ] Gradual migration path for existing users
+  - [ ] Data migration tools for historical data
+
+- [ ] **Feature Parity**
+  - [ ] Ensure all current observability features work with OpenTelemetry
+  - [ ] Maintain CLI commands functionality
+  - [ ] Update tests for OpenTelemetry implementation
+  - [ ] Performance comparison and optimization
+
+### 11.2 Enhanced Observability Features
+
+- [ ] **Distributed Tracing**
+  - [ ] Trace context propagation between services
+  - [ ] Parent-child span relationships
+  - [ ] Cross-service dependency mapping
+  - [ ] Trace sampling strategies
+  - [ ] Long-running operation tracking
+
+- [ ] **Advanced Metrics**
+  - [ ] Percentile calculations (p50, p95, p99)
+  - [ ] Rate and throughput calculations
+  - [ ] Custom metric aggregations
+  - [ ] Service Level Indicators (SLIs)
+  - [ ] Cost tracking metrics
 
 - [ ] **Debugging & Profiling**
-  - [ ] Pyroscope integration for performance profiling
-  - [ ] Debug mode enhancements
-  - [ ] Memory usage tracking
-  - [ ] Bottleneck identification
+  - [ ] Continuous profiling integration
+  - [ ] Memory profiling with traces
+  - [ ] CPU profiling correlation
+  - [ ] Goroutine/thread analysis
+  - [ ] Heap dump integration
 
-### 11.2 Observability Testing ✅ COMPLETED (July 8, 2025)
+### 11.3 Observability Testing ✅ COMPLETED (July 8, 2025)
 
 - [x] **Comprehensive Integration Testing**
   - [x] Test every observability command option with mock provider
