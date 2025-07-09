@@ -1,0 +1,413 @@
+{
+  "coda/__version__.py": {
+    "unit_tests": ["tests/test_version.py"],
+    "integration_tests": [],
+    "markers": ["unit", "fast"],
+    "dependencies": []
+  },
+  "coda/agents/agent.py": {
+    "unit_tests": ["tests/test_agent.py"],
+    "integration_tests": [
+      "tests/integration/test_agent_models_integration.py",
+      "tests/agents/test_agent_tool_integration.py"
+    ],
+    "markers": ["agent", "core"],
+    "dependencies": ["coda/providers/", "coda/tools/", "coda/agents/types.py"]
+  },
+  "coda/agents/builtin_tools.py": {
+    "unit_tests": ["tests/agents/test_builtin_tools.py"],
+    "integration_tests": [],
+    "markers": ["agent", "tools"],
+    "dependencies": ["coda/tools/"]
+  },
+  "coda/agents/decorators.py": {
+    "unit_tests": ["tests/agents/test_decorators.py"],
+    "integration_tests": [],
+    "markers": ["agent", "unit", "fast"],
+    "dependencies": []
+  },
+  "coda/agents/function_tool.py": {
+    "unit_tests": ["tests/agents/test_function_tool.py"],
+    "integration_tests": [],
+    "markers": ["agent", "tools"],
+    "dependencies": ["coda/agents/types.py"]
+  },
+  "coda/agents/intelligence_tools.py": {
+    "unit_tests": [
+      "tests/agents/test_intelligence_tools.py",
+      "tests/tools/test_intelligence_tools.py"
+    ],
+    "integration_tests": [],
+    "markers": ["agent", "intelligence", "tools"],
+    "dependencies": ["coda/intelligence/"]
+  },
+  "coda/agents/tool_adapter.py": {
+    "unit_tests": ["tests/agents/test_tool_adapter.py"],
+    "integration_tests": [],
+    "markers": ["agent", "tools"],
+    "dependencies": ["coda/tools/base.py"]
+  },
+  "coda/chunking.py": {
+    "unit_tests": ["tests/test_chunking.py"],
+    "integration_tests": [],
+    "markers": ["unit", "fast"],
+    "dependencies": []
+  },
+  "coda/cli/cli.py": {
+    "unit_tests": ["tests/cli/test_basic_commands.py"],
+    "integration_tests": ["tests/functional/test_cli_workflows.py"],
+    "markers": ["cli", "core"],
+    "dependencies": ["coda/providers/", "coda/session/"]
+  },
+  "coda/cli/interactive_cli.py": {
+    "unit_tests": [
+      "tests/cli/test_interactive_cli.py",
+      "tests/cli/test_interactive_cli_input.py"
+    ],
+    "integration_tests": ["tests/cli/test_cli_interrupt.py"],
+    "markers": ["cli", "interactive"],
+    "dependencies": ["coda/cli/completers.py", "coda/session/"]
+  },
+  "coda/cli/completers.py": {
+    "unit_tests": [
+      "tests/cli/test_completers.py",
+      "tests/cli/test_cli_completion.py"
+    ],
+    "integration_tests": ["tests/cli/test_interactive_completion.py"],
+    "markers": ["cli", "interactive"],
+    "dependencies": []
+  },
+  "coda/cli/model_selector.py": {
+    "unit_tests": ["tests/cli/test_model_selector.py"],
+    "integration_tests": [],
+    "markers": ["cli", "ui"],
+    "dependencies": ["coda/providers/"]
+  },
+  "coda/cli/search_display.py": {
+    "unit_tests": ["tests/cli/test_search_display.py"],
+    "integration_tests": [],
+    "markers": ["cli", "ui"],
+    "dependencies": []
+  },
+  "coda/cli/shared/commands.py": {
+    "unit_tests": ["tests/cli/test_shared_commands.py"],
+    "integration_tests": [],
+    "markers": ["cli", "commands"],
+    "dependencies": []
+  },
+  "coda/cli/shared/help.py": {
+    "unit_tests": ["tests/cli/test_shared_help.py"],
+    "integration_tests": [],
+    "markers": ["cli", "help"],
+    "dependencies": []
+  },
+  "coda/cli/shared/modes.py": {
+    "unit_tests": ["tests/cli/test_shared_modes.py"],
+    "integration_tests": ["tests/cli/test_mode_integration.py"],
+    "markers": ["cli", "modes"],
+    "dependencies": []
+  },
+  "coda/cli/agent_chat.py": {
+    "unit_tests": [],
+    "integration_tests": ["tests/cli/test_agent_chat_workflow.py"],
+    "markers": ["cli", "agent", "chat"],
+    "dependencies": ["coda/agents/", "coda/session/"]
+  },
+  "coda/cli/tool_chat.py": {
+    "unit_tests": [],
+    "integration_tests": ["tests/cli/test_tool_chat_workflow.py"],
+    "markers": ["cli", "tools", "chat"],
+    "dependencies": ["coda/tools/", "coda/session/"]
+  },
+  "coda/cli/web_command.py": {
+    "unit_tests": ["tests/web/unit/test_web_command.py"],
+    "integration_tests": [],
+    "markers": ["cli", "web"],
+    "dependencies": ["coda/web/"]
+  },
+  "coda/configuration.py": {
+    "unit_tests": [
+      "tests/unit/test_configuration.py",
+      "tests/unit/test_config.py"
+    ],
+    "integration_tests": [],
+    "markers": ["config", "unit", "fast"],
+    "dependencies": []
+  },
+  "coda/embeddings/factory.py": {
+    "unit_tests": ["tests/embeddings/test_factory.py"],
+    "integration_tests": [],
+    "markers": ["embeddings", "factory"],
+    "dependencies": ["coda/embeddings/base.py"]
+  },
+  "coda/embeddings/mock.py": {
+    "unit_tests": ["tests/embeddings/test_mock.py"],
+    "integration_tests": [],
+    "markers": ["embeddings", "mock", "fast"],
+    "dependencies": ["coda/embeddings/base.py"]
+  },
+  "coda/embeddings/oci.py": {
+    "unit_tests": ["tests/embeddings/test_oci_embeddings.py"],
+    "integration_tests": [],
+    "markers": ["embeddings", "oci", "provider"],
+    "dependencies": ["coda/embeddings/base.py"]
+  },
+  "coda/embeddings/ollama.py": {
+    "unit_tests": ["tests/embeddings/test_ollama.py"],
+    "integration_tests": [],
+    "markers": ["embeddings", "ollama", "provider"],
+    "dependencies": ["coda/embeddings/base.py"]
+  },
+  "coda/embeddings/sentence_transformers.py": {
+    "unit_tests": ["tests/embeddings/test_sentence_transformers.py"],
+    "integration_tests": [],
+    "markers": ["embeddings", "sentence-transformers"],
+    "dependencies": ["coda/embeddings/base.py"]
+  },
+  "coda/intelligence/repo_map.py": {
+    "unit_tests": ["tests/intelligence/test_repo_map.py"],
+    "integration_tests": ["tests/intelligence/test_repo_map_integration.py"],
+    "markers": ["intelligence", "repo-map"],
+    "dependencies": ["coda/intelligence/tree_sitter_analyzer.py"]
+  },
+  "coda/intelligence/dependency_graph.py": {
+    "unit_tests": ["tests/intelligence/test_dependency_graph.py"],
+    "integration_tests": [],
+    "markers": ["intelligence", "dependencies"],
+    "dependencies": ["coda/intelligence/tree_sitter_analyzer.py"]
+  },
+  "coda/intelligence/tree_sitter_analyzer.py": {
+    "unit_tests": ["tests/intelligence/test_tree_sitter_analyzer.py"],
+    "integration_tests": [],
+    "markers": ["intelligence", "tree-sitter"],
+    "dependencies": []
+  },
+  "coda/intelligence/cli.py": {
+    "unit_tests": ["tests/intelligence/test_cli_commands.py"],
+    "integration_tests": ["tests/intelligence/test_interactive_integration.py"],
+    "markers": ["intelligence", "cli"],
+    "dependencies": ["coda/intelligence/repo_map.py"]
+  },
+  "coda/observability/base.py": {
+    "unit_tests": ["tests/unit/observability/test_base.py"],
+    "integration_tests": [],
+    "markers": ["observability", "unit"],
+    "dependencies": []
+  },
+  "coda/observability/collections.py": {
+    "unit_tests": ["tests/unit/observability/test_collections.py"],
+    "integration_tests": [],
+    "markers": ["observability", "collections"],
+    "dependencies": ["coda/observability/base.py"]
+  },
+  "coda/observability/commands.py": {
+    "unit_tests": ["tests/unit/cli/test_observability_commands.py"],
+    "integration_tests": ["tests/integration/observability/test_cli_integration.py"],
+    "markers": ["observability", "cli", "commands"],
+    "dependencies": ["coda/observability/manager.py"]
+  },
+  "coda/observability/error_tracker.py": {
+    "unit_tests": ["tests/unit/observability/test_error_tracker.py"],
+    "integration_tests": ["tests/integration/observability/test_observability_error_scenarios.py"],
+    "markers": ["observability", "errors"],
+    "dependencies": ["coda/observability/base.py"]
+  },
+  "coda/observability/health.py": {
+    "unit_tests": ["tests/unit/observability/test_health.py"],
+    "integration_tests": [],
+    "markers": ["observability", "health"],
+    "dependencies": ["coda/observability/base.py"]
+  },
+  "coda/observability/manager.py": {
+    "unit_tests": ["tests/unit/observability/test_manager.py"],
+    "integration_tests": ["tests/integration/observability/test_full_stack.py"],
+    "markers": ["observability", "manager", "core"],
+    "dependencies": ["coda/observability/storage.py", "coda/observability/metrics.py"]
+  },
+  "coda/observability/metrics.py": {
+    "unit_tests": ["tests/unit/observability/test_metrics.py"],
+    "integration_tests": [],
+    "markers": ["observability", "metrics"],
+    "dependencies": ["coda/observability/base.py"]
+  },
+  "coda/observability/storage.py": {
+    "unit_tests": ["tests/unit/observability/test_storage.py"],
+    "integration_tests": ["tests/integration/observability/test_retention_policies.py"],
+    "markers": ["observability", "storage"],
+    "dependencies": ["coda/observability/base.py"]
+  },
+  "coda/observability/tracing.py": {
+    "unit_tests": ["tests/unit/observability/test_tracing.py"],
+    "integration_tests": [],
+    "markers": ["observability", "tracing"],
+    "dependencies": ["coda/observability/base.py"]
+  },
+  "coda/providers/base.py": {
+    "unit_tests": ["tests/unit/test_providers.py"],
+    "integration_tests": [],
+    "markers": ["providers", "base", "unit"],
+    "dependencies": []
+  },
+  "coda/providers/mock_provider.py": {
+    "unit_tests": [
+      "tests/providers/test_mock_provider_commands.py",
+      "tests/providers/test_mock_provider_conversations.py",
+      "tests/providers/test_mock_provider_edge_cases.py",
+      "tests/providers/test_mock_provider_modes.py"
+    ],
+    "integration_tests": ["tests/integration/test_autosave_mock_provider.py"],
+    "markers": ["providers", "mock", "fast"],
+    "dependencies": ["coda/providers/base.py"]
+  },
+  "coda/providers/oci_genai.py": {
+    "unit_tests": [
+      "tests/test_oci_genai_basic.py",
+      "tests/unit/test_oci_parsing.py",
+      "tests/unit/test_oci_response_parsing.py"
+    ],
+    "integration_tests": [
+      "tests/integration/test_oci_genai_integration.py",
+      "tests/functional/test_oci_genai_functional.py"
+    ],
+    "markers": ["providers", "oci", "provider"],
+    "dependencies": ["coda/providers/base.py"]
+  },
+  "coda/providers/ollama_provider.py": {
+    "unit_tests": [],
+    "integration_tests": [
+      "tests/integration/test_ollama_integration.py",
+      "tests/integration/observability/test_ollama_provider_commands.py"
+    ],
+    "markers": ["providers", "ollama", "provider"],
+    "dependencies": ["coda/providers/base.py"]
+  },
+  "coda/providers/registry.py": {
+    "unit_tests": ["tests/unit/test_provider_registry.py"],
+    "integration_tests": [],
+    "markers": ["providers", "registry"],
+    "dependencies": ["coda/providers/base.py"]
+  },
+  "coda/semantic_search.py": {
+    "unit_tests": ["tests/test_semantic_search.py"],
+    "integration_tests": [
+      "tests/integration/test_semantic_search_integration.py",
+      "tests/integration/test_semantic_search_cli.py"
+    ],
+    "markers": ["search", "embeddings"],
+    "dependencies": ["coda/embeddings/", "coda/vector_stores/"]
+  },
+  "coda/session/manager.py": {
+    "unit_tests": ["tests/session/test_manager.py"],
+    "integration_tests": [
+      "tests/session/test_end_to_end.py",
+      "tests/integration/test_session_integration.py"
+    ],
+    "markers": ["session", "manager", "core"],
+    "dependencies": ["coda/session/database.py", "coda/session/context.py"]
+  },
+  "coda/session/database.py": {
+    "unit_tests": ["tests/session/test_database.py"],
+    "integration_tests": [],
+    "markers": ["session", "database"],
+    "dependencies": ["coda/session/models.py"]
+  },
+  "coda/session/context.py": {
+    "unit_tests": ["tests/session/test_context.py"],
+    "integration_tests": [],
+    "markers": ["session", "context"],
+    "dependencies": ["coda/session/models.py"]
+  },
+  "coda/session/commands.py": {
+    "unit_tests": ["tests/session/test_commands.py"],
+    "integration_tests": ["tests/session/test_interactive_integration.py"],
+    "markers": ["session", "commands", "cli"],
+    "dependencies": ["coda/session/manager.py"]
+  },
+  "coda/session/tool_storage.py": {
+    "unit_tests": ["tests/session/test_tool_storage.py"],
+    "integration_tests": ["tests/integration/test_tool_storage_simple.py"],
+    "markers": ["session", "tools", "storage"],
+    "dependencies": ["coda/session/database.py"]
+  },
+  "coda/themes.py": {
+    "unit_tests": ["tests/test_theme_colors.py"],
+    "integration_tests": ["tests/cli/test_theme_integration.py"],
+    "markers": ["themes", "ui", "fast"],
+    "dependencies": []
+  },
+  "coda/tools/base.py": {
+    "unit_tests": ["tests/test_tools.py"],
+    "integration_tests": [],
+    "markers": ["tools", "base"],
+    "dependencies": []
+  },
+  "coda/tools/mcp_server.py": {
+    "unit_tests": ["tests/tools/test_mcp_server.py"],
+    "integration_tests": [],
+    "markers": ["tools", "mcp"],
+    "dependencies": ["coda/tools/base.py"]
+  },
+  "coda/tools/session_storage.py": {
+    "unit_tests": ["tests/tools/test_session_storage.py"],
+    "integration_tests": [],
+    "markers": ["tools", "session", "storage"],
+    "dependencies": ["coda/session/tool_storage.py"]
+  },
+  "coda/vector_stores/faiss_store.py": {
+    "unit_tests": ["tests/vector_stores/test_faiss_store.py"],
+    "integration_tests": [],
+    "markers": ["vector-stores", "faiss"],
+    "dependencies": ["coda/vector_stores/base.py"]
+  },
+  "coda/web/app.py": {
+    "unit_tests": ["tests/web/unit/test_app.py"],
+    "integration_tests": [
+      "tests/web/test_backend_integration.py",
+      "tests/web/integration/test_chat_integration.py"
+    ],
+    "markers": ["web", "streamlit", "app"],
+    "dependencies": ["coda/web/pages/", "coda/web/components/"]
+  },
+  "coda/web/components/chat_widget.py": {
+    "unit_tests": ["tests/web/unit/components/test_chat_widget.py"],
+    "integration_tests": [],
+    "markers": ["web", "components", "chat"],
+    "dependencies": []
+  },
+  "coda/web/components/file_manager.py": {
+    "unit_tests": ["tests/web/unit/components/test_file_manager.py"],
+    "integration_tests": [],
+    "markers": ["web", "components", "files"],
+    "dependencies": []
+  },
+  "coda/web/components/model_selector.py": {
+    "unit_tests": ["tests/web/unit/components/test_model_selector.py"],
+    "integration_tests": [],
+    "markers": ["web", "components", "models"],
+    "dependencies": ["coda/providers/"]
+  },
+  "coda/web/pages/chat.py": {
+    "unit_tests": ["tests/web/unit/pages/test_chat_page.py"],
+    "integration_tests": [],
+    "markers": ["web", "pages", "chat"],
+    "dependencies": ["coda/web/components/chat_widget.py"]
+  },
+  "coda/web/pages/dashboard.py": {
+    "unit_tests": ["tests/web/unit/pages/test_dashboard_page.py"],
+    "integration_tests": [],
+    "markers": ["web", "pages", "dashboard"],
+    "dependencies": []
+  },
+  "coda/web/pages/settings.py": {
+    "unit_tests": ["tests/web/unit/pages/test_settings_page.py"],
+    "integration_tests": [],
+    "markers": ["web", "pages", "settings"],
+    "dependencies": []
+  },
+  "coda/web/utils/state.py": {
+    "unit_tests": ["tests/web/unit/utils/test_state.py"],
+    "integration_tests": [],
+    "markers": ["web", "utils", "state"],
+    "dependencies": []
+  }
+}
