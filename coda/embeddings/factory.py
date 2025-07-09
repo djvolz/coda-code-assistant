@@ -37,10 +37,7 @@ class EmbeddingProviderFactory:
 
     @classmethod
     def create_provider(
-        cls,
-        provider_type: str,
-        model_id: str | None = None,
-        **kwargs
+        cls, provider_type: str, model_id: str | None = None, **kwargs
     ) -> BaseEmbeddingProvider:
         """Create an embedding provider.
 
@@ -64,8 +61,7 @@ class EmbeddingProviderFactory:
         if not provider_class:
             available = list(cls.PROVIDERS.keys()) + list(cls.ALIASES.keys())
             raise ValueError(
-                f"Unknown provider type: {provider_type}. "
-                f"Available: {', '.join(available)}"
+                f"Unknown provider type: {provider_type}. " f"Available: {', '.join(available)}"
             )
 
         # Set default model IDs if not provided
@@ -84,11 +80,12 @@ class EmbeddingProviderFactory:
             if provider_type == "oci":
                 # OCI requires special initialization
                 from .oci import create_standalone_oci_provider
+
                 return create_standalone_oci_provider(
                     model_id=model_id,
                     compartment_id=kwargs.get("compartment_id"),
                     config_file=kwargs.get("config_file"),
-                    profile=kwargs.get("profile")
+                    profile=kwargs.get("profile"),
                 )
             else:
                 # Standard initialization
@@ -135,19 +132,15 @@ class EmbeddingProviderFactory:
                 "example_models": [
                     "cohere.embed-multilingual-v3.0",
                     "cohere.embed-english-v3.0",
-                    "multilingual-e5-base"
-                ]
+                    "multilingual-e5-base",
+                ],
             },
             "mock": {
                 "description": "Mock provider for testing",
                 "requires_auth": False,
                 "requires_internet": False,
                 "default_model": "mock-768d",
-                "example_models": [
-                    "mock-384d",
-                    "mock-768d",
-                    "mock-1024d"
-                ]
+                "example_models": ["mock-384d", "mock-768d", "mock-1024d"],
             },
             "sentence-transformers": {
                 "description": "Local embeddings using sentence-transformers library",
@@ -157,8 +150,8 @@ class EmbeddingProviderFactory:
                 "example_models": [
                     "all-MiniLM-L6-v2",
                     "all-mpnet-base-v2",
-                    "paraphrase-multilingual-mpnet-base-v2"
-                ]
+                    "paraphrase-multilingual-mpnet-base-v2",
+                ],
             },
             "ollama": {
                 "description": "Local embeddings using Ollama server",
@@ -169,24 +162,25 @@ class EmbeddingProviderFactory:
                     "mxbai-embed-large",
                     "nomic-embed-text",
                     "all-minilm",
-                    "bge-base"
-                ]
-            }
+                    "bge-base",
+                ],
+            },
         }
 
-        return info.get(provider_type, {
-            "description": "Unknown provider",
-            "requires_auth": "unknown",
-            "requires_internet": "unknown",
-            "default_model": "unknown",
-            "example_models": []
-        })
+        return info.get(
+            provider_type,
+            {
+                "description": "Unknown provider",
+                "requires_auth": "unknown",
+                "requires_internet": "unknown",
+                "default_model": "unknown",
+                "example_models": [],
+            },
+        )
 
 
 def create_embedding_provider(
-    provider_type: str = "mock",
-    model_id: str | None = None,
-    **kwargs
+    provider_type: str = "mock", model_id: str | None = None, **kwargs
 ) -> BaseEmbeddingProvider:
     """Convenience function to create an embedding provider.
 
@@ -199,7 +193,5 @@ def create_embedding_provider(
         Initialized embedding provider
     """
     return EmbeddingProviderFactory.create_provider(
-        provider_type=provider_type,
-        model_id=model_id,
-        **kwargs
+        provider_type=provider_type, model_id=model_id, **kwargs
     )

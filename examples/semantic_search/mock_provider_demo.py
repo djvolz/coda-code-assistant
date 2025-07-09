@@ -27,10 +27,7 @@ async def main():
     try:
         # Use mock embedding provider
         print("Initializing mock embedding provider...")
-        embedding_provider = MockEmbeddingProvider(
-            dimension=768,
-            delay=0.1  # Simulate API latency
-        )
+        embedding_provider = MockEmbeddingProvider(dimension=768, delay=0.1)  # Simulate API latency
         manager = SemanticSearchManager(embedding_provider=embedding_provider)
         print("✓ Mock manager initialized")
 
@@ -42,20 +39,18 @@ async def main():
             "Rust provides memory safety without garbage collection overhead",
             "Go is designed for efficient concurrent programming",
             "TypeScript adds static typing to JavaScript for better tooling",
-
             # Data science
             "Machine learning models learn patterns from training data",
             "Neural networks consist of interconnected layers of neurons",
             "Data preprocessing is crucial for model performance",
             "Feature engineering transforms raw data into useful features",
             "Cross-validation helps prevent overfitting in ML models",
-
             # DevOps
             "Docker containers package applications with dependencies",
             "Kubernetes orchestrates containerized applications at scale",
             "CI/CD pipelines automate software delivery processes",
             "Infrastructure as Code manages resources declaratively",
-            "Monitoring and logging are essential for production systems"
+            "Monitoring and logging are essential for production systems",
         ]
 
         print(f"\nIndexing {len(documents)} documents...")
@@ -68,11 +63,9 @@ async def main():
             ("web development", "Should find JavaScript/TypeScript docs"),
             ("memory management", "Should find Rust/GC related docs"),
             ("concurrent programming", "Should find Go related docs"),
-
             # Data science queries
             ("neural networks training", "Should find ML/NN docs"),
             ("prevent overfitting", "Should find cross-validation doc"),
-
             # DevOps queries
             ("container orchestration", "Should find Kubernetes doc"),
             ("automated deployment", "Should find CI/CD doc"),
@@ -113,6 +106,7 @@ async def main():
     except Exception as e:
         print(f"\n❌ Error: {str(e)}")
         import traceback
+
         traceback.print_exc()
 
 

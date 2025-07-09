@@ -38,9 +38,7 @@ class TestObservabilityFullStack:
                 },
                 "health": {"enabled": True, "check_interval": 30},
                 "error_tracking": {"enabled": True, "max_errors": 1000, "alert_threshold": 5},
-                "profiling": {
-                    "enabled": False  # Disabled for integration tests
-                },
+                "profiling": {"enabled": False},  # Disabled for integration tests
                 "scheduler": {"max_workers": 2},
             }
         }

@@ -54,5 +54,7 @@ MODEL_INFO: dict[str, dict[str, Any]] = {
 
 # Default configuration
 DEFAULT_MODEL = "cohere.embed-english-v3.0"
-DEFAULT_COMPARTMENT_ID = "ocid1.compartment.oc1..aaaaaaaauzqq5ybqlvshhpnhvhkmxrtvfx2ece5dnmn3iq5bgfsi7zb3n2q"
+DEFAULT_COMPARTMENT_ID = (
+    "ocid1.compartment.oc1..aaaaaaaauzqq5ybqlvshhpnhvhkmxrtvfx2ece5dnmn3iq5bgfsi7zb3n2q"
+)
 DEFAULT_SERVICE_ENDPOINT = "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"

@@ -31,7 +31,9 @@ class TestSemanticSearchCLI:
         mock_manager = Mock(spec=SemanticSearchManager)
         mock_manager.search = AsyncMock(return_value=[])
 
-        with patch('coda.semantic_search_coda.create_semantic_search_manager', return_value=mock_manager):
+        with patch(
+            "coda.semantic_search_coda.create_semantic_search_manager", return_value=mock_manager
+        ):
             # Run semantic search command
             await command_registry.run_command("search", ["semantic", "test", "query"])
 
@@ -49,7 +51,9 @@ class TestSemanticSearchCLI:
         mock_manager = Mock(spec=SemanticSearchManager)
         mock_manager.search = AsyncMock(return_value=[])
 
-        with patch('coda.semantic_search_coda.create_semantic_search_manager', return_value=mock_manager):
+        with patch(
+            "coda.semantic_search_coda.create_semantic_search_manager", return_value=mock_manager
+        ):
             # Run code search command
             await command_registry.run_command("search", ["code", "async", "function"])
 
@@ -63,11 +67,13 @@ class TestSemanticSearchCLI:
         mock_manager = Mock(spec=SemanticSearchManager)
         mock_manager.index_session_messages = AsyncMock(return_value=["id1", "id2"])
 
-        with patch('coda.semantic_search_coda.create_semantic_search_manager', return_value=mock_manager):
-            with patch('coda.session.get_session_messages', return_value=[
-                {"content": "message 1"},
-                {"content": "message 2"}
-            ]):
+        with patch(
+            "coda.semantic_search_coda.create_semantic_search_manager", return_value=mock_manager
+        ):
+            with patch(
+                "coda.session.get_session_messages",
+                return_value=[{"content": "message 1"}, {"content": "message 2"}],
+            ):
                 # Run index command
                 await command_registry.run_command("search", ["index", "session"])
 
@@ -83,14 +89,18 @@ class TestSemanticSearchCLI:
         """Test status command execution."""
         # Mock the semantic search manager
         mock_manager = Mock(spec=SemanticSearchManager)
-        mock_manager.get_stats = AsyncMock(return_value={
-            "vector_count": 100,
-            "embedding_model": "mock-768d",
-            "embedding_dimension": 768,
-            "vector_store_type": "faiss"
-        })
+        mock_manager.get_stats = AsyncMock(
+            return_value={
+                "vector_count": 100,
+                "embedding_model": "mock-768d",
+                "embedding_dimension": 768,
+                "vector_store_type": "faiss",
+            }
+        )
 
-        with patch('coda.semantic_search_coda.create_semantic_search_manager', return_value=mock_manager):
+        with patch(
+            "coda.semantic_search_coda.create_semantic_search_manager", return_value=mock_manager
+        ):
             # Run status command
             await command_registry.run_command("search", ["status"])
 
@@ -106,8 +116,10 @@ class TestSemanticSearchCLI:
     async def test_search_command_error_handling(self, command_registry, mock_console):
         """Test error handling in search commands."""
         # Mock manager creation to fail
-        with patch('coda.semantic_search_coda.create_semantic_search_manager',
-                   side_effect=ValueError("No embedding provider configured")):
+        with patch(
+            "coda.semantic_search_coda.create_semantic_search_manager",
+            side_effect=ValueError("No embedding provider configured"),
+        ):
 
             # Run semantic search command
             await command_registry.run_command("search", ["semantic", "test"])

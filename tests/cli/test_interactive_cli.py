@@ -359,21 +359,20 @@ class TestInteractiveCLI:
 
     def test_command_options_loading(self, cli):
         """Test that command options are properly loaded."""
-        # The command options are loaded in the SlashCommandCompleter
-        completer = cli.session.completer.slash_completer
-        options = completer.command_options
+        # Test that commands have proper autocomplete options
+        mode_command = cli.commands.get("mode")
+        assert mode_command is not None
+        mode_options = mode_command.get_autocomplete_options()
+        assert len(mode_options) > 0  # Should have mode options
+        assert "general" in mode_options
+        assert "code" in mode_options
 
-        # Should have options for various commands
-        assert "mode" in options
-        assert "provider" in options
-        assert "session" in options
-
-        # Check mode options
-        mode_options = options["mode"]
-        mode_names = [opt[0] for opt in mode_options]
-        assert "general" in mode_names
-        assert "code" in mode_names
-        assert "debug" in mode_names
+        session_command = cli.commands.get("session")
+        assert session_command is not None
+        session_options = session_command.get_autocomplete_options()
+        assert len(session_options) > 0  # Should have session subcommands
+        assert "save" in session_options
+        assert "load" in session_options
 
     @patch("coda.cli.theme_selector.ThemeSelector")
     @patch("coda.themes.get_theme_manager")
@@ -614,10 +613,10 @@ class TestInteractiveCLI:
 
         # The table object is printed, so we need to check call count and content
         assert cli.console.print.call_count >= 2  # Empty line + table + tip
-        
+
         # Check that a table was printed (second call)
         assert any("Table object" in str(call) for call in cli.console.print.call_args_list)
-        
+
         # Check tip was printed
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("search index demo" in str(call) for call in calls)
@@ -629,28 +628,30 @@ class TestInteractiveCLI:
         mock_manager = Mock()
         mock_manager.search = AsyncMock(return_value=[])
         mock_manager.embedding_provider = Mock()
-        mock_manager.embedding_provider.get_model_info = Mock(return_value={"model": "mock", "dimension": 384})
-        
+        mock_manager.embedding_provider.get_model_info = Mock(
+            return_value={"model": "mock", "dimension": 384}
+        )
+
         # Mock console.status to support context manager
         mock_status = Mock()
         mock_status.__enter__ = Mock(return_value=mock_status)
         mock_status.__exit__ = Mock(return_value=None)
         cli.console.status = Mock(return_value=mock_status)
-        
+
         # Set the mock manager directly
         cli._search_manager = mock_manager
-        
+
         # Test semantic search without query (should show error)
         await cli._cmd_search("semantic")
-        
+
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Please provide a search query" in str(call) for call in calls)
-        
+
         # Clear previous calls
         cli.console.print.reset_mock()
-        
+
         # Test with query
         await cli._cmd_search("semantic test query")
-        
+
         # Should have called search
         mock_manager.search.assert_called_with("test query", k=5)
