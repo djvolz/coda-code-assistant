@@ -19,11 +19,12 @@ class TestChatWidget:
     @pytest.fixture
     def mock_streamlit(self):
         """Mock Streamlit for this specific module."""
-        with patch('coda.web.components.chat_widget.st') as mock_st:
+        with patch("coda.web.components.chat_widget.st") as mock_st:
             # Create a mock session state that behaves like a dict but also has attributes
             class MockSessionState(dict):
                 def __setattr__(self, key, value):
                     self[key] = value
+
                 def __getattr__(self, key):
                     return self.get(key)
 
@@ -79,7 +80,7 @@ class TestChatWidget:
         """Test rendering chat interface with messages."""
         messages = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there!"}
+            {"role": "assistant", "content": "Hi there!"},
         ]
         mock_streamlit.session_state = {"messages": messages}
         mock_streamlit.chat_input.return_value = None
@@ -116,7 +117,7 @@ class TestChatWidget:
         mock_streamlit.spinner.return_value = mock_spinner
 
         # Mock the AI response function
-        with patch('coda.web.components.chat_widget.get_ai_response', return_value="Test response"):
+        with patch("coda.web.components.chat_widget.get_ai_response", return_value="Test response"):
             render_chat_interface("openai", "gpt-4")
 
         # Should add message to session state
@@ -137,7 +138,9 @@ class TestChatWidget:
         """Test chat interface with uploaded files."""
         # Use the MockSessionState class
         mock_streamlit.session_state["messages"] = []
-        mock_streamlit.session_state["uploaded_files"] = [{"name": "test.py", "content": "print('hello')"}]
+        mock_streamlit.session_state["uploaded_files"] = [
+            {"name": "test.py", "content": "print('hello')"}
+        ]
         mock_streamlit.chat_input.return_value = "Analyze this file"
 
         # Mock context managers
@@ -151,8 +154,13 @@ class TestChatWidget:
         mock_spinner.__exit__ = Mock(return_value=None)
         mock_streamlit.spinner.return_value = mock_spinner
 
-        with patch('coda.web.components.file_manager.create_file_context_prompt', return_value="File context: "):
-            with patch('coda.web.components.chat_widget.get_ai_response', return_value="File analyzed"):
+        with patch(
+            "coda.web.components.file_manager.create_file_context_prompt",
+            return_value="File context: ",
+        ):
+            with patch(
+                "coda.web.components.chat_widget.get_ai_response", return_value="File analyzed"
+            ):
                 render_chat_interface("openai", "gpt-4")
 
         # Should clear uploaded files after use

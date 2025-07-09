@@ -19,10 +19,10 @@ def test_web_ui_tabs():
 
     # Start the web UI
     proc = subprocess.Popen(
-        ['uv', 'run', 'coda', 'web', '--port', str(port)],
+        ["uv", "run", "coda", "web", "--port", str(port)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
     )
 
     # Wait for startup
@@ -44,9 +44,9 @@ def test_web_ui_tabs():
     except:
         pass
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📋 MANUAL VERIFICATION CHECKLIST")
-    print("="*60)
+    print("=" * 60)
     print("Please verify each tab works correctly:\n")
 
     print("📊 DASHBOARD TAB:")
@@ -88,11 +88,11 @@ def test_web_ui_tabs():
     print("  □ No 404 errors or broken links")
     print("  □ Refresh button in sidebar works")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("⌨️  CONTROLS:")
     print("  Press ENTER when done testing")
     print("  Or Ctrl+C to stop immediately")
-    print("="*60)
+    print("=" * 60)
 
     try:
         # Keep server running until user input

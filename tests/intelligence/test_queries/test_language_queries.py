@@ -1,37 +1,39 @@
 """Tests for language-specific query behavior."""
 
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from textwrap import dedent
 
+import pytest
+
 from coda.intelligence.tree_sitter_query_analyzer import (
-    TreeSitterQueryAnalyzer,
+    TREE_SITTER_AVAILABLE,
     DefinitionKind,
-    TREE_SITTER_AVAILABLE
+    TreeSitterQueryAnalyzer,
 )
 
 
 @pytest.mark.skipif(not TREE_SITTER_AVAILABLE, reason="tree-sitter not available")
 class TestLanguageQueries:
     """Test language-specific query behavior with real code samples."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.temp_dir = Path(tempfile.mkdtemp())
         self.analyzer = TreeSitterQueryAnalyzer()
-    
+
     def teardown_method(self):
         """Clean up test fixtures."""
         import shutil
+
         shutil.rmtree(self.temp_dir)
-    
+
     def create_test_file(self, filename: str, content: str) -> Path:
         """Create a temporary test file."""
         file_path = self.temp_dir / filename
         file_path.write_text(dedent(content).strip())
         return file_path
-    
+
     def test_python_comprehensive(self):
         """Test Python query with comprehensive code sample."""
         code = '''
@@ -100,19 +102,19 @@ class TestLanguageQueries:
             instance = DerivedClass("test")
             result = instance.method1()
         '''
-        
+
         file_path = self.create_test_file("test_python.py", code)
         analysis = self.analyzer.analyze_file(file_path)
-        
+
         # Check no errors
         assert len(analysis.errors) == 0
-        
+
         # Check classes
         classes = [d for d in analysis.definitions if d.kind == DefinitionKind.CLASS]
         class_names = [c.name for c in classes]
         assert "BaseClass" in class_names
         assert "DerivedClass" in class_names
-        
+
         # Check methods
         methods = [d for d in analysis.definitions if d.kind == DefinitionKind.METHOD]
         method_names = [m.name for m in methods]
@@ -121,25 +123,29 @@ class TestLanguageQueries:
         assert "static_method" in method_names
         assert "class_method" in method_names
         assert "async_method" in method_names
-        
+
         # Check functions
         functions = [d for d in analysis.definitions if d.kind == DefinitionKind.FUNCTION]
         function_names = [f.name for f in functions]
         assert "regular_function" in function_names
         assert "async_function" in function_names
         assert "_private_function" in function_names
-        
+
         # Check variables/constants
-        variables = [d for d in analysis.definitions if d.kind in [DefinitionKind.VARIABLE, DefinitionKind.CONSTANT]]
+        variables = [
+            d
+            for d in analysis.definitions
+            if d.kind in [DefinitionKind.VARIABLE, DefinitionKind.CONSTANT]
+        ]
         var_names = [v.name for v in variables]
         assert "MAX_SIZE" in var_names or "global_var" in var_names
-        
+
         # Check imports
         assert len(analysis.imports) >= 4  # os, sys, Path, typing imports
-    
+
     def test_javascript_comprehensive(self):
         """Test JavaScript query with comprehensive code sample."""
-        code = '''
+        code = """
         // Module imports
         import React from 'react';
         import { useState, useEffect } from 'react';
@@ -228,38 +234,44 @@ class TestLanguageQueries:
         // Export
         export default MyComponent;
         export { Animal, Dog };
-        '''
-        
+        """
+
         file_path = self.create_test_file("test_javascript.js", code)
         analysis = self.analyzer.analyze_file(file_path)
-        
+
         assert len(analysis.errors) == 0
-        
+
         # Check classes
         classes = [d for d in analysis.definitions if d.kind == DefinitionKind.CLASS]
         class_names = [c.name for c in classes]
         assert "Animal" in class_names
         assert "Dog" in class_names
-        
+
         # Check functions (including methods)
-        functions = [d for d in analysis.definitions if d.kind in [DefinitionKind.FUNCTION, DefinitionKind.METHOD]]
+        functions = [
+            d
+            for d in analysis.definitions
+            if d.kind in [DefinitionKind.FUNCTION, DefinitionKind.METHOD]
+        ]
         func_names = [f.name for f in functions]
         assert "regularFunction" in func_names
         assert "asyncFunction" in func_names
         assert "generatorFunc" in func_names
-        
+
         # Check variables
         variables = [d for d in analysis.definitions if d.kind == DefinitionKind.VARIABLE]
         var_names = [v.name for v in variables]
         # Should find const, let, var declarations
-        assert any(name in var_names for name in ["MAX_COUNT", "arrowFunc", "mutableVar", "MyComponent"])
-        
+        assert any(
+            name in var_names for name in ["MAX_COUNT", "arrowFunc", "mutableVar", "MyComponent"]
+        )
+
         # Check imports
         assert len(analysis.imports) >= 2  # React imports and require statements
-    
+
     def test_typescript_comprehensive(self):
         """Test TypeScript query with comprehensive code sample."""
-        code = '''
+        code = """
         // Imports
         import { Component } from '@angular/core';
         import type { User } from './types';
@@ -376,40 +388,40 @@ class TestLanguageQueries:
         function isString(x: unknown): x is string {
             return typeof x === 'string';
         }
-        '''
-        
+        """
+
         file_path = self.create_test_file("test_typescript.ts", code)
         analysis = self.analyzer.analyze_file(file_path)
-        
+
         assert len(analysis.errors) == 0
-        
+
         # Check interfaces
         interfaces = [d for d in analysis.definitions if d.kind == DefinitionKind.INTERFACE]
         interface_names = [i.name for i in interfaces]
         assert "Person" in interface_names or len(interfaces) > 0
-        
+
         # Check types
         types = [d for d in analysis.definitions if d.kind == DefinitionKind.TYPE]
         type_names = [t.name for t in types]
         assert "ID" in type_names or "Callback" in type_names or len(types) > 0
-        
+
         # Check enums
         enums = [d for d in analysis.definitions if d.kind == DefinitionKind.ENUM]
         enum_names = [e.name for e in enums]
         assert "Color" in enum_names or "Direction" in enum_names or len(enums) > 0
-        
+
         # Check classes
         classes = [d for d in analysis.definitions if d.kind == DefinitionKind.CLASS]
         assert len(classes) >= 2  # Shape, Container, AppComponent
-        
+
         # Check functions
         functions = [d for d in analysis.definitions if d.kind == DefinitionKind.FUNCTION]
         func_names = [f.name for f in functions]
         assert "process" in func_names or "identity" in func_names or len(functions) > 0
-    
+
     def test_rust_comprehensive(self):
         """Test Rust query with comprehensive code sample."""
-        code = '''
+        code = """
         // Use declarations
         use std::collections::HashMap;
         use std::io::{self, Read, Write};
@@ -583,47 +595,47 @@ class TestLanguageQueries:
                 assert_eq!(p.x, 0.0);
             }
         }
-        '''
-        
+        """
+
         file_path = self.create_test_file("test_rust.rs", code)
         analysis = self.analyzer.analyze_file(file_path)
-        
+
         assert len(analysis.errors) == 0
-        
+
         # Check structs
         structs = [d for d in analysis.definitions if d.kind == DefinitionKind.STRUCT]
         struct_names = [s.name for s in structs]
         assert "Point" in struct_names
         assert "Config" in struct_names
         assert "Color" in struct_names
-        
+
         # Check enums
         enums = [d for d in analysis.definitions if d.kind == DefinitionKind.ENUM]
         enum_names = [e.name for e in enums]
         assert "Status" in enum_names or len(enums) > 0
-        
+
         # Check traits (they are mapped to INTERFACE in the current implementation)
         traits = [d for d in analysis.definitions if d.kind == DefinitionKind.INTERFACE]
         trait_names = [t.name for t in traits]
         assert "Animal" in trait_names or "Drawable" in trait_names or len(traits) > 0
-        
+
         # Check functions
         functions = [d for d in analysis.definitions if d.kind == DefinitionKind.FUNCTION]
         func_names = [f.name for f in functions]
         assert "regular_function" in func_names
         assert "main" in func_names
         assert "new" in func_names or "distance" in func_names  # Methods
-        
+
         # Check macros
         macros = [d for d in analysis.definitions if d.kind == DefinitionKind.MACRO]
         assert len(macros) >= 0  # May or may not capture macros depending on query
-        
+
         # Check imports
         assert len(analysis.imports) >= 3  # use statements
-    
+
     def test_go_comprehensive(self):
         """Test Go query with comprehensive code sample."""
-        code = '''
+        code = """
         package main
         
         import (
@@ -760,49 +772,49 @@ class TestLanguageQueries:
                 ch <- 42
             }()
         }
-        '''
-        
+        """
+
         file_path = self.create_test_file("test_go.go", code)
         analysis = self.analyzer.analyze_file(file_path)
-        
+
         assert len(analysis.errors) == 0
-        
+
         # Check type definitions
         types = [d for d in analysis.definitions if d.kind == DefinitionKind.TYPE]
         type_names = [t.name for t in types]
         # Should find type aliases and structs
         assert any(name in type_names for name in ["ID", "Handler", "Point", "Person"])
-        
+
         # Check interfaces
         interfaces = [d for d in analysis.definitions if d.kind == DefinitionKind.INTERFACE]
         interface_names = [i.name for i in interfaces]
         assert "Writer" in interface_names or "ReadWriter" in interface_names or len(interfaces) > 0
-        
+
         # Check functions
         functions = [d for d in analysis.definitions if d.kind == DefinitionKind.FUNCTION]
         func_names = [f.name for f in functions]
         assert "regularFunction" in func_names
         assert "main" in func_names
         assert "init" in func_names
-        
+
         # Check methods
         methods = [d for d in analysis.definitions if d.kind == DefinitionKind.METHOD]
         method_names = [m.name for m in methods]
         assert "Distance" in method_names or "Translate" in method_names
-        
+
         # Check constants
         constants = [d for d in analysis.definitions if d.kind == DefinitionKind.CONSTANT]
         const_names = [c.name for c in constants]
         assert "MaxSize" in const_names or "Pi" in const_names or len(constants) > 0
-        
+
         # Check imports
         # TODO: Fix Go import parsing - currently not capturing imports correctly
         # assert len(analysis.imports) >= 4  # fmt, io, net/http, sync
         assert len(analysis.definitions) > 0  # At least we're parsing definitions
-    
+
     def test_java_comprehensive(self):
         """Test Java query with comprehensive code sample."""
-        code = '''
+        code = """
         package com.example.app;
         
         import java.util.*;
@@ -955,36 +967,36 @@ class TestLanguageQueries:
                 System.out.println("Helping...");
             }
         }
-        '''
-        
+        """
+
         file_path = self.create_test_file("Application.java", code)
         analysis = self.analyzer.analyze_file(file_path)
-        
+
         assert len(analysis.errors) == 0
-        
+
         # Check classes
         classes = [d for d in analysis.definitions if d.kind == DefinitionKind.CLASS]
         class_names = [c.name for c in classes]
         assert "Application" in class_names
         assert "Helper" in class_names or "InnerClass" in class_names or len(classes) >= 2
-        
+
         # Check interfaces
         interfaces = [d for d in analysis.definitions if d.kind == DefinitionKind.INTERFACE]
         assert len(interfaces) >= 0  # May capture Service interface
-        
+
         # Check methods
         methods = [d for d in analysis.definitions if d.kind == DefinitionKind.METHOD]
         method_names = [m.name for m in methods]
         assert "publicMethod" in method_names or "main" in method_names or len(methods) > 0
-        
+
         # Check constructors
         constructors = [d for d in analysis.definitions if d.kind == DefinitionKind.CONSTRUCTOR]
         assert len(constructors) >= 0  # May capture constructors
-        
+
         # Check enums
         enums = [d for d in analysis.definitions if d.kind == DefinitionKind.ENUM]
         assert len(enums) >= 0  # May capture Status enum
-        
+
         # Check imports
         # TODO: Fix Java import parsing - currently not capturing imports correctly
         # assert len(analysis.imports) >= 3  # java.util.*, IOException, etc.

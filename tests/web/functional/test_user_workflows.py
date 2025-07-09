@@ -53,7 +53,9 @@ class TestUserWorkflows:
         # Step 4: Select provider and model
         try:
             # Select provider
-            provider_selector = driver.find_element(By.XPATH, "//div[@data-testid='stSelectbox'][1]")
+            provider_selector = driver.find_element(
+                By.XPATH, "//div[@data-testid='stSelectbox'][1]"
+            )
             provider_selector.click()
 
             openai_option = WebDriverWait(driver, 5).until(
@@ -98,7 +100,8 @@ class TestUserWorkflows:
 
         # Verify dashboard shows activity
         dashboard_elements = driver.find_elements(
-            By.XPATH, "//*[contains(@class, 'metric') or contains(text(), 'Total') or contains(text(), 'Usage')]"
+            By.XPATH,
+            "//*[contains(@class, 'metric') or contains(text(), 'Total') or contains(text(), 'Usage')]",
         )
         assert len(dashboard_elements) > 0
 
@@ -116,7 +119,8 @@ class TestUserWorkflows:
 
         # Step 2: Upload a file
         test_file = tmp_path / "code_sample.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def calculate_fibonacci(n):
     if n <= 1:
         return n
@@ -124,7 +128,8 @@ def calculate_fibonacci(n):
 
 # Test the function
 print(calculate_fibonacci(10))
-""")
+"""
+        )
 
         try:
             file_input = WebDriverWait(driver, 5).until(
@@ -139,7 +144,9 @@ print(calculate_fibonacci(10))
         chat_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//textarea[@data-testid='stChatInput']"))
         )
-        chat_input.send_keys("Can you explain this Fibonacci implementation and suggest improvements?")
+        chat_input.send_keys(
+            "Can you explain this Fibonacci implementation and suggest improvements?"
+        )
         chat_input.send_keys(Keys.RETURN)
 
         time.sleep(3)
@@ -305,7 +312,9 @@ print(calculate_fibonacci(10))
 
         # Change provider
         try:
-            provider_selector = driver.find_element(By.XPATH, "//div[@data-testid='stSelectbox'][1]")
+            provider_selector = driver.find_element(
+                By.XPATH, "//div[@data-testid='stSelectbox'][1]"
+            )
             provider_selector.click()
 
             # Select different provider
@@ -344,9 +353,7 @@ print(calculate_fibonacci(10))
         settings_tab.click()
 
         # Clear API keys
-        api_key_inputs = driver.find_elements(
-            By.XPATH, "//input[@type='password']"
-        )
+        api_key_inputs = driver.find_elements(By.XPATH, "//input[@type='password']")
         for input_field in api_key_inputs:
             input_field.clear()
 
@@ -374,7 +381,8 @@ print(calculate_fibonacci(10))
 
         # Step 3: Verify error message
         error_elements = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'Error') or contains(text(), 'API key') or contains(@class, 'error')]"
+            By.XPATH,
+            "//*[contains(text(), 'Error') or contains(text(), 'API key') or contains(@class, 'error')]",
         )
         assert len(error_elements) > 0
 
@@ -385,9 +393,7 @@ print(calculate_fibonacci(10))
         settings_tab.click()
 
         # Add valid API key
-        api_key_inputs = driver.find_elements(
-            By.XPATH, "//input[@type='password']"
-        )
+        api_key_inputs = driver.find_elements(By.XPATH, "//input[@type='password']")
         if api_key_inputs:
             api_key_inputs[0].send_keys("valid-test-api-key")
 
@@ -413,7 +419,5 @@ print(calculate_fibonacci(10))
         time.sleep(2)
 
         # Verify recovery
-        new_messages = driver.find_elements(
-            By.XPATH, "//div[@data-testid='stChatMessage'][last()]"
-        )
+        new_messages = driver.find_elements(By.XPATH, "//div[@data-testid='stChatMessage'][last()]")
         assert len(new_messages) > 0

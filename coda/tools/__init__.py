@@ -8,9 +8,9 @@ web interactions, and Git operations, all built on the Model Context Protocol (M
 # Import all tool modules to register them
 from . import file_tools as _file_tools  # noqa: F401
 from . import git_tools as _git_tools  # noqa: F401
+from . import intelligence_tools as _intelligence_tools  # noqa: F401
 from . import shell_tools as _shell_tools  # noqa: F401
 from . import web_tools as _web_tools  # noqa: F401
-from . import intelligence_tools as _intelligence_tools  # noqa: F401
 from .base import (
     BaseTool,
     ToolParameter,

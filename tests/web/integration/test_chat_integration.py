@@ -132,7 +132,8 @@ class TestChatIntegration:
 
             # Verify file appears in uploaded files section
             uploaded_files = driver.find_elements(
-                By.XPATH, "//div[contains(@class, 'uploadedFile') or contains(text(), 'test_document.txt')]"
+                By.XPATH,
+                "//div[contains(@class, 'uploadedFile') or contains(text(), 'test_document.txt')]",
             )
             assert len(uploaded_files) > 0
 
@@ -270,7 +271,8 @@ class TestChatIntegration:
 
         # Check for welcome message or placeholder
         welcome_elements = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'Welcome') or contains(text(), 'Start') or contains(text(), 'How can I help')]"
+            By.XPATH,
+            "//*[contains(text(), 'Welcome') or contains(text(), 'Start') or contains(text(), 'How can I help')]",
         )
         assert len(welcome_elements) > 0
 
@@ -313,7 +315,8 @@ class TestChatIntegration:
 
             # Check for error message
             error_elements = driver.find_elements(
-                By.XPATH, "//*[contains(@class, 'error') or contains(text(), 'Error') or contains(text(), 'API key')]"
+                By.XPATH,
+                "//*[contains(@class, 'error') or contains(text(), 'Error') or contains(text(), 'API key')]",
             )
             assert len(error_elements) > 0
 

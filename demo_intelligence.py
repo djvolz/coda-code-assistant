@@ -5,7 +5,8 @@ Demo script to showcase tree-sitter intelligence features in Coda.
 Run this after starting Coda with: uv run coda
 """
 
-print("""
+print(
+    """
 === Coda Tree-Sitter Intelligence Demo ===
 
 Start Coda with: uv run coda
@@ -48,4 +49,5 @@ The tree-sitter integration provides accurate code parsing for:
 - Provides better accuracy for code understanding
 
 Try it out on your own projects!
-""")
+"""
+)

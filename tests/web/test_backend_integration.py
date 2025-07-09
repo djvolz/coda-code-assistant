@@ -15,11 +15,20 @@ class TestBackendIntegration:
         """Test that the web server starts successfully."""
         port = 8601
         proc = subprocess.Popen(
-            ["uv", "run", "streamlit", "run", "coda/web/app.py",
-             "--server.port", str(port), "--server.headless", "true"],
+            [
+                "uv",
+                "run",
+                "streamlit",
+                "run",
+                "coda/web/app.py",
+                "--server.port",
+                str(port),
+                "--server.headless",
+                "true",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=Path(__file__).parent.parent.parent
+            cwd=Path(__file__).parent.parent.parent,
         )
 
         try:
@@ -48,11 +57,20 @@ class TestBackendIntegration:
         """Test Streamlit health endpoint."""
         port = 8602
         proc = subprocess.Popen(
-            ["uv", "run", "streamlit", "run", "coda/web/app.py",
-             "--server.port", str(port), "--server.headless", "true"],
+            [
+                "uv",
+                "run",
+                "streamlit",
+                "run",
+                "coda/web/app.py",
+                "--server.port",
+                str(port),
+                "--server.headless",
+                "true",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=Path(__file__).parent.parent.parent
+            cwd=Path(__file__).parent.parent.parent,
         )
 
         try:
@@ -139,7 +157,7 @@ class TestBackendIntegration:
             capture_output=True,
             text=True,
             timeout=10,
-            cwd=Path(__file__).parent.parent.parent
+            cwd=Path(__file__).parent.parent.parent,
         )
 
         assert result.returncode == 0
@@ -148,28 +166,38 @@ class TestBackendIntegration:
 
     def test_minimal_streamlit_app(self):
         """Test a minimal Streamlit app to verify Streamlit works."""
-        minimal_app_content = '''
+        minimal_app_content = """
 import streamlit as st
 
 st.title("Test App")
 page = st.radio("Navigation", ["Page 1", "Page 2"])
 st.write(f"Current page: {page}")
-'''
+"""
 
         # Write minimal app to temp file
         import tempfile
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(minimal_app_content)
             temp_app_path = f.name
 
         try:
             port = 8603
             proc = subprocess.Popen(
-                ["uv", "run", "streamlit", "run", temp_app_path,
-                 "--server.port", str(port), "--server.headless", "true"],
+                [
+                    "uv",
+                    "run",
+                    "streamlit",
+                    "run",
+                    temp_app_path,
+                    "--server.port",
+                    str(port),
+                    "--server.headless",
+                    "true",
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=Path(__file__).parent.parent.parent
+                cwd=Path(__file__).parent.parent.parent,
             )
 
             try:
