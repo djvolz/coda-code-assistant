@@ -171,14 +171,3 @@ class ModeSelector(GenericSelector):
         super().__init__("Select Developer Mode", options, console)
 
 
-class ProviderSelector(GenericSelector):
-    """Selector for AI providers."""
-
-    def __init__(self, console: Console = None):
-        options = [
-            ("oci_genai", "Oracle Cloud Infrastructure GenAI"),
-            ("ollama", "Local models via Ollama"),
-            ("openai", "OpenAI GPT models"),
-            ("litellm", "100+ providers via LiteLLM"),
-        ]
-        super().__init__("Select AI Provider", options, console)
