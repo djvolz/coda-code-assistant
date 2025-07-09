@@ -1,13 +1,12 @@
 """Functional tests for Docker Compose integration."""
 
-import pytest
-import subprocess
 import os
-import time
-import tempfile
 import shutil
+import subprocess
+import tempfile
+
+import pytest
 import yaml
-from unittest.mock import patch, Mock
 
 
 class TestDockerComposeIntegration:
@@ -55,11 +54,11 @@ class TestDockerComposeIntegration:
     def test_service_orchestration(self, temp_compose_dir, base_compose_config):
         """Test basic service orchestration."""
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
-        
+
         # Write compose file
         with open(compose_file, 'w') as f:
             yaml.dump(base_compose_config, f)
-        
+
         # Test compose validation
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
@@ -67,7 +66,7 @@ class TestDockerComposeIntegration:
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             # Validate configuration
             config = yaml.safe_load(result.stdout)
@@ -96,15 +95,15 @@ class TestDockerComposeIntegration:
                 }
             }
         }
-        
+
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         with open(compose_file, 'w') as f:
             yaml.dump(compose_config, f)
-        
+
         # Create required directories
         os.makedirs(os.path.join(temp_compose_dir, 'config'), exist_ok=True)
         os.makedirs(os.path.join(temp_compose_dir, 'data'), exist_ok=True)
-        
+
         # Validate volumes
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
@@ -112,7 +111,7 @@ class TestDockerComposeIntegration:
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)
             volumes = config['services']['coda']['volumes']
@@ -123,24 +122,24 @@ class TestDockerComposeIntegration:
     def test_network_connectivity(self, temp_compose_dir, base_compose_config):
         """Test network configuration between services."""
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
-        
+
         # Add network aliases
         base_compose_config['services']['ollama']['networks'] = {
             'coda-network': {
                 'aliases': ['llm-server']
             }
         }
-        
+
         with open(compose_file, 'w') as f:
             yaml.dump(base_compose_config, f)
-        
+
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
             capture_output=True,
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)
             # Check network configuration
@@ -159,7 +158,7 @@ CUSTOM_VAR=test_value
         env_file = os.path.join(temp_compose_dir, '.env')
         with open(env_file, 'w') as f:
             f.write(env_content)
-        
+
         # Compose file with env vars
         compose_config = {
             'version': '3.8',
@@ -175,11 +174,11 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         with open(compose_file, 'w') as f:
             yaml.dump(compose_config, f)
-        
+
         # Test environment substitution
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
@@ -187,7 +186,7 @@ CUSTOM_VAR=test_value
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)
             env = config['services']['coda']['environment']
@@ -209,7 +208,7 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         # Dev override
         dev_compose = {
             'version': '3.8',
@@ -231,16 +230,16 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         # Write files
         base_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         dev_file = os.path.join(temp_compose_dir, 'docker-compose.dev.yml')
-        
+
         with open(base_file, 'w') as f:
             yaml.dump(base_compose, f)
         with open(dev_file, 'w') as f:
             yaml.dump(dev_compose, f)
-        
+
         # Test production config
         prod_result = subprocess.run(
             ['docker-compose', '-f', base_file, 'config'],
@@ -248,7 +247,7 @@ CUSTOM_VAR=test_value
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         # Test dev config (with override)
         dev_result = subprocess.run(
             ['docker-compose', '-f', base_file, '-f', dev_file, 'config'],
@@ -256,15 +255,15 @@ CUSTOM_VAR=test_value
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if prod_result.returncode == 0 and dev_result.returncode == 0:
             prod_config = yaml.safe_load(prod_result.stdout)
             dev_config = yaml.safe_load(dev_result.stdout)
-            
+
             # Verify production config
             assert prod_config['services']['coda']['environment']['CODA_ENV'] == 'production'
             assert 'DEBUG' not in prod_config['services']['coda']['environment']
-            
+
             # Verify dev config overrides
             assert dev_config['services']['coda']['environment']['CODA_ENV'] == 'development'
             assert dev_config['services']['coda']['environment']['DEBUG'] == 'true'
@@ -295,18 +294,18 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         with open(compose_file, 'w') as f:
             yaml.dump(compose_config, f)
-        
+
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
             capture_output=True,
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)
             health = config['services']['ollama']['healthcheck']
@@ -345,18 +344,18 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         with open(compose_file, 'w') as f:
             yaml.dump(compose_config, f)
-        
+
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
             capture_output=True,
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)
             coda_resources = config['services']['coda']['deploy']['resources']
@@ -378,18 +377,18 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         with open(compose_file, 'w') as f:
             yaml.dump(compose_config, f)
-        
+
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
             capture_output=True,
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)
             assert config['services']['coda']['restart'] == 'unless-stopped'
@@ -412,18 +411,18 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         with open(compose_file, 'w') as f:
             yaml.dump(compose_config, f)
-        
+
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
             capture_output=True,
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)
             logging = config['services']['coda']['logging']
@@ -441,18 +440,18 @@ CUSTOM_VAR=test_value
                 }
             }
         }
-        
+
         compose_file = os.path.join(temp_compose_dir, 'docker-compose.yml')
         with open(compose_file, 'w') as f:
             yaml.dump(compose_config, f)
-        
+
         result = subprocess.run(
             ['docker-compose', '-f', compose_file, 'config'],
             capture_output=True,
             text=True,
             cwd=temp_compose_dir
         )
-        
+
         # Should work with all recent versions
         if result.returncode == 0:
             config = yaml.safe_load(result.stdout)

@@ -1,11 +1,10 @@
 """Functional tests for end-to-end CLI workflows."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock, call
-import tempfile
 import os
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.keys import Keys
+import tempfile
+from unittest.mock import Mock, patch
+
+import pytest
 
 from coda.cli.interactive_cli import InteractiveCLI
 
@@ -21,37 +20,37 @@ class TestCLIWorkflows:
             mock_mm.return_value.list_providers.return_value = ['openai', 'anthropic']
             mock_mm.return_value.list_models.return_value = ['gpt-4', 'gpt-3.5-turbo']
             mock_mm.return_value.validate_model.return_value = True
-            
+
             cli = InteractiveCLI()
-            
+
             # Mock session components
             cli.session_manager = Mock()
             cli.chat_session = Mock()
             cli.chat_session.send_message = Mock(return_value="AI response")
-            
+
             # Mock prompt session
             with patch.object(cli, '_setup_prompt_sessions'):
                 cli.prompt_session = Mock()
                 cli.multiline_session = Mock()
-            
+
             return cli
 
     def test_complete_conversation_workflow(self, cli_with_mocks):
         """Test a complete conversation workflow."""
         cli = cli_with_mocks
-        
+
         # Simulate user inputs
         inputs = [
             "Hello, can you help me?",
             "Write a Python function",
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, 'run') as mock_run:
                 # Start the CLI
                 cli.run()
-                
+
                 # Verify conversation flow
                 assert cli.chat_session.send_message.call_count == 2
                 cli.chat_session.send_message.assert_any_call(
@@ -66,7 +65,7 @@ class TestCLIWorkflows:
     def test_mode_switching_workflow(self, cli_with_mocks):
         """Test switching modes during conversation."""
         cli = cli_with_mocks
-        
+
         # Simulate mode switching
         inputs = [
             "Normal chat message",
@@ -76,7 +75,7 @@ class TestCLIWorkflows:
             "ls -la",
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command') as mock_exec:
                 with patch('coda.cli.interactive_cli.print') as mock_print:
@@ -89,12 +88,12 @@ class TestCLIWorkflows:
                             cli.mode = 'shell'
                             return True
                         return False
-                    
+
                     mock_exec.side_effect = exec_side_effect
-                    
+
                     # Run workflow
                     cli.run()
-                    
+
                     # Verify mode changes
                     calls = cli.chat_session.send_message.call_args_list
                     assert calls[0][1]['mode'] == 'default'
@@ -104,7 +103,7 @@ class TestCLIWorkflows:
     def test_model_selection_workflow(self, cli_with_mocks):
         """Test model selection during session."""
         cli = cli_with_mocks
-        
+
         inputs = [
             "/model",  # List models
             "/model gpt-4",  # Select model
@@ -113,7 +112,7 @@ class TestCLIWorkflows:
             "/model claude-2",  # Select model from new provider
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command') as mock_exec:
                 with patch('coda.cli.interactive_cli.print') as mock_print:
@@ -133,12 +132,12 @@ class TestCLIWorkflows:
                             cli.current_model = "claude-2"
                             return True
                         return False
-                    
+
                     mock_exec.side_effect = exec_side_effect
-                    
+
                     # Run workflow
                     cli.run()
-                    
+
                     # Verify model/provider changes
                     assert mock_exec.call_count >= 4
                     mock_exec.assert_any_call("/model")
@@ -150,7 +149,7 @@ class TestCLIWorkflows:
         cli = cli_with_mocks
         temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.md')
         temp_file.close()
-        
+
         try:
             inputs = [
                 "First message",
@@ -158,7 +157,7 @@ class TestCLIWorkflows:
                 f"/export {temp_file.name}",
                 "/exit"
             ]
-            
+
             # Mock conversation history
             cli.chat_session.get_history.return_value = [
                 {"role": "user", "content": "First message"},
@@ -166,7 +165,7 @@ class TestCLIWorkflows:
                 {"role": "user", "content": "Second message"},
                 {"role": "assistant", "content": "Second response"}
             ]
-            
+
             with patch.object(cli, 'get_input', side_effect=inputs):
                 with patch.object(cli, '_execute_command') as mock_exec:
                     with patch('coda.cli.interactive_cli.print') as mock_print:
@@ -180,18 +179,18 @@ class TestCLIWorkflows:
                                         f.write(f"**{msg['role']}**: {msg['content']}\n\n")
                                 return True
                             return False
-                        
+
                         mock_exec.side_effect = exec_side_effect
-                        
+
                         # Run workflow
                         cli.run()
-                        
+
                         # Verify export was called
                         mock_exec.assert_any_call(f"/export {temp_file.name}")
-                        
+
                         # Check file was created
                         assert os.path.exists(temp_file.name)
-                        with open(temp_file.name, 'r') as f:
+                        with open(temp_file.name) as f:
                             content = f.read()
                             assert "Conversation Export" in content
         finally:
@@ -200,7 +199,7 @@ class TestCLIWorkflows:
     def test_multiline_code_input_workflow(self, cli_with_mocks):
         """Test multiline code input workflow."""
         cli = cli_with_mocks
-        
+
         # Simulate multiline code input
         code_lines = [
             "```python",
@@ -210,7 +209,7 @@ class TestCLIWorkflows:
             "    return fibonacci(n-1) + fibonacci(n-2)",
             "```"
         ]
-        
+
         inputs = [
             "I need help with a function",
             "```python",  # Start multiline
@@ -218,7 +217,7 @@ class TestCLIWorkflows:
             "```",  # End multiline
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input') as mock_input:
             # Setup multiline behavior
             call_count = 0
@@ -227,7 +226,7 @@ class TestCLIWorkflows:
                 if call_count < len(inputs):
                     result = inputs[call_count]
                     call_count += 1
-                    
+
                     # Simulate multiline mode
                     if result == "```python" and call_count == 2:
                         # Return the full multiline block
@@ -236,15 +235,15 @@ class TestCLIWorkflows:
                         # Skip the multiline portion
                         call_count = 8
                         return inputs[7] if 7 < len(inputs) else None
-                    
+
                     return result
                 return None
-            
+
             mock_input.side_effect = get_input_side_effect
-            
+
             # Run workflow
             cli.run()
-            
+
             # Verify multiline code was sent
             calls = cli.chat_session.send_message.call_args_list
             assert any("def fibonacci" in str(call) for call in calls)
@@ -252,14 +251,14 @@ class TestCLIWorkflows:
     def test_interrupt_handling_workflow(self, cli_with_mocks):
         """Test interrupt handling during conversation."""
         cli = cli_with_mocks
-        
+
         inputs = [
             "Start a conversation",
             KeyboardInterrupt(),  # Simulate Ctrl+C
             "Continue after interrupt",
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input') as mock_input:
             # Handle the interrupt
             call_count = 0
@@ -272,13 +271,13 @@ class TestCLIWorkflows:
                         return None  # Interrupt returns None
                     return inp
                 return None
-            
+
             mock_input.side_effect = get_input_side_effect
-            
+
             with patch('coda.cli.interactive_cli.print') as mock_print:
                 # Run workflow
                 cli.run()
-                
+
                 # Should handle interrupt gracefully
                 assert cli.chat_session.send_message.call_count == 2
                 # Verify both messages were sent (before and after interrupt)
@@ -289,7 +288,7 @@ class TestCLIWorkflows:
     def test_theme_switching_workflow(self, cli_with_mocks):
         """Test theme switching during session."""
         cli = cli_with_mocks
-        
+
         inputs = [
             "/theme",  # List themes
             "/theme dark",  # Switch theme
@@ -297,7 +296,7 @@ class TestCLIWorkflows:
             "/theme reset",  # Reset theme
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command') as mock_exec:
                 with patch('coda.cli.interactive_cli.print') as mock_print:
@@ -313,13 +312,13 @@ class TestCLIWorkflows:
                             cli.theme_manager.reset_theme()
                             return True
                         return False
-                    
+
                     mock_exec.side_effect = exec_side_effect
                     cli.theme_manager = Mock()
-                    
+
                     # Run workflow
                     cli.run()
-                    
+
                     # Verify theme changes
                     cli.theme_manager.set_theme.assert_called_with("dark")
                     cli.theme_manager.reset_theme.assert_called_once()
@@ -327,22 +326,22 @@ class TestCLIWorkflows:
     def test_help_navigation_workflow(self, cli_with_mocks):
         """Test help command navigation."""
         cli = cli_with_mocks
-        
+
         inputs = [
             "/help",  # General help
             "/help model",  # Specific command help
             "/help theme",  # Another command help
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command') as mock_exec:
                 with patch('coda.cli.interactive_cli.print') as mock_print:
                     mock_exec.return_value = True
-                    
+
                     # Run workflow
                     cli.run()
-                    
+
                     # Verify help commands
                     assert mock_exec.call_count >= 3
                     mock_exec.assert_any_call("/help")
@@ -352,30 +351,30 @@ class TestCLIWorkflows:
     def test_error_recovery_workflow(self, cli_with_mocks):
         """Test error recovery in conversation."""
         cli = cli_with_mocks
-        
+
         # Make send_message fail once then succeed
         cli.chat_session.send_message.side_effect = [
             Exception("Network error"),
             "Recovery response",
             "Normal response"
         ]
-        
+
         inputs = [
             "Message that will fail",
             "Retry message",
             "Normal message",
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch('coda.cli.interactive_cli.print') as mock_print:
                 # Run workflow
                 cli.run()
-                
+
                 # Should recover from error
                 assert cli.chat_session.send_message.call_count == 3
                 # Verify error was printed
-                error_prints = [call for call in mock_print.call_args_list 
+                error_prints = [call for call in mock_print.call_args_list
                               if "Network error" in str(call)]
                 assert len(error_prints) > 0
 
@@ -383,7 +382,7 @@ class TestCLIWorkflows:
         """Test session saving and loading workflow."""
         cli = cli_with_mocks
         session_id = "test_session_123"
-        
+
         inputs = [
             "/session new",  # Create new session
             "Message in new session",
@@ -393,12 +392,12 @@ class TestCLIWorkflows:
             "Continue in loaded session",
             "/exit"
         ]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command') as mock_exec:
                 # Mock session commands
                 saved_sessions = {}
-                
+
                 def exec_side_effect(cmd):
                     if cmd == "/session new":
                         cli.chat_session = Mock()
@@ -416,12 +415,12 @@ class TestCLIWorkflows:
                     elif cmd == "/session list":
                         return True
                     return False
-                
+
                 mock_exec.side_effect = exec_side_effect
-                
+
                 # Run workflow
                 cli.run()
-                
+
                 # Verify session commands
                 mock_exec.assert_any_call("/session new")
                 mock_exec.assert_any_call(f"/session save {session_id}")
@@ -436,7 +435,7 @@ class TestCLIWorkflows:
     def test_common_workflow_patterns(self, cli_with_mocks, workflow_type):
         """Test common usage patterns."""
         cli = cli_with_mocks
-        
+
         workflows = {
             "quick_question": [
                 "What is Python?",
@@ -461,14 +460,14 @@ class TestCLIWorkflows:
                 "/exit"
             ]
         }
-        
+
         inputs = workflows[workflow_type]
-        
+
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command', return_value=True):
                 # Run workflow
                 cli.run()
-                
+
                 # Verify appropriate number of messages sent
                 expected_messages = len([i for i in inputs if not i.startswith("/")])
                 assert cli.chat_session.send_message.call_count == expected_messages
