@@ -19,6 +19,7 @@ def test_imports():
         from coda.web.components.file_manager import render_file_upload_widget
         from coda.web.components.model_selector import render_model_selector
         from coda.web.pages import chat, dashboard, sessions, settings
+
         print("✅ All imports successful")
         return True
     except ImportError as e:
@@ -32,17 +33,19 @@ def test_cli_commands():
 
     try:
         # Test help command
-        result = subprocess.run(['uv', 'run', 'coda', '--help'],
-                              capture_output=True, text=True, timeout=10)
-        if result.returncode == 0 and 'web' in result.stdout:
+        result = subprocess.run(
+            ["uv", "run", "coda", "--help"], capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0 and "web" in result.stdout:
             print("✅ CLI help works and includes web command")
         else:
             print(f"❌ CLI help failed: {result.stderr}")
             return False
 
         # Test web command help
-        result = subprocess.run(['uv', 'run', 'coda', 'web', '--help'],
-                              capture_output=True, text=True, timeout=10)
+        result = subprocess.run(
+            ["uv", "run", "coda", "web", "--help"], capture_output=True, text=True, timeout=10
+        )
         if result.returncode == 0:
             print("✅ Web command help works")
         else:
@@ -60,11 +63,19 @@ def test_web_startup():
     print("\n🧪 Testing web UI startup...")
 
     try:
-        cmd = ['uv', 'run', 'streamlit', 'run', 'coda/web/app.py',
-               '--server.headless', 'true', '--server.port', '8508']
+        cmd = [
+            "uv",
+            "run",
+            "streamlit",
+            "run",
+            "coda/web/app.py",
+            "--server.headless",
+            "true",
+            "--server.port",
+            "8508",
+        ]
 
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE, text=True)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         time.sleep(5)
 

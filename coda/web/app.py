@@ -1,12 +1,9 @@
 """Main Streamlit application for Coda Assistant Web UI."""
 
-import streamlit as st
-from pathlib import Path
-from typing import Dict, Any
 
-from coda.configuration import get_config
-from coda.session.manager import SessionManager
-from coda.web.pages import dashboard, chat, sessions, settings
+import streamlit as st
+
+from coda.web.pages import chat, dashboard, sessions, settings
 from coda.web.utils.state import init_session_state
 
 
@@ -30,17 +27,17 @@ def setup_sidebar() -> str:
     with st.sidebar:
         st.title("🤖 Coda Assistant")
         st.markdown("---")
-        
+
         # Use a key to persist the radio selection
         page = st.radio(
             "Navigation",
             ["📊 Dashboard", "💬 Chat", "📁 Sessions", "⚙️ Settings"],
             index=0,
-            key="navigation_radio"
+            key="navigation_radio",
         )
-        
+
         st.markdown("---")
-        
+
         st.markdown("### Quick Stats")
         if "session_manager" in st.session_state and st.session_state.session_manager is not None:
             try:
@@ -48,12 +45,12 @@ def setup_sidebar() -> str:
                 st.metric("Total Sessions", total_sessions)
             except Exception:
                 st.metric("Total Sessions", "N/A")
-        
+
         st.markdown("---")
-        
+
         if st.button("🔄 Refresh", use_container_width=True):
             st.rerun()
-            
+
     return page
 
 
@@ -71,11 +68,11 @@ def render_page(page: str):
             settings.render()
         else:
             st.error(f"Page not found: {page}")
-            
+
     except Exception as e:
         st.error(f"Error loading {page}: {str(e)}")
         st.exception(e)
-        
+
         # Show fallback content
         st.markdown("---")
         st.write("**Fallback Content:**")
@@ -86,14 +83,14 @@ def render_page(page: str):
 def main():
     """Main application entry point."""
     configure_page()
-    
+
     init_session_state()
-    
+
     selected_page = setup_sidebar()
-    
+
     # Debug info
     # st.write(f"Selected page: {selected_page}")
-    
+
     render_page(selected_page)
 
 

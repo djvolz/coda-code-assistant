@@ -4,8 +4,9 @@ import streamlit as st
 
 # Import pages
 try:
-    from coda.web.pages import dashboard, chat, sessions, settings
+    from coda.web.pages import chat, dashboard, sessions, settings
     from coda.web.utils.state import init_session_state
+
     PAGES_AVAILABLE = True
 except Exception as e:
     PAGES_AVAILABLE = False
@@ -15,42 +16,35 @@ except Exception as e:
 def main():
     """Main application entry point."""
     st.set_page_config(
-        page_title="Coda Assistant",
-        page_icon="🤖",
-        layout="wide",
-        initial_sidebar_state="expanded"
+        page_title="Coda Assistant", page_icon="🤖", layout="wide", initial_sidebar_state="expanded"
     )
-    
+
     # Initialize session state
     if PAGES_AVAILABLE:
         try:
             init_session_state()
         except Exception as e:
             st.error(f"State initialization failed: {e}")
-    
+
     # Sidebar navigation
     with st.sidebar:
         st.title("🤖 Coda Assistant")
         st.markdown("---")
-        
+
         if PAGES_AVAILABLE:
-            page = st.radio(
-                "Navigation",
-                ["Dashboard", "Chat", "Sessions", "Settings"],
-                index=0
-            )
+            page = st.radio("Navigation", ["Dashboard", "Chat", "Sessions", "Settings"], index=0)
         else:
             st.error("Pages not available")
             st.error(f"Import error: {import_error}")
             return
-    
+
     # Main content area
     st.title(f"{page} Page")
-    
+
     if not PAGES_AVAILABLE:
         st.error("Cannot load pages due to import errors")
         return
-    
+
     # Simple page routing
     try:
         if page == "Dashboard":
@@ -67,11 +61,11 @@ def main():
             settings.render()
         else:
             st.error(f"Unknown page: {page}")
-            
+
     except Exception as e:
         st.error(f"Error rendering {page}: {str(e)}")
         st.exception(e)
-        
+
         # Show fallback content
         st.markdown("---")
         st.write("**Fallback Content:**")

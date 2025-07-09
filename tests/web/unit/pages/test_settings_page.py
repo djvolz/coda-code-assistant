@@ -34,7 +34,7 @@ class TestSettingsPage:
     @pytest.mark.unit
     def test_provider_configuration_display(self, app):
         """Test that provider configurations are displayed."""
-        with patch('coda.providers.registry.ProviderFactory') as mock_factory:
+        with patch("coda.providers.registry.ProviderFactory") as mock_factory:
             mock_factory.list_providers.return_value = ["openai", "anthropic"]
 
             app.run()
@@ -51,7 +51,11 @@ class TestSettingsPage:
             app.radio[0].set_value("⚙️ Settings").run()
 
             # Check for password/API key inputs
-            api_key_inputs = [inp for inp in app.text_input if "api" in str(inp).lower() or "key" in str(inp).lower()]
+            api_key_inputs = [
+                inp
+                for inp in app.text_input
+                if "api" in str(inp).lower() or "key" in str(inp).lower()
+            ]
             assert len(api_key_inputs) >= 0  # May or may not have API key inputs
         except RuntimeError:
             # Skip if timeout
@@ -103,7 +107,7 @@ class TestSettingsPage:
     @pytest.mark.unit
     def test_model_configuration(self, app):
         """Test model selection in settings."""
-        with patch('coda.providers.registry.ProviderFactory'):
+        with patch("coda.providers.registry.ProviderFactory"):
             app.run()
             app.radio[0].set_value("⚙️ Settings").run()
 

@@ -7,17 +7,19 @@ using query files (.scm) following aider's approach.
 
 # Re-export the query-based analyzer as the main analyzer
 from .tree_sitter_query_analyzer import (
-    TreeSitterQueryAnalyzer as TreeSitterAnalyzer,
+    TREE_SITTER_AVAILABLE,
     CodeElement,
-    FileAnalysis,
     DefinitionKind,
-    TREE_SITTER_AVAILABLE
+    FileAnalysis,
+)
+from .tree_sitter_query_analyzer import (
+    TreeSitterQueryAnalyzer as TreeSitterAnalyzer,
 )
 
 __all__ = [
-    'TreeSitterAnalyzer',
-    'CodeElement',
-    'FileAnalysis',
-    'DefinitionKind',
-    'TREE_SITTER_AVAILABLE'
+    "TreeSitterAnalyzer",
+    "CodeElement",
+    "FileAnalysis",
+    "DefinitionKind",
+    "TREE_SITTER_AVAILABLE",
 ]

@@ -42,7 +42,9 @@ class TestNavigation:
 
         # Verify chat page loaded
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Type your message here...']"))
+            EC.presence_of_element_located(
+                (By.XPATH, "//input[@placeholder='Type your message here...']")
+            )
         )
 
     def test_navigate_to_sessions(self, driver, streamlit_server):
@@ -127,7 +129,9 @@ class TestNavigation:
 
         # Wait for chat page to load
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Type your message here...']"))
+            EC.presence_of_element_located(
+                (By.XPATH, "//input[@placeholder='Type your message here...']")
+            )
         )
 
         end_time = time.time()

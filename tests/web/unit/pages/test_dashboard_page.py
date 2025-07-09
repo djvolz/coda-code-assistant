@@ -32,18 +32,18 @@ class TestDashboardPage:
                     "name": "Test Session 1",
                     "created_at": datetime.now().isoformat(),
                     "message_count": 10,
-                    "last_active": datetime.now().isoformat()
+                    "last_active": datetime.now().isoformat(),
                 },
                 {
                     "id": "session2",
                     "name": "Test Session 2",
                     "created_at": datetime.now().isoformat(),
                     "message_count": 5,
-                    "last_active": datetime.now().isoformat()
-                }
+                    "last_active": datetime.now().isoformat(),
+                },
             ],
             "total_messages": 15,
-            "active_sessions": 2
+            "active_sessions": 2,
         }
 
     @pytest.mark.unit
@@ -64,7 +64,7 @@ class TestDashboardPage:
     @pytest.mark.unit
     def test_statistics_display(self, app, mock_session_data):
         """Test that statistics are displayed on dashboard."""
-        with patch('coda.session.manager.SessionManager') as mock_manager:
+        with patch("coda.session.manager.SessionManager") as mock_manager:
             mock_manager.return_value.get_statistics.return_value = mock_session_data
 
             app.run()
@@ -75,7 +75,7 @@ class TestDashboardPage:
     @pytest.mark.unit
     def test_provider_status_display(self, app):
         """Test that provider status is shown."""
-        with patch('coda.providers.registry.ProviderFactory') as mock_factory:
+        with patch("coda.providers.registry.ProviderFactory") as mock_factory:
             mock_factory.list_providers.return_value = ["openai", "anthropic"]
 
             app.run()
@@ -99,7 +99,9 @@ class TestDashboardPage:
         app.run()
 
         # Should have buttons for quick actions
-        action_buttons = [b for b in app.button if "new" in str(b).lower() or "start" in str(b).lower()]
+        action_buttons = [
+            b for b in app.button if "new" in str(b).lower() or "start" in str(b).lower()
+        ]
         assert len(action_buttons) >= 0  # May have quick actions
 
     @pytest.mark.unit
