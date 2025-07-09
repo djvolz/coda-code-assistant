@@ -16,7 +16,7 @@ class TestInterruptHandling:
     @pytest.fixture
     def cli(self):
         """Create an InteractiveCLI instance for testing."""
-        with patch('coda.cli.interactive_cli.ModelManager'):
+        with patch("coda.cli.interactive_cli.ModelManager"):
             cli = InteractiveCLI()
             cli.session_manager = Mock()
             cli.chat_session = Mock()
@@ -45,14 +45,14 @@ class TestInterruptHandling:
 
     def test_handle_interrupt_with_print(self, cli):
         """Test interrupt handler with print output."""
-        with patch('coda.cli.interactive_cli.print') as mock_print:
+        with patch("coda.cli.interactive_cli.print") as mock_print:
             cli._handle_interrupt(signal.SIGINT, None)
 
             # Should print interrupt message
             mock_print.assert_called_once()
             assert "Interrupt received" in str(mock_print.call_args)
 
-    @patch('coda.cli.interactive_cli.signal')
+    @patch("coda.cli.interactive_cli.signal")
     def test_start_interrupt_listener(self, mock_signal, cli):
         """Test starting interrupt listener registers handler."""
         # Mock the current handler
@@ -66,7 +66,7 @@ class TestInterruptHandling:
         # Should register new handler
         mock_signal.signal.assert_called_with(signal.SIGINT, cli._handle_interrupt)
 
-    @patch('coda.cli.interactive_cli.signal')
+    @patch("coda.cli.interactive_cli.signal")
     def test_stop_interrupt_listener(self, mock_signal, cli):
         """Test stopping interrupt listener restores handler."""
         cli.original_sigint_handler = signal.default_int_handler
@@ -79,7 +79,7 @@ class TestInterruptHandling:
         # Should clear stored handler
         assert cli.original_sigint_handler is None
 
-    @patch('coda.cli.interactive_cli.signal')
+    @patch("coda.cli.interactive_cli.signal")
     def test_stop_interrupt_listener_no_original(self, mock_signal, cli):
         """Test stopping listener when no original handler stored."""
         cli.original_sigint_handler = None
@@ -126,7 +126,7 @@ class TestInterruptHandling:
 
     def test_interrupt_during_input(self, cli):
         """Test interrupt handling during get_input."""
-        with patch('coda.cli.interactive_cli.PromptSession'):
+        with patch("coda.cli.interactive_cli.PromptSession"):
             # Set interrupt flag before input
             cli.interrupted = True
 
@@ -138,19 +138,16 @@ class TestInterruptHandling:
 
     def test_interrupt_cleanup_on_exit(self, cli):
         """Test interrupt handler cleanup on CLI exit."""
-        with patch('coda.cli.interactive_cli.signal') as mock_signal:
+        with patch("coda.cli.interactive_cli.signal") as mock_signal:
             cli.original_sigint_handler = signal.default_int_handler
 
             # Simulate cleanup
             cli.stop_interrupt_listener()
 
             # Handler should be restored
-            mock_signal.signal.assert_called_with(
-                signal.SIGINT,
-                signal.default_int_handler
-            )
+            mock_signal.signal.assert_called_with(signal.SIGINT, signal.default_int_handler)
 
-    @patch('coda.cli.interactive_cli.signal')
+    @patch("coda.cli.interactive_cli.signal")
     def test_interrupt_listener_idempotent(self, mock_signal, cli):
         """Test starting interrupt listener multiple times is safe."""
         mock_signal.getsignal.return_value = signal.default_int_handler
@@ -171,7 +168,7 @@ class TestInterruptHandling:
         """Test interrupt with custom signal handler."""
         custom_handler = Mock()
 
-        with patch('coda.cli.interactive_cli.signal') as mock_signal:
+        with patch("coda.cli.interactive_cli.signal") as mock_signal:
             mock_signal.getsignal.return_value = custom_handler
 
             cli.start_interrupt_listener()
@@ -192,11 +189,14 @@ class TestInterruptHandling:
         cli.reset_interrupt()
         assert cli.interrupted is False
 
-    @pytest.mark.parametrize("signal_num,frame", [
-        (signal.SIGINT, None),
-        (signal.SIGINT, Mock()),
-        (2, None),  # SIGINT numeric value
-    ])
+    @pytest.mark.parametrize(
+        "signal_num,frame",
+        [
+            (signal.SIGINT, None),
+            (signal.SIGINT, Mock()),
+            (2, None),  # SIGINT numeric value
+        ],
+    )
     def test_handle_interrupt_parameters(self, cli, signal_num, frame):
         """Test interrupt handler with different parameters."""
         cli._handle_interrupt(signal_num, frame)
@@ -204,7 +204,7 @@ class TestInterruptHandling:
 
     def test_interrupt_integration_with_chat(self, cli):
         """Test interrupt handling integration with chat flow."""
-        with patch('coda.cli.interactive_cli.PromptSession') as mock_session:
+        with patch("coda.cli.interactive_cli.PromptSession") as mock_session:
             # Simulate interrupt during chat
             def side_effect(*args, **kwargs):
                 if mock_session.prompt.call_count == 1:
@@ -235,9 +235,7 @@ class TestInterruptHandling:
         # Simulate multiple concurrent interrupts
         threads = []
         for _ in range(5):
-            t = threading.Thread(
-                target=lambda: cli._handle_interrupt(signal.SIGINT, None)
-            )
+            t = threading.Thread(target=lambda: cli._handle_interrupt(signal.SIGINT, None))
             threads.append(t)
             t.start()
 
@@ -250,7 +248,7 @@ class TestInterruptHandling:
 
     def test_interrupt_listener_error_handling(self, cli):
         """Test error handling in interrupt listener setup."""
-        with patch('coda.cli.interactive_cli.signal.signal') as mock_signal:
+        with patch("coda.cli.interactive_cli.signal.signal") as mock_signal:
             mock_signal.side_effect = OSError("Cannot set signal handler")
 
             # Should not crash

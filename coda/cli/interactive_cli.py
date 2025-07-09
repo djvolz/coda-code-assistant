@@ -23,7 +23,9 @@ from .shared import CommandHandler, CommandResult, DeveloperMode
 class SlashCommand:
     """Represents a slash command with its handler and help text."""
 
-    def __init__(self, name: str, handler: Callable, help_text: str, aliases: list[str] | None = None):
+    def __init__(
+        self, name: str, handler: Callable, help_text: str, aliases: list[str] | None = None
+    ):
         self.name = name
         self.handler = handler
         self.help_text = help_text
@@ -581,6 +583,7 @@ class InteractiveCLI(CommandHandler):
         elif args == "reset":
             # Reset to default theme
             from ..constants import THEME_DEFAULT
+
             args = THEME_DEFAULT
 
         # Set the theme

@@ -22,16 +22,16 @@ class TestShellScripts:
     @pytest.fixture
     def mock_commands(self):
         """Mock system commands for testing."""
-        with patch('subprocess.run') as mock_run:
+        with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = ""
             yield mock_run
 
     def test_test_with_ollama_dependency_check(self, temp_script_dir):
         """Test dependency checking in test_with_ollama.sh."""
-        script_path = os.path.join(temp_script_dir, 'check_deps.sh')
+        script_path = os.path.join(temp_script_dir, "check_deps.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 check_dependencies() {
     local missing_deps=()
 
@@ -53,17 +53,13 @@ check_dependencies() {
 }
 
 check_dependencies
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
         # Test with all dependencies available
-        result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["bash", script_path], capture_output=True, text=True)
 
         # Should pass if basic commands exist
         if result.returncode == 0:
@@ -73,9 +69,9 @@ check_dependencies
 
     def test_ollama_installation_check(self, temp_script_dir):
         """Test Ollama installation checking."""
-        script_path = os.path.join(temp_script_dir, 'check_ollama.sh')
+        script_path = os.path.join(temp_script_dir, "check_ollama.sh")
 
-        script_content = r'''#!/bin/bash
+        script_content = r"""#!/bin/bash
 OLLAMA_MIN_VERSION="0.1.0"
 
 check_ollama() {
@@ -96,25 +92,21 @@ check_ollama() {
 }
 
 check_ollama
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
-        result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["bash", script_path], capture_output=True, text=True)
 
         # Will fail if ollama not installed
         assert "Ollama" in result.stdout
 
     def test_model_download_script(self, temp_script_dir):
         """Test model downloading functionality."""
-        script_path = os.path.join(temp_script_dir, 'download_model.sh')
+        script_path = os.path.join(temp_script_dir, "download_model.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 MODEL_NAME="${1:-llama2}"
 RETRY_COUNT=3
 RETRY_DELAY=5
@@ -144,16 +136,12 @@ download_model() {
 }
 
 download_model "$MODEL_NAME"
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
-        result = subprocess.run(
-            ['bash', script_path, 'codellama'],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["bash", script_path, "codellama"], capture_output=True, text=True)
 
         assert result.returncode == 0
         assert "Downloading model: codellama" in result.stdout
@@ -162,9 +150,9 @@ download_model "$MODEL_NAME"
 
     def test_test_execution_with_timeout(self, temp_script_dir):
         """Test test execution with timeout handling."""
-        script_path = os.path.join(temp_script_dir, 'run_tests.sh')
+        script_path = os.path.join(temp_script_dir, "run_tests.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 TEST_TIMEOUT="${TEST_TIMEOUT:-300}"  # 5 minutes default
 TEST_COMMAND="${TEST_COMMAND:-pytest}"
 
@@ -192,25 +180,22 @@ run_tests_with_timeout() {
 
 # Simulate test command
 TEST_COMMAND="echo 'Tests passed'" run_tests_with_timeout
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
         result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True,
-            env={'TEST_TIMEOUT': '10'}
+            ["bash", script_path], capture_output=True, text=True, env={"TEST_TIMEOUT": "10"}
         )
 
         assert "Running tests with timeout: 10s" in result.stdout
 
     def test_ollama_server_management(self, temp_script_dir):
         """Test Ollama server start/stop functionality."""
-        script_path = os.path.join(temp_script_dir, 'manage_ollama.sh')
+        script_path = os.path.join(temp_script_dir, "manage_ollama.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 OLLAMA_PID_FILE="/tmp/ollama_test.pid"
 
 start_ollama_server() {
@@ -257,16 +242,12 @@ stop_ollama_server() {
 # Test start and stop
 start_ollama_server
 stop_ollama_server
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
-        result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["bash", script_path], capture_output=True, text=True)
 
         assert result.returncode == 0
         assert "Starting Ollama server" in result.stdout
@@ -276,9 +257,9 @@ stop_ollama_server
 
     def test_environment_setup(self, temp_script_dir):
         """Test environment setup for testing."""
-        script_path = os.path.join(temp_script_dir, 'setup_env.sh')
+        script_path = os.path.join(temp_script_dir, "setup_env.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 setup_test_environment() {
     echo "Setting up test environment..."
 
@@ -301,16 +282,13 @@ setup_test_environment() {
 }
 
 setup_test_environment
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
         result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True,
-            cwd=temp_script_dir
+            ["bash", script_path], capture_output=True, text=True, cwd=temp_script_dir
         )
 
         assert result.returncode == 0
@@ -320,9 +298,9 @@ setup_test_environment
 
     def test_cleanup_operations(self, temp_script_dir):
         """Test cleanup operations in scripts."""
-        script_path = os.path.join(temp_script_dir, 'cleanup.sh')
+        script_path = os.path.join(temp_script_dir, "cleanup.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 cleanup() {
     echo "Performing cleanup..."
 
@@ -347,16 +325,12 @@ cleanup() {
 # Simulate having a PID
 OLLAMA_PID=12345
 cleanup
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
-        result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["bash", script_path], capture_output=True, text=True)
 
         assert result.returncode == 0
         assert "Performing cleanup" in result.stdout
@@ -365,9 +339,9 @@ cleanup
 
     def test_error_handling_and_exit_codes(self, temp_script_dir):
         """Test error handling and exit codes."""
-        script_path = os.path.join(temp_script_dir, 'error_handling.sh')
+        script_path = os.path.join(temp_script_dir, "error_handling.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 set -e  # Exit on error
 
 handle_error() {
@@ -400,17 +374,14 @@ risky_operation() {
 # Run with error handling
 risky_operation
 echo "Script completed successfully"
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
         # Test failure case
         result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True,
-            env={'FORCE_FAIL': 'true'}
+            ["bash", script_path], capture_output=True, text=True, env={"FORCE_FAIL": "true"}
         )
 
         assert result.returncode == 1
@@ -420,9 +391,9 @@ echo "Script completed successfully"
 
     def test_parallel_execution(self, temp_script_dir):
         """Test parallel execution capabilities."""
-        script_path = os.path.join(temp_script_dir, 'parallel_test.sh')
+        script_path = os.path.join(temp_script_dir, "parallel_test.sh")
 
-        script_content = '''#!/bin/bash
+        script_content = """#!/bin/bash
 run_parallel_tests() {
     echo "Starting parallel test execution..."
 
@@ -451,16 +422,12 @@ run_parallel_tests() {
 }
 
 run_parallel_tests
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
-        result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["bash", script_path], capture_output=True, text=True)
 
         assert result.returncode == 0
         assert "Starting parallel test execution" in result.stdout
@@ -469,17 +436,20 @@ run_parallel_tests
         assert "performance_tests completed" in result.stdout
         assert "All parallel tests completed" in result.stdout
 
-    @pytest.mark.parametrize("exit_code,expected_message", [
-        (0, "Tests passed successfully"),
-        (1, "Tests failed with errors"),
-        (2, "Tests failed with warnings"),
-        (124, "Tests timed out"),
-    ])
+    @pytest.mark.parametrize(
+        "exit_code,expected_message",
+        [
+            (0, "Tests passed successfully"),
+            (1, "Tests failed with errors"),
+            (2, "Tests failed with warnings"),
+            (124, "Tests timed out"),
+        ],
+    )
     def test_exit_code_handling(self, temp_script_dir, exit_code, expected_message):
         """Test handling of different exit codes."""
-        script_path = os.path.join(temp_script_dir, 'exit_codes.sh')
+        script_path = os.path.join(temp_script_dir, "exit_codes.sh")
 
-        script_content = f'''#!/bin/bash
+        script_content = f"""#!/bin/bash
 EXIT_CODE={exit_code}
 
 interpret_exit_code() {{
@@ -494,16 +464,12 @@ interpret_exit_code() {{
 }}
 
 interpret_exit_code $EXIT_CODE
-'''
-        with open(script_path, 'w') as f:
+"""
+        with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
 
-        result = subprocess.run(
-            ['bash', script_path],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["bash", script_path], capture_output=True, text=True)
 
         assert result.returncode == exit_code
         assert expected_message in result.stdout

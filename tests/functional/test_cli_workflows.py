@@ -15,10 +15,10 @@ class TestCLIWorkflows:
     @pytest.fixture
     def cli_with_mocks(self):
         """Create a fully mocked InteractiveCLI for workflow testing."""
-        with patch('coda.cli.interactive_cli.ModelManager') as mock_mm:
+        with patch("coda.cli.interactive_cli.ModelManager") as mock_mm:
             # Mock model manager
-            mock_mm.return_value.list_providers.return_value = ['openai', 'anthropic']
-            mock_mm.return_value.list_models.return_value = ['gpt-4', 'gpt-3.5-turbo']
+            mock_mm.return_value.list_providers.return_value = ["openai", "anthropic"]
+            mock_mm.return_value.list_models.return_value = ["gpt-4", "gpt-3.5-turbo"]
             mock_mm.return_value.validate_model.return_value = True
 
             cli = InteractiveCLI()
@@ -29,7 +29,7 @@ class TestCLIWorkflows:
             cli.chat_session.send_message = Mock(return_value="AI response")
 
             # Mock prompt session
-            with patch.object(cli, '_setup_prompt_sessions'):
+            with patch.object(cli, "_setup_prompt_sessions"):
                 cli.prompt_session = Mock()
                 cli.multiline_session = Mock()
 
@@ -40,26 +40,20 @@ class TestCLIWorkflows:
         cli = cli_with_mocks
 
         # Simulate user inputs
-        inputs = [
-            "Hello, can you help me?",
-            "Write a Python function",
-            "/exit"
-        ]
+        inputs = ["Hello, can you help me?", "Write a Python function", "/exit"]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, 'run'):
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch.object(cli, "run"):
                 # Start the CLI
                 cli.run()
 
                 # Verify conversation flow
                 assert cli.chat_session.send_message.call_count == 2
                 cli.chat_session.send_message.assert_any_call(
-                    message="Hello, can you help me?",
-                    mode='default'
+                    message="Hello, can you help me?", mode="default"
                 )
                 cli.chat_session.send_message.assert_any_call(
-                    message="Write a Python function",
-                    mode='default'
+                    message="Write a Python function", mode="default"
                 )
 
     def test_mode_switching_workflow(self, cli_with_mocks):
@@ -73,19 +67,19 @@ class TestCLIWorkflows:
             "def hello_world():",
             "/mode shell",
             "ls -la",
-            "/exit"
+            "/exit",
         ]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, '_execute_command') as mock_exec:
-                with patch('coda.cli.interactive_cli.print'):
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch.object(cli, "_execute_command") as mock_exec:
+                with patch("coda.cli.interactive_cli.print"):
                     # Mock command execution
                     def exec_side_effect(cmd):
                         if cmd == "/mode code":
-                            cli.mode = 'code'
+                            cli.mode = "code"
                             return True
                         elif cmd == "/mode shell":
-                            cli.mode = 'shell'
+                            cli.mode = "shell"
                             return True
                         return False
 
@@ -96,9 +90,9 @@ class TestCLIWorkflows:
 
                     # Verify mode changes
                     calls = cli.chat_session.send_message.call_args_list
-                    assert calls[0][1]['mode'] == 'default'
-                    assert calls[1][1]['mode'] == 'code'
-                    assert calls[2][1]['mode'] == 'shell'
+                    assert calls[0][1]["mode"] == "default"
+                    assert calls[1][1]["mode"] == "code"
+                    assert calls[2][1]["mode"] == "shell"
 
     def test_model_selection_workflow(self, cli_with_mocks):
         """Test model selection during session."""
@@ -110,12 +104,12 @@ class TestCLIWorkflows:
             "Test with new model",
             "/provider anthropic",  # Switch provider
             "/model claude-2",  # Select model from new provider
-            "/exit"
+            "/exit",
         ]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, '_execute_command') as mock_exec:
-                with patch('coda.cli.interactive_cli.print') as mock_print:
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch.object(cli, "_execute_command") as mock_exec:
+                with patch("coda.cli.interactive_cli.print") as mock_print:
                     # Mock command execution
                     def exec_side_effect(cmd):
                         if cmd == "/model":
@@ -126,7 +120,10 @@ class TestCLIWorkflows:
                             return True
                         elif cmd == "/provider anthropic":
                             cli.current_provider = "anthropic"
-                            cli.model_manager.list_models.return_value = ['claude-2', 'claude-instant']
+                            cli.model_manager.list_models.return_value = [
+                                "claude-2",
+                                "claude-instant",
+                            ]
                             return True
                         elif cmd == "/model claude-2":
                             cli.current_model = "claude-2"
@@ -147,33 +144,28 @@ class TestCLIWorkflows:
     def test_session_export_workflow(self, cli_with_mocks):
         """Test session export functionality."""
         cli = cli_with_mocks
-        temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.md')
+        temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".md")
         temp_file.close()
 
         try:
-            inputs = [
-                "First message",
-                "Second message",
-                f"/export {temp_file.name}",
-                "/exit"
-            ]
+            inputs = ["First message", "Second message", f"/export {temp_file.name}", "/exit"]
 
             # Mock conversation history
             cli.chat_session.get_history.return_value = [
                 {"role": "user", "content": "First message"},
                 {"role": "assistant", "content": "First response"},
                 {"role": "user", "content": "Second message"},
-                {"role": "assistant", "content": "Second response"}
+                {"role": "assistant", "content": "Second response"},
             ]
 
-            with patch.object(cli, 'get_input', side_effect=inputs):
-                with patch.object(cli, '_execute_command') as mock_exec:
-                    with patch('coda.cli.interactive_cli.print'):
+            with patch.object(cli, "get_input", side_effect=inputs):
+                with patch.object(cli, "_execute_command") as mock_exec:
+                    with patch("coda.cli.interactive_cli.print"):
                         # Mock export command
                         def exec_side_effect(cmd):
                             if cmd.startswith("/export"):
                                 # Simulate export
-                                with open(temp_file.name, 'w') as f:
+                                with open(temp_file.name, "w") as f:
                                     f.write("# Conversation Export\n\n")
                                     for msg in cli.chat_session.get_history():
                                         f.write(f"**{msg['role']}**: {msg['content']}\n\n")
@@ -207,7 +199,7 @@ class TestCLIWorkflows:
             "    if n <= 1:",
             "        return n",
             "    return fibonacci(n-1) + fibonacci(n-2)",
-            "```"
+            "```",
         ]
 
         inputs = [
@@ -215,12 +207,13 @@ class TestCLIWorkflows:
             "```python",  # Start multiline
             *code_lines[1:-1],  # Code lines
             "```",  # End multiline
-            "/exit"
+            "/exit",
         ]
 
-        with patch.object(cli, 'get_input') as mock_input:
+        with patch.object(cli, "get_input") as mock_input:
             # Setup multiline behavior
             call_count = 0
+
             def get_input_side_effect():
                 nonlocal call_count
                 if call_count < len(inputs):
@@ -256,12 +249,13 @@ class TestCLIWorkflows:
             "Start a conversation",
             KeyboardInterrupt(),  # Simulate Ctrl+C
             "Continue after interrupt",
-            "/exit"
+            "/exit",
         ]
 
-        with patch.object(cli, 'get_input') as mock_input:
+        with patch.object(cli, "get_input") as mock_input:
             # Handle the interrupt
             call_count = 0
+
             def get_input_side_effect():
                 nonlocal call_count
                 if call_count < len(inputs):
@@ -274,7 +268,7 @@ class TestCLIWorkflows:
 
             mock_input.side_effect = get_input_side_effect
 
-            with patch('coda.cli.interactive_cli.print'):
+            with patch("coda.cli.interactive_cli.print"):
                 # Run workflow
                 cli.run()
 
@@ -294,12 +288,12 @@ class TestCLIWorkflows:
             "/theme dark",  # Switch theme
             "Continue with dark theme",
             "/theme reset",  # Reset theme
-            "/exit"
+            "/exit",
         ]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, '_execute_command') as mock_exec:
-                with patch('coda.cli.interactive_cli.print') as mock_print:
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch.object(cli, "_execute_command") as mock_exec:
+                with patch("coda.cli.interactive_cli.print") as mock_print:
                     # Mock theme commands
                     def exec_side_effect(cmd):
                         if cmd == "/theme":
@@ -331,12 +325,12 @@ class TestCLIWorkflows:
             "/help",  # General help
             "/help model",  # Specific command help
             "/help theme",  # Another command help
-            "/exit"
+            "/exit",
         ]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, '_execute_command') as mock_exec:
-                with patch('coda.cli.interactive_cli.print'):
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch.object(cli, "_execute_command") as mock_exec:
+                with patch("coda.cli.interactive_cli.print"):
                     mock_exec.return_value = True
 
                     # Run workflow
@@ -356,26 +350,22 @@ class TestCLIWorkflows:
         cli.chat_session.send_message.side_effect = [
             Exception("Network error"),
             "Recovery response",
-            "Normal response"
+            "Normal response",
         ]
 
-        inputs = [
-            "Message that will fail",
-            "Retry message",
-            "Normal message",
-            "/exit"
-        ]
+        inputs = ["Message that will fail", "Retry message", "Normal message", "/exit"]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch('coda.cli.interactive_cli.print') as mock_print:
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch("coda.cli.interactive_cli.print") as mock_print:
                 # Run workflow
                 cli.run()
 
                 # Should recover from error
                 assert cli.chat_session.send_message.call_count == 3
                 # Verify error was printed
-                error_prints = [call for call in mock_print.call_args_list
-                              if "Network error" in str(call)]
+                error_prints = [
+                    call for call in mock_print.call_args_list if "Network error" in str(call)
+                ]
                 assert len(error_prints) > 0
 
     def test_session_persistence_workflow(self, cli_with_mocks):
@@ -390,11 +380,11 @@ class TestCLIWorkflows:
             "/session list",  # List sessions
             f"/session load {session_id}",  # Load session
             "Continue in loaded session",
-            "/exit"
+            "/exit",
         ]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, '_execute_command') as mock_exec:
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch.object(cli, "_execute_command") as mock_exec:
                 # Mock session commands
                 saved_sessions = {}
 
@@ -426,45 +416,35 @@ class TestCLIWorkflows:
                 mock_exec.assert_any_call(f"/session save {session_id}")
                 mock_exec.assert_any_call(f"/session load {session_id}")
 
-    @pytest.mark.parametrize("workflow_type", [
-        "quick_question",
-        "code_review",
-        "debugging_session",
-        "learning_tutorial"
-    ])
+    @pytest.mark.parametrize(
+        "workflow_type", ["quick_question", "code_review", "debugging_session", "learning_tutorial"]
+    )
     def test_common_workflow_patterns(self, cli_with_mocks, workflow_type):
         """Test common usage patterns."""
         cli = cli_with_mocks
 
         workflows = {
-            "quick_question": [
-                "What is Python?",
-                "/exit"
-            ],
-            "code_review": [
-                "/mode code",
-                "Review this: def add(a,b): return a+b",
-                "/exit"
-            ],
+            "quick_question": ["What is Python?", "/exit"],
+            "code_review": ["/mode code", "Review this: def add(a,b): return a+b", "/exit"],
             "debugging_session": [
                 "/mode shell",
                 "python --version",
                 "/mode code",
                 "Fix this error: NameError",
-                "/exit"
+                "/exit",
             ],
             "learning_tutorial": [
                 "Teach me about decorators",
                 "Show me an example",
                 "Explain how it works",
-                "/exit"
-            ]
+                "/exit",
+            ],
         }
 
         inputs = workflows[workflow_type]
 
-        with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, '_execute_command', return_value=True):
+        with patch.object(cli, "get_input", side_effect=inputs):
+            with patch.object(cli, "_execute_command", return_value=True):
                 # Run workflow
                 cli.run()
 
