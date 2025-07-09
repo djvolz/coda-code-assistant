@@ -94,7 +94,7 @@ class GenericSelector:
         # Create the layout
         content = Window(
             content=FormattedTextControl(
-                get_text=lambda: self.get_formatted_options(),
+                text=lambda: self.get_formatted_options(),
                 focusable=False,
             ),
             align=WindowAlign.LEFT,
