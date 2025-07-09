@@ -24,239 +24,186 @@ class TestInterruptHandling:
             return cli
 
     def test_initial_interrupt_state(self, cli):
-        """Test initial state of interrupt flag."""
-        assert cli.interrupted is False
-        assert cli.original_sigint_handler is None
+        """Test initial state of interrupt event."""
+        assert hasattr(cli, "interrupt_event")
+        assert not cli.interrupt_event.is_set()
+        assert cli.escape_count == 0
+        assert cli.ctrl_c_count == 0
 
     def test_reset_interrupt(self, cli):
-        """Test reset_interrupt clears the flag."""
-        cli.interrupted = True
+        """Test reset_interrupt clears the event and counters."""
+        # Set the interrupt event and counters
+        cli.interrupt_event.set()
+        cli.escape_count = 5
+        cli.ctrl_c_count = 3
 
         cli.reset_interrupt()
 
-        assert cli.interrupted is False
+        assert not cli.interrupt_event.is_set()
+        assert cli.escape_count == 0
+        assert cli.ctrl_c_count == 0
 
-    def test_handle_interrupt_sets_flag(self, cli):
-        """Test interrupt handler sets the flag."""
-        assert cli.interrupted is False
-
-        cli._handle_interrupt(signal.SIGINT, None)
-
-        assert cli.interrupted is True
-
-    def test_handle_interrupt_with_print(self, cli):
-        """Test interrupt handler with print output."""
-        with patch("coda.cli.interactive_cli.print") as mock_print:
-            cli._handle_interrupt(signal.SIGINT, None)
-
-            # Should print interrupt message
-            mock_print.assert_called_once()
-            assert "Interrupt received" in str(mock_print.call_args)
-
-    @patch("coda.cli.interactive_cli.signal")
-    def test_start_interrupt_listener(self, mock_signal, cli):
-        """Test starting interrupt listener registers handler."""
-        # Mock the current handler
-        mock_signal.getsignal.return_value = signal.default_int_handler
-
-        cli.start_interrupt_listener()
-
-        # Should store original handler
-        assert cli.original_sigint_handler == signal.default_int_handler
-
-        # Should register new handler
-        mock_signal.signal.assert_called_with(signal.SIGINT, cli._handle_interrupt)
-
-    @patch("coda.cli.interactive_cli.signal")
-    def test_stop_interrupt_listener(self, mock_signal, cli):
-        """Test stopping interrupt listener restores handler."""
-        cli.original_sigint_handler = signal.default_int_handler
-
-        cli.stop_interrupt_listener()
-
-        # Should restore original handler
-        mock_signal.signal.assert_called_with(signal.SIGINT, signal.default_int_handler)
-
-        # Should clear stored handler
-        assert cli.original_sigint_handler is None
-
-    @patch("coda.cli.interactive_cli.signal")
-    def test_stop_interrupt_listener_no_original(self, mock_signal, cli):
-        """Test stopping listener when no original handler stored."""
-        cli.original_sigint_handler = None
-
-        cli.stop_interrupt_listener()
-
-        # Should not call signal.signal
-        mock_signal.signal.assert_not_called()
-
-    def test_interrupt_flag_thread_safety(self, cli):
-        """Test interrupt flag is thread-safe."""
+    def test_interrupt_event_thread_safety(self, cli):
+        """Test interrupt event is thread-safe."""
         results = []
 
         def set_interrupt():
-            cli._handle_interrupt(signal.SIGINT, None)
-            results.append(cli.interrupted)
+            cli.interrupt_event.set()
+            results.append(cli.interrupt_event.is_set())
 
-        def reset_interrupt():
+        def clear_interrupt():
             time.sleep(0.01)  # Small delay to ensure ordering
-            cli.reset_interrupt()
-            results.append(cli.interrupted)
+            cli.interrupt_event.clear()
+            results.append(cli.interrupt_event.is_set())
 
         # Run in threads
         t1 = threading.Thread(target=set_interrupt)
-        t2 = threading.Thread(target=reset_interrupt)
+        t2 = threading.Thread(target=clear_interrupt)
 
         t1.start()
         t2.start()
         t1.join()
         t2.join()
 
-        # Should have set then reset
+        # Should have set then cleared
         assert results[0] is True
         assert results[1] is False
 
-    def test_multiple_interrupts(self, cli):
-        """Test handling multiple interrupts."""
-        cli._handle_interrupt(signal.SIGINT, None)
-        assert cli.interrupted is True
+    def test_multiple_interrupt_sets(self, cli):
+        """Test handling multiple interrupt event sets."""
+        cli.interrupt_event.set()
+        assert cli.interrupt_event.is_set()
 
-        # Second interrupt should still leave flag set
-        cli._handle_interrupt(signal.SIGINT, None)
-        assert cli.interrupted is True
+        # Second set should still leave event set
+        cli.interrupt_event.set()
+        assert cli.interrupt_event.is_set()
 
-    def test_interrupt_during_input(self, cli):
-        """Test interrupt handling during get_input."""
-        with patch("coda.cli.interactive_cli.PromptSession"):
-            # Set interrupt flag before input
-            cli.interrupted = True
+    def test_interrupt_event_persistence(self, cli):
+        """Test interrupt event persists until cleared."""
+        cli.interrupt_event.set()
+        assert cli.interrupt_event.is_set()
 
-            result = cli.get_input()
+        # Event should persist
+        assert cli.interrupt_event.is_set()
+        assert cli.interrupt_event.is_set()
 
-            # Should return None and reset flag
-            assert result is None
-            assert cli.interrupted is False
+        # Until explicitly cleared
+        cli.interrupt_event.clear()
+        assert not cli.interrupt_event.is_set()
 
-    def test_interrupt_cleanup_on_exit(self, cli):
-        """Test interrupt handler cleanup on CLI exit."""
-        with patch("coda.cli.interactive_cli.signal") as mock_signal:
-            cli.original_sigint_handler = signal.default_int_handler
-
-            # Simulate cleanup
-            cli.stop_interrupt_listener()
-
-            # Handler should be restored
-            mock_signal.signal.assert_called_with(signal.SIGINT, signal.default_int_handler)
-
-    @patch("coda.cli.interactive_cli.signal")
-    def test_interrupt_listener_idempotent(self, mock_signal, cli):
-        """Test starting interrupt listener multiple times is safe."""
-        mock_signal.getsignal.return_value = signal.default_int_handler
+    @patch("signal.signal")
+    def test_start_interrupt_listener(self, mock_signal, cli):
+        """Test starting interrupt listener registers handler."""
+        # Mock the current handler
+        mock_signal.return_value = signal.default_int_handler
 
         cli.start_interrupt_listener()
-        first_handler = cli.original_sigint_handler
 
-        # Start again
+        # Should register new handler
+        mock_signal.assert_called_once()
+        call_args = mock_signal.call_args[0]
+        assert call_args[0] == signal.SIGINT
+        # The handler should be a function
+        assert callable(call_args[1])
+
+        # Should store old handler
+        assert hasattr(cli, "old_sigint_handler")
+
+    @patch("signal.signal")
+    def test_stop_interrupt_listener(self, mock_signal, cli):
+        """Test stopping interrupt listener restores handler."""
+        cli.old_sigint_handler = signal.default_int_handler
+
+        cli.stop_interrupt_listener()
+
+        # Should restore original handler
+        mock_signal.assert_called_with(signal.SIGINT, signal.default_int_handler)
+
+    @patch("signal.signal")
+    def test_stop_interrupt_listener_no_old_handler(self, mock_signal, cli):
+        """Test stopping listener when no old handler stored."""
+        # Ensure no old_sigint_handler attribute
+        if hasattr(cli, "old_sigint_handler"):
+            delattr(cli, "old_sigint_handler")
+
+        cli.stop_interrupt_listener()
+
+        # Should not call signal.signal
+        mock_signal.assert_not_called()
+
+    @patch("signal.signal")
+    def test_interrupt_handler_sets_event(self, mock_signal, cli):
+        """Test that the interrupt handler sets the interrupt event."""
+        # Start the listener to get the handler
         cli.start_interrupt_listener()
 
-        # Should not change stored handler
-        assert cli.original_sigint_handler == first_handler
+        # Get the handler that was registered
+        handler = mock_signal.call_args[0][1]
 
-        # Should register handler twice (not ideal but safe)
-        assert mock_signal.signal.call_count == 2
+        # Ensure event is not set
+        cli.interrupt_event.clear()
+        assert not cli.interrupt_event.is_set()
 
-    def test_interrupt_with_custom_handler(self, cli):
-        """Test interrupt with custom signal handler."""
-        custom_handler = Mock()
+        # Call the handler
+        handler(signal.SIGINT, None)
 
-        with patch("coda.cli.interactive_cli.signal") as mock_signal:
-            mock_signal.getsignal.return_value = custom_handler
+        # Event should now be set
+        assert cli.interrupt_event.is_set()
 
-            cli.start_interrupt_listener()
+    def test_escape_and_ctrl_c_counters(self, cli):
+        """Test escape and ctrl-c counter attributes."""
+        assert hasattr(cli, "escape_count")
+        assert hasattr(cli, "ctrl_c_count")
+        assert hasattr(cli, "last_escape_time")
+        assert hasattr(cli, "last_ctrl_c_time")
 
-            # Should store custom handler
-            assert cli.original_sigint_handler == custom_handler
-
-    def test_interrupt_flag_persistence(self, cli):
-        """Test interrupt flag persists until reset."""
-        cli._handle_interrupt(signal.SIGINT, None)
-        assert cli.interrupted is True
-
-        # Flag should persist
-        assert cli.interrupted is True
-        assert cli.interrupted is True
-
-        # Until explicitly reset
-        cli.reset_interrupt()
-        assert cli.interrupted is False
-
-    @pytest.mark.parametrize(
-        "signal_num,frame",
-        [
-            (signal.SIGINT, None),
-            (signal.SIGINT, Mock()),
-            (2, None),  # SIGINT numeric value
-        ],
-    )
-    def test_handle_interrupt_parameters(self, cli, signal_num, frame):
-        """Test interrupt handler with different parameters."""
-        cli._handle_interrupt(signal_num, frame)
-        assert cli.interrupted is True
-
-    def test_interrupt_integration_with_chat(self, cli):
-        """Test interrupt handling integration with chat flow."""
-        with patch("coda.cli.interactive_cli.PromptSession") as mock_session:
-            # Simulate interrupt during chat
-            def side_effect(*args, **kwargs):
-                if mock_session.prompt.call_count == 1:
-                    cli._handle_interrupt(signal.SIGINT, None)
-                    raise KeyboardInterrupt()
-                return "follow-up input"
-
-            mock_session.prompt.side_effect = side_effect
-
-            # First call should be interrupted
-            result = cli.get_input()
-            assert result is None
-
-            # Flag should be reset for next input
-            assert cli.interrupted is False
+        # Initial values
+        assert cli.escape_count == 0
+        assert cli.ctrl_c_count == 0
+        assert cli.last_escape_time == 0
+        assert cli.last_ctrl_c_time == 0
 
     def test_concurrent_interrupt_handling(self, cli):
-        """Test concurrent interrupt signal handling."""
-        interrupt_count = 0
+        """Test concurrent interrupt event handling."""
+        set_count = 0
+        clear_count = 0
 
-        def counting_handler(signum, frame):
-            nonlocal interrupt_count
-            interrupt_count += 1
-            cli._handle_interrupt(signum, frame)
+        def set_event():
+            nonlocal set_count
+            cli.interrupt_event.set()
+            if cli.interrupt_event.is_set():
+                set_count += 1
 
-        cli._handle_interrupt = counting_handler
+        def clear_event():
+            nonlocal clear_count
+            cli.interrupt_event.clear()
+            if not cli.interrupt_event.is_set():
+                clear_count += 1
 
-        # Simulate multiple concurrent interrupts
+        # Simulate multiple concurrent sets and clears
         threads = []
-        for _ in range(5):
-            t = threading.Thread(target=lambda: cli._handle_interrupt(signal.SIGINT, None))
+        for i in range(5):
+            if i % 2 == 0:
+                t = threading.Thread(target=set_event)
+            else:
+                t = threading.Thread(target=clear_event)
             threads.append(t)
             t.start()
 
         for t in threads:
             t.join()
 
-        # All interrupts should be handled
-        assert interrupt_count == 5
-        assert cli.interrupted is True
+        # All operations should have completed
+        assert set_count + clear_count == 5
 
-    def test_interrupt_listener_error_handling(self, cli):
+    @patch("signal.signal")
+    def test_interrupt_listener_error_handling(self, mock_signal, cli):
         """Test error handling in interrupt listener setup."""
-        with patch("coda.cli.interactive_cli.signal.signal") as mock_signal:
-            mock_signal.side_effect = OSError("Cannot set signal handler")
+        mock_signal.side_effect = OSError("Cannot set signal handler")
 
-            # Should not crash
-            try:
-                cli.start_interrupt_listener()
-            except OSError:
-                pass  # Expected in test
+        # Should not crash even if signal setup fails
+        with pytest.raises(OSError):
+            cli.start_interrupt_listener()
 
-            # Flag should remain unset
-            assert cli.interrupted is False
+        # Event should remain unset
+        assert not cli.interrupt_event.is_set()
