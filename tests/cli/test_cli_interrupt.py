@@ -17,7 +17,7 @@ class TestInterruptHandling:
     def cli(self):
         """Create an InteractiveCLI instance for testing."""
         # Mock the console to avoid terminal issues in tests
-        with patch("coda.cli.interactive_cli.get_themed_console"):
+        with patch("coda.themes.get_themed_console"):
             cli = InteractiveCLI()
             cli.session_manager = Mock()
             cli.chat_session = Mock()
