@@ -231,9 +231,9 @@ class TestObservabilityEnabledDisabledStates:
 
         # When disabled, operations should be significantly faster (near zero overhead)
         # Allow some variance but disabled should be at least 50% faster
-        assert (
-            time_disabled < time_enabled * 0.5
-        ), f"Disabled time {time_disabled} not significantly faster than enabled {time_enabled}"
+        assert time_disabled < time_enabled * 0.5, (
+            f"Disabled time {time_disabled} not significantly faster than enabled {time_enabled}"
+        )
 
     def test_dynamic_component_toggling(self, temp_dir):
         """Test behavior when components are toggled during runtime."""

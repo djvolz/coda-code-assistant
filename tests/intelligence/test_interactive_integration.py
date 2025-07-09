@@ -308,9 +308,7 @@ class TestIntelligenceInteractiveCLI:
         assert "Found" in processor_result or "No definitions found" in processor_result
 
         # This information could help AI provide more specific assistance
-        [
-            Message(role=Role.USER, content="Where is the DataProcessor class defined in my code?")
-        ]
+        [Message(role=Role.USER, content="Where is the DataProcessor class defined in my code?")]
 
         # The find command provides the exact answer
         if "Found" in processor_result:

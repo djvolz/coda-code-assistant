@@ -120,7 +120,7 @@ def create_semantic_search_manager(
                 error_messages.append(f"Mock: {str(e)}")
 
     if embedding_provider is None:
-        raise ValueError("No embedding provider available. " f"Errors: {'; '.join(error_messages)}")
+        raise ValueError(f"No embedding provider available. Errors: {'; '.join(error_messages)}")
 
     # Use Coda's cache directory for indexes
     index_dir = get_cache_dir() / "semantic_search"

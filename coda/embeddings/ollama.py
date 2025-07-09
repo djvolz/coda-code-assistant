@@ -158,7 +158,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
             raise
         except httpx.ConnectError:
             raise ConnectionError(
-                f"Cannot connect to Ollama at {self.base_url}. " "Make sure Ollama is running."
+                f"Cannot connect to Ollama at {self.base_url}. Make sure Ollama is running."
             ) from None
 
     async def embed_batch(self, texts: list[str]) -> list[EmbeddingResult]:

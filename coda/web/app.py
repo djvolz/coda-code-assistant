@@ -1,6 +1,5 @@
 """Main Streamlit application for Coda Assistant Web UI."""
 
-
 import streamlit as st
 
 from coda.web.pages import chat, dashboard, sessions, settings

@@ -1,6 +1,5 @@
 """Chat interface page."""
 
-
 import streamlit as st
 
 from coda.providers.registry import get_provider_registry

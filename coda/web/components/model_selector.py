@@ -1,6 +1,5 @@
 """Model selection component."""
 
-
 import streamlit as st
 
 from coda.providers.registry import ProviderFactory

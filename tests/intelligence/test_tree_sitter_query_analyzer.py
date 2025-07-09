@@ -141,7 +141,6 @@ class TestTreeSitterQueryAnalyzer:
             patch("coda.intelligence.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
             patch("coda.intelligence.tree_sitter_query_analyzer.get_language") as mock_get_language,
         ):
-
             # Setup mock parser
             mock_parser = Mock()
             mock_tree = Mock()
@@ -464,7 +463,6 @@ class TestTreeSitterQueryAnalyzer:
             patch("coda.intelligence.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
             patch("coda.intelligence.tree_sitter_query_analyzer.get_language") as mock_get_language,
         ):
-
             # Setup mocks
             mock_parser = Mock()
             mock_tree = Mock()

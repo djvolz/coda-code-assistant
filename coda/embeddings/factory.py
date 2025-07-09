@@ -61,7 +61,7 @@ class EmbeddingProviderFactory:
         if not provider_class:
             available = list(cls.PROVIDERS.keys()) + list(cls.ALIASES.keys())
             raise ValueError(
-                f"Unknown provider type: {provider_type}. " f"Available: {', '.join(available)}"
+                f"Unknown provider type: {provider_type}. Available: {', '.join(available)}"
             )
 
         # Set default model IDs if not provided

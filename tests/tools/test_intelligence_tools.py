@@ -277,7 +277,9 @@ def utility_function():
             print(f"Test dir: {self.test_dir}")
             print(f"Files in test dir: {list(self.test_dir.rglob('*'))}")
 
-        assert result.result["total_files"] >= 3, f"Expected at least 3 files, got {result.result['total_files']}"
+        assert result.result["total_files"] >= 3, (
+            f"Expected at least 3 files, got {result.result['total_files']}"
+        )
         assert result.result["total_size"] > 0
         assert "python" in result.result["languages"]
         assert "javascript" in result.result["languages"]
