@@ -599,9 +599,9 @@ class SessionCommands:
         # Summary panel
         summary_text = f"""[bold]Tool Usage Summary[/bold]
 
-Total tool calls: [cyan]{summary['total_tool_calls']}[/cyan]
-Unique tools used: [cyan]{summary['unique_tools']}[/cyan]
-Most used tool: [cyan]{summary['most_used'] or 'N/A'}[/cyan]
+Total tool calls: [cyan]{summary["total_tool_calls"]}[/cyan]
+Unique tools used: [cyan]{summary["unique_tools"]}[/cyan]
+Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
 
 [bold]Tool Counts:[/bold]"""
 
