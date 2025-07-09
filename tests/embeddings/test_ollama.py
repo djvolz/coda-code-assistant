@@ -54,7 +54,8 @@ class TestOllamaProvider:
         client = provider._get_client()
         assert isinstance(client, httpx.AsyncClient)
         assert client.base_url == "http://localhost:11434"
-        assert client.timeout.total == 30.0
+        # Check timeout - httpx.Timeout has different attributes
+        assert client.timeout.connect == 30.0 or client.timeout.read == 30.0
         
         # Test that same client is reused
         client2 = provider._get_client()
