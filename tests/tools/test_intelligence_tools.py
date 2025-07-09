@@ -1,6 +1,7 @@
 """Tests for intelligence tools."""
 
 import asyncio
+import os
 import tempfile
 from pathlib import Path
 
@@ -21,8 +22,10 @@ class TestIntelligenceTools:
 
     def setup_method(self):
         """Set up test environment."""
-        self.temp_dir = tempfile.mkdtemp()
-        self.test_dir = Path(self.temp_dir)
+        # Create test directory in current directory to avoid /tmp being ignored
+        self.test_dir = Path.cwd() / f"test_temp_{os.getpid()}"
+        self.test_dir.mkdir(exist_ok=True)
+        self.temp_dir = str(self.test_dir)
 
         # Create test Python file
         self.python_file = self.test_dir / "test.py"
