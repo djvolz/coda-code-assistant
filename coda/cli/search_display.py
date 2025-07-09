@@ -19,6 +19,8 @@ class SearchHighlighter(RegexHighlighter):
     def __init__(self, query_terms: list[str]):
         super().__init__()
         self.query_terms = query_terms
+        # Create a new instance-specific highlights list
+        self.highlights = []
         # Build regex patterns for each term
         for term in query_terms:
             # Case-insensitive matching
