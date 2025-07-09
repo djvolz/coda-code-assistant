@@ -176,4 +176,3 @@ class TestInteractiveCLICompletion:
             assert completion.style is not None
             # Style should contain theme color
             assert "bold" in completion.style or "#" in completion.style
-

@@ -1,9 +1,10 @@
 """Web UI command for launching Streamlit interface."""
 
-import click
 import subprocess
 import sys
 from pathlib import Path
+
+import click
 from rich.console import Console
 from rich.panel import Panel
 
@@ -25,7 +26,7 @@ def web(port: int, host: str, browser: bool, debug: bool):
     except Exception as e:
         console.print(f"[red]Error loading configuration: {e}[/red]")
         sys.exit(1)
-    
+
     console.print(
         Panel(
             f"[green]Starting Coda Web UI on http://{host}:{port}[/green]\n"
@@ -34,9 +35,9 @@ def web(port: int, host: str, browser: bool, debug: bool):
             border_style=PANEL_BORDER_STYLE,
         )
     )
-    
+
     app_path = Path(__file__).parent.parent / "web" / "app.py"
-    
+
     cmd = [
         sys.executable,
         "-m",
@@ -48,13 +49,13 @@ def web(port: int, host: str, browser: bool, debug: bool):
         "--server.address",
         host,
     ]
-    
+
     if not browser:
         cmd.extend(["--server.headless", "true"])
-    
+
     if debug:
         cmd.extend(["--logger.level", "debug"])
-    
+
     try:
         subprocess.run(cmd, check=True)
     except KeyboardInterrupt:

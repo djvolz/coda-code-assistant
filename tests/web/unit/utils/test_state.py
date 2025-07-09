@@ -19,11 +19,12 @@ class TestStateManagement:
     @pytest.fixture
     def mock_streamlit(self):
         """Mock Streamlit session state."""
-        with patch('coda.web.utils.state.st') as mock_st:
+        with patch("coda.web.utils.state.st") as mock_st:
             # Create a custom class that behaves like streamlit session_state
             class SessionState(dict):
                 def __setattr__(self, key, value):
                     self[key] = value
+
                 def __getattr__(self, key):
                     return self.get(key)
 
@@ -33,14 +34,11 @@ class TestStateManagement:
     @pytest.fixture
     def mock_config(self):
         """Mock configuration."""
-        with patch('coda.web.utils.state.get_config') as mock:
+        with patch("coda.web.utils.state.get_config") as mock:
             config = Mock()
             config.to_dict.return_value = {
                 "default_provider": "openai",
-                "openai": {
-                    "enabled": True,
-                    "models": ["gpt-4", "gpt-3.5-turbo"]
-                }
+                "openai": {"enabled": True, "models": ["gpt-4", "gpt-3.5-turbo"]},
             }
             mock.return_value = config
             yield mock
@@ -48,13 +46,13 @@ class TestStateManagement:
     @pytest.fixture
     def mock_session_manager(self):
         """Mock SessionManager."""
-        with patch('coda.web.utils.state.SessionManager') as mock:
+        with patch("coda.web.utils.state.SessionManager") as mock:
             yield mock
 
     @pytest.fixture
     def mock_path(self):
         """Mock Path operations."""
-        with patch('coda.web.utils.state.Path') as mock:
+        with patch("coda.web.utils.state.Path") as mock:
             mock_home = Mock()
             mock_path_obj = Mock()
             mock_parent = Mock()
@@ -64,7 +62,9 @@ class TestStateManagement:
             mock.home = mock_home
             yield mock
 
-    def test_init_session_state_first_run(self, mock_streamlit, mock_config, mock_session_manager, mock_path):
+    def test_init_session_state_first_run(
+        self, mock_streamlit, mock_config, mock_session_manager, mock_path
+    ):
         """Test initialization on first run."""
         init_session_state()
 
@@ -82,10 +82,7 @@ class TestStateManagement:
     def test_init_session_state_already_initialized(self, mock_streamlit, mock_config):
         """Test initialization when already initialized."""
         # Simulate already initialized state
-        mock_streamlit.session_state = {
-            "initialized": True,
-            "messages": ["existing"]
-        }
+        mock_streamlit.session_state = {"initialized": True, "messages": ["existing"]}
 
         init_session_state()
 
@@ -95,7 +92,7 @@ class TestStateManagement:
 
     def test_init_session_state_config_error(self, mock_streamlit, mock_session_manager, mock_path):
         """Test initialization with config error."""
-        with patch('coda.web.utils.state.get_config') as mock_config:
+        with patch("coda.web.utils.state.get_config") as mock_config:
             mock_config.side_effect = Exception("Config error")
 
             init_session_state()
@@ -107,15 +104,18 @@ class TestStateManagement:
 
     def test_init_session_state_session_manager_error(self, mock_streamlit, mock_config, mock_path):
         """Test initialization with session manager error."""
-        with patch('coda.web.utils.state.SessionManager') as mock_sm:
+        with patch("coda.web.utils.state.SessionManager") as mock_sm:
             mock_sm.side_effect = Exception("DB error")
 
             init_session_state()
 
             assert mock_streamlit.session_state["session_manager"] is None
             # The error message includes the path issue, so just check it contains our error
-            assert "DB error" in mock_streamlit.session_state["session_manager_error"] or \
-                   "Operation not supported" in mock_streamlit.session_state["session_manager_error"]
+            assert (
+                "DB error" in mock_streamlit.session_state["session_manager_error"]
+                or "Operation not supported"
+                in mock_streamlit.session_state["session_manager_error"]
+            )
             # Should continue initialization despite error
             assert mock_streamlit.session_state["initialized"] == True
 
@@ -158,7 +158,7 @@ class TestStateManagement:
         mock_streamlit.session_state = {
             "messages": ["msg1", "msg2"],
             "current_session_id": "session-123",
-            "other_key": "keep_this"
+            "other_key": "keep_this",
         }
 
         clear_chat_state()
@@ -167,9 +167,11 @@ class TestStateManagement:
         assert mock_streamlit.session_state["current_session_id"] is None
         assert mock_streamlit.session_state["other_key"] == "keep_this"  # Not cleared
 
-    def test_init_session_state_creates_db_directory(self, mock_streamlit, mock_config, mock_session_manager):
+    def test_init_session_state_creates_db_directory(
+        self, mock_streamlit, mock_config, mock_session_manager
+    ):
         """Test that initialization creates database directory."""
-        with patch('coda.web.utils.state.Path') as mock_path_class:
+        with patch("coda.web.utils.state.Path") as mock_path_class:
             # Create a mock path chain
             mock_parent = Mock()
             mock_db_path = Mock()
@@ -192,9 +194,11 @@ class TestStateManagement:
             # Verify directory creation was attempted
             mock_parent.mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    def test_init_session_state_config_dict_conversion(self, mock_streamlit, mock_session_manager, mock_path):
+    def test_init_session_state_config_dict_conversion(
+        self, mock_streamlit, mock_session_manager, mock_path
+    ):
         """Test that config is converted to dict."""
-        with patch('coda.web.utils.state.get_config') as mock_config:
+        with patch("coda.web.utils.state.get_config") as mock_config:
             config = Mock()
             config.to_dict.return_value = {"key": "value"}
             mock_config.return_value = config

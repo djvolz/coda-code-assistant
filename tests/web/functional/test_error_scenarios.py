@@ -34,7 +34,8 @@ class TestErrorScenarios:
 
         # Check for error handling
         error_indicators = driver.find_elements(
-            By.XPATH, "//*[contains(@class, 'error') or contains(text(), 'Error') or contains(text(), 'Failed') or contains(text(), 'timeout')]"
+            By.XPATH,
+            "//*[contains(@class, 'error') or contains(text(), 'Error') or contains(text(), 'Failed') or contains(text(), 'timeout')]",
         )
 
         # Should show some error indication
@@ -66,7 +67,8 @@ class TestErrorScenarios:
 
             # Check for error or validation message
             error_messages = driver.find_elements(
-                By.XPATH, "//*[contains(text(), 'Invalid') or contains(text(), 'not allowed') or contains(text(), 'Error')]"
+                By.XPATH,
+                "//*[contains(text(), 'Invalid') or contains(text(), 'not allowed') or contains(text(), 'Error')]",
             )
 
             # File might be rejected or show warning
@@ -85,7 +87,9 @@ class TestErrorScenarios:
 
         # Try to corrupt session state via JavaScript
         try:
-            driver.execute_script("window.sessionStorage.setItem('corrupted_data', '{invalid json}')")
+            driver.execute_script(
+                "window.sessionStorage.setItem('corrupted_data', '{invalid json}')"
+            )
             driver.execute_script("window.localStorage.setItem('session_state', '{corrupted}')")
         except:
             pass
@@ -136,7 +140,8 @@ class TestErrorScenarios:
 
         # Check for rate limit handling
         rate_limit_indicators = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'rate') or contains(text(), 'limit') or contains(text(), 'slow down') or contains(text(), 'Too many')]"
+            By.XPATH,
+            "//*[contains(text(), 'rate') or contains(text(), 'limit') or contains(text(), 'slow down') or contains(text(), 'Too many')]",
         )
 
         # Should handle rate limiting gracefully
@@ -154,9 +159,7 @@ class TestErrorScenarios:
         settings_tab.click()
 
         # Clear all API keys
-        api_key_inputs = driver.find_elements(
-            By.XPATH, "//input[@type='password']"
-        )
+        api_key_inputs = driver.find_elements(By.XPATH, "//input[@type='password']")
         for input_field in api_key_inputs:
             input_field.clear()
 
@@ -176,7 +179,8 @@ class TestErrorScenarios:
 
         # Check for appropriate messaging
         warning_messages = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'No provider') or contains(text(), 'Configure') or contains(text(), 'API key')]"
+            By.XPATH,
+            "//*[contains(text(), 'No provider') or contains(text(), 'Configure') or contains(text(), 'API key')]",
         )
 
         assert len(warning_messages) > 0 or True  # Should show some guidance
@@ -224,7 +228,7 @@ class TestErrorScenarios:
             "Test & < > \" ' characters",
             "Unicode: 你好世界 🌍 émojis",
             "```javascript\nconsole.log('<test>');\n```",
-            "Path: C:\\Users\\Test\\file.txt"
+            "Path: C:\\Users\\Test\\file.txt",
         ]
 
         chat_input = WebDriverWait(driver, 10).until(
@@ -352,7 +356,8 @@ class TestErrorScenarios:
 
         # Should either work or show session expired message
         error_messages = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'Session') or contains(text(), 'expired') or contains(text(), 'timeout')]"
+            By.XPATH,
+            "//*[contains(text(), 'Session') or contains(text(), 'expired') or contains(text(), 'timeout')]",
         )
 
         # App should handle gracefully either way

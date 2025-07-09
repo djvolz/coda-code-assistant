@@ -34,7 +34,7 @@ class TestFileManager:
     @pytest.fixture
     def mock_streamlit(self):
         """Mock Streamlit components."""
-        with patch('coda.web.components.file_manager.st') as mock_st:
+        with patch("coda.web.components.file_manager.st") as mock_st:
             # Setup expander context manager
             mock_expander_context = MagicMock()
             mock_expander_context.__enter__ = Mock(return_value=mock_expander_context)
@@ -53,12 +53,14 @@ class TestFileManager:
             mock_col3 = Mock()
             mock_col3.__enter__ = Mock(return_value=mock_col3)
             mock_col3.__exit__ = Mock(return_value=None)
+
             # Different return values for different column calls
             def columns_side_effect(arg):
                 if arg == 2:
                     return [mock_col1, mock_col2]
                 else:
                     return [mock_col1, mock_col2, mock_col3]
+
             mock_st.columns = Mock(side_effect=columns_side_effect)
             mock_st.expander = Mock(return_value=mock_expander_context)
             mock_st.write = Mock()
@@ -75,7 +77,7 @@ class TestFileManager:
     @pytest.fixture
     def mock_state_value(self):
         """Mock get_state_value function."""
-        with patch('coda.web.components.file_manager.get_state_value') as mock:
+        with patch("coda.web.components.file_manager.get_state_value") as mock:
             yield mock
 
     def test_render_file_upload_widget_no_files(self, mock_streamlit):
@@ -100,10 +102,10 @@ class TestFileManager:
         # Verify result
         assert result is not None
         assert len(result) == 1
-        assert result[0]['name'] == "test_document.txt"
-        assert result[0]['size'] == 1024
-        assert result[0]['type'] == "text/plain"
-        assert result[0]['content'] == b"This is test file content"
+        assert result[0]["name"] == "test_document.txt"
+        assert result[0]["size"] == 1024
+        assert result[0]["type"] == "text/plain"
+        assert result[0]["content"] == b"This is test file content"
 
     def test_render_file_upload_widget_multiple_files(self, mock_streamlit):
         """Test uploading multiple files."""
@@ -126,8 +128,8 @@ class TestFileManager:
         # Verify result
         assert len(result) == 3
         for i, file_data in enumerate(result):
-            assert file_data['name'] == f"file_{i}.txt"
-            assert file_data['size'] == 1024 * (i + 1)
+            assert file_data["name"] == f"file_{i}.txt"
+            assert file_data["size"] == 1024 * (i + 1)
 
     def test_render_file_upload_widget_text_file_preview(self, mock_streamlit, mock_uploaded_file):
         """Test text file preview."""
@@ -144,14 +146,14 @@ class TestFileManager:
         binary_file.name = "image.jpg"
         binary_file.size = 2048
         binary_file.type = "image/jpeg"
-        binary_file.read = Mock(return_value=b'\xff\xd8\xff\xe0')  # JPEG header
+        binary_file.read = Mock(return_value=b"\xff\xd8\xff\xe0")  # JPEG header
 
         mock_streamlit.file_uploader.return_value = [binary_file]
 
         result = render_file_upload_widget()
 
         assert result is not None
-        assert result[0]['type'] == "image/jpeg"
+        assert result[0]["type"] == "image/jpeg"
 
     def test_render_file_download_section(self, mock_streamlit):
         """Test download section rendering."""
@@ -173,7 +175,7 @@ class TestFileManager:
         """Test downloading chat history with messages."""
         messages = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there!"}
+            {"role": "assistant", "content": "Hi there!"},
         ]
         mock_state_value.return_value = messages
 
@@ -184,13 +186,13 @@ class TestFileManager:
 
         # Check markdown download
         markdown_call = mock_streamlit.download_button.call_args_list[0]
-        assert markdown_call[1]['label'] == "Download as Markdown"
-        assert markdown_call[1]['mime'] == "text/markdown"
+        assert markdown_call[1]["label"] == "Download as Markdown"
+        assert markdown_call[1]["mime"] == "text/markdown"
 
         # Check JSON download
         json_call = mock_streamlit.download_button.call_args_list[1]
-        assert json_call[1]['label'] == "Download as JSON"
-        assert json_call[1]['mime'] == "application/json"
+        assert json_call[1]["label"] == "Download as JSON"
+        assert json_call[1]["mime"] == "application/json"
 
     def test_download_session_data(self, mock_streamlit, mock_state_value):
         """Test downloading session data."""
@@ -222,14 +224,18 @@ class TestFileManager:
         # Verify download button was called
         mock_streamlit.download_button.assert_called_once()
         download_call = mock_streamlit.download_button.call_args
-        assert download_call[1]['label'] == "Download All Sessions"
-        assert download_call[1]['mime'] == "application/json"
+        assert download_call[1]["label"] == "Download All Sessions"
+        assert download_call[1]["mime"] == "application/json"
 
     def test_generate_markdown_history(self):
         """Test markdown history generation."""
         messages = [
             {"role": "user", "content": "What is Python?", "timestamp": "2024-01-01T10:00:00"},
-            {"role": "assistant", "content": "Python is a programming language.", "timestamp": "2024-01-01T10:00:30"}
+            {
+                "role": "assistant",
+                "content": "Python is a programming language.",
+                "timestamp": "2024-01-01T10:00:30",
+            },
         ]
 
         result = generate_markdown_history(messages)
@@ -271,7 +277,12 @@ class TestFileManager:
         """Test file context prompt generation."""
         files_data = [
             {"name": "script.py", "type": "text/plain", "content": b"print('hello')", "size": 14},
-            {"name": "data.json", "type": "application/json", "content": b'{"key": "value"}', "size": 16}
+            {
+                "name": "data.json",
+                "type": "application/json",
+                "content": b'{"key": "value"}',
+                "size": 16,
+            },
         ]
 
         result = create_file_context_prompt(files_data)
@@ -285,8 +296,8 @@ class TestFileManager:
     def test_create_file_context_prompt_with_binary(self):
         """Test file context with binary files."""
         files_data = [
-            {"name": "image.jpg", "type": "image/jpeg", "content": b'\xff\xd8\xff\xe0', "size": 4},
-            {"name": "text.txt", "type": "text/plain", "content": b"Text content", "size": 12}
+            {"name": "image.jpg", "type": "image/jpeg", "content": b"\xff\xd8\xff\xe0", "size": 4},
+            {"name": "text.txt", "type": "text/plain", "content": b"Text content", "size": 12},
         ]
 
         result = create_file_context_prompt(files_data)
@@ -301,7 +312,7 @@ class TestFileManager:
         file.name = "bad_encoding.txt"
         file.size = 100
         file.type = "text/plain"
-        file.read = Mock(return_value=b'\xff\xfe\x00\x00')  # Invalid UTF-8
+        file.read = Mock(return_value=b"\xff\xfe\x00\x00")  # Invalid UTF-8
 
         mock_streamlit.file_uploader.return_value = [file]
 
