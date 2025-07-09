@@ -1,29 +1,65 @@
 # <type>(<scope>): <subject>
-#
+# 
 # <body>
-#
+# 
+# AI Prompt: "<user's actual request>"
+# AI Tools: <Read, Write, Edit, Bash, etc.>
+# 
+# - <implementation detail 1>
+# - <implementation detail 2>
+# - <changes made>
+# 
 # <footer>
-#
-# Type should be one of the following:
-# - feat: A new feature
-# - fix: A bug fix
-# - docs: Documentation only changes
-# - style: Changes that do not affect the meaning of the code
-# - refactor: A code change that neither fixes a bug nor adds a feature
-# - perf: A code change that improves performance
-# - test: Adding missing tests or correcting existing tests
-# - chore: Changes to the build process or auxiliary tools
-#
-# Scope is optional and can be anything specifying the place of the commit change.
-# For example: cli, providers, oci, tests, etc.
-#
-# Subject should use the imperative, present tense: "change" not "changed" nor "changes"
-# No dot (.) at the end.
-#
-# Body should include the motivation for the change and contrast with previous behavior.
-#
-# Footer should contain any information about Breaking Changes and is also the place
-# to reference GitHub issues that this commit closes.
-#
-# Breaking Changes should start with the word BREAKING CHANGE: with a space or two
-# newlines. The rest of the commit message is then used for this.
+
+# TYPE must be one of:
+#   feat     - New feature (triggers release)
+#   fix      - Bug fix (triggers release)
+#   perf     - Performance improvement (triggers release)
+#   refactor - Code refactoring (triggers release)
+#   docs     - Documentation only (no release)
+#   chore    - Routine tasks, maintenance (no release)
+#   test     - Adding or updating tests (no release)
+#   style    - Code style changes (no release)
+#   build    - Build system changes (no release)
+#   ci       - CI configuration changes (no release)
+
+# SCOPE is optional and should be the module/component affected
+# Examples: providers, cli, config, tests
+
+# SUBJECT should be a short summary (50 chars or less)
+# - Use imperative mood ("add" not "added")
+# - Don't capitalize first letter
+# - No period at the end
+
+# BODY should explain what and why (not how)
+# - Wrap at 72 characters
+# - Can use multiple paragraphs
+
+# AI METADATA (required for AI-assisted commits):
+# - Scrub PII from prompts
+# - Replace actual paths with generic ones
+# - Remove API keys, tokens, secrets
+# - Remove email addresses, usernames
+# - Add "(edited by agent)" if prompt was modified
+
+# FOOTER can contain:
+# - Breaking changes (start with "BREAKING CHANGE:")
+# - Issue references (e.g., "Fixes #123")
+# - Skip release with [skip ci] or [skip release]
+
+# EXAMPLES:
+# feat(providers): add OpenAI support
+# 
+# Add OpenAI provider implementation with support for GPT-4
+# and GPT-3.5 models. Includes streaming responses and proper
+# error handling.
+# 
+# AI Prompt: "add openai provider support"
+# AI Tools: Read, Write, Edit, Bash
+# 
+# - Created new OpenAI provider class
+# - Added model discovery and caching
+# - Implemented streaming chat responses
+# - Added comprehensive unit tests
+# 
+# Fixes #42

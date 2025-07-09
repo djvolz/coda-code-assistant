@@ -166,6 +166,9 @@ class InteractiveCLI(CommandHandler):
         # Initialize session management
         self.session_commands = SessionCommands()
 
+        # Track terminal dimensions
+        self._last_terminal_width = None
+
         # Initialize session with all features
         self._init_session()
 
@@ -265,6 +268,81 @@ class InteractiveCLI(CommandHandler):
             key_bindings=kb,
         )
 
+    def _get_mode_panel_config(self) -> dict:
+        """Get mode-specific panel configuration with title and styling."""
+        mode_configs = {
+            DeveloperMode.GENERAL: {
+                "title": "💬 General Chat",
+                "border_style": "white",
+                "title_style": "bold white",
+            },
+            DeveloperMode.CODE: {
+                "title": "⚡ Code Mode",
+                "border_style": "green",
+                "title_style": "bold green",
+            },
+            DeveloperMode.DEBUG: {
+                "title": "🔍 Debug Mode",
+                "border_style": "yellow",
+                "title_style": "bold yellow",
+            },
+            DeveloperMode.EXPLAIN: {
+                "title": "📚 Explain Mode",
+                "border_style": "blue",
+                "title_style": "bold blue",
+            },
+            DeveloperMode.REVIEW: {
+                "title": "🔎 Review Mode",
+                "border_style": "magenta",
+                "title_style": "bold magenta",
+            },
+            DeveloperMode.REFACTOR: {
+                "title": "🔄 Refactor Mode",
+                "border_style": "cyan",
+                "title_style": "bold cyan",
+            },
+            DeveloperMode.PLAN: {
+                "title": "📋 Plan Mode",
+                "border_style": "red",
+                "title_style": "bold red",
+            },
+        }
+        return mode_configs.get(self.current_mode, mode_configs[DeveloperMode.GENERAL])
+
+    def _get_safe_terminal_width(self) -> int:
+        """Get terminal width with minimum constraint to prevent squashing."""
+        min_width = 40  # Minimum width to prevent ugly squashing
+        max_width = 60  # Reduced max width for cleaner look
+
+        try:
+            width = self.console.size.width
+            # Clamp between min and max
+            return max(min_width, min(width, max_width))
+        except Exception:
+            # Fallback if console size detection fails
+            return 60
+
+    def _render_input_separator(self) -> None:
+        """Render just the mode title without separator lines."""
+        config = self._get_mode_panel_config()
+
+        # Just print the mode title without any lines
+        title = config["title"]
+
+        # Print the title with mode-specific color
+        self.console.print(f"[{config['title_style']}]{title}[/{config['title_style']}]")
+
+    def _render_bottom_separator(self) -> None:
+        """Render a minimal bottom separator line after input."""
+        config = self._get_mode_panel_config()
+
+        # Just print a simple, short separator line
+        # This provides a subtle visual break without being too prominent
+        separator = "─" * 30  # Fixed 30 character width, left-aligned
+
+        # Left-align the separator (no padding)
+        self.console.print(f"[{config['border_style']}]{separator}[/{config['border_style']}]")
+
     def _get_prompt(self) -> HTML:
         """Generate the prompt with mode indicator."""
         mode_color = {
@@ -277,14 +355,14 @@ class InteractiveCLI(CommandHandler):
             DeveloperMode.PLAN: "red",
         }.get(self.current_mode, "white")
 
-        # Simple prompt
-        return HTML(
-            f"<prompt>[<prompt.mode>{self.current_mode.value}</prompt.mode>]</prompt> "
-            f"<b><ansi{mode_color}>You</ansi{mode_color}></b> "
-        )
+        # Simple colored prompt arrow
+        return HTML(f"<ansi{mode_color}>❯</ansi{mode_color}> ")
 
     async def get_input(self, multiline: bool = False) -> str:
         """Get input from user with rich features."""
+        # Render top separator with mode title
+        self._render_input_separator()
+
         if multiline:
             self.console.print(
                 "[dim]Enter multiple lines. Press [Meta+Enter] or [Esc] followed by [Enter] to submit.[/dim]"
@@ -299,13 +377,19 @@ class InteractiveCLI(CommandHandler):
             )
             # Reset Ctrl+C count on successful input
             self.ctrl_c_count = 0
+
+            # Render bottom separator
+            self._render_bottom_separator()
+
             return text.strip()
         except EOFError:
+            # Still render bottom separator on EOF
+            self._render_bottom_separator()
             return "/exit"
         except KeyboardInterrupt:
             # Handle Ctrl+C gracefully
-            # Clear the current line and return empty string
-            # The main loop will skip empty input
+            # Still render bottom separator
+            self._render_bottom_separator()
             self.console.print()  # New line for cleaner display
             return ""
         finally:
@@ -530,13 +614,9 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
-        if not args:
-            options = self.session.completer.slash_completer.command_options.get("tools", [])
-            self._show_coming_soon_command(
-                "tools", "MCP Tools Management", options, "/tools <subcommand>"
-            )
-        else:
-            self.console.print(f"[yellow]Tools command '{args}' not implemented yet[/yellow]")
+        # Use the shared command handler
+        result = self.handle_tools_command(args)
+        return result
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""

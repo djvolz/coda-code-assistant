@@ -146,6 +146,13 @@ class SessionManager:
         Returns:
             Created message object
         """
+        # Normalize content to string if it's not already
+        if not isinstance(content, str):
+            if hasattr(content, "content"):
+                content = content.content
+            else:
+                content = str(content)
+
         with self.db.get_session() as db:
             # Get next sequence number
             last_msg = (
@@ -209,6 +216,13 @@ class SessionManager:
     def _prepare_search_content(self, content: str) -> str:
         """Prepare content for full-text search."""
         # Basic preprocessing - can be enhanced later
+        # Handle cases where content might not be a string
+        if not isinstance(content, str):
+            # If it's a ChatCompletion object, extract the content
+            if hasattr(content, "content"):
+                content = content.content
+            else:
+                content = str(content)
         return content.lower().strip()
 
     def get_session(self, session_id: str) -> Session | None:
@@ -585,7 +599,7 @@ class SessionManager:
 <body>
     <h1>{session.name}</h1>
     <p><strong>Provider:</strong> {session.provider} | <strong>Model:</strong> {session.model}</p>
-    <p><strong>Created:</strong> {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
+    <p><strong>Created:</strong> {session.created_at.strftime("%Y-%m-%d %H:%M:%S")}</p>
     <hr>
 """
 
@@ -593,8 +607,8 @@ class SessionManager:
             html += f"""
     <div class="message {msg.role}">
         <strong>{msg.role.title()}</strong>
-        <span class="timestamp">{msg.created_at.strftime('%H:%M:%S')}</span>
-        <div>{msg.content.replace(chr(10), '<br>')}</div>
+        <span class="timestamp">{msg.created_at.strftime("%H:%M:%S")}</span>
+        <div>{msg.content.replace(chr(10), "<br>")}</div>
 """
             if msg.metadata or msg.tool_calls:
                 html += '<div class="metadata">'

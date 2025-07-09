@@ -15,8 +15,31 @@ on:
       - 'LICENSE'
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run lint checks
+      run: |
+        uv run ruff check .
+    
+    - name: Check code formatting
+      run: |
+        uv run ruff format --check .
+
   test:
     runs-on: ubuntu-latest
+    needs: lint
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
@@ -37,7 +60,12 @@ jobs:
     
     - name: Run unit tests
       run: |
+        rm -f .coverage* coverage.xml
         uv run python -m pytest tests/ -v -m "unit or not integration" --cov=coda --cov-report=xml --cov-report=term-missing
+    
+    - name: Run agent tests
+      run: |
+        uv run python -m pytest tests/agents/ tests/tools/ -v --cov=coda --cov-append --cov-report=xml --cov-report=term-missing
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
