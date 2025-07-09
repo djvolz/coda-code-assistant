@@ -165,8 +165,8 @@ class TestSettingsPage:
         app.radio[0].set_value("⚙️ Settings").run()
 
         # Check for export/import buttons
-        export_buttons = [b for b in app.button if "export" in str(b).lower()]
-        import_buttons = [b for b in app.button if "import" in str(b).lower()]
+        [b for b in app.button if "export" in str(b).lower()]
+        [b for b in app.button if "import" in str(b).lower()]
 
         # Feature may or may not exist
         assert True

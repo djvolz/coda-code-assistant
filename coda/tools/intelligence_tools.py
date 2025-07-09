@@ -160,7 +160,7 @@ class ScanDirectoryTool(BaseTool):
             total_definitions = 0
             total_imports = 0
 
-            for file_path, analysis in analyses.items():
+            for _file_path, analysis in analyses.items():
                 lang = analysis.language
                 if lang not in language_stats:
                     language_stats[lang] = {

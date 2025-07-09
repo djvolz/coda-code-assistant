@@ -69,7 +69,7 @@ class TestStateManagement:
         init_session_state()
 
         # Verify all required keys are initialized
-        assert mock_streamlit.session_state["initialized"] == True
+        assert mock_streamlit.session_state["initialized"]
         assert "config" in mock_streamlit.session_state
         assert "session_manager" in mock_streamlit.session_state
         assert mock_streamlit.session_state["current_session_id"] is None
@@ -100,7 +100,7 @@ class TestStateManagement:
             assert mock_streamlit.session_state["config"] is None
             assert mock_streamlit.session_state["config_error"] == "Config error"
             # Should continue initialization despite config error
-            assert mock_streamlit.session_state["initialized"] == True
+            assert mock_streamlit.session_state["initialized"]
 
     def test_init_session_state_session_manager_error(self, mock_streamlit, mock_config, mock_path):
         """Test initialization with session manager error."""
@@ -117,7 +117,7 @@ class TestStateManagement:
                 in mock_streamlit.session_state["session_manager_error"]
             )
             # Should continue initialization despite error
-            assert mock_streamlit.session_state["initialized"] == True
+            assert mock_streamlit.session_state["initialized"]
 
     def test_get_state_value_existing(self, mock_streamlit):
         """Test getting existing state value."""

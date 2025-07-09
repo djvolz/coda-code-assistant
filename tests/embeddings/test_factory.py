@@ -253,7 +253,7 @@ class TestFactoryIntegration:
         provider1 = EmbeddingProviderFactory.create_provider("mock", model_id="test-model")
         provider2 = EmbeddingProviderFactory.create_provider("mock", model_id="test-model")
 
-        assert type(provider1) == type(provider2)
+        assert type(provider1) is type(provider2)
         assert provider1.model_id == provider2.model_id
 
     @pytest.mark.parametrize(

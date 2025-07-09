@@ -41,7 +41,7 @@ def test_web_ui_tabs():
     # Open browser (if possible)
     try:
         webbrowser.open(url)
-    except:
+    except Exception:
         pass
 
     print("\n" + "=" * 60)

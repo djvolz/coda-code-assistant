@@ -9,8 +9,8 @@ from pathlib import Path
 def check_dependencies():
     """Check if web testing dependencies are available."""
     try:
-        import pytest
-        import selenium
+        import pytest  # noqa: F401
+        import selenium  # noqa: F401
 
         return True
     except ImportError:

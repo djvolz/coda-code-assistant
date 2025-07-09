@@ -54,11 +54,11 @@ class TestIntelligenceCommands:
         def hello_world():
             '''A greeting function.'''
             return "Hello, World!"
-        
+
         class Calculator:
             def add(self, a, b):
                 return a + b
-        
+
         import math
         PI = 3.14159
         """,
@@ -219,7 +219,7 @@ class TestIntelligenceCommands:
         import os
         from pathlib import Path
         import json
-        
+
         def main():
             pass
         """,
@@ -381,14 +381,14 @@ class TestIntelligenceCommandsIntegration:
         from src.calculator import Calculator
         from src.utils import format_result
         import json
-        
+
         def main():
             '''Main application entry point.'''
             calc = Calculator()
             result = calc.add(10, 20)
             formatted = format_result(result)
             print(json.dumps(formatted))
-        
+
         if __name__ == "__main__":
             main()
         """
@@ -406,11 +406,11 @@ class TestIntelligenceCommandsIntegration:
                 """
         class Calculator:
             '''A simple calculator class.'''
-            
+
             def add(self, a, b):
                 '''Add two numbers.'''
                 return a + b
-            
+
             def subtract(self, a, b):
                 '''Subtract two numbers.'''
                 return a - b
@@ -429,7 +429,7 @@ class TestIntelligenceCommandsIntegration:
                 "result": value,
                 "formatted": f"Result: {value}"
             }
-        
+
         def validate_input(value):
             '''Validate numeric input.'''
             if not isinstance(value, (int, float)):
@@ -451,7 +451,7 @@ class TestIntelligenceCommandsIntegration:
         import sys
         sys.path.append('..')
         from src.calculator import Calculator
-        
+
         class TestCalculator(unittest.TestCase):
             def test_add(self):
                 calc = Calculator()
@@ -473,7 +473,7 @@ class TestIntelligenceCommandsIntegration:
             constructor() {
                 this.calculator = new Calculator();
             }
-            
+
             /**
              * Handle calculation request
              */
@@ -481,7 +481,7 @@ class TestIntelligenceCommandsIntegration:
                 return this.calculator.add(a, b);
             }
         }
-        
+
         function Calculator() {
             this.add = function(a, b) {
                 return a + b;

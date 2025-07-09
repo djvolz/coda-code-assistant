@@ -309,12 +309,12 @@ class TestSentenceTransformersIntegration:
         # Test with normalization
         provider1 = SentenceTransformersProvider(normalize_embeddings=True)
         mock_model.encode.return_value = np.array([3.0, 4.0])  # Length = 5
-        result1 = await provider1.embed_text("Test")
+        await provider1.embed_text("Test")
 
         # Test without normalization
         provider2 = SentenceTransformersProvider(normalize_embeddings=False)
         mock_model.encode.return_value = np.array([3.0, 4.0])  # Same embedding
-        result2 = await provider2.embed_text("Test")
+        await provider2.embed_text("Test")
 
         # Check that normalization flag was passed correctly
         calls = mock_model.encode.call_args_list

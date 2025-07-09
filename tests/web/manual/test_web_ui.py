@@ -11,14 +11,14 @@ def test_imports():
     print("🧪 Testing imports...")
 
     try:
-        from coda.configuration import get_config
-        from coda.providers.registry import get_provider_registry
-        from coda.session.manager import SessionManager
-        from coda.web.app import main
-        from coda.web.components.chat_widget import render_chat_interface
-        from coda.web.components.file_manager import render_file_upload_widget
-        from coda.web.components.model_selector import render_model_selector
-        from coda.web.pages import chat, dashboard, sessions, settings
+        from coda.configuration import get_config  # noqa: F401
+        from coda.providers.registry import get_provider_registry  # noqa: F401
+        from coda.session.manager import SessionManager  # noqa: F401
+        from coda.web.app import main  # noqa: F401
+        from coda.web.components.chat_widget import render_chat_interface  # noqa: F401
+        from coda.web.components.file_manager import render_file_upload_widget  # noqa: F401
+        from coda.web.components.model_selector import render_model_selector  # noqa: F401
+        from coda.web.pages import chat, dashboard, sessions, settings  # noqa: F401
 
         print("✅ All imports successful")
         return True

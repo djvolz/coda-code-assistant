@@ -198,7 +198,7 @@ print(calculate_fibonacci(10))
             )
             new_session_btn.click()
             time.sleep(1)
-        except:
+        except Exception:
             # Navigate to sessions and create new
             sessions_tab = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Sessions')]"))
@@ -273,7 +273,7 @@ print(calculate_fibonacci(10))
                 By.XPATH, "//div[@data-testid='stSelectbox'][1]//div[contains(@class, 'selected')]"
             ).text
             initial_provider = provider_text
-        except:
+        except Exception:
             pass
 
         # Step 2: Go to settings and change configuration

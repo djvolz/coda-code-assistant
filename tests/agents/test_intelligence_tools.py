@@ -34,11 +34,11 @@ from typing import List, Dict
 
 class Calculator:
     """A simple calculator class."""
-    
+
     def add(self, a: int, b: int) -> int:
         """Add two numbers."""
         return a + b
-    
+
     def multiply(self, x: float, y: float) -> float:
         """Multiply two numbers."""
         return x * y
@@ -79,7 +79,7 @@ export class UserComponent {
     constructor() {
         this.state = {};
     }
-    
+
     fetchUser(id) {
         return axios.get(`/api/users/${id}`);
     }

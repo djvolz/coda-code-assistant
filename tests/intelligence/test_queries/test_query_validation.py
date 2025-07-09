@@ -87,24 +87,6 @@ class TestQueryValidation:
 
     def test_query_capture_consistency(self):
         """Test that queries use consistent capture names."""
-        expected_captures = {
-            "name.definition.function",
-            "name.definition.class",
-            "name.definition.method",
-            "name.definition.variable",
-            "name.definition.constant",
-            "name.definition.property",
-            "definition.function",
-            "definition.class",
-            "definition.method",
-            "definition.variable",
-            "definition.constant",
-            "definition.property",
-            "import",
-            "name.import",
-            "name.reference.property",
-            "reference.property",
-        }
 
         for query_file in self.query_dir.glob("*-tags.scm"):
             content = query_file.read_text()
@@ -225,7 +207,7 @@ class TestQueryValidation:
 
             # Check for comments (tree-sitter uses ; for comments)
             lines = content.split("\n")
-            comment_lines = [l for l in lines if l.strip().startswith(";")]
+            [line for line in lines if line.strip().startswith(";")]
 
             # Should have at least some comments for documentation
             # Skip comment requirement for now - many files lack comments

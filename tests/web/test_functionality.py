@@ -144,7 +144,7 @@ class TestWebUIFunctionality:
         """Test that no JavaScript errors occur during navigation."""
         try:
             # Get initial JavaScript logs
-            initial_logs = web_page.get_log("browser")
+            web_page.get_log("browser")
 
             # Navigate through all tabs
             sidebar = web_page.find_element(By.CSS_SELECTOR, "[data-testid='stSidebar']")
@@ -185,7 +185,7 @@ class TestWebUIFunctionality:
 
             # Try to identify the correct radio button by context
             # This is a simplified approach - in practice you might need more sophisticated element finding
-            for i, button in enumerate(radio_buttons):
+            for _i, button in enumerate(radio_buttons):
                 button.click()
                 time.sleep(2)
 

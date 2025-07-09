@@ -233,7 +233,6 @@ class TreeSitterQueryAnalyzer:
             for node, tag in all_nodes:
                 # Extract element details
                 start_point = node.start_point
-                end_point = node.end_point
                 line = start_point[0] + 1  # Convert to 1-based
                 column = start_point[1]
 
@@ -643,7 +642,7 @@ class TreeSitterQueryAnalyzer:
                                     if i > next_line_idx and quote in line:
                                         break
                                 result["docstring"] = "\n".join(docstring_lines).strip()
-                except:
+                except Exception:
                     pass
 
             return result

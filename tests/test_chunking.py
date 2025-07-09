@@ -147,13 +147,13 @@ def function3():
         chunker = CodeChunker(language="python", chunk_size=300)
         code = '''class MyClass:
     """A test class."""
-    
+
     def __init__(self):
         self.value = 0
-    
+
     def method1(self):
         return self.value
-    
+
     def method2(self):
         self.value += 1
 
@@ -212,7 +212,7 @@ def helper():
 
 class MainClass:
     """Main class."""
-    
+
     def run(self):
         return helper()
 '''

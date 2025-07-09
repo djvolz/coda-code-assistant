@@ -70,15 +70,15 @@ def calculate_product(a, b):
 
 class Calculator:
     """A simple calculator class."""
-    
+
     def __init__(self):
         self.result = 0
-    
+
     def add(self, value):
         """Add a value to the result."""
         self.result += value
         return self.result
-    
+
     def multiply(self, value):
         """Multiply the result by a value."""
         self.result *= value

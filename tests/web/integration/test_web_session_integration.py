@@ -105,7 +105,7 @@ class TestSessionIntegration:
                 )
                 new_btn.click()
                 time.sleep(1)
-            except:
+            except Exception:
                 pass
 
         # Navigate to sessions
@@ -148,7 +148,7 @@ class TestSessionIntegration:
             )
             new_btn.click()
             time.sleep(1)
-        except:
+        except Exception:
             pass
 
         # Navigate to sessions
@@ -278,7 +278,7 @@ class TestSessionIntegration:
                     By.XPATH, "//button[contains(text(), 'New') or contains(@title, 'New')]"
                 )
                 new_btn.click()
-            except:
+            except Exception:
                 pass
 
         # Navigate to sessions
@@ -422,7 +422,7 @@ class TestSessionIntegration:
                     By.XPATH, "//button[contains(text(), 'New') or contains(@title, 'New')]"
                 )
                 new_btn.click()
-            except:
+            except Exception:
                 pass
 
         # Navigate to sessions

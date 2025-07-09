@@ -204,10 +204,10 @@ def goodbye():
             file2.write_text(
                 """class MyClass:
     \"\"\"A sample class for testing.\"\"\"
-    
+
     def __init__(self):
         self.value = 42
-    
+
     def get_value(self):
         return self.value
 """

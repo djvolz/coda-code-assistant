@@ -28,8 +28,8 @@ Then try these commands to explore the new tree-sitter intelligence features:
 
 5. Scan a directory with progress indicator:
    /intel scan coda/intelligence/
-   
-   Note: The scan now shows a progress bar with percentage, file count, 
+
+   Note: The scan now shows a progress bar with percentage, file count,
    and current filename being analyzed!
 
 6. Check file dependencies:
