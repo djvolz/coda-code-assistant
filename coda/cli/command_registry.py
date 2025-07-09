@@ -23,6 +23,7 @@ class CommandDefinition:
     subcommands: list["CommandDefinition"] = field(default_factory=list)
     examples: list[str] = field(default_factory=list)
     type: CommandType = CommandType.MAIN
+    completion_type: str | None = None  # e.g., "session_name", "model_name", "theme_name"
 
     def get_all_names(self) -> list[str]:
         """Get all names including aliases."""
@@ -79,6 +80,7 @@ class CommandRegistry:
             aliases=["l"],
             type=CommandType.SUBCOMMAND,
             examples=["/session load my_session", "/session load abc123"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="last",
@@ -99,6 +101,7 @@ class CommandRegistry:
             aliases=["b"],
             type=CommandType.SUBCOMMAND,
             examples=["/session branch", "/session branch new_branch"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="delete",
@@ -106,6 +109,7 @@ class CommandRegistry:
             aliases=["d", "rm"],
             type=CommandType.SUBCOMMAND,
             examples=["/session delete my_session", "/session delete abc123"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="delete-all",
@@ -119,6 +123,7 @@ class CommandRegistry:
             aliases=["r"],
             type=CommandType.SUBCOMMAND,
             examples=["/session rename new_name", "/session rename abc123 new_name"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="info",
@@ -126,6 +131,7 @@ class CommandRegistry:
             aliases=["i"],
             type=CommandType.SUBCOMMAND,
             examples=["/session info", "/session info abc123"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="search",
@@ -324,13 +330,14 @@ class CommandRegistry:
             description="Select a different model",
             aliases=["m"],
             examples=["/model", "/model gpt-4"],
+            completion_type="model_name",
         ),
         CommandDefinition(
             name="provider",
-            description="Switch provider",
+            description="Show provider information",
             aliases=["p"],
             subcommands=PROVIDER_OPTIONS,
-            examples=["/provider", "/provider ollama"],
+            examples=["/provider"],
         ),
         CommandDefinition(
             name="mode",

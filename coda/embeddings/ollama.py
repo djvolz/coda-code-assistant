@@ -25,33 +25,33 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
         "mxbai-embed-large": {
             "dimension": 1024,
             "description": "High-quality embedding model from MixedBread AI",
-            "max_tokens": 512
+            "max_tokens": 512,
         },
         "nomic-embed-text": {
             "dimension": 768,
             "description": "Nomic's embedding model optimized for text",
-            "max_tokens": 8192
+            "max_tokens": 8192,
         },
         "all-minilm": {
             "dimension": 384,
             "description": "Sentence-transformers MiniLM model via Ollama",
-            "max_tokens": 256
+            "max_tokens": 256,
         },
         "bge-small": {
             "dimension": 384,
             "description": "BAAI General Embedding small model",
-            "max_tokens": 512
+            "max_tokens": 512,
         },
         "bge-base": {
             "dimension": 768,
             "description": "BAAI General Embedding base model",
-            "max_tokens": 512
+            "max_tokens": 512,
         },
         "bge-large": {
             "dimension": 1024,
             "description": "BAAI General Embedding large model",
-            "max_tokens": 512
-        }
+            "max_tokens": 512,
+        },
     }
 
     def __init__(
@@ -59,7 +59,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
         model_id: str = "mxbai-embed-large",
         base_url: str = "http://localhost:11434",
         timeout: float = 30.0,
-        keep_alive: str | None = "5m"
+        keep_alive: str | None = "5m",
     ):
         """Initialize Ollama embedding provider.
 
@@ -74,20 +74,20 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
         self.timeout = timeout
         self.keep_alive = keep_alive
         self._client: httpx.AsyncClient | None = None
-        self._model_info = self.MODELS.get(model_id, {
-            "dimension": None,  # Will be detected
-            "description": f"Custom Ollama model: {model_id}",
-            "max_tokens": 2048
-        })
+        self._model_info = self.MODELS.get(
+            model_id,
+            {
+                "dimension": None,  # Will be detected
+                "description": f"Custom Ollama model: {model_id}",
+                "max_tokens": 2048,
+            },
+        )
         self._dimension_cache: dict[str, int] = {}
 
     def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
         if self._client is None:
-            self._client = httpx.AsyncClient(
-                base_url=self.base_url,
-                timeout=self.timeout
-            )
+            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout)
         return self._client
 
     async def _detect_dimension(self, model: str) -> int:
@@ -100,11 +100,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
         try:
             response = await client.post(
                 "/api/embeddings",
-                json={
-                    "model": model,
-                    "prompt": "test",
-                    "keep_alive": self.keep_alive
-                }
+                json={"model": model, "prompt": "test", "keep_alive": self.keep_alive},
             )
             response.raise_for_status()
 
@@ -135,11 +131,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
         try:
             response = await client.post(
                 "/api/embeddings",
-                json={
-                    "model": self.model_id,
-                    "prompt": text,
-                    "keep_alive": self.keep_alive
-                }
+                json={"model": self.model_id, "prompt": text, "keep_alive": self.keep_alive},
             )
             response.raise_for_status()
 
@@ -154,10 +146,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
                 text=text,
                 embedding=embedding,
                 model=self.model_id,
-                metadata={
-                    "provider": "ollama",
-                    "dimension": len(embedding)
-                }
+                metadata={"provider": "ollama", "dimension": len(embedding)},
             )
 
         except httpx.HTTPStatusError as e:
@@ -169,8 +158,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
             raise
         except httpx.ConnectError:
             raise ConnectionError(
-                f"Cannot connect to Ollama at {self.base_url}. "
-                "Make sure Ollama is running."
+                f"Cannot connect to Ollama at {self.base_url}. " "Make sure Ollama is running."
             ) from None
 
     async def embed_batch(self, texts: list[str]) -> list[EmbeddingResult]:
@@ -213,7 +201,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
             "description": self._model_info["description"],
             "max_tokens": self._model_info.get("max_tokens", 2048),
             "base_url": self.base_url,
-            "keep_alive": self.keep_alive
+            "keep_alive": self.keep_alive,
         }
 
     async def list_models(self) -> list[dict[str, Any]]:
@@ -229,14 +217,16 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
 
         # First, add known models
         for model_id, info in self.MODELS.items():
-            models.append({
-                "id": model_id,
-                "provider": "ollama",
-                "dimension": info["dimension"],
-                "description": info["description"],
-                "max_tokens": info["max_tokens"],
-                "status": "known"
-            })
+            models.append(
+                {
+                    "id": model_id,
+                    "provider": "ollama",
+                    "dimension": info["dimension"],
+                    "description": info["description"],
+                    "max_tokens": info["max_tokens"],
+                    "status": "known",
+                }
+            )
 
         # Try to get actual models from Ollama
         try:
@@ -264,26 +254,30 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
                     except Exception:
                         dimension = None
 
-                    models.append({
-                        "id": name,
-                        "provider": "ollama",
-                        "dimension": dimension or "unknown",
-                        "description": f"Detected Ollama model: {name}",
-                        "max_tokens": "unknown",
-                        "status": "available"
-                    })
+                    models.append(
+                        {
+                            "id": name,
+                            "provider": "ollama",
+                            "dimension": dimension or "unknown",
+                            "description": f"Detected Ollama model: {name}",
+                            "max_tokens": "unknown",
+                            "status": "available",
+                        }
+                    )
 
         except Exception as e:
             logger.warning(f"Could not list Ollama models: {e}")
             # Add a note about the connection issue
-            models.append({
-                "id": "error",
-                "provider": "ollama",
-                "dimension": "N/A",
-                "description": f"Could not connect to Ollama at {self.base_url}",
-                "max_tokens": "N/A",
-                "status": "error"
-            })
+            models.append(
+                {
+                    "id": "error",
+                    "provider": "ollama",
+                    "dimension": "N/A",
+                    "description": f"Could not connect to Ollama at {self.base_url}",
+                    "max_tokens": "N/A",
+                    "status": "error",
+                }
+            )
 
         return models
 

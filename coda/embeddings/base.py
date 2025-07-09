@@ -12,6 +12,7 @@ import numpy as np
 @dataclass
 class EmbeddingResult:
     """Result of an embedding operation."""
+
     text: str
     embedding: np.ndarray
     model: str

@@ -47,7 +47,7 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
         oci_profile: str = "DEFAULT",
         region: str | None = None,
         service_endpoint: str | None = None,
-        cache_duration_hours: int = 24
+        cache_duration_hours: int = 24,
     ):
         """Initialize OCI embedding provider.
 
@@ -86,8 +86,7 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
         if oci_config is None:
             if oci_config_file:
                 self._oci_config = oci.config.from_file(
-                    file_location=str(oci_config_file),
-                    profile_name=oci_profile
+                    file_location=str(oci_config_file), profile_name=oci_profile
                 )
             else:
                 self._oci_config = oci.config.from_file(profile_name=oci_profile)
@@ -102,8 +101,7 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
         """Get or create OCI client."""
         if self._client is None:
             self._client = GenerativeAiInferenceClient(
-                self._oci_config,
-                service_endpoint=self.service_endpoint
+                self._oci_config, service_endpoint=self.service_endpoint
             )
         return self._client
 
@@ -142,23 +140,25 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
 
             # Make request
             response = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.client.embed_text(embed_details)
+                None, lambda: self.client.embed_text(embed_details)
             )
 
             # Extract embeddings
             results = []
             for i, text in enumerate(texts):
                 embedding = np.array(response.data.embeddings[i])
-                results.append(EmbeddingResult(
-                    text=text,
-                    embedding=embedding,
-                    model=self.model_id,
-                    metadata={
-                        "provider": "oci",
-                        "truncated": len(text.split()) > MODEL_INFO.get(self.model_id, {}).get("max_tokens", 512)
-                    }
-                ))
+                results.append(
+                    EmbeddingResult(
+                        text=text,
+                        embedding=embedding,
+                        model=self.model_id,
+                        metadata={
+                            "provider": "oci",
+                            "truncated": len(text.split())
+                            > MODEL_INFO.get(self.model_id, {}).get("max_tokens", 512),
+                        },
+                    )
+                )
 
             return results
 
@@ -180,14 +180,16 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
         # Return all available models from constants
         models = []
         for model_id, info in MODEL_INFO.items():
-            models.append({
-                "id": model_id,
-                "provider": "oci",
-                "dimensions": info.get("dimensions", 768),
-                "max_tokens": info.get("max_tokens", 512),
-                "languages": info.get("languages", ["multilingual"]),
-                "description": info.get("description", "")
-            })
+            models.append(
+                {
+                    "id": model_id,
+                    "provider": "oci",
+                    "dimensions": info.get("dimensions", 768),
+                    "max_tokens": info.get("max_tokens", 512),
+                    "languages": info.get("languages", ["multilingual"]),
+                    "description": info.get("description", ""),
+                }
+            )
 
         self._models_cache = models
         self._cache_timestamp = datetime.now()
@@ -207,14 +209,13 @@ class OCIEmbeddingProvider(BaseEmbeddingProvider):
             "dimensions": info.get("dimensions", 768),
             "max_tokens": info.get("max_tokens", 512),
             "languages": info.get("languages", ["multilingual"]),
-            "description": info.get("description", "")
+            "description": info.get("description", ""),
         }
 
 
 # Factory functions for easier instantiation
 def create_oci_provider_from_coda_config(
-    coda_config: dict[str, Any],
-    model_id: str | None = None
+    coda_config: dict[str, Any], model_id: str | None = None
 ) -> OCIEmbeddingProvider:
     """Create OCI provider from Coda configuration.
 
@@ -232,14 +233,12 @@ def create_oci_provider_from_coda_config(
         oci_config_file=oci_config.get("config_file_path"),
         oci_profile=oci_config.get("profile", "DEFAULT"),
         region=oci_config.get("region"),
-        service_endpoint=oci_config.get("endpoint")
+        service_endpoint=oci_config.get("endpoint"),
     )
 
 
 def create_standalone_oci_provider(
-    compartment_id: str | None = None,
-    model_id: str | None = None,
-    **kwargs
+    compartment_id: str | None = None, model_id: str | None = None, **kwargs
 ) -> OCIEmbeddingProvider:
     """Create standalone OCI provider with minimal configuration.
 
@@ -251,8 +250,4 @@ def create_standalone_oci_provider(
     Returns:
         Configured OCIEmbeddingProvider instance
     """
-    return OCIEmbeddingProvider(
-        compartment_id=compartment_id,
-        model_id=model_id,
-        **kwargs
-    )
+    return OCIEmbeddingProvider(compartment_id=compartment_id, model_id=model_id, **kwargs)

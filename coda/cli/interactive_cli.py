@@ -6,7 +6,6 @@ from pathlib import Path
 from threading import Event
 
 from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
@@ -18,6 +17,7 @@ from coda.session import SessionCommands
 from ..constants import (
     HISTORY_FILE_PATH,
 )
+from .completers import CodaCompleter
 from .shared import CommandHandler, CommandResult, DeveloperMode
 
 
@@ -29,117 +29,17 @@ class SlashCommand:
         self.handler = handler
         self.help_text = help_text
         self.aliases = aliases or []
+        self._autocomplete_options = None
 
+    def get_autocomplete_options(self) -> list[str]:
+        """Get autocomplete options for this command."""
+        if self._autocomplete_options is None:
+            # Load options from command registry
+            from coda.cli.command_registry import CommandRegistry
 
-class SlashCommandCompleter(Completer):
-    """Custom completer for slash commands."""
-
-    def __init__(self, commands: dict[str, SlashCommand]):
-        self.commands = commands
-        self.command_options = self._load_command_options()
-
-    def _load_command_options(self) -> dict[str, list[tuple[str, str]]]:
-        """Load command options from the command registry."""
-        from coda.cli.command_registry import CommandRegistry
-
-        # Get autocomplete options from the registry
-        # This currently only includes commands with subcommands
-        return CommandRegistry.get_autocomplete_options()
-
-    def get_completions(self, document, complete_event):
-        # Get the current text
-        text = document.text_before_cursor
-
-        # If we just typed '/', show all commands immediately
-        if text == "/":
-            yield from self._complete_all_commands()
-        elif text.startswith("/"):
-            # Check if we have a complete command with a space
-            parts = text.split(" ", 1)
-
-            if len(parts) == 2:  # We have a command and possibly partial argument
-                yield from self._complete_command_arguments(parts[0][1:], parts[1])
-            else:
-                # Complete the command itself
-                yield from self._complete_command_names(text)
-
-    def _complete_all_commands(self):
-        """Yield completions for all available commands."""
-        for cmd_name, cmd in self.commands.items():
-            yield Completion(
-                "/" + cmd_name,  # Include the slash
-                start_position=-1,  # Replace just the '/'
-                display_meta=cmd.help_text,
-            )
-
-    def _complete_command_arguments(self, cmd_part: str, arg_part: str):
-        """Yield completions for command arguments."""
-        if cmd_part not in self.command_options:
-            return
-
-        options = self.command_options[cmd_part]
-
-        if not arg_part:  # Just typed space, show all options
-            for option, description in options:
-                yield Completion(option, start_position=0, display_meta=description)
-        else:  # Partial argument typed
-            for option, description in options:
-                if option.startswith(arg_part):
-                    yield Completion(
-                        option, start_position=-len(arg_part), display_meta=description
-                    )
-
-    def _complete_command_names(self, text: str):
-        """Yield completions for command names and aliases."""
-        word = text[1:]  # Get the part after '/'
-
-        for cmd_name, cmd in self.commands.items():
-            if cmd_name.startswith(word):
-                yield Completion(
-                    "/" + cmd_name,  # Include the slash in completion
-                    start_position=-len(text),  # Replace entire text including '/'
-                    display_meta=cmd.help_text,
-                )
-            # Also complete aliases
-            for alias in cmd.aliases:
-                if alias.startswith(word):
-                    yield Completion(
-                        "/" + alias,  # Include the slash in completion
-                        start_position=-len(text),  # Replace entire text including '/'
-                        display_meta=f"Alias for /{cmd_name}",
-                    )
-
-
-class EnhancedCompleter(Completer):
-    """Combined completer for slash commands and file paths."""
-
-    def __init__(self, slash_commands: dict[str, SlashCommand]):
-        self.slash_completer = SlashCommandCompleter(slash_commands)
-        self.path_completer = PathCompleter(expanduser=True)
-
-    def get_completions(self, document, complete_event):
-        text = document.text_before_cursor
-
-        # If line starts with /, use slash completer
-        if text.startswith("/"):
-            yield from self.slash_completer.get_completions(document, complete_event)
-        # If empty or just whitespace, show available slash commands
-        elif not text.strip():
-            # Show all slash commands
-            for cmd_name, cmd in self.slash_completer.commands.items():
-                yield Completion(
-                    f"/{cmd_name}",
-                    start_position=0,
-                    display_meta=cmd.help_text,
-                    style="fg:cyan",
-                )
-        # Only show path completions if text contains / or ~ (indicating a path)
-        elif "/" in text or text.startswith("~"):
-            yield from self.path_completer.get_completions(document, complete_event)
-        # Otherwise, no completions for regular text
-        else:
-            # Explicitly return nothing - no completions for regular text
-            return
+            options = CommandRegistry.get_autocomplete_options()
+            self._autocomplete_options = [opt[0] for opt in options.get(self.name, [])]
+        return self._autocomplete_options
 
 
 class InteractiveCLI(CommandHandler):
@@ -154,6 +54,7 @@ class InteractiveCLI(CommandHandler):
             super().__init__(get_themed_console())
         self.session = None
         self.config = None  # Will be set by interactive.py
+        self.provider = None  # Will be set by interactive.py
         self.commands = self._init_commands()
         self.style = self._create_style()
 
@@ -175,6 +76,26 @@ class InteractiveCLI(CommandHandler):
 
         # Initialize session with all features
         self._init_session()
+
+    def _get_current_provider(self):
+        """Get current provider for model completion."""
+        return self.provider
+
+    def _get_available_themes(self):
+        """Get available theme names."""
+        from coda.themes import THEMES
+
+        return THEMES
+
+    def _get_available_models(self):
+        """Get available model names from current provider."""
+        provider = self._get_current_provider()
+        if not provider:
+            return []
+        try:
+            return provider.list_models()
+        except Exception:
+            return []
 
     def _init_commands(self) -> dict[str, SlashCommand]:
         """Initialize slash commands from the command registry."""
@@ -258,10 +179,18 @@ class InteractiveCLI(CommandHandler):
         # Note: We handle interrupts via signal handler during AI responses
         # Double escape is not reliable with prompt-toolkit during streaming
 
+        # Create enhanced completer with all features
+        completer = CodaCompleter(
+            slash_commands=self.commands,
+            get_provider_func=self._get_current_provider,
+            session_commands=self.session_commands,
+            get_themes_func=self._get_available_themes,
+        )
+
         self.session = PromptSession(
             history=FileHistory(str(HISTORY_FILE_PATH)),
             auto_suggest=None,  # Disable auto-suggestions from history
-            completer=EnhancedCompleter(self.commands),
+            completer=completer,
             style=self.style,
             multiline=False,  # We'll handle multiline manually
             enable_history_search=True,
@@ -486,9 +415,22 @@ class InteractiveCLI(CommandHandler):
         """Switch provider."""
         self.show_provider_info(args)
 
-    def _cmd_mode(self, args: str):
+    async def _cmd_mode(self, args: str):
         """Change developer mode."""
-        self.switch_mode(args)
+        if not args:
+            # Show interactive mode selector
+            from .generic_selector import ModeSelector
+
+            selector = ModeSelector(self.console)
+            mode_choice = await selector.select_option_interactive()
+
+            if mode_choice:
+                self.switch_mode(mode_choice)
+            else:
+                # Show current mode if cancelled
+                self.console.print(f"[yellow]Current mode: {self.current_mode.value}[/yellow]")
+        else:
+            self.switch_mode(args)
 
     def _show_coming_soon_command(
         self, command_name: str, title: str, options: list[tuple[str, str]], usage: str
@@ -502,12 +444,28 @@ class InteractiveCLI(CommandHandler):
             self.console.print(f"  [cyan]{option}[/cyan] - {description}")
         self.console.print(f"\n[dim]Usage: {usage}[/dim]")
 
-    def _cmd_session(self, args: str):
+    async def _cmd_session(self, args: str):
         """Manage sessions."""
-        # Pass the arguments to session commands handler
-        result = self.session_commands.handle_session_command(args.split() if args else [])
-        if result:
-            self.console.print(result)
+        if not args:
+            # Show interactive session command selector
+            from .generic_selector import SessionCommandSelector
+
+            selector = SessionCommandSelector(self.console)
+            cmd_choice = await selector.select_option_interactive()
+
+            if cmd_choice:
+                # Execute selected command
+                result = self.session_commands.handle_session_command([cmd_choice])
+                if result:
+                    self.console.print(result)
+            else:
+                # Show available commands if cancelled
+                self.console.print("[yellow]Session command cancelled[/yellow]")
+        else:
+            # Pass the arguments to session commands handler
+            result = self.session_commands.handle_session_command(args.split() if args else [])
+            if result:
+                self.console.print(result)
 
     async def _cmd_theme(self, args: str):
         """Change UI theme."""
@@ -611,12 +569,27 @@ class InteractiveCLI(CommandHandler):
         except ValueError as e:
             self.console.print(f"[red]Error:[/] {e}")
 
-    def _cmd_export(self, args: str):
+    async def _cmd_export(self, args: str):
         """Export conversation."""
-        # Pass the arguments to session commands handler for export
-        result = self.session_commands.handle_export_command(args.split() if args else [])
-        if result:
-            self.console.print(result)
+        if not args:
+            # Show interactive export format selector
+            from .generic_selector import ExportSelector
+
+            selector = ExportSelector(self.console)
+            format_choice = await selector.select_option_interactive()
+
+            if format_choice:
+                # Export with selected format
+                result = self.session_commands.handle_export_command([format_choice])
+                if result:
+                    self.console.print(result)
+            else:
+                self.console.print("[yellow]Export cancelled[/yellow]")
+        else:
+            # Pass the arguments to session commands handler for export
+            result = self.session_commands.handle_export_command(args.split() if args else [])
+            if result:
+                self.console.print(result)
 
     def _cmd_tools(self, args: str):
         """Manage MCP tools."""
@@ -632,12 +605,17 @@ class InteractiveCLI(CommandHandler):
 
         if not subcommand:
             from rich.table import Table
+
             table = Table(title="[bold cyan]Semantic Search Commands[/bold cyan]", box=None)
             table.add_column("Command", style="white", no_wrap=True)
             table.add_column("Description", style="dim")
 
-            table.add_row("/search semantic <query>", "Search indexed content using semantic similarity")
-            table.add_row("/search code <query>", "Search code files with language-aware formatting")
+            table.add_row(
+                "/search semantic <query>", "Search indexed content using semantic similarity"
+            )
+            table.add_row(
+                "/search code <query>", "Search code files with language-aware formatting"
+            )
             table.add_row("/search index [path]", "Index files or directories for search")
             table.add_row("/search status", "Show search index statistics")
             table.add_row("/search reset", "Reset search manager and clear index")
@@ -675,10 +653,14 @@ class InteractiveCLI(CommandHandler):
                 self._search_manager = create_semantic_search_manager()
                 # Get provider info
                 provider_info = self._search_manager.embedding_provider.get_model_info()
-                self.console.print(f"[green]Using {provider_info.get('provider', 'configured')} embeddings[/green]")
+                self.console.print(
+                    f"[green]Using {provider_info.get('provider', 'configured')} embeddings[/green]"
+                )
             except Exception as e:
                 # Fall back to mock provider
-                self.console.print(f"[yellow]Failed to initialize configured provider: {str(e)}[/yellow]")
+                self.console.print(
+                    f"[yellow]Failed to initialize configured provider: {str(e)}[/yellow]"
+                )
                 self.console.print("[yellow]Using mock embeddings for demo purposes[/yellow]")
                 provider = MockEmbeddingProvider(dimension=768)
                 self._search_manager = SemanticSearchManager(embedding_provider=provider)
@@ -700,6 +682,7 @@ class InteractiveCLI(CommandHandler):
 
             except Exception as e:
                 import traceback
+
                 self.console.print(f"[red]Search error: {e}[/red]")
                 self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
@@ -730,6 +713,7 @@ class InteractiveCLI(CommandHandler):
 
             except Exception as e:
                 import traceback
+
                 self.console.print(f"[red]Code search error: {e}[/red]")
                 self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
@@ -746,7 +730,7 @@ class InteractiveCLI(CommandHandler):
                     "Kubernetes orchestrates containerized applications",
                     "Git is essential for version control",
                     "React is a popular frontend framework",
-                    "FastAPI is great for building Python APIs"
+                    "FastAPI is great for building Python APIs",
                 ]
 
                 try:
@@ -758,7 +742,9 @@ class InteractiveCLI(CommandHandler):
                             indexed_ids.extend(doc_id)
                             progress.update(1, f"Indexing: {doc[:50]}...")
 
-                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} demo documents[/green]")
+                    self.console.print(
+                        f"\n[green]✓ Successfully indexed {len(indexed_ids)} demo documents[/green]"
+                    )
                 except Exception as e:
                     self.console.print(f"[red]Indexing error: {e}[/red]")
             else:
@@ -777,12 +763,36 @@ class InteractiveCLI(CommandHandler):
 
                         # Common code file extensions
                         extensions = [
-                            "*.py", "*.js", "*.ts", "*.jsx", "*.tsx",
-                            "*.java", "*.cpp", "*.c", "*.h", "*.hpp",
-                            "*.go", "*.rs", "*.rb", "*.php", "*.swift",
-                            "*.kt", "*.scala", "*.r", "*.m", "*.cs",
-                            "*.sh", "*.bash", "*.zsh", "*.fish",
-                            "*.md", "*.txt", "*.json", "*.yaml", "*.yml", "*.toml"
+                            "*.py",
+                            "*.js",
+                            "*.ts",
+                            "*.jsx",
+                            "*.tsx",
+                            "*.java",
+                            "*.cpp",
+                            "*.c",
+                            "*.h",
+                            "*.hpp",
+                            "*.go",
+                            "*.rs",
+                            "*.rb",
+                            "*.php",
+                            "*.swift",
+                            "*.kt",
+                            "*.scala",
+                            "*.r",
+                            "*.m",
+                            "*.cs",
+                            "*.sh",
+                            "*.bash",
+                            "*.zsh",
+                            "*.fish",
+                            "*.md",
+                            "*.txt",
+                            "*.json",
+                            "*.yaml",
+                            "*.yml",
+                            "*.toml",
                         ]
 
                         files = []
@@ -797,25 +807,29 @@ class InteractiveCLI(CommandHandler):
                             self.console.print(f"[yellow]No code files found in {path}[/yellow]")
                             return
 
-                        self.console.print(f"[cyan]Found {len(files)} files to index in {path}[/cyan]")
+                        self.console.print(
+                            f"[cyan]Found {len(files)} files to index in {path}[/cyan]"
+                        )
 
                     # Index files with progress
                     with indexing_progress.start_indexing(len(files)) as progress:
                         indexed_ids = await manager.index_code_files(files)
                         for _i, file in enumerate(files):
-                            progress.update(
-                                1,
-                                f"Indexed: {file.name}"
-                            )
+                            progress.update(1, f"Indexed: {file.name}")
 
-                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} files[/green]")
+                    self.console.print(
+                        f"\n[green]✓ Successfully indexed {len(indexed_ids)} files[/green]"
+                    )
 
                     # Show some stats
                     stats = await manager.get_stats()
-                    self.console.print(f"[dim]Total vectors in index: {stats['vector_count']}[/dim]")
+                    self.console.print(
+                        f"[dim]Total vectors in index: {stats['vector_count']}[/dim]"
+                    )
 
                 except Exception as e:
                     import traceback
+
                     self.console.print(f"[red]Indexing error: {e}[/red]")
                     self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
@@ -825,11 +839,13 @@ class InteractiveCLI(CommandHandler):
                 create_search_stats_display(stats, self.console)
             except Exception as e:
                 self.console.print(f"[red]Error getting status: {e}[/red]")
-        
+
         elif subcommand == "reset":
             # Reset the search manager
             self._search_manager = None
-            self.console.print("[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]")
+            self.console.print(
+                "[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]"
+            )
 
         else:
             self.console.print(f"[red]Unknown search subcommand: {subcommand}[/red]")

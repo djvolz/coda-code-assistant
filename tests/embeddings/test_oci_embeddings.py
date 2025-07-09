@@ -36,21 +36,21 @@ class TestOCIEmbeddingProvider:
 
     def test_init_with_short_name(self, compartment_id):
         """Test initialization with short model name."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
             # multilingual-e5 is now an alias for cohere.embed-multilingual-v3.0
             assert provider.model_id == "cohere.embed-multilingual-v3.0"
 
     def test_init_with_full_name(self, compartment_id):
         """Test initialization with full model name."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id, "cohere.embed-multilingual-v3.0")
             assert provider.model_id == "cohere.embed-multilingual-v3.0"
 
     @pytest.mark.asyncio
     async def test_embed_text(self, compartment_id, mock_oci_client):
         """Test embedding a single text."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
             provider._client = mock_oci_client
 
@@ -65,7 +65,7 @@ class TestOCIEmbeddingProvider:
     @pytest.mark.asyncio
     async def test_embed_batch(self, compartment_id, mock_oci_client):
         """Test embedding a batch of texts."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
             provider._client = mock_oci_client
 
@@ -80,7 +80,7 @@ class TestOCIEmbeddingProvider:
     @pytest.mark.asyncio
     async def test_list_models(self, compartment_id):
         """Test listing available models."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id)
 
         models = await provider.list_models()
@@ -96,7 +96,7 @@ class TestOCIEmbeddingProvider:
 
     def test_get_model_info(self, compartment_id):
         """Test getting current model info."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
 
         info = provider.get_model_info()
@@ -109,7 +109,7 @@ class TestOCIEmbeddingProvider:
 
     def test_similarity_calculation(self, compartment_id):
         """Test cosine similarity calculation."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id)
 
         # Test with identical vectors
@@ -133,7 +133,7 @@ class TestOCIEmbeddingProvider:
     @pytest.mark.asyncio
     async def test_error_handling(self, compartment_id):
         """Test error handling in embed operations."""
-        with patch('oci.config.from_file', return_value={"region": "us-chicago-1"}):
+        with patch("oci.config.from_file", return_value={"region": "us-chicago-1"}):
             provider = OCIEmbeddingProvider(compartment_id, "multilingual-e5")
 
         # Mock client that raises an error
