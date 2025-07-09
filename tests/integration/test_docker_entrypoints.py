@@ -69,7 +69,7 @@ echo "Ollama started with PID: $OLLAMA_PID"
 check_ollama_health() {
     local retries=0
     local max_retries=3
-    
+
     while [ $retries -lt $max_retries ]; do
         if curl -f http://localhost:11434/api/tags >/dev/null 2>&1; then
             echo "Ollama is healthy"
@@ -78,7 +78,7 @@ check_ollama_health() {
         retries=$((retries + 1))
         sleep 1
     done
-    
+
     echo "Ollama health check failed"
     return 1
 }
@@ -110,13 +110,13 @@ OLLAMA_MODEL="${OLLAMA_MODEL:-llama2}"
 
 pull_model() {
     echo "Checking if model $OLLAMA_MODEL exists..."
-    
+
     # Simulate checking for model
     if [ "$OLLAMA_MODEL" = "existing-model" ]; then
         echo "Model $OLLAMA_MODEL already exists"
         return 0
     fi
-    
+
     echo "Pulling model $OLLAMA_MODEL..."
     # Simulate model pull
     sleep 0.1
@@ -152,17 +152,17 @@ CODA_PID=""
 
 cleanup() {
     echo "Received termination signal"
-    
+
     if [ -n "$CODA_PID" ]; then
         echo "Stopping Coda (PID: $CODA_PID)"
         kill -TERM $CODA_PID 2>/dev/null
     fi
-    
+
     if [ -n "$OLLAMA_PID" ]; then
         echo "Stopping Ollama (PID: $OLLAMA_PID)"
         kill -TERM $OLLAMA_PID 2>/dev/null
     fi
-    
+
     exit 0
 }
 
@@ -204,7 +204,7 @@ EXTERNAL_OLLAMA_HOST="${EXTERNAL_OLLAMA_HOST:-}"
 if [ "$USE_EXTERNAL_OLLAMA" = "true" ] && [ -n "$EXTERNAL_OLLAMA_HOST" ]; then
     echo "Using external Ollama at $EXTERNAL_OLLAMA_HOST"
     export OLLAMA_HOST="$EXTERNAL_OLLAMA_HOST"
-    
+
     # Check connection
     if curl -f "$OLLAMA_HOST/api/tags" >/dev/null 2>&1; then
         echo "Connected to external Ollama"
@@ -245,18 +245,18 @@ required_vars=("OCI_COMPARTMENT_ID" "OCI_REGION" "OCI_TENANCY_ID")
 
 validate_oci_config() {
     local missing_vars=()
-    
+
     for var in "${required_vars[@]}"; do
         if [ -z "${!var}" ]; then
             missing_vars+=("$var")
         fi
     done
-    
+
     if [ ${#missing_vars[@]} -gt 0 ]; then
         echo "Error: Missing required OCI variables: ${missing_vars[*]}"
         return 1
     fi
-    
+
     echo "OCI configuration validated"
     return 0
 }
@@ -287,21 +287,21 @@ wait_for_service() {
     local service=$1
     local timeout=$2
     local elapsed=0
-    
+
     echo "Waiting for $service (timeout: ${timeout}s)..."
-    
+
     while [ $elapsed -lt $timeout ]; do
         # Simulate service check
         if [ $elapsed -gt 2 ]; then
             echo "$service is ready"
             return 0
         fi
-        
+
         sleep 1
         elapsed=$((elapsed + 1))
         echo "Waited ${elapsed}s..."
     done
-    
+
     echo "Timeout waiting for $service"
     return 1
 }
@@ -381,7 +381,7 @@ env | grep -E "(OLLAMA|CODA)" | sort
             capture_output=True,
             text=True,
             env={
-                **mock_env,
+                **os.environ,
                 'CODA_LOG_LEVEL': 'DEBUG'
             }
         )
@@ -399,10 +399,10 @@ SHUTDOWN_GRACE_PERIOD=5
 
 graceful_shutdown() {
     echo "Initiating graceful shutdown..."
-    
+
     # Notify services
     echo "Sending SIGTERM to services..."
-    
+
     # Wait for services to stop
     local waited=0
     while [ $waited -lt $SHUTDOWN_GRACE_PERIOD ]; do
@@ -411,12 +411,12 @@ graceful_shutdown() {
             echo "All services stopped gracefully"
             return 0
         fi
-        
+
         sleep 1
         waited=$((waited + 1))
         echo "Waiting for shutdown... ${waited}s"
     done
-    
+
     echo "Force stopping remaining services"
     return 0
 }

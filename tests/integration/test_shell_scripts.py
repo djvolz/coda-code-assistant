@@ -34,20 +34,20 @@ class TestShellScripts:
         script_content = '''#!/bin/bash
 check_dependencies() {
     local missing_deps=()
-    
+
     # Check for required commands
     for cmd in jq curl docker; do
         if ! command -v $cmd &> /dev/null; then
             missing_deps+=($cmd)
         fi
     done
-    
+
     if [ ${#missing_deps[@]} -gt 0 ]; then
         echo "Error: Missing dependencies: ${missing_deps[*]}"
         echo "Please install: ${missing_deps[*]}"
         return 1
     fi
-    
+
     echo "All dependencies satisfied"
     return 0
 }
@@ -83,14 +83,14 @@ check_ollama() {
         echo "Ollama not found"
         return 1
     fi
-    
+
     # Check version
     local version=$(ollama --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     if [ -n "$version" ]; then
         echo "Ollama version: $version"
         return 0
     fi
-    
+
     echo "Could not determine Ollama version"
     return 1
 }
@@ -122,23 +122,23 @@ RETRY_DELAY=5
 download_model() {
     local model=$1
     local attempt=1
-    
+
     echo "Downloading model: $model"
-    
+
     while [ $attempt -le $RETRY_COUNT ]; do
         echo "Attempt $attempt of $RETRY_COUNT..."
-        
+
         # Simulate download (would be: ollama pull $model)
         if [ $attempt -eq 2 ]; then
             echo "Successfully downloaded $model"
             return 0
         fi
-        
+
         echo "Download failed, retrying in ${RETRY_DELAY}s..."
         sleep 0.1  # Short sleep for testing
         attempt=$((attempt + 1))
     done
-    
+
     echo "Failed to download $model after $RETRY_COUNT attempts"
     return 1
 }
@@ -171,17 +171,17 @@ TEST_COMMAND="${TEST_COMMAND:-pytest}"
 run_tests_with_timeout() {
     echo "Running tests with timeout: ${TEST_TIMEOUT}s"
     echo "Command: $TEST_COMMAND"
-    
+
     # Use timeout command if available
     if command -v timeout &> /dev/null; then
         timeout $TEST_TIMEOUT $TEST_COMMAND
         local exit_code=$?
-        
+
         if [ $exit_code -eq 124 ]; then
             echo "ERROR: Tests timed out after ${TEST_TIMEOUT}s"
             return 1
         fi
-        
+
         return $exit_code
     else
         # Fallback without timeout
@@ -215,7 +215,7 @@ OLLAMA_PID_FILE="/tmp/ollama_test.pid"
 
 start_ollama_server() {
     echo "Starting Ollama server..."
-    
+
     # Check if already running
     if [ -f "$OLLAMA_PID_FILE" ]; then
         local pid=$(cat "$OLLAMA_PID_FILE")
@@ -224,14 +224,14 @@ start_ollama_server() {
             return 0
         fi
     fi
-    
+
     # Simulate starting server
     sleep 60 &
     local pid=$!
     echo $pid > "$OLLAMA_PID_FILE"
-    
+
     echo "Ollama started (PID: $pid)"
-    
+
     # Wait for startup
     sleep 0.1
     echo "Ollama server ready"
@@ -240,7 +240,7 @@ start_ollama_server() {
 
 stop_ollama_server() {
     echo "Stopping Ollama server..."
-    
+
     if [ -f "$OLLAMA_PID_FILE" ]; then
         local pid=$(cat "$OLLAMA_PID_FILE")
         if kill -TERM $pid 2>/dev/null; then
@@ -249,7 +249,7 @@ stop_ollama_server() {
             return 0
         fi
     fi
-    
+
     echo "Ollama server not running"
     return 0
 }
@@ -281,22 +281,22 @@ stop_ollama_server
         script_content = '''#!/bin/bash
 setup_test_environment() {
     echo "Setting up test environment..."
-    
+
     # Export required variables
     export OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
     export CODA_TEST_MODE="true"
     export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
-    
+
     # Create necessary directories
     mkdir -p test_output
     mkdir -p .coverage
-    
+
     # Display environment
     echo "Environment configured:"
     echo "  OLLAMA_HOST=$OLLAMA_HOST"
     echo "  CODA_TEST_MODE=$CODA_TEST_MODE"
     echo "  PYTHONPATH=$PYTHONPATH"
-    
+
     return 0
 }
 
@@ -325,21 +325,21 @@ setup_test_environment
         script_content = '''#!/bin/bash
 cleanup() {
     echo "Performing cleanup..."
-    
+
     # Stop services
     if [ -n "$OLLAMA_PID" ]; then
         echo "Stopping Ollama process: $OLLAMA_PID"
         kill -TERM $OLLAMA_PID 2>/dev/null || true
     fi
-    
+
     # Remove temporary files
     rm -f /tmp/ollama_test.pid
     rm -rf ./test_output
-    
+
     # Clear environment
     unset CODA_TEST_MODE
     unset TEST_OLLAMA_HOST
-    
+
     echo "Cleanup completed"
     return 0
 }
@@ -374,10 +374,10 @@ handle_error() {
     local exit_code=$?
     local line_no=$1
     echo "Error on line $line_no: Exit code $exit_code"
-    
+
     # Cleanup on error
     echo "Performing error cleanup..."
-    
+
     exit $exit_code
 }
 
@@ -386,13 +386,13 @@ trap 'handle_error $LINENO' ERR
 # Function that might fail
 risky_operation() {
     echo "Attempting risky operation..."
-    
+
     # Simulate failure condition
     if [ "$FORCE_FAIL" = "true" ]; then
         echo "Operation failed!"
         return 1
     fi
-    
+
     echo "Operation succeeded"
     return 0
 }
@@ -425,14 +425,14 @@ echo "Script completed successfully"
         script_content = '''#!/bin/bash
 run_parallel_tests() {
     echo "Starting parallel test execution..."
-    
+
     # Define test suites
     declare -a test_suites=(
         "unit_tests"
         "integration_tests"
         "performance_tests"
     )
-    
+
     # Run tests in parallel
     for suite in "${test_suites[@]}"; do
         (
@@ -441,11 +441,11 @@ run_parallel_tests() {
             echo "$suite completed"
         ) &
     done
-    
+
     # Wait for all background jobs
     echo "Waiting for all test suites to complete..."
     wait
-    
+
     echo "All parallel tests completed"
     return 0
 }
