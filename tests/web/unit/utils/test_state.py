@@ -104,20 +104,39 @@ class TestStateManagement:
 
     def test_init_session_state_session_manager_error(self, mock_streamlit, mock_config, mock_path):
         """Test initialization with session manager error."""
-        with patch("coda.web.utils.state.SessionManager") as mock_sm:
-            mock_sm.side_effect = Exception("DB error")
+        # Mock the Path.home() and mkdir operations
+        with patch("coda.web.utils.state.Path") as mock_path_class:
+            mock_home_path = Mock()
+            mock_config_path = Mock()
+            mock_coda_path = Mock()
+            mock_db_path = Mock()
+            mock_parent = Mock()
 
-            init_session_state()
-
-            assert mock_streamlit.session_state["session_manager"] is None
-            # The error message includes the path issue, so just check it contains our error
-            assert (
-                "DB error" in mock_streamlit.session_state["session_manager_error"]
-                or "Operation not supported"
-                in mock_streamlit.session_state["session_manager_error"]
+            # Set up the chain of path operations
+            mock_path_class.home.return_value = mock_home_path
+            mock_home_path.__truediv__ = Mock(
+                side_effect=lambda x: mock_config_path if x == ".config" else None
             )
-            # Should continue initialization despite error
-            assert mock_streamlit.session_state["initialized"]
+            mock_config_path.__truediv__ = Mock(
+                side_effect=lambda x: mock_coda_path if x == "coda" else None
+            )
+            mock_coda_path.__truediv__ = Mock(
+                side_effect=lambda x: mock_db_path if x == "sessions.db" else None
+            )
+            mock_db_path.parent = mock_parent
+            mock_parent.mkdir = Mock()  # This will succeed
+
+            # Now mock SessionManager to fail
+            with patch("coda.web.utils.state.SessionManager") as mock_sm:
+                mock_sm.side_effect = Exception("DB error")
+
+                init_session_state()
+
+                assert mock_streamlit.session_state["session_manager"] is None
+                # Check that the error message is our DB error
+                assert "DB error" in mock_streamlit.session_state["session_manager_error"]
+                # Should continue initialization despite error
+                assert mock_streamlit.session_state["initialized"]
 
     def test_get_state_value_existing(self, mock_streamlit):
         """Test getting existing state value."""

@@ -227,9 +227,9 @@ class TestInteractiveSessionIntegration:
         has_specific_context = any(
             word in no_context_response.content.lower() for word in ["python", "decorator"]
         )
-        assert (
-            not has_specific_context
-        ), f"Without context, should not reference specific topics: {no_context_response}"
+        assert not has_specific_context, (
+            f"Without context, should not reference specific topics: {no_context_response}"
+        )
 
     def test_session_export_with_interactive_data(self, setup_interactive_cli):
         """Test session export contains correct interactive conversation data."""

@@ -46,6 +46,7 @@ class TestObservabilityThreadSafety:
         manager.config = config
         return manager
 
+    @pytest.mark.timeout(10)
     def test_concurrent_event_tracking(self, config_manager):
         """Test concurrent event tracking from multiple threads."""
         obs_manager = ObservabilityManager(config_manager)
@@ -86,6 +87,7 @@ class TestObservabilityThreadSafety:
         assert len(errors) == 0, f"Errors occurred: {errors}"
         assert len(all_events) == num_threads * events_per_thread
 
+    @pytest.mark.timeout(10)
     def test_concurrent_trace_operations(self, config_manager):
         """Test concurrent trace operations with nested spans."""
         obs_manager = ObservabilityManager(config_manager)
@@ -291,6 +293,7 @@ class TestObservabilityThreadSafety:
         # Each thread should have its own context
         assert len(thread_contexts) == 10
 
+    @pytest.mark.timeout(15)  # Test timeout to prevent hanging in CI
     def test_deadlock_prevention(self, config_manager):
         """Test that concurrent operations don't cause deadlocks."""
         obs_manager = ObservabilityManager(config_manager)
@@ -321,18 +324,18 @@ class TestObservabilityThreadSafety:
         # Wait with timeout to detect deadlock
         start_time = time.time()
         for thread in threads:
-            thread.join(timeout=30)  # 30 second timeout
+            thread.join(timeout=5)  # Reduced timeout to 5 seconds
 
         # Check if all threads completed
         active_threads = [t for t in threads if t.is_alive()]
-        assert (
-            len(active_threads) == 0
-        ), f"Deadlock detected! {len(active_threads)} threads still running"
+        assert len(active_threads) == 0, (
+            f"Deadlock detected! {len(active_threads)} threads still running"
+        )
 
         completion_time = time.time() - start_time
-        assert (
-            completion_time < 10
-        ), f"Operations took too long ({completion_time}s), possible lock contention"
+        assert completion_time < 10, (
+            f"Operations took too long ({completion_time}s), possible lock contention"
+        )
 
     def test_concurrent_configuration_updates(self, config_manager):
         """Test thread safety during configuration updates."""
