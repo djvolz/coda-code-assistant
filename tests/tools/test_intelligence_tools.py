@@ -266,8 +266,16 @@ def utility_function():
 
         # Test execution
         result = asyncio.run(tool.execute({"repository_path": str(self.test_dir)}))
-        assert result.success
-        assert result.result["total_files"] >= 3
+        assert result.success, f"Tool execution failed: {result.error}"
+        
+        # Debug output
+        if result.result["total_files"] < 3:
+            print(f"Expected at least 3 files, but got {result.result['total_files']}")
+            print(f"Result: {result.result}")
+            print(f"Test dir: {self.test_dir}")
+            print(f"Files in test dir: {list(self.test_dir.rglob('*'))}")
+        
+        assert result.result["total_files"] >= 3, f"Expected at least 3 files, got {result.result['total_files']}"
         assert result.result["total_size"] > 0
         assert "python" in result.result["languages"]
         assert "javascript" in result.result["languages"]

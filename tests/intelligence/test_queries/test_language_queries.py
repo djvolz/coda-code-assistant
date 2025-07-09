@@ -38,66 +38,66 @@ class TestLanguageQueries:
         """Test Python query with comprehensive code sample."""
         code = '''
         """Module docstring."""
-        
+
         import os
         import sys
         from pathlib import Path
         from typing import List, Dict, Optional
-        
+
         # Constants
         MAX_SIZE = 1000
         DEFAULT_NAME = "test"
-        
+
         class BaseClass:
             """Base class docstring."""
             CLASS_VAR = 42
-            
+
             def __init__(self, name: str):
                 self.name = name
-            
+
             def method1(self) -> str:
                 """Method docstring."""
                 return self.name
-            
+
             @property
             def prop(self) -> int:
                 return self.CLASS_VAR
-            
+
             @staticmethod
             def static_method():
                 pass
-            
+
             @classmethod
             def class_method(cls):
                 pass
-        
+
         class DerivedClass(BaseClass):
             """Derived class."""
-            
+
             def method1(self) -> str:
                 """Override method."""
                 return super().method1()
-            
+
             async def async_method(self):
                 """Async method."""
                 pass
-        
+
         def regular_function(param1: int, param2: str = "default") -> bool:
             """Regular function."""
             return True
-        
+
         async def async_function():
             """Async function."""
             pass
-        
+
         def _private_function():
             """Private function."""
             pass
-        
+
         # Variables
         global_var = 100
         _private_var = 200
-        
+
         if __name__ == "__main__":
             instance = DerivedClass("test")
             result = instance.method1()
@@ -151,86 +151,86 @@ class TestLanguageQueries:
         import { useState, useEffect } from 'react';
         const fs = require('fs');
         const { readFile } = require('fs/promises');
-        
+
         // Constants
         const MAX_COUNT = 100;
         const DEFAULT_CONFIG = { timeout: 5000 };
-        
+
         // Class declaration
         class Animal {
             constructor(name) {
                 this.name = name;
             }
-            
+
             speak() {
                 return `${this.name} makes a sound`;
             }
-            
+
             static createDog(name) {
                 return new Dog(name);
             }
         }
-        
+
         // Class expression
         const Vehicle = class {
             constructor(type) {
                 this.type = type;
             }
         };
-        
+
         // Derived class
         class Dog extends Animal {
             speak() {
                 return `${this.name} barks`;
             }
-            
+
             async fetch() {
                 // Async method
             }
         }
-        
+
         // Function declaration
         function regularFunction(param1, param2 = 'default') {
             return param1 + param2;
         }
-        
+
         // Function expression
         const funcExpression = function(x) {
             return x * 2;
         };
-        
+
         // Arrow functions
         const arrowFunc = (x) => x * 2;
         const asyncArrow = async (x) => {
             return await Promise.resolve(x);
         };
-        
+
         // Generator function
         function* generatorFunc() {
             yield 1;
             yield 2;
         }
-        
+
         // Async function
         async function asyncFunction() {
             return await fetch('/api');
         }
-        
+
         // Variables
         let mutableVar = 10;
         var oldStyleVar = 20;
-        
+
         // React component
         const MyComponent = ({ prop1, prop2 }) => {
             const [state, setState] = useState(0);
-            
+
             useEffect(() => {
                 // Effect
             }, []);
-            
+
             return <div>{state}</div>;
         };
-        
+
         // Export
         export default MyComponent;
         export { Animal, Dog };
@@ -276,59 +276,59 @@ class TestLanguageQueries:
         import { Component } from '@angular/core';
         import type { User } from './types';
         import * as utils from './utils';
-        
+
         // Interfaces
         interface Person {
             name: string;
             age: number;
             greet(): string;
         }
-        
+
         interface Employee extends Person {
             employeeId: number;
         }
-        
+
         // Type aliases
         type ID = string | number;
         type Callback<T> = (data: T) => void;
         type Status = 'active' | 'inactive' | 'pending';
-        
+
         // Enums
         enum Color {
             Red = 'RED',
             Green = 'GREEN',
             Blue = 'BLUE'
         }
-        
+
         const enum Direction {
             Up = 1,
             Down,
             Left,
             Right
         }
-        
+
         // Abstract class
         abstract class Shape {
             abstract area(): number;
-            
+
             describe(): string {
                 return `Area: ${this.area()}`;
             }
         }
-        
+
         // Generic class
         class Container<T> {
             private items: T[] = [];
-            
+
             add(item: T): void {
                 this.items.push(item);
             }
-            
+
             get(index: number): T | undefined {
                 return this.items[index];
             }
         }
-        
+
         // Decorators
         @Component({
             selector: 'app-root',
@@ -336,54 +336,54 @@ class TestLanguageQueries:
         })
         class AppComponent {
             @Input() title: string = 'App';
-            
+
             @Output()
             onClick = new EventEmitter<void>();
-            
+
             constructor(private service: MyService) {}
-            
+
             @HostListener('click')
             handleClick(): void {
                 this.onClick.emit();
             }
         }
-        
+
         // Namespace
         namespace Utils {
             export function log(msg: string): void {
                 console.log(msg);
             }
-            
+
             export interface Config {
                 debug: boolean;
             }
         }
-        
+
         // Module
         module MyModule {
             export class MyClass {
                 method(): void {}
             }
         }
-        
+
         // Function overloads
         function process(x: string): string;
         function process(x: number): number;
         function process(x: string | number): string | number {
             return x;
         }
-        
+
         // Generic function
         function identity<T>(arg: T): T {
             return arg;
         }
-        
+
         // Const assertions
         const config = {
             endpoint: 'https://api.example.com',
             timeout: 5000
         } as const;
-        
+
         // Type guards
         function isString(x: unknown): x is string {
             return typeof x === 'string';
@@ -426,54 +426,54 @@ class TestLanguageQueries:
         use std::collections::HashMap;
         use std::io::{self, Read, Write};
         use serde::{Serialize, Deserialize};
-        
+
         // External crate
         extern crate regex;
-        
+
         // Modules
         mod utils {
             pub fn helper() -> i32 {
                 42
             }
         }
-        
+
         pub mod public_module {
             use super::*;
-            
+
             pub struct PublicStruct {
                 pub field: String,
             }
         }
-        
+
         // Constants
         const MAX_SIZE: usize = 1024;
         static GLOBAL_COUNT: AtomicUsize = AtomicUsize::new(0);
         static mut MUTABLE_STATIC: i32 = 0;
-        
+
         // Type alias
         type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
         type Callback = fn(i32) -> i32;
-        
+
         // Structs
         #[derive(Debug, Clone)]
         struct Point {
             x: f64,
             y: f64,
         }
-        
+
         #[derive(Serialize, Deserialize)]
         pub struct Config {
             pub name: String,
             pub timeout: u64,
             settings: HashMap<String, String>,
         }
-        
+
         // Tuple struct
         struct Color(u8, u8, u8);
-        
+
         // Unit struct
         struct Marker;
-        
+
         // Enums
         #[derive(Debug)]
         enum Status {
@@ -481,12 +481,12 @@ class TestLanguageQueries:
             Inactive { reason: String },
             Pending(u32),
         }
-        
+
         pub enum Result<T, E> {
             Ok(T),
             Err(E),
         }
-        
+
         // Traits
         trait Animal {
             fn name(&self) -> &str;
@@ -494,73 +494,73 @@ class TestLanguageQueries:
                 format!("{} makes a sound", self.name())
             }
         }
-        
+
         pub trait Drawable {
             fn draw(&self);
         }
-        
+
         // Trait implementations
         impl Animal for Dog {
             fn name(&self) -> &str {
                 &self.name
             }
         }
-        
+
         impl Point {
             // Associated function (constructor)
             pub fn new(x: f64, y: f64) -> Self {
                 Point { x, y }
             }
-            
+
             // Method
             pub fn distance(&self, other: &Point) -> f64 {
                 ((self.x - other.x).powi(2) + (self.y - other.y).powi(2)).sqrt()
             }
-            
+
             // Mutable method
             pub fn translate(&mut self, dx: f64, dy: f64) {
                 self.x += dx;
                 self.y += dy;
             }
         }
-        
+
         // Generic struct
         struct Container<T> {
             items: Vec<T>,
         }
-        
+
         impl<T> Container<T> {
             fn new() -> Self {
                 Container { items: Vec::new() }
             }
-            
+
             fn add(&mut self, item: T) {
                 self.items.push(item);
             }
         }
-        
+
         // Functions
         fn regular_function(x: i32, y: i32) -> i32 {
             x + y
         }
-        
+
         pub fn public_function() -> Result<()> {
             Ok(())
         }
-        
+
         async fn async_function() -> io::Result<String> {
             Ok("done".to_string())
         }
-        
+
         unsafe fn unsafe_function() {
             // Unsafe code
         }
-        
+
         // Generic function
         fn generic_func<T: Clone>(item: &T) -> T {
             item.clone()
         }
-        
+
         // Function with where clause
         fn complex_generic<T, U>(t: T, u: U) -> (T, U)
         where
@@ -569,26 +569,26 @@ class TestLanguageQueries:
         {
             (t, u)
         }
-        
+
         // Macros
         macro_rules! my_macro {
             ($x:expr) => {
                 println!("Value: {}", $x);
             };
         }
-        
+
         // Main function
         fn main() {
             let point = Point::new(1.0, 2.0);
             let mut container = Container::<String>::new();
             container.add("test".to_string());
         }
-        
+
         // Tests module
         #[cfg(test)]
         mod tests {
             use super::*;
-            
+
             #[test]
             fn test_point() {
                 let p = Point::new(0.0, 0.0);
@@ -637,91 +637,91 @@ class TestLanguageQueries:
         """Test Go query with comprehensive code sample."""
         code = """
         package main
-        
+
         import (
             "fmt"
             "io"
             "net/http"
             "sync"
-            
+
             "github.com/user/package"
             alias "github.com/other/package"
         )
-        
+
         // Constants
         const (
             MaxSize = 1024
             DefaultTimeout = 30
         )
-        
+
         const Pi float64 = 3.14159
-        
+
         // Variables
         var (
             globalVar int
             mutex     sync.Mutex
         )
-        
+
         var logger = log.New(os.Stdout, "APP: ", log.LstdFlags)
-        
+
         // Type definitions
         type ID int64
         type Handler func(w http.ResponseWriter, r *http.Request)
-        
+
         // Struct definitions
         type Point struct {
             X, Y float64
         }
-        
+
         type Person struct {
             Name    string `json:"name"`
             Age     int    `json:"age"`
             private string // unexported field
         }
-        
+
         // Embedded struct
         type Employee struct {
             Person
             ID     ID
             Salary float64
         }
-        
+
         // Interface definitions
         type Writer interface {
             Write([]byte) (int, error)
         }
-        
+
         type ReadWriter interface {
             io.Reader
             Writer
         }
-        
+
         // Method receivers
         func (p Point) Distance(other Point) float64 {
             dx := p.X - other.X
             dy := p.Y - other.Y
             return math.Sqrt(dx*dx + dy*dy)
         }
-        
+
         func (p *Point) Translate(dx, dy float64) {
             p.X += dx
             p.Y += dy
         }
-        
+
         // Functions
         func regularFunction(x, y int) int {
             return x + y
         }
-        
+
         func multiReturn() (int, error) {
             return 42, nil
         }
-        
+
         func namedReturn() (result int, err error) {
             result = 42
             return
         }
-        
+
         func variadicFunc(nums ...int) int {
             sum := 0
             for _, n := range nums {
@@ -729,7 +729,7 @@ class TestLanguageQueries:
             }
             return sum
         }
-        
+
         // Generic function (Go 1.18+)
         func Min[T constraints.Ordered](a, b T) T {
             if a < b {
@@ -737,35 +737,35 @@ class TestLanguageQueries:
             }
             return b
         }
-        
+
         // Goroutine and channels
         func worker(id int, jobs <-chan int, results chan<- int) {
             for j := range jobs {
                 results <- j * 2
             }
         }
-        
+
         // Init function
         func init() {
             fmt.Println("Initializing...")
         }
-        
+
         // Main function
         func main() {
             p := Point{X: 1.0, Y: 2.0}
             p.Translate(1.0, 1.0)
-            
+
             // Anonymous function
             add := func(x, y int) int {
                 return x + y
             }
-            
+
             result := add(5, 3)
             fmt.Println(result)
-            
+
             // Defer
             defer fmt.Println("Deferred")
-            
+
             // Channel
             ch := make(chan int, 10)
             go func() {
@@ -816,13 +816,13 @@ class TestLanguageQueries:
         """Test Java query with comprehensive code sample."""
         code = """
         package com.example.app;
-        
+
         import java.util.*;
         import java.io.IOException;
         import java.util.stream.Collectors;
         import static java.lang.Math.PI;
         import static java.lang.Math.*;
-        
+
         /**
          * Main application class
          */
@@ -832,41 +832,41 @@ class TestLanguageQueries:
             // Static fields
             private static final String VERSION = "1.0.0";
             public static final int MAX_SIZE = 1000;
-            
+
             // Instance fields
             private String name;
             protected int count;
             final Logger logger = LoggerFactory.getLogger(Application.class);
-            
+
             // Static block
             static {
                 System.out.println("Static initializer");
             }
-            
+
             // Instance initializer
             {
                 count = 0;
             }
-            
+
             // Constructors
             public Application() {
                 this("default");
             }
-            
+
             public Application(String name) {
                 this.name = name;
             }
-            
+
             // Inner class
             private class InnerClass {
                 void innerMethod() {}
             }
-            
+
             // Static nested class
             public static class NestedClass {
                 public void nestedMethod() {}
             }
-            
+
             // Anonymous class
             Runnable runner = new Runnable() {
                 @Override
@@ -874,63 +874,63 @@ class TestLanguageQueries:
                     System.out.println("Running");
                 }
             };
-            
+
             // Enum
             public enum Status {
                 ACTIVE("Active"),
                 INACTIVE("Inactive");
-                
+
                 private final String label;
-                
+
                 Status(String label) {
                     this.label = label;
                 }
-                
+
                 public String getLabel() {
                     return label;
                 }
             }
-            
+
             // Interface
             public interface Service {
                 void process();
-                
+
                 default void log(String message) {
                     System.out.println(message);
                 }
             }
-            
+
             // Annotation
             @Retention(RetentionPolicy.RUNTIME)
             @Target(ElementType.METHOD)
             public @interface Monitored {
                 String value() default "";
             }
-            
+
             // Methods
             public void publicMethod() {
                 System.out.println("Public method");
             }
-            
+
             private String privateMethod(String input) {
                 return input.toUpperCase();
             }
-            
+
             protected final void protectedFinalMethod() {
                 // Method implementation
             }
-            
+
             @Override
             @Monitored("main-process")
             public synchronized void process() throws IOException {
                 // Synchronized method
             }
-            
+
             // Generic method
             public <T extends Comparable<T>> T findMax(List<T> list) {
                 return Collections.max(list);
             }
-            
+
             // Lambda and streams
             public List<String> filterAndTransform(List<String> input) {
                 return input.stream()
@@ -939,19 +939,19 @@ class TestLanguageQueries:
                     .sorted()
                     .collect(Collectors.toList());
             }
-            
+
             // Main method
             public static void main(String[] args) {
                 Application app = new Application();
                 app.publicMethod();
-                
+
                 // Lambda expression
                 List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
                 numbers.forEach(n -> System.out.println(n * 2));
-                
+
                 // Method reference
                 numbers.forEach(System.out::println);
-                
+
                 // Try-with-resources
                 try (Scanner scanner = new Scanner(System.in)) {
                     String input = scanner.nextLine();
@@ -960,7 +960,7 @@ class TestLanguageQueries:
                 }
             }
         }
-        
+
         // Another top-level class
         class Helper {
             static void help() {
