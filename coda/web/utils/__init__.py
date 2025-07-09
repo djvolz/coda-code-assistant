@@ -1,0 +1,1 @@
+"""Web UI utility functions."""
