@@ -3,7 +3,6 @@
 import click
 
 from ..__version__ import __version__
-from .main import main as chat_command
 from .web_command import web as web_command
 
 
@@ -12,7 +11,7 @@ from .web_command import web as web_command
 @click.version_option(version=__version__, prog_name="coda")
 def cli(ctx):
     """Coda - Multi-provider AI code assistant.
-    
+
     Run without arguments to start interactive chat mode.
     """
     if ctx.invoked_subcommand is None:

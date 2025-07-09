@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Runner script for web UI tests with proper dependency checking."""
 
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 
 def check_dependencies():
     """Check if web testing dependencies are available."""
     try:
-        import selenium
         import pytest
+        import selenium
         return True
     except ImportError:
         return False
@@ -30,7 +30,7 @@ def run_backend_tests():
     """Run backend integration tests (no browser required)."""
     print("🧪 Running backend integration tests...")
     result = subprocess.run([
-        "uv", "run", "pytest", 
+        "uv", "run", "pytest",
         "tests/web/test_backend_integration.py",
         "-v"
     ], cwd=Path(__file__).parent.parent.parent)
@@ -41,11 +41,11 @@ def run_browser_tests():
     """Run browser-based tests."""
     print("🌐 Running browser-based tests...")
     print("⚠️  Note: These tests require Chrome or Firefox WebDriver")
-    
+
     result = subprocess.run([
         "uv", "run", "pytest",
         "tests/web/test_navigation.py",
-        "tests/web/test_functionality.py", 
+        "tests/web/test_functionality.py",
         "-v",
         "--tb=short"
     ], cwd=Path(__file__).parent.parent.parent)
@@ -56,12 +56,12 @@ def main():
     """Main test runner."""
     print("🚀 Coda Web UI Test Runner")
     print("=" * 40)
-    
+
     # Check if dependencies are available
     if not check_dependencies():
         print("❌ Web testing dependencies not found")
         response = input("Install them now? (y/n): ").lower().strip()
-        
+
         if response in ['y', 'yes']:
             if not install_test_dependencies():
                 print("❌ Failed to install dependencies")
@@ -70,13 +70,13 @@ def main():
         else:
             print("❌ Cannot run tests without dependencies")
             sys.exit(1)
-    
+
     print("✅ Dependencies available")
-    
+
     # Run tests in order of complexity
     tests_passed = 0
     total_tests = 2
-    
+
     # 1. Backend tests (fast, no browser required)
     print("\n" + "="*40)
     if run_backend_tests():
@@ -84,7 +84,7 @@ def main():
         tests_passed += 1
     else:
         print("❌ Backend tests failed")
-    
+
     # 2. Browser tests (slower, require WebDriver)
     print("\n" + "="*40)
     try:
@@ -96,11 +96,11 @@ def main():
     except Exception as e:
         print(f"❌ Browser tests failed with error: {e}")
         print("💡 Make sure Chrome or Firefox WebDriver is installed")
-    
+
     # Summary
     print("\n" + "="*40)
     print(f"📊 Test Results: {tests_passed}/{total_tests} test suites passed")
-    
+
     if tests_passed == total_tests:
         print("🎉 All web UI tests passed!")
         return True
