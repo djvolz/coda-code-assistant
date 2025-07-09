@@ -49,10 +49,12 @@ jobs:
     
     - name: Run agent unit tests
       run: |
+        rm -f .coverage* coverage.xml
         uv run python -m pytest tests/agents/ -v --cov=coda/agents --cov-report=xml --cov-report=term-missing
     
     - name: Run tool unit tests
       run: |
+        # Note: Using --cov-append to combine with agent coverage
         uv run python -m pytest tests/tools/ -v --cov=coda/tools --cov-append --cov-report=xml --cov-report=term-missing
     
     - name: Upload coverage to Codecov
@@ -113,9 +115,9 @@ jobs:
         # Test agent with file operations
         uv run python -m pytest tests/cli/test_agent_chat_workflow.py::TestAgentChatWorkflow::test_file_operation_workflow -v
         
-        # Test tool commands
-        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tools_list_command -v
-        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tools_enable_command -v
+        # Test tool workflows
+        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tools_basic_workflow -v
+        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tool_execution_workflow -v
 
   agent-performance-tests:
     runs-on: ubuntu-latest
@@ -185,6 +187,8 @@ jobs:
     
     - name: Generate coverage report
       run: |
+        # Clean any existing coverage data to avoid combination errors
+        rm -f .coverage* coverage.xml
         # Run all agent-related tests with coverage
         uv run python -m pytest tests/agents/ tests/tools/ tests/cli/*agent* tests/cli/*tool* \
           -v --cov=coda/agents --cov=coda/tools --cov=coda/cli/agent_chat --cov=coda/cli/tool_chat \
