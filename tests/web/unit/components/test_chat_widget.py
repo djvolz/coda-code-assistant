@@ -10,7 +10,10 @@ import pytest
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
 sys.path.insert(0, project_root)
 
-from coda.web.components.chat_widget import render_chat_interface, render_message_with_code  # noqa: E402, I001
+from coda.web.components.chat_widget import (
+    render_chat_interface,
+    render_message_with_code,
+)  # noqa: E402, I001
 
 
 class TestChatWidget:
