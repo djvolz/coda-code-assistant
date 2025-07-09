@@ -254,10 +254,10 @@ class CommandRegistry:
         ),
         CommandDefinition(
             name="provider",
-            description="Switch provider",
+            description="Show provider information",
             aliases=["p"],
             subcommands=PROVIDER_OPTIONS,
-            examples=["/provider", "/provider ollama"],
+            examples=["/provider"],
         ),
         CommandDefinition(
             name="mode",

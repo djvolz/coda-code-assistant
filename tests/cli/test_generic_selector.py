@@ -8,7 +8,6 @@ from coda.cli.generic_selector import (
     ExportSelector,
     SessionCommandSelector,
     ModeSelector,
-    ProviderSelector,
 )
 
 
@@ -114,22 +113,6 @@ class TestModeSelector:
         assert "plan" in modes
 
 
-class TestProviderSelector:
-    """Test AI provider selector."""
-
-    def test_provider_options(self):
-        """Test that provider selector has correct options."""
-        selector = ProviderSelector()
-        
-        assert selector.title == "Select AI Provider"
-        assert len(selector.options) == 4  # 4 providers
-        
-        # Check providers are present
-        providers = [opt[0] for opt in selector.options]
-        assert "oci_genai" in providers
-        assert "ollama" in providers
-        assert "openai" in providers
-        assert "litellm" in providers
 
 
 @pytest.mark.asyncio
