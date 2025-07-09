@@ -12,6 +12,9 @@ help:
 	@echo "make test-llm      - Run LLM tests with Ollama"
 	@echo "make test-cov      - Run tests with coverage report"
 	@echo "make test-fast     - Run fast smoke tests"
+	@echo "make test-smoke    - Run critical path smoke tests"
+	@echo "make test-changes  - Run tests for changed files only"
+	@echo "make test-parallel - Run fast unit tests in parallel"
 	@echo "make test-new      - Run all new tests added for container automation"
 	@echo "make test-cli-input - Run CLI input handling tests"
 	@echo "make test-completion - Run CLI completion tests"
@@ -47,6 +50,19 @@ help:
 # Run unit tests only (default for CI)
 test:
 	uv run pytest tests/ -v -m "unit or not integration"
+
+# Run tests based on changed files
+test-changes:
+	@echo "Running tests for changed files..."
+	uv run python scripts/select_tests.py --changed-files "$$(git diff --name-only HEAD)" --output-format command | bash
+
+# Run tests in parallel (requires pytest-xdist)
+test-parallel:
+	uv run pytest tests/ -v -m "unit and fast" -n auto --maxfail=5
+
+# Run smoke tests
+test-smoke:
+	uv run pytest tests/ -v -m smoke --maxfail=1
 
 # Run all tests including integration
 test-all:

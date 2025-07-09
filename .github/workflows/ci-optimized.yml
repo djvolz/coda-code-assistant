@@ -1,0 +1,291 @@
+name: Optimized CI Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  
+# Cancel in-progress runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Stage 1: Detect changes and plan test execution
+  detect-changes:
+    name: Analyze Changes
+    runs-on: ubuntu-latest
+    outputs:
+      skip-tests: ${{ steps.analyze.outputs.skip-tests }}
+      test-command: ${{ steps.analyze.outputs.command }}
+      markers: ${{ steps.analyze.outputs.markers }}
+      affected-modules: ${{ steps.analyze.outputs.modules }}
+      all-tests: ${{ steps.analyze.outputs.all-tests }}
+      run-integration: ${{ steps.analyze.outputs.run-integration }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files_separator: ' '
+      
+      - name: Install uv for test selector
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      
+      - name: Analyze changes
+        id: analyze
+        run: |
+          # Skip tests for pure documentation changes
+          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -qE "^(docs/|.*\.md|LICENSE)$"; then
+            echo "skip-tests=true" >> $GITHUB_OUTPUT
+            echo "::notice::Skipping tests - only documentation changed"
+            exit 0
+          fi
+          
+          # Use test selector script
+          uv run python scripts/select_tests.py \
+            --changed-files "${{ steps.changed-files.outputs.all_changed_files }}" \
+            --github-output
+  
+  # Stage 2: Quick validation (always runs)
+  quick-checks:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      
+      - name: Set up Python
+        run: uv python install 3.11
+      
+      - name: Lint and format check
+        run: |
+          uv sync --no-dev
+          
+          # Run checks with fail-fast
+          echo "::group::Ruff lint"
+          uv run ruff check . --exit-non-zero-on-fix || exit 1
+          echo "::endgroup::"
+          
+          echo "::group::Ruff format"
+          uv run ruff format --check . || exit 1
+          echo "::endgroup::"
+      
+      - name: Import validation
+        run: |
+          echo "::group::Core imports"
+          uv run python -c "import coda; print('✓ Core imports OK')"
+          echo "::endgroup::"
+  
+  # Stage 3: Smoke tests (critical path)
+  smoke-tests:
+    name: Smoke Tests
+    needs: quick-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    strategy:
+      fail-fast: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      
+      - name: Set up Python
+        run: uv python install 3.11
+      
+      - name: Install dependencies
+        run: uv sync --all-extras
+      
+      - name: Run smoke tests
+        run: |
+          echo "::group::Running smoke tests"
+          uv run pytest -m smoke --maxfail=1 --tb=short -v
+          echo "::endgroup::"
+  
+  # Stage 4: Targeted unit tests
+  unit-tests:
+    name: Unit Tests
+    needs: [detect-changes, smoke-tests]
+    if: needs.detect-changes.outputs.skip-tests != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      
+      - name: Set up Python
+        run: uv python install 3.11
+      
+      - name: Install dependencies
+        run: uv sync --all-extras
+      
+      - name: Run targeted unit tests
+        run: |
+          # Use the test command from change detection
+          TEST_CMD="${{ needs.detect-changes.outputs.test-command }}"
+          
+          # Default to fast unit tests if no command
+          if [ -z "$TEST_CMD" ]; then
+            TEST_CMD="pytest -m 'unit and fast' --maxfail=1"
+          fi
+          
+          echo "::notice::Running: $TEST_CMD"
+          eval "$TEST_CMD"
+      
+      - name: Upload coverage
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unit-tests
+          fail_ci_if_error: false
+  
+  # Stage 5: Parallel specialized tests (only if needed)
+  specialized-tests:
+    name: ${{ matrix.component }} Tests
+    needs: [detect-changes, unit-tests]
+    if: |
+      needs.detect-changes.outputs.skip-tests != 'true' && 
+      contains(needs.detect-changes.outputs.affected-modules, matrix.component)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - component: agents
+            test-path: tests/agents/ tests/tools/
+            markers: "not integration and not slow"
+          - component: cli
+            test-path: tests/cli/
+            markers: "not slow and not integration"
+          - component: web
+            test-path: tests/web/unit/
+            markers: "unit"
+          - component: observability
+            test-path: tests/unit/observability/
+            markers: "unit"
+          - component: providers
+            test-path: tests/providers/ tests/unit/test_oci*.py
+            markers: "not integration"
+          - component: session
+            test-path: tests/session/
+            markers: "not integration"
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      
+      - name: Set up Python
+        run: uv python install 3.11
+      
+      - name: Install dependencies
+        run: uv sync --all-extras
+      
+      - name: Run ${{ matrix.component }} tests
+        run: |
+          uv run pytest ${{ matrix.test-path }} \
+            -m "${{ matrix.markers }}" \
+            --maxfail=2 \
+            --tb=short \
+            -v
+  
+  # Stage 6: Integration tests (conditional)
+  integration-tests:
+    name: Integration Tests
+    needs: [detect-changes, specialized-tests]
+    if: |
+      always() && 
+      (needs.detect-changes.outputs.run-integration == 'true' ||
+      github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      
+      - name: Set up Python
+        run: uv python install 3.11
+      
+      - name: Install dependencies
+        run: uv sync --all-extras
+      
+      - name: Run integration tests
+        env:
+          OCI_COMPARTMENT_ID: ${{ secrets.OCI_COMPARTMENT_ID }}
+        run: |
+          if [ -n "$OCI_COMPARTMENT_ID" ]; then
+            uv run pytest tests/ -m integration --maxfail=3 -v
+          else
+            echo "::warning::Integration tests skipped - no credentials"
+            # Run mock provider integration tests instead
+            uv run pytest tests/integration/ -k "mock" --maxfail=3 -v
+          fi
+  
+  # Summary job for branch protection
+  ci-status:
+    name: CI Status
+    if: always()
+    needs: [quick-checks, smoke-tests, unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check status
+        run: |
+          if [[ "${{ needs.quick-checks.result }}" != "success" ]]; then
+            echo "❌ Quick checks failed"
+            exit 1
+          fi
+          
+          if [[ "${{ needs.smoke-tests.result }}" != "success" ]]; then
+            echo "❌ Smoke tests failed"
+            exit 1
+          fi
+          
+          if [[ "${{ needs.unit-tests.result }}" == "failure" ]]; then
+            echo "❌ Unit tests failed"
+            exit 1
+          fi
+          
+          echo "✅ Required checks passed"
+
+# Workflow optimizations:
+# 1. Fail-fast strategy on all jobs
+# 2. Strict timeouts to prevent hanging tests
+# 3. Change detection to run only relevant tests
+# 4. Parallel execution of specialized tests
+# 5. Conditional integration tests
+# 6. Clear stage separation for quick feedback
+# 7. Smart caching with uv
+# 8. Concurrency limits to cancel outdated runs
+# 9. Smoke tests for critical path validation

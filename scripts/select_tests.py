@@ -57,6 +57,26 @@ class TestSelector:
         
         return unit_tests, integration_tests
     
+    def get_affected_modules(self, changed_files: List[str]) -> Set[str]:
+        """Get high-level modules affected by changes."""
+        modules = set()
+        
+        for file in changed_files:
+            if file.startswith('coda/agents/') or file in self.mapping and 'agent' in self.mapping[file].get('markers', []):
+                modules.add('agents')
+            if file.startswith('coda/cli/') or file in self.mapping and 'cli' in self.mapping[file].get('markers', []):
+                modules.add('cli')
+            if file.startswith('coda/web/') or file in self.mapping and 'web' in self.mapping[file].get('markers', []):
+                modules.add('web')
+            if file.startswith('coda/providers/') or file in self.mapping and 'providers' in self.mapping[file].get('markers', []):
+                modules.add('providers')
+            if file.startswith('coda/observability/') or file in self.mapping and 'observability' in self.mapping[file].get('markers', []):
+                modules.add('observability')
+            if file.startswith('coda/session/') or file in self.mapping and 'session' in self.mapping[file].get('markers', []):
+                modules.add('session')
+        
+        return modules
+    
     def get_markers_for_changes(self, changed_files: List[str]) -> Set[str]:
         """Get pytest markers for changed files."""
         markers = set()
@@ -206,8 +226,14 @@ def main():
     # Check if we should run all tests
     if selector.should_run_all_tests(changed_files):
         if args.github_output:
-            print("::set-output name=all-tests::true")
-            print("::set-output name=command::pytest tests/ -m 'not slow' --maxfail=5")
+            import os
+            if os.environ.get('GITHUB_OUTPUT'):
+                with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                    f.write("all-tests=true\n")
+                    f.write("command=pytest tests/ -m 'not slow' --maxfail=5\n")
+            else:
+                print("all-tests=true")
+                print("command=pytest tests/ -m 'not slow' --maxfail=5")
         else:
             print("ALL_TESTS")
         sys.exit(0)
@@ -215,6 +241,7 @@ def main():
     # Get tests
     unit_tests, integration_tests = selector.get_tests_for_changes(changed_files)
     markers = selector.get_markers_for_changes(changed_files)
+    modules = selector.get_affected_modules(changed_files)
     
     # Output based on format
     if args.output_format == 'command':
@@ -223,15 +250,29 @@ def main():
     elif args.github_output:
         # GitHub Actions format
         all_tests = unit_tests.union(integration_tests)
-        print(f"::set-output name=tests::{selector.format_output(all_tests, 'github')}")
-        print(f"::set-output name=unit-tests::{selector.format_output(unit_tests, 'github')}")
-        print(f"::set-output name=integration-tests::{selector.format_output(integration_tests, 'github')}")
-        print(f"::set-output name=markers::{' '.join(markers)}")
-        print(f"::set-output name=skip-tests::{'true' if not all_tests else 'false'}")
-        
+        import os
         # Generate command
         command = selector.get_test_command(changed_files, args.test_type)
-        print(f"::set-output name=command::{command}")
+        
+        if os.environ.get('GITHUB_OUTPUT'):
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                f.write(f"tests={selector.format_output(all_tests, 'github')}\n")
+                f.write(f"unit-tests={selector.format_output(unit_tests, 'github')}\n")
+                f.write(f"integration-tests={selector.format_output(integration_tests, 'github')}\n")
+                f.write(f"markers={' '.join(markers)}\n")
+                f.write(f"modules={' '.join(modules)}\n")
+                f.write(f"skip-tests={'true' if not all_tests else 'false'}\n")
+                f.write(f"run-integration={'true' if integration_tests else 'false'}\n")
+                f.write(f"command={command}\n")
+        else:
+            print(f"tests={selector.format_output(all_tests, 'github')}")
+            print(f"unit-tests={selector.format_output(unit_tests, 'github')}")
+            print(f"integration-tests={selector.format_output(integration_tests, 'github')}")
+            print(f"markers={' '.join(markers)}")
+            print(f"modules={' '.join(modules)}")
+            print(f"skip-tests={'true' if not all_tests else 'false'}")
+            print(f"run-integration={'true' if integration_tests else 'false'}")
+            print(f"command={command}")
     else:
         # Standard output
         if args.test_type == 'unit':
