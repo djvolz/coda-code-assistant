@@ -404,6 +404,33 @@ None currently - all bugs have been resolved!
 
 **Deliverable**: Create a comparison document highlighting best practices and innovative approaches that could enhance our implementation
 
+### 4.8 OpenRouter Integration for Enhanced Model Access
+
+**Note**: While we have LiteLLM support that includes OpenRouter as one of its providers, direct OpenRouter integration offers unique advantages.
+
+- [ ] **Native OpenRouter Provider Implementation**
+  - [ ] Direct API integration without LiteLLM intermediary
+  - [ ] Support for OpenRouter-specific features (model routing, fallbacks)
+  - [ ] Cost tracking and budget management via OpenRouter API
+  - [ ] Model preference and routing configuration
+  - [ ] Access to exclusive models not available through standard LiteLLM
+
+- [ ] **Enhanced Features**
+  - [ ] Automatic model selection based on task complexity
+  - [ ] Cost-optimized routing (balance performance vs price)
+  - [ ] Fallback chains for reliability
+  - [ ] Usage analytics and reporting
+  - [ ] Custom model routing rules
+
+- [ ] **Integration Benefits**
+  - [ ] Access to 100+ models through single API key
+  - [ ] Unified billing across all providers
+  - [ ] Built-in rate limit handling across providers
+  - [ ] Model comparison and A/B testing capabilities
+  - [ ] Provider-agnostic tool calling support
+
+**Timeline**: After Phase 4.7 comparative analysis completion
+
 ### 4.4 AI-to-Tool Integration (Critical for Phase 5 tools)
 - [x] Function calling protocol for OCI provider (Cohere models support this) ✅
 - [x] Parse AI responses for tool requests ✅
@@ -556,6 +583,14 @@ None currently - all bugs have been resolved!
   - [ ] Documentation and comment extraction
   - [ ] Session history semantic search
   - [ ] Multi-modal content support (code + docs)
+  - [ ] **Intelligent Chunking Strategies**
+    - [ ] Hybrid chunking approach with configurable size/overlap
+    - [ ] Tree-sitter integration for code-aware chunking
+    - [ ] Semantic boundary detection (functions, classes, blocks)
+    - [ ] Sub-function chunking for large methods
+    - [ ] Configurable chunk size (300-400 tokens) with overlap (50-100 tokens)
+    - [ ] Support for different chunking strategies per file type
+    - [ ] Preserve context across chunk boundaries
 
 - [ ] **Search Interface**
   - [ ] `/search semantic <query>` - Semantic similarity search
@@ -645,27 +680,179 @@ None currently - all bugs have been resolved!
 
 ## Phase 11: Observability & Performance
 
-### 11.1 Monitoring & Telemetry
+### 11.1 Real OpenTelemetry Integration 🚧 PENDING
 
-- [ ] **OpenTelemetry Integration**
-  - [ ] Metrics for daily active users and session statistics
-  - [ ] Performance monitoring (response times, token usage)
-  - [ ] Error tracking and alerting
-  - [ ] Provider health monitoring
-  - [ ] **Grafana Docker Container Setup**
-    - [ ] Deploy Grafana with OpenTelemetry data source
-    - [ ] Pre-configured dashboards for Coda metrics
-    - [ ] Integration with Coda's OTLP exporter
-    - [ ] Docker Compose configuration for observability stack
-    - [ ] Prometheus backend for metrics storage
-    - [ ] Jaeger/Tempo integration for distributed tracing
-    - [ ] Custom Coda performance dashboards
+**Current State**: OpenTelemetry dependencies are included but not used. The current implementation uses a custom file-based solution.
+
+#### 11.1.1 OpenTelemetry SDK Integration
+
+- [ ] **Replace Custom Tracing with OpenTelemetry**
+  - [ ] Replace custom `Span` class with `opentelemetry.trace.Span`
+  - [ ] Replace `TracingManager` with `opentelemetry.trace.Tracer`
+  - [ ] Use OpenTelemetry context propagation
+  - [ ] Implement proper span attributes following semantic conventions
+  - [ ] Add span events and links support
+  - [ ] Implement baggage for cross-cutting concerns
+
+- [ ] **Replace Custom Metrics with OpenTelemetry**
+  - [ ] Replace `MetricsCollector` with OpenTelemetry metrics API
+  - [ ] Use proper metric instruments (Counter, Histogram, Gauge)
+  - [ ] Follow OpenTelemetry semantic conventions for metric names
+  - [ ] Implement metric views and aggregations
+  - [ ] Add exemplar support for metrics-to-traces correlation
+
+- [ ] **Implement OpenTelemetry Logging**
+  - [ ] Integrate Python logging with OpenTelemetry
+  - [ ] Add trace context to log records
+  - [ ] Implement log correlation with traces
+  - [ ] Support structured logging with attributes
+
+#### 11.1.2 OTLP Exporter Configuration
+
+- [ ] **OTLP Export Support**
+  - [ ] Configure OTLP/gRPC exporter for traces
+  - [ ] Configure OTLP/HTTP exporter option
+  - [ ] Add authentication support (headers, certificates)
+  - [ ] Implement retry and backoff policies
+  - [ ] Add batch processing configuration
+  - [ ] Support multiple export endpoints
+
+- [ ] **Configuration Management**
+  - [ ] Add OTLP endpoint configuration to settings
+  - [ ] Environment variable support (OTEL_EXPORTER_OTLP_ENDPOINT, etc.)
+  - [ ] Service name and resource attributes configuration
+  - [ ] Sampling configuration (TraceIdRatioBased, ParentBased)
+  - [ ] Export timeout and batch size settings
+
+#### 11.1.3 Backend Integrations
+
+- [ ] **Popular Observability Platforms**
+  - [ ] Jaeger integration guide and testing
+  - [ ] Zipkin compatibility testing
+  - [ ] Grafana Tempo configuration
+  - [ ] Datadog APM integration
+  - [ ] New Relic integration
+  - [ ] AWS X-Ray support via ADOT
+  - [ ] Google Cloud Trace integration
+  - [ ] Azure Monitor integration
+
+- [ ] **Local Development Support**
+  - [ ] Docker Compose setup with Jaeger
+  - [ ] Local Grafana stack (Tempo + Prometheus + Loki)
+  - [ ] OpenTelemetry Collector configuration
+  - [ ] Development environment documentation
+
+- [ ] **Grafana Docker Container Setup**
+  - [ ] Deploy Grafana with OpenTelemetry data source
+  - [ ] Pre-configured dashboards for Coda metrics
+  - [ ] Integration with Coda's OTLP exporter
+  - [ ] Docker Compose configuration for observability stack
+  - [ ] Prometheus backend for metrics storage
+  - [ ] Jaeger/Tempo integration for distributed tracing
+  - [ ] Custom Coda performance dashboards
+
+#### 11.1.4 Instrumentation Libraries
+
+- [ ] **Auto-Instrumentation**
+  - [ ] SQLAlchemy instrumentation for database queries
+  - [ ] HTTPX instrumentation for API calls
+  - [ ] aiohttp instrumentation for async HTTP
+  - [ ] Rich console instrumentation for CLI operations
+  - [ ] Custom instrumentation for AI provider calls
+
+- [ ] **Manual Instrumentation**
+  - [ ] Instrument all provider methods with proper spans
+  - [ ] Add metrics for token usage and costs
+  - [ ] Trace tool execution with detailed attributes
+  - [ ] Session operations tracing
+  - [ ] Add custom business metrics
+
+#### 11.1.5 Observability Standards
+
+- [ ] **Semantic Conventions**
+  - [ ] Follow OpenTelemetry semantic conventions for:
+    - [ ] HTTP requests (http.method, http.status_code, etc.)
+    - [ ] Database operations (db.system, db.operation, etc.)
+    - [ ] AI/ML operations (create custom conventions)
+    - [ ] Tool executions (custom conventions)
+  - [ ] Document custom attributes and conventions
+
+- [ ] **Resource Detection**
+  - [ ] Automatic service name detection
+  - [ ] Version information in resource attributes
+  - [ ] Deployment environment detection
+  - [ ] Container/K8s resource attributes
+  - [ ] Cloud provider resource detection
+
+#### 11.1.6 Migration Strategy
+
+- [ ] **Backward Compatibility**
+  - [ ] Keep file-based export as fallback option
+  - [ ] Configuration flag to switch between implementations
+  - [ ] Gradual migration path for existing users
+  - [ ] Data migration tools for historical data
+
+- [ ] **Feature Parity**
+  - [ ] Ensure all current observability features work with OpenTelemetry
+  - [ ] Maintain CLI commands functionality
+  - [ ] Update tests for OpenTelemetry implementation
+  - [ ] Performance comparison and optimization
+
+### 11.2 Enhanced Observability Features
+
+- [ ] **Distributed Tracing**
+  - [ ] Trace context propagation between services
+  - [ ] Parent-child span relationships
+  - [ ] Cross-service dependency mapping
+  - [ ] Trace sampling strategies
+  - [ ] Long-running operation tracking
+
+- [ ] **Advanced Metrics**
+  - [ ] Percentile calculations (p50, p95, p99)
+  - [ ] Rate and throughput calculations
+  - [ ] Custom metric aggregations
+  - [ ] Service Level Indicators (SLIs)
+  - [ ] Cost tracking metrics
 
 - [ ] **Debugging & Profiling**
+  - [ ] Continuous profiling integration
+  - [ ] Memory profiling with traces
+  - [ ] CPU profiling correlation
+  - [ ] Goroutine/thread analysis
+  - [ ] Heap dump integration
+  - [ ] Pyroscope integration for performance profiling
   - [ ] Debug mode enhancements
   - [ ] Memory usage tracking
   - [ ] Bottleneck identification
   - [ ] Performance analysis tools integration
+
+### 11.3 Observability Testing ✅ COMPLETED (July 8, 2025)
+
+- [x] **Comprehensive Integration Testing**
+  - [x] Test every observability command option with mock provider
+  - [x] Test every observability command option with ollama provider
+  - [x] Test all components with observability.enabled=true
+  - [x] Test all components with observability.enabled=false
+  - [x] Test individual component enable/disable configurations
+  - [x] Verify no performance impact when observability is disabled
+  - [x] Test data export formats (JSON, CSV, HTML)
+  - [x] Test retention policies and data cleanup
+  - [x] Test memory limits and eviction policies
+  - [x] Test error scenarios and recovery
+  - [x] Load testing with high-volume metrics
+  - [x] Concurrent access testing for thread safety
+
+**Test Suite Created**:
+- 10 comprehensive test files covering all aspects
+- 200+ individual test cases
+- Mock provider and Ollama provider integration tests
+- Configuration state tests (enabled/disabled/partial)
+- Export format tests (JSON, CSV, HTML)
+- Error handling and recovery tests
+- Retention policy and cleanup tests
+- Memory management and eviction tests
+- Load testing with throughput benchmarks
+- Thread safety and concurrent access tests
 
 ## Phase 12: DevOps & Automation
 
@@ -682,6 +869,11 @@ None currently - all bugs have been resolved!
     - [ ] Pre-configured data sources and dashboards
     - [ ] Integration with Phase 11 OpenTelemetry features
     - [ ] Development and production configurations
+    - [ ] Pre-configured Grafana instance for monitoring
+    - [ ] Dashboards for metrics, traces, errors, and health
+    - [ ] Prometheus or OpenTelemetry collector integration
+    - [ ] Automated datasource configuration
+    - [ ] Sample alerts and monitoring rules
     - [ ] **Pyroscope Profiling Container**
       - [ ] Deploy Pyroscope for continuous performance profiling
       - [ ] Integration with Coda application for flame graphs
@@ -696,6 +888,91 @@ None currently - all bugs have been resolved!
   - [ ] Changelog generator (VCS-agnostic, hash-to-hash)
   - [ ] Automated changelog detection from commits
   - [ ] Git workflow optimization tools
+
+## Phase 13: Plugin System Architecture
+
+### 13.1 Core Plugin Infrastructure
+
+**Inspiration**: Implement a plugin system similar to [simonw/llm](https://github.com/simonw/llm) for maximum extensibility.
+
+- [ ] **Plugin Discovery & Loading**
+  - [ ] Entry point-based plugin discovery (using Python entry points)
+  - [ ] Dynamic plugin loading at runtime
+  - [ ] Plugin dependency resolution
+  - [ ] Version compatibility checking
+  - [ ] Hot-reload support for development
+
+- [ ] **Plugin Types**
+  - [ ] **Provider Plugins**: Add new LLM providers
+  - [ ] **Tool Plugins**: Add new MCP tools and capabilities
+  - [ ] **Mode Plugins**: Add custom developer modes
+  - [ ] **Export Plugins**: Add new export formats
+  - [ ] **Storage Plugins**: Alternative session storage backends
+  - [ ] **Theme Plugins**: Custom UI themes and styles
+
+### 13.2 Plugin Development Kit
+
+- [ ] **Plugin Template & Scaffolding**
+  - [ ] Cookiecutter template for new plugins
+  - [ ] Example plugins for each type
+  - [ ] Plugin development guide
+  - [ ] Testing utilities for plugin developers
+
+- [ ] **Plugin API**
+  - [ ] Well-defined plugin interfaces (ABCs)
+  - [ ] Hook system for extending core functionality
+  - [ ] Event system for plugin communication
+  - [ ] Configuration management for plugins
+  - [ ] Resource access controls
+
+### 13.3 Plugin Management
+
+- [ ] **CLI Commands**
+  - [ ] `coda plugins list` - List installed plugins
+  - [ ] `coda plugins install <name>` - Install from PyPI
+  - [ ] `coda plugins uninstall <name>` - Remove plugin
+  - [ ] `coda plugins enable/disable <name>` - Toggle plugins
+  - [ ] `coda plugins info <name>` - Show plugin details
+  - [ ] `coda plugins search <query>` - Search available plugins
+
+- [ ] **Plugin Registry**
+  - [ ] Central plugin registry (similar to npm/pypi)
+  - [ ] Plugin metadata and descriptions
+  - [ ] Compatibility matrix with coda versions
+  - [ ] Download statistics and ratings
+  - [ ] Security scanning for plugins
+
+### 13.4 Plugin Examples
+
+- [ ] **Example Provider Plugin**: Anthropic Claude direct integration
+- [ ] **Example Tool Plugin**: Database query tool
+- [ ] **Example Mode Plugin**: SQL-specific assistant mode
+- [ ] **Example Export Plugin**: Jupyter notebook export
+- [ ] **Example Storage Plugin**: PostgreSQL session backend
+- [ ] **Example Theme Plugin**: High contrast accessibility theme
+
+### 13.5 Security & Isolation
+
+- [ ] **Plugin Sandboxing**
+  - [ ] Resource usage limits
+  - [ ] File system access controls
+  - [ ] Network request filtering
+  - [ ] API rate limiting per plugin
+
+- [ ] **Plugin Verification**
+  - [ ] Code signing for official plugins
+  - [ ] Security audit requirements
+  - [ ] Automated vulnerability scanning
+  - [ ] User permission system for plugin capabilities
+
+**Benefits**:
+- Community can extend Coda without modifying core
+- Easy distribution of custom functionality
+- Maintains clean separation of concerns
+- Enables domain-specific extensions
+- Facilitates experimentation with new features
+
+**Timeline**: After Phase 12, as this provides the foundation for future extensibility
 
 ## Technical Decisions
 

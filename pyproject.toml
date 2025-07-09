@@ -24,20 +24,53 @@ dependencies = [
     "pyyaml>=6.0.1",
     "tiktoken>=0.5.0",
     "tomli-w>=1.2.0",
+    # Web UI dependencies
+    "streamlit>=1.40.0",
+    "streamlit-ace>=0.1.1",
+    "plotly>=5.0.0",
+    "pandas>=2.0.0",
+    "requests>=2.32.4",
+    # Observability dependencies
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-otlp>=1.20.0",
+    "opentelemetry-instrumentation>=0.41b0",
 ]
 
 [project.scripts]
-coda = "coda.cli.main:main"
+coda = "coda.cli.cli:cli"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0,<1.0",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "pre-commit>=3.5.0",
+]
+test-web = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-selenium>=4.0.0",
+    "pytest-timeout>=2.0.0",
+    "pytest-asyncio>=0.21.0",
+    "selenium>=4.0.0",
+    "requests>=2.32.0",
+]
+performance = [
+    "pytest-benchmark>=4.0.0",
+    "locust>=2.0.0",
+]
+embeddings = [
+    "numpy>=1.24.0",
+    "faiss-cpu>=1.7.4",
+    "sentence-transformers>=2.2.0",
+    "chromadb>=0.4.0",
+]
+oracle = [
+    "oracledb>=2.0.0",
 ]
 
 [tool.uv]
@@ -62,12 +95,15 @@ addopts = [
 ]
 markers = [
     "unit: Unit tests (fast, no external dependencies)",
-    "integration: Integration tests (requires OCI credentials)",
+    "integration: Integration tests (requires OCI credentials or browser)",
     "functional: Functional/E2E tests (requires full setup)",
     "slow: Slow running tests",
+    "requires_browser: Tests that require Selenium WebDriver",
+    "asyncio: Asynchronous tests",
     "llm: LLM tests (requires real language model)",
     "ollama: Ollama-specific tests (requires Ollama service)",
 ]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["coda"]

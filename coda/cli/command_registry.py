@@ -23,6 +23,7 @@ class CommandDefinition:
     subcommands: list["CommandDefinition"] = field(default_factory=list)
     examples: list[str] = field(default_factory=list)
     type: CommandType = CommandType.MAIN
+    completion_type: str | None = None  # e.g., "session_name", "model_name", "theme_name"
 
     def get_all_names(self) -> list[str]:
         """Get all names including aliases."""
@@ -79,6 +80,7 @@ class CommandRegistry:
             aliases=["l"],
             type=CommandType.SUBCOMMAND,
             examples=["/session load my_session", "/session load abc123"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="last",
@@ -99,6 +101,7 @@ class CommandRegistry:
             aliases=["b"],
             type=CommandType.SUBCOMMAND,
             examples=["/session branch", "/session branch new_branch"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="delete",
@@ -106,6 +109,7 @@ class CommandRegistry:
             aliases=["d", "rm"],
             type=CommandType.SUBCOMMAND,
             examples=["/session delete my_session", "/session delete abc123"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="delete-all",
@@ -119,6 +123,7 @@ class CommandRegistry:
             aliases=["r"],
             type=CommandType.SUBCOMMAND,
             examples=["/session rename new_name", "/session rename abc123 new_name"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="info",
@@ -126,6 +131,7 @@ class CommandRegistry:
             aliases=["i"],
             type=CommandType.SUBCOMMAND,
             examples=["/session info", "/session info abc123"],
+            completion_type="session_name",
         ),
         CommandDefinition(
             name="search",
@@ -219,6 +225,86 @@ class CommandRegistry:
         ),
     ]
 
+    # Search subcommands
+    SEARCH_SUBCOMMANDS = [
+        CommandDefinition(
+            name="semantic",
+            description="Semantic search through indexed content",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search semantic 'web development'", "/search semantic 'error handling'"],
+        ),
+        CommandDefinition(
+            name="code",
+            description="Semantic search through code files",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search code 'async function'", "/search code 'database query'"],
+        ),
+        CommandDefinition(
+            name="index",
+            description="Index files for semantic search",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search index", "/search index src/", "/search index demo"],
+        ),
+        CommandDefinition(
+            name="status",
+            description="Show semantic search index status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search status"],
+        ),
+        CommandDefinition(
+            name="reset",
+            description="Reset search manager and clear index",
+            type=CommandType.SUBCOMMAND,
+            examples=["/search reset"],
+        ),
+    ]
+
+    # Observability subcommands
+    OBSERVABILITY_SUBCOMMANDS = [
+        CommandDefinition(
+            name="status",
+            description="Show observability status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs status"],
+        ),
+        CommandDefinition(
+            name="metrics",
+            description="Show metrics summary",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs metrics", "/obs metrics --detailed"],
+        ),
+        CommandDefinition(
+            name="health",
+            description="Show health status",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs health", "/obs health database"],
+        ),
+        CommandDefinition(
+            name="traces",
+            description="Show recent traces",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs traces", "/obs traces --limit 20"],
+        ),
+        CommandDefinition(
+            name="export",
+            description="Export observability data",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs export", "/obs export --format json --output data.json"],
+        ),
+        CommandDefinition(
+            name="errors",
+            description="Show error analysis and recent errors",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs errors", "/obs errors --limit 50 --days 7"],
+        ),
+        CommandDefinition(
+            name="performance",
+            description="Show performance profiling data",
+            type=CommandType.SUBCOMMAND,
+            examples=["/obs performance", "/obs performance --limit 30"],
+        ),
+    ]
+
     # Main commands
     COMMANDS = [
         CommandDefinition(
@@ -244,13 +330,14 @@ class CommandRegistry:
             description="Select a different model",
             aliases=["m"],
             examples=["/model", "/model gpt-4"],
+            completion_type="model_name",
         ),
         CommandDefinition(
             name="provider",
-            description="Switch provider",
+            description="Show provider information",
             aliases=["p"],
             subcommands=PROVIDER_OPTIONS,
-            examples=["/provider", "/provider ollama"],
+            examples=["/provider"],
         ),
         CommandDefinition(
             name="mode",
@@ -285,6 +372,19 @@ class CommandRegistry:
             subcommands=TOOLS_SUBCOMMANDS,
             examples=["/tools", "/tools list"],
         ),
+        CommandDefinition(
+            name="search",
+            description="Semantic search commands",
+            subcommands=SEARCH_SUBCOMMANDS,
+            examples=["/search semantic 'query'", "/search code 'function'", "/search status"],
+        ),
+        CommandDefinition(
+            name="observability",
+            description="View observability data",
+            aliases=["obs", "telemetry"],
+            subcommands=OBSERVABILITY_SUBCOMMANDS,
+            examples=["/obs", "/obs status", "/obs metrics"],
+        ),
     ]
 
     @classmethod
@@ -302,7 +402,12 @@ class CommandRegistry:
 
         for cmd in cls.COMMANDS:
             if cmd.subcommands:
-                options[cmd.name] = [sub.to_autocomplete_tuple() for sub in cmd.subcommands]
+                subcommand_tuples = [sub.to_autocomplete_tuple() for sub in cmd.subcommands]
+                # Add options for the main command name
+                options[cmd.name] = subcommand_tuples
+                # Also add options for each alias
+                for alias in cmd.aliases:
+                    options[alias] = subcommand_tuples
 
         return options
 
