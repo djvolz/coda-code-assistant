@@ -47,7 +47,7 @@ class TestCLIWorkflows:
         ]
 
         with patch.object(cli, 'get_input', side_effect=inputs):
-            with patch.object(cli, 'run') as mock_run:
+            with patch.object(cli, 'run'):
                 # Start the CLI
                 cli.run()
 
@@ -78,7 +78,7 @@ class TestCLIWorkflows:
 
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command') as mock_exec:
-                with patch('coda.cli.interactive_cli.print') as mock_print:
+                with patch('coda.cli.interactive_cli.print'):
                     # Mock command execution
                     def exec_side_effect(cmd):
                         if cmd == "/mode code":
@@ -168,7 +168,7 @@ class TestCLIWorkflows:
 
             with patch.object(cli, 'get_input', side_effect=inputs):
                 with patch.object(cli, '_execute_command') as mock_exec:
-                    with patch('coda.cli.interactive_cli.print') as mock_print:
+                    with patch('coda.cli.interactive_cli.print'):
                         # Mock export command
                         def exec_side_effect(cmd):
                             if cmd.startswith("/export"):
@@ -274,7 +274,7 @@ class TestCLIWorkflows:
 
             mock_input.side_effect = get_input_side_effect
 
-            with patch('coda.cli.interactive_cli.print') as mock_print:
+            with patch('coda.cli.interactive_cli.print'):
                 # Run workflow
                 cli.run()
 
@@ -336,7 +336,7 @@ class TestCLIWorkflows:
 
         with patch.object(cli, 'get_input', side_effect=inputs):
             with patch.object(cli, '_execute_command') as mock_exec:
-                with patch('coda.cli.interactive_cli.print') as mock_print:
+                with patch('coda.cli.interactive_cli.print'):
                     mock_exec.return_value = True
 
                     # Run workflow
