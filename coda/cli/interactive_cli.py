@@ -114,6 +114,7 @@ class InteractiveCLI(CommandHandler):
             "theme": self._cmd_theme,
             "clear": self._cmd_clear,
             "exit": self._cmd_exit,
+            "intel": self._cmd_intel,
             "observability": self._cmd_observability,
         }
 
@@ -583,6 +584,31 @@ class InteractiveCLI(CommandHandler):
         # Use the shared command handler
         result = self.handle_tools_command(args)
         return result
+
+    def _cmd_intel(self, args: str):
+        """Handle codebase intelligence commands."""
+        from coda.intelligence.cli import IntelligenceCommands
+        
+        if not hasattr(self, '_intelligence_commands'):
+            self._intelligence_commands = IntelligenceCommands()
+        
+        if not args:
+            # Show help for intelligence commands
+            help_text = self._intelligence_commands.get_help()
+            self.console.print(help_text)
+            return
+        
+        # Parse the subcommand and arguments
+        parts = args.split(maxsplit=1)
+        subcommand = parts[0]
+        subargs = parts[1].split() if len(parts) > 1 else []
+        
+        try:
+            result = self._intelligence_commands.handle_command(subcommand, subargs)
+            if result:
+                self.console.print(result)
+        except Exception as e:
+            self.console.print(f"[red]Error executing intelligence command: {e}[/red]")
 
     async def _cmd_search(self, args: str):
         """Semantic search commands."""

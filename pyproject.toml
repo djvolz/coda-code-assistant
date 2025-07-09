@@ -24,6 +24,9 @@ dependencies = [
     "pyyaml>=6.0.1",
     "tiktoken>=0.5.0",
     "tomli-w>=1.2.0",
+    # Tree-sitter intelligence dependencies
+    "grep-ast>=0.9.0",
+    "tree-sitter-language-pack>=0.8.0",
     # Web UI dependencies
     "streamlit>=1.40.0",
     "streamlit-ace>=0.1.1",

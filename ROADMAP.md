@@ -479,9 +479,42 @@ None currently - all bugs have been resolved!
 - [ ] External MCP server implementation (deferred)
 - [ ] Custom tool development SDK (deferred)
 
-## Phase 6: Advanced Features
+## Phase 6: Advanced Features 📅 CURRENT PHASE
 
-### 6.1 Multi-Modal Support
+**Status**: Ready to begin - Phase 5 is being handled by another developer.
+
+**Priority Organization for Phase 6**:
+
+1. **Immediate Priority**: Add Rich Panel around input prompt (simple visual improvement)
+2. **High Priority**: Enhanced Response Rendering (immediate user experience improvement)
+3. **Medium Priority**: Multi-Modal Support (image understanding, document support)
+4. **Lower Priority**: Project Intelligence (longer-term features)
+
+### 6.0 Input Prompt Panel Enhancement ✅ COMPLETED (July 7, 2025)
+
+- [x] **Add mode title display** - Clean mode title without separator lines
+- [x] **Keep existing prompt-toolkit functionality** - Preserved all current features (multiline, history, autocomplete, shortcuts)
+- [x] **Mode-specific styling integration** - Mode titles with colors and emojis matching theme system
+- [x] **Clean visual hierarchy** - Minimal 30-char separator after input for subtle visual break
+- [x] **Maintain performance** - No impact on input responsiveness or async behavior
+
+**Implementation Details**:
+
+- Removed decorative separator lines for cleaner interface
+- Mode title displays with mode-specific colors and emojis
+- Left-aligned minimal separator after user input
+- Maximum width of 60 chars to prevent stretching
+- Professional, uncluttered appearance that focuses on content
+
+### 6.1 Enhanced Response Rendering (🔥 HIGH PRIORITY)
+
+- [ ] **Live markdown rendering during streaming** - Real-time formatting as AI responds
+- [ ] **Syntax highlighting for code blocks** - Better code readability in terminal
+- [ ] **Proper handling of tables and lists** - Structured data display
+- [ ] **Toggle between raw and formatted view** - User preference for output style
+- [ ] **Preserve terminal scrollback while rendering** - Maintain terminal history
+
+### 6.2 Multi-Modal Support
 
 - [ ] Image understanding (for providers that support it)
 - [ ] Code screenshot analysis
@@ -505,18 +538,13 @@ None currently - all bugs have been resolved!
 
 ### 6.3 UI Customization
 
-- [ ] `/theme` - Change UI theme
-  - [ ] `default` - Default color scheme
-  - [ ] `dark` - Dark mode optimized
-  - [ ] `light` - Light terminal theme
-  - [ ] `minimal` - Minimal colors
-  - [ ] `vibrant` - High contrast colors
-- [ ] **Enhanced Response Rendering**
-  - [ ] Live markdown rendering during streaming
-  - [ ] Syntax highlighting for code blocks
-  - [ ] Proper handling of tables and lists
-  - [ ] Toggle between raw and formatted view
-  - [ ] Preserve terminal scrollback while rendering
+- [x] `/theme` - Change UI theme ✅ COMPLETED in Phase 4.6
+  - [x] `default` - Default color scheme
+  - [x] `dark` - Dark mode optimized
+  - [x] `light` - Light terminal theme
+  - [x] `minimal` - Minimal colors
+  - [x] `vibrant` - High contrast colors
+  - [x] Additional themes: `monokai_dark/light`, `dracula_dark/light`, `gruvbox_dark/light`
 
 ### 6.4 Collaboration Features (DEFERRED)
 
@@ -606,14 +634,41 @@ None currently - all bugs have been resolved!
 
 ## Phase 9: Codebase Intelligence
 
-### 9.1 Repository Analysis
+### 9.1 Repository Analysis 🚧 IN PROGRESS (July 7, 2025)
 
-- [ ] **Repo Mapping**
-  - [ ] Repo mapping like [aider](https://aider.chat/docs/repomap.html)
-  - [ ] Tree-sitter integration using [aider ts implementation](https://github.com/Aider-AI/aider/tree/main/aider/queries)
-  - [ ] Support for documentation, function, class, struct, etc (beyond aider's ref/def approach)
-  - [ ] Multi-language code structure analysis
-  - [ ] Dependency graph generation
+- [x] **Repo Mapping** ✅ COMPLETED
+  - [x] Repo mapping like [aider](https://aider.chat/docs/repomap.html)
+    - see local checkout: /Users/danny/Developer/forks/aider-fork/aider-using-claude
+  - [x] Tree-sitter integration using [aider ts implementation](https://github.com/Aider-AI/aider/tree/main/aider/queries)
+    - Implemented using tree-sitter query language (.scm files)
+    - Copied 30 query files from aider for multiple languages
+    - Using grep-ast and tree-sitter-language-pack
+  - [x] Support for documentation, function, class, struct, etc (beyond aider's ref/def approach)
+  - [x] Multi-language code structure analysis (30+ languages)
+  - [x] Dependency graph generation with circular dependency detection
+
+**Implementation Details**:
+- Created `/intel` CLI command with 7 subcommands (analyze, map, scan, stats, find, deps, graph)
+- Tree-sitter query-based extraction using .scm files
+- Support for Python, JavaScript, TypeScript, Rust, Go, Java, C/C++, Ruby, and 20+ more languages
+- Comprehensive test suite with 138 tests (including integration tests)
+- Progress indicators for long-running operations
+- MockProvider integration for AI-enhanced development
+
+**Enhancements TODO**:
+- [ ] **Intelligence as Tools** - Make intel commands available as AI tools
+  - [ ] Register intel commands with MCP tool system
+  - [ ] Enable AI to analyze code structure during conversations
+  - [ ] Allow AI to find definitions and dependencies automatically
+  - [ ] Provide semantic code search capabilities to AI
+
+- [ ] **Self-Contained API Module** - Make intelligence module fully independent
+  - [ ] Extract intelligence module as standalone Python package
+  - [ ] Create public API interface for external usage
+  - [ ] Document API methods and usage examples
+  - [ ] Support both CLI and programmatic access
+  - [ ] Ensure zero dependencies on Coda-specific code
+  - [ ] Publish as separate package (coda-intelligence)
 
 ### 9.2 Context Management
 
@@ -1136,6 +1191,15 @@ None currently - all bugs have been resolved!
 - ⏸️ External MCP server implementation (deferred)
 - ⏸️ Advanced permission system (deferred)
 
+**Phase 4.6 Achievements**:
+
+- ✅ Centralized constants system (`coda/constants.py`)
+- ✅ Comprehensive theme system with 11 pre-defined themes
+- ✅ Complete `/theme` command implementation
+- ✅ Code quality refactoring across 57 files
+- ✅ Enhanced test coverage (25 new theme-related tests)
+- ✅ Backward compatibility maintained
+
 **Agent Integration ✅ COMPLETED (July 7, 2025)**:
 - ✅ Full AI-to-tool integration via Agent system
 - ✅ Agent-based chat with streaming support (`run_async_streaming`)
@@ -1169,6 +1233,14 @@ None currently - all bugs have been resolved!
 - [ ] MCP server discovery and registration from config files
 - [ ] Tool loading from external MCP servers specified in config
 - [ ] Priority: local project config > global config > built-in tools
+
+**Phase 6.0 Achievement**:
+
+- ✅ Clean mode title display without decorative lines
+- ✅ Minimal separator after input (30 chars, left-aligned)
+- ✅ Mode-specific colors and emojis
+- ✅ Preserved all prompt-toolkit functionality
+- ✅ Professional, uncluttered interface
 
 ### 2025.7.15 - Advanced Features (Target: July 15)
 
