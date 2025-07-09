@@ -61,7 +61,7 @@ class TestPerformanceTracker:
         return {
             "timestamp": start_time.isoformat(),
             "duration": duration,
-            "exit_code": result.exit_code,
+            "exit_code": result.returncode,
             "pytest_output": result.stdout,
             "report": report_data
         }
