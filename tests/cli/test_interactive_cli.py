@@ -94,15 +94,15 @@ class TestInteractiveCLI:
 
     def test_mode_switching(self, cli):
         """Test switching between developer modes."""
-        # Test each mode
+        # Test each mode using the synchronous switch_mode method
         for mode in DeveloperMode:
-            cli._cmd_mode(mode.value)
+            cli.switch_mode(mode.value)
             assert cli.current_mode == mode
             cli.console.print.assert_called()
 
     def test_mode_invalid(self, cli):
         """Test switching to invalid mode."""
-        cli._cmd_mode("invalid_mode")
+        cli.switch_mode("invalid_mode")
         # Mode should not change
         assert cli.current_mode == DeveloperMode.GENERAL  # default mode
 
@@ -110,14 +110,20 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Invalid mode" in str(call) for call in calls)
 
-    def test_mode_no_args(self, cli):
+    @pytest.mark.asyncio
+    async def test_mode_no_args(self, cli):
         """Test mode command without arguments."""
-        cli._cmd_mode("")
+        # Mock the ModeSelector
+        with patch("coda.cli.generic_selector.ModeSelector") as mock_selector_class:
+            mock_selector = Mock()
+            mock_selector.select_option_interactive = AsyncMock(return_value=None)
+            mock_selector_class.return_value = mock_selector
 
-        # Should print current mode and available modes
-        calls = [str(call) for call in cli.console.print.call_args_list]
-        assert any("Current mode" in str(call) for call in calls)
-        assert any("Available modes" in str(call) for call in calls)
+            await cli._cmd_mode("")
+
+            # Should show current mode when cancelled
+            calls = [str(call) for call in cli.console.print.call_args_list]
+            assert any("Current mode" in str(call) for call in calls)
 
     def test_help_command(self, cli):
         """Test help command output."""
@@ -235,28 +241,36 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("not supported in current mode" in str(call) for call in calls)
 
-    def test_session_command(self, cli):
+    @pytest.mark.asyncio
+    async def test_session_command(self, cli):
         """Test session command."""
         # Mock the session commands to avoid console output issues
         cli.session_commands.handle_session_command = Mock(return_value="Session help shown")
 
-        # Test without args - should call session command handler
-        cli._cmd_session("")
+        # Test with args - should pass to session command handler
+        await cli._cmd_session("save test")
 
-        # Verify the session command handler was called with empty args
-        cli.session_commands.handle_session_command.assert_called_with([])
+        # Verify the session command handler was called with the right args
+        cli.session_commands.handle_session_command.assert_called_with(["save", "test"])
 
         # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Session help shown" in str(call) for call in calls)
 
-        # Test with args - should pass to session command handler
-        cli.console.reset_mock()
-        cli.session_commands.handle_session_command.reset_mock()
-        cli._cmd_session("save test")
+    @pytest.mark.asyncio
+    async def test_session_command_no_args(self, cli):
+        """Test session command without arguments (interactive mode)."""
+        # Mock the SessionCommandSelector
+        with patch("coda.cli.generic_selector.SessionCommandSelector") as mock_selector_class:
+            mock_selector = Mock()
+            mock_selector.select_option_interactive = AsyncMock(return_value=None)
+            mock_selector_class.return_value = mock_selector
 
-        # Verify the session command handler was called with the right args
-        cli.session_commands.handle_session_command.assert_called_with(["save", "test"])
+            await cli._cmd_session("")
+
+            # Should show cancelled message
+            calls = [str(call) for call in cli.console.print.call_args_list]
+            assert any("Session command cancelled" in str(call) for call in calls)
 
     @patch("coda.cli.theme_selector.ThemeSelector")
     @patch("coda.themes.get_theme_manager")
@@ -292,28 +306,36 @@ class TestInteractiveCLI:
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Current theme:" in str(call) for call in calls)
 
-    def test_export_command(self, cli):
+    @pytest.mark.asyncio
+    async def test_export_command(self, cli):
         """Test export command."""
         # Mock the export commands to avoid console output issues
         cli.session_commands.handle_export_command = Mock(return_value="Export help shown")
 
-        # Test without args - should call export command handler
-        cli._cmd_export("")
+        # Test with args - should pass to export command handler
+        await cli._cmd_export("markdown")
 
-        # Verify the export command handler was called with empty args
-        cli.session_commands.handle_export_command.assert_called_with([])
+        # Verify the export command handler was called with the right args
+        cli.session_commands.handle_export_command.assert_called_with(["markdown"])
 
         # Should print the result
         calls = [str(call) for call in cli.console.print.call_args_list]
         assert any("Export help shown" in str(call) for call in calls)
 
-        # Test with args - should pass to export command handler
-        cli.console.reset_mock()
-        cli.session_commands.handle_export_command.reset_mock()
-        cli._cmd_export("markdown")
+    @pytest.mark.asyncio
+    async def test_export_command_no_args(self, cli):
+        """Test export command without arguments (interactive mode)."""
+        # Mock the ExportSelector
+        with patch("coda.cli.generic_selector.ExportSelector") as mock_selector_class:
+            mock_selector = Mock()
+            mock_selector.select_option_interactive = AsyncMock(return_value=None)
+            mock_selector_class.return_value = mock_selector
 
-        # Verify the export command handler was called with the right args
-        cli.session_commands.handle_export_command.assert_called_with(["markdown"])
+            await cli._cmd_export("")
+
+            # Should show cancelled message
+            calls = [str(call) for call in cli.console.print.call_args_list]
+            assert any("Export cancelled" in str(call) for call in calls)
 
     def test_tools_command(self, cli):
         """Test tools command implementation."""
