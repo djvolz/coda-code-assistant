@@ -283,6 +283,32 @@ async def _handle_chat_interaction(
                 # Update messages to match what happened
                 messages.clear()
                 messages.extend(updated_messages)
+
+                # Save all messages from the agent interaction to session
+                from ..session.tool_storage import format_tool_calls_for_storage
+
+                # Find and save new messages (after the user message which was already saved)
+                # Skip the first message (user) since it was already saved above
+                for msg in updated_messages[1:]:
+                    tool_calls_data = None
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                        tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
+
+                    cli.session_commands.add_message(
+                        role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
+                        content=msg.content,
+                        tool_calls=tool_calls_data,
+                        metadata={
+                            "mode": cli.current_mode.value,
+                            "provider": (
+                                provider_instance.name
+                                if hasattr(provider_instance, "name")
+                                else "unknown"
+                            ),
+                            "model": cli.current_model,
+                            "tool_call_id": getattr(msg, "tool_call_id", None),
+                        },
+                    )
         else:
             # Use regular streaming
             with console.status(
@@ -412,6 +438,7 @@ async def run_interactive_session(
         # Set model info in CLI for /model command
         cli.current_model = model
         cli.available_models = unique_models
+        cli.provider = provider_instance
 
         # Interactive chat loop
         # Initialize messages - use loaded messages if available
