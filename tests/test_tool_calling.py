@@ -35,9 +35,11 @@ class ToolCallRecorder:
         self.requests.append(
             {
                 "messages": [{"role": m.role.value, "content": m.content} for m in messages],
-                "tools": [{"name": t.name, "description": t.description} for t in tools]
-                if tools
-                else None,
+                "tools": (
+                    [{"name": t.name, "description": t.description} for t in tools]
+                    if tools
+                    else None
+                ),
                 "kwargs": kwargs,
             }
         )
@@ -47,11 +49,11 @@ class ToolCallRecorder:
         self.responses.append(
             {
                 "content": response.content,
-                "tool_calls": [
-                    {"name": tc.name, "arguments": tc.arguments} for tc in response.tool_calls
-                ]
-                if response.tool_calls
-                else None,
+                "tool_calls": (
+                    [{"name": tc.name, "arguments": tc.arguments} for tc in response.tool_calls]
+                    if response.tool_calls
+                    else None
+                ),
                 "finish_reason": response.finish_reason,
             }
         )

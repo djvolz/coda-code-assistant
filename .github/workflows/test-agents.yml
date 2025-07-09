@@ -118,6 +118,7 @@ jobs:
         # Test tool workflows
         uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tools_basic_workflow -v
         uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tool_execution_workflow -v
+        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tools_with_cohere_model -v
 
   agent-performance-tests:
     runs-on: ubuntu-latest
