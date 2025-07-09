@@ -1,11 +1,9 @@
 """Tests for CLI completion system."""
 
-from unittest.mock import Mock, patch
-
 import pytest
 from prompt_toolkit.document import Document
 
-from coda.cli.interactive_cli import EnhancedCompleter, InteractiveCLI, SlashCommandCompleter
+from coda.cli.interactive_cli import EnhancedCompleter, SlashCommandCompleter
 
 
 class TestSlashCommandCompleter:
@@ -116,7 +114,7 @@ class TestEnhancedCompleter:
     def completer(self):
         """Create an EnhancedCompleter instance."""
         from coda.cli.interactive_cli import SlashCommand
-        
+
         commands = {
             "help": SlashCommand("help", lambda: None, "Show help"),
             "exit": SlashCommand("exit", lambda: None, "Exit"),
