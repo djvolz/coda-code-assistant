@@ -76,3 +76,10 @@ tmp/
 temp/
 *.tmp
 *.bak
+
+# Debug and test files in root
+/test_*.py
+/debug_*.py
+/temp_*.py
+/*_debug.py
+/*_test.py

@@ -21,7 +21,7 @@ Build a multi-provider, CLI-focused code assistant that provides a unified inter
 - Context optimization for token limits
 - MockProvider for deterministic testing
 
-✅ **Completed**: Phase 4.6 - Code Quality Refactoring
+🚧 **Current Focus**: Phase 4.6 - Code Quality Refactoring - Before Phase 5
 
 📅 **Next**: Phase 5 - Tool Integration (MCP) - Target: July 12
 
@@ -201,12 +201,11 @@ None currently - all bugs have been resolved!
 
 ## Phase 4: Session Management
 
-**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 are being developed in parallel on separate branches. To minimize merge conflicts:
-
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Phase 4 and 5 were developed in parallel. Phase 5 is now complete and merged.
 - Phase 4 branch: `feature/session-management` (focuses on persistence layer)
-- Phase 5 branch: `feature/mcp-tools` (focuses on tool execution)
-- Integration points: Session schema will need `tool_invocations` table from Phase 5
-- Merge strategy: Phase 4 merges first, then Phase 5 rebases and adds tool logging
+- Phase 5 branch: `feature/mcp-tools` ✅ MERGED
+- **Critical Integration**: Phase 4 must implement AI-to-tool integration for Phase 5 tools to work in conversation
+- Session schema needs `tool_invocations` table for storing tool execution history
 
 ### 4.1 Persistence Layer ✅ COMPLETED
 
@@ -287,125 +286,198 @@ None currently - all bugs have been resolved!
   - [x] Updated help display to show implemented commands
   - [ ] Full command initialization from registry (lower priority)
 
-### 4.6 Code Quality Refactoring ✅ COMPLETED
+### 4.6 Code Quality Refactoring (NEW) 🚧 PENDING
 
-**Branch**: `feature/code-quality-refactor`
+**Branch Strategy**: Create `feature/code-quality-refactor` from current feature branch
 
-#### High Priority - Eliminate Hardcoded Values ✅ COMPLETED
+#### High Priority - Eliminate Hardcoded Values
 
-- [x] **Create `coda/constants.py` module** for centralized configuration
-  - [x] Path constants (`.coda`, `.config`, `sessions.db`, etc.)
-  - [x] Default query limits (50, 100, 1000)
-  - [x] File extensions and formats (`.toml`, `.txt`, etc.)
-  - [x] Environment variable names
-  - [x] Database table and schema constants
-  - [x] Cache durations (24-hour model cache)
-  - [x] Default temperature and context limits
+- [ ] **Create `coda/constants.py` module** for centralized configuration
+  - [ ] Path constants (`.coda`, `.config`, `sessions.db`, etc.)
+  - [ ] Default query limits (50, 100, 1000)
+  - [ ] File extensions and formats (`.toml`, `.txt`, etc.)
+  - [ ] Environment variable names
+  - [ ] Database table and schema constants
+  - [ ] Cache durations (24-hour model cache)
+  - [ ] Default temperature and context limits
 
-- [x] **Create theme/styling configuration**
-  - [x] Extract all hardcoded colors from CLI modules
-  - [x] Create theme configuration system (`themes.py`)
-  - [x] Support for theme switching via `/theme` command
-  - [x] Consolidate prompt-toolkit styles
-  - [x] 5 pre-defined themes (default, dark, light, minimal, vibrant)
+- [ ] **Create theme/styling configuration**
+  - [ ] Extract all hardcoded colors from CLI modules
+  - [ ] Create theme configuration system
+  - [ ] Support for theme switching via `/theme` command
+  - [ ] Consolidate prompt-toolkit styles
 
-- [x] **Remove duplicate `commands_config.yaml`**
-  - [x] CommandRegistry in Python supersedes YAML
-  - [x] Delete unused YAML file
-  - [x] Update any references
+#### Medium Priority - Code Structure
 
-- [x] **Update configuration module**
-  - [x] Use constants instead of hardcoded values
-  - [x] Make session limits configurable
-  - [x] Add theme configuration support
-  - [x] Document all configuration options
+- [ ] **Remove duplicate `commands_config.yaml`**
+  - [ ] CommandRegistry in Python supersedes YAML
+  - [ ] Delete unused YAML file
+  - [ ] Update any references
 
-#### Medium Priority - Code Structure ✅ COMPLETED
+- [ ] **Consolidate interactive CLI modules**
+  - [ ] Merge `interactive.py` and `interactive_cli.py`
+  - [ ] Remove duplicate command handling logic
+  - [ ] Use InteractiveCLI class consistently
 
-- [x] **Consolidate interactive CLI modules**
-  - [x] Analyzed separation - found it architecturally sound
-  - [x] `interactive_cli.py` = reusable UI component
-  - [x] `interactive.py` = application orchestration
-  - [x] Kept separation for better maintainability
+- [ ] **Remove unnecessary wrapper methods**
+  - [ ] Direct calls to shared functions instead of wrappers
+  - [ ] Eliminate `get_system_prompt()` wrappers
 
-- [x] **Remove unnecessary wrapper methods**
-  - [x] Direct calls to shared functions instead of wrappers
-  - [x] Eliminated `get_system_prompt()` wrappers in CLI modules
-  - [x] Removed thin wrapper methods in BasicCommandProcessor
+#### Configuration Updates
 
-- [x] **Update remaining CLI modules to use theme system**
-  - [x] Updated `main.py` to use theme constants
-  - [x] Updated `interactive.py` to use theme system
-  - [x] Updated `provider_manager.py` console output
-  - [x] Updated `error_handler.py` styling
+- [ ] **Update configuration module**
+  - [ ] Use constants instead of hardcoded values
+  - [ ] Make session limits configurable
+  - [ ] Add theme configuration support
+  - [ ] Document all configuration options
 
-#### Testing ✅ COMPLETED
+#### Testing
 
-- [x] Reviewed tests - hardcoded values are intentional test data
-- [x] Test files appropriately use specific values for testing
-- [x] No configuration values that need centralization found in tests
-
-#### Code Review Fixes ✅ COMPLETED (July 6, 2025)
-
-- [x] **Applied high-priority code review recommendations**
-  - [x] Fixed path construction to use Path objects instead of string concatenation
-  - [x] Added color validation to theme system (is_valid_color, validate_theme_colors)
-  - [x] Added model_provider and model_info theme attributes
-  - [x] Documented architectural constraint for style constants location
-
-#### Post-Merge Items ✅ COMPLETED (July 7, 2025)
-
-- [x] **Fix import errors in CLI modules**
-  - [x] Fixed missing style constant imports in `interactive.py`
-  - [x] Added all required console style constants to imports
-  - [x] Verified CLI functionality works correctly
-  - [x] CLI help and one-shot mode working properly
-
-- [x] **Complete theme command implementation**
-  - [x] Replace placeholder `/theme` command with actual theme switching functionality
-  - [x] Connect `/theme` command to existing `ThemeManager.set_theme()` method
-  - [x] Add theme persistence to configuration (save theme preference)
-  - [x] Update help text to remove "Coming soon" message for `/theme` command
-  - [x] Add `/theme list`, `/theme current`, `/theme reset` subcommands
-  - [x] Add tests for theme command implementation and persistence
-  - [x] Added `tomli-w` dependency for TOML config file writing
-  - [x] Fixed configuration save functionality for theme persistence
+- [ ] Update tests to use constants
+- [ ] Ensure no hardcoded values in test files
+- [ ] Add tests for theme configuration
 
 **Timeline**: Complete before merging Phase 5
 
-## Phase 5: Tool Integration (MCP)
+### 4.7 Comparative Analysis of Agent Execution in Code Companions (Research)
 
-**⚠️ PARALLEL DEVELOPMENT NOTE**: Being developed in parallel with Phase 4. Key considerations:
+**Note**: As we finish up Phase 4, conduct a thorough analysis of how other major open source code companions handle their agent execution:
 
-- Work on branch: `feature/mcp-tools`
-- Mock the session storage API during development
-- Plan for adding `tool_invocations` to session schema after merge
-- Avoid modifying core files that Phase 4 is likely to change (cli/main.py, config.py)
-- Focus on creating new files: `tools/`, `mcp/` directories
+- [ ] **Aider**
+  - [ ] How does aider handle agent-based interactions?
+  - [ ] Tool calling mechanisms and protocols
+  - [ ] Context management for long conversations
+  - [ ] Error handling and recovery strategies
 
-### 5.1 Core Tools
+- [ ] **Continue.dev**
+  - [ ] Agent architecture and execution model
+  - [ ] Integration with various LLM providers
+  - [ ] Tool/action system implementation
+  - [ ] Session and context persistence
 
-- [ ] File operations (read, write, edit)
-- [ ] Shell command execution
-- [ ] Web search and fetch
-- [ ] Git operations
-- [ ] **Tool Result Storage**: Design format for session integration
+- [ ] **Cursor**
+  - [ ] Agent conversation flow (if open source components available)
+  - [ ] Multi-turn interaction handling
+  - [ ] Code modification strategies
 
-### 5.2 Tool Commands
+- [ ] **Open Interpreter**
+  - [ ] Code execution sandboxing approach
+  - [ ] Agent safety mechanisms
+  - [ ] Tool integration patterns
 
-- [ ] `/tools` (`/t`) - Manage MCP tools
-  - [ ] `list` - List available MCP tools
-  - [ ] `enable` - Enable specific tools
-  - [ ] `disable` - Disable specific tools
-  - [ ] `config` - Configure tool settings
-  - [ ] `status` - Show tool status
+- [ ] **GPT Engineer**
+  - [ ] Agent planning and execution phases
+  - [ ] File system interaction patterns
+  - [ ] Project structure understanding
 
-### 5.3 MCP Protocol
+- [ ] **Cody (Sourcegraph)**
+  - [ ] Context fetching and management
+  - [ ] Agent memory and persistence
+  - [ ] Multi-file operation handling
 
-- [ ] MCP server implementation
-- [ ] Tool discovery and registration
-- [ ] Permission management
-- [ ] Custom tool development SDK
+- [ ] **Gemini CLI**
+  - [ ] Token usage tracking and reporting
+  - [ ] Conversation flow and state management
+  - [ ] Multi-modal input handling
+  - [ ] Cost tracking mechanisms
+
+- [ ] **Cline**
+  - [ ] VSCode extension architecture patterns
+  - [ ] Agent-based file editing approach
+  - [ ] Task planning and execution flow
+  - [ ] User approval workflows
+
+- [ ] **Codex CLI**
+  - [ ] Command generation and execution patterns
+  - [ ] Shell integration approaches
+  - [ ] Safety mechanisms for command execution
+  - [ ] Context awareness in terminal environments
+
+**Key Areas to Analyze**:
+- Agent conversation state management
+- Tool/function calling implementations
+- Error recovery and retry mechanisms
+- Context window optimization strategies
+- Security and sandboxing approaches
+- Performance optimization techniques
+- User interaction patterns (confirmations, interruptions, etc.)
+
+**Deliverable**: Create a comparison document highlighting best practices and innovative approaches that could enhance our implementation
+
+### 4.8 OpenRouter Integration for Enhanced Model Access
+
+**Note**: While we have LiteLLM support that includes OpenRouter as one of its providers, direct OpenRouter integration offers unique advantages.
+
+- [ ] **Native OpenRouter Provider Implementation**
+  - [ ] Direct API integration without LiteLLM intermediary
+  - [ ] Support for OpenRouter-specific features (model routing, fallbacks)
+  - [ ] Cost tracking and budget management via OpenRouter API
+  - [ ] Model preference and routing configuration
+  - [ ] Access to exclusive models not available through standard LiteLLM
+
+- [ ] **Enhanced Features**
+  - [ ] Automatic model selection based on task complexity
+  - [ ] Cost-optimized routing (balance performance vs price)
+  - [ ] Fallback chains for reliability
+  - [ ] Usage analytics and reporting
+  - [ ] Custom model routing rules
+
+- [ ] **Integration Benefits**
+  - [ ] Access to 100+ models through single API key
+  - [ ] Unified billing across all providers
+  - [ ] Built-in rate limit handling across providers
+  - [ ] Model comparison and A/B testing capabilities
+  - [ ] Provider-agnostic tool calling support
+
+**Timeline**: After Phase 4.7 comparative analysis completion
+
+### 4.4 AI-to-Tool Integration (Critical for Phase 5 tools)
+- [x] Function calling protocol for OCI provider (Cohere models support this) ✅
+- [x] Parse AI responses for tool requests ✅
+- [x] Execute tools based on AI instructions ✅
+- [x] Include tool results in conversation context ✅
+- [ ] Store tool invocations in session database
+- [x] Handle tool errors gracefully in conversation flow ✅
+- [ ] **Extend tool support to additional providers:**
+  - [ ] Ollama - implement native tool calling support
+  - [ ] xAI (Grok) models - tool calling protocol implementation needed
+  - [ ] Meta (Llama) models - tool calling protocol implementation needed
+  - [ ] Other OCI GenAI providers beyond Cohere
+  - [ ] Ensure LiteLLM properly passes through tool calls to supported providers
+
+## Phase 5: Tool Integration (MCP) ✅ COMPLETED (July 5, 2025)
+
+**⚠️ PARALLEL DEVELOPMENT NOTE**: Developed in parallel with Phase 4 and is now complete.
+
+- Work on branch: `feature/mcp-tools` ✅ MERGED
+- Created new files: `tools/`, `mcp/` directories
+- Full integration with AI conversation pending Phase 4 completion
+
+### 5.1 Core Tools ✅ COMPLETED
+
+- [x] File operations (read, write, edit, list directory)
+- [x] Shell command execution with safety controls
+- [x] Web search and fetch capabilities
+- [x] Git operations (status, log, diff, branch)
+- [x] **Tool Result Storage**: Designed format for session integration
+
+### 5.2 Tool Commands ✅ COMPLETED
+
+- [x] `/tools` (`/t`) - Manage MCP tools
+  - [x] `list` - List all available tools
+  - [x] `info` - Show detailed tool information
+  - [x] `categories` - Show all tool categories
+  - [x] `stats` - Show tool statistics
+  - [x] `help` - Show detailed tools help
+
+### 5.3 MCP Protocol 🚧 PARTIALLY COMPLETED
+
+- [x] Base tool architecture with MCP compatibility
+- [x] Tool discovery and registration
+- [x] Permission management for dangerous tools
+- [x] Parameter validation and error handling
+- [ ] External MCP server implementation (deferred)
+- [ ] Custom tool development SDK (deferred)
 
 ## Phase 6: Advanced Features
 
@@ -632,6 +704,91 @@ None currently - all bugs have been resolved!
   - [ ] Automated changelog detection from commits
   - [ ] Git workflow optimization tools
 
+## Phase 13: Plugin System Architecture
+
+### 13.1 Core Plugin Infrastructure
+
+**Inspiration**: Implement a plugin system similar to [simonw/llm](https://github.com/simonw/llm) for maximum extensibility.
+
+- [ ] **Plugin Discovery & Loading**
+  - [ ] Entry point-based plugin discovery (using Python entry points)
+  - [ ] Dynamic plugin loading at runtime
+  - [ ] Plugin dependency resolution
+  - [ ] Version compatibility checking
+  - [ ] Hot-reload support for development
+
+- [ ] **Plugin Types**
+  - [ ] **Provider Plugins**: Add new LLM providers
+  - [ ] **Tool Plugins**: Add new MCP tools and capabilities
+  - [ ] **Mode Plugins**: Add custom developer modes
+  - [ ] **Export Plugins**: Add new export formats
+  - [ ] **Storage Plugins**: Alternative session storage backends
+  - [ ] **Theme Plugins**: Custom UI themes and styles
+
+### 13.2 Plugin Development Kit
+
+- [ ] **Plugin Template & Scaffolding**
+  - [ ] Cookiecutter template for new plugins
+  - [ ] Example plugins for each type
+  - [ ] Plugin development guide
+  - [ ] Testing utilities for plugin developers
+
+- [ ] **Plugin API**
+  - [ ] Well-defined plugin interfaces (ABCs)
+  - [ ] Hook system for extending core functionality
+  - [ ] Event system for plugin communication
+  - [ ] Configuration management for plugins
+  - [ ] Resource access controls
+
+### 13.3 Plugin Management
+
+- [ ] **CLI Commands**
+  - [ ] `coda plugins list` - List installed plugins
+  - [ ] `coda plugins install <name>` - Install from PyPI
+  - [ ] `coda plugins uninstall <name>` - Remove plugin
+  - [ ] `coda plugins enable/disable <name>` - Toggle plugins
+  - [ ] `coda plugins info <name>` - Show plugin details
+  - [ ] `coda plugins search <query>` - Search available plugins
+
+- [ ] **Plugin Registry**
+  - [ ] Central plugin registry (similar to npm/pypi)
+  - [ ] Plugin metadata and descriptions
+  - [ ] Compatibility matrix with coda versions
+  - [ ] Download statistics and ratings
+  - [ ] Security scanning for plugins
+
+### 13.4 Plugin Examples
+
+- [ ] **Example Provider Plugin**: Anthropic Claude direct integration
+- [ ] **Example Tool Plugin**: Database query tool
+- [ ] **Example Mode Plugin**: SQL-specific assistant mode
+- [ ] **Example Export Plugin**: Jupyter notebook export
+- [ ] **Example Storage Plugin**: PostgreSQL session backend
+- [ ] **Example Theme Plugin**: High contrast accessibility theme
+
+### 13.5 Security & Isolation
+
+- [ ] **Plugin Sandboxing**
+  - [ ] Resource usage limits
+  - [ ] File system access controls
+  - [ ] Network request filtering
+  - [ ] API rate limiting per plugin
+
+- [ ] **Plugin Verification**
+  - [ ] Code signing for official plugins
+  - [ ] Security audit requirements
+  - [ ] Automated vulnerability scanning
+  - [ ] User permission system for plugin capabilities
+
+**Benefits**:
+- Community can extend Coda without modifying core
+- Easy distribution of custom functionality
+- Maintains clean separation of concerns
+- Enables domain-specific extensions
+- Facilitates experimentation with new features
+
+**Timeline**: After Phase 12, as this provides the foundation for future extensibility
+
 ## Technical Decisions
 
 ### Architecture
@@ -778,13 +935,55 @@ None currently - all bugs have been resolved!
 - ✅ Seamless integration with existing interactive shell
 - ✅ Conversation continuity across save/load cycles
 
-### 2025.7.12 - Tool Integration / MCP (Target: July 12)
+### 2025.7.12 - Tool Integration / MCP ✅ COMPLETED (July 5, 2025)
 
-- MCP server implementation
-- Core tools (file ops, shell, web search, git)
-- Tool commands (/tools list/enable/disable/config/status)
-- Permission management
-- Custom tool SDK
+- ✅ Core tools implemented (12 tools across 4 categories)
+  - ✅ File operations (read, write, edit, list directory)
+  - ✅ Shell command execution with safety controls
+  - ✅ Web search and fetch capabilities
+  - ✅ Git operations (status, log, diff, branch)
+- ✅ Tool commands (/tools list/info/categories/stats/help)
+- ✅ Base tool architecture with MCP compatibility
+- ✅ Parameter validation and error handling
+- ✅ Permission management for dangerous tools
+- ✅ Comprehensive test suite (30+ tests)
+- ✅ CLI integration (both interactive and basic modes)
+- ⏸️ External MCP server implementation (deferred)
+- ⏸️ Advanced permission system (deferred)
+
+**Agent Integration ✅ COMPLETED (July 7, 2025)**:
+- ✅ Full AI-to-tool integration via Agent system
+- ✅ Agent-based chat with streaming support (`run_async_streaming`)
+- ✅ Intelligent tool usage - agents only use tools when necessary
+- ✅ Enhanced agent instructions for balanced tool usage
+- ✅ Real-time streaming responses while maintaining tool functionality
+- ✅ Cohere models now fully support streaming with tool capabilities
+- ✅ Agent can handle both tool-based and non-tool requests appropriately
+
+**Tools Support for Additional Providers 🚧 PENDING**:
+- [ ] **Ollama Provider** - Add native tool calling support (currently not supported)
+- [ ] **OCI GenAI Provider**:
+  - [ ] Add tools support for Meta (Llama) models
+  - [ ] Add tools support for xAI (Grok) models
+  - [ ] Add tools support for any other non-Cohere models
+- [ ] **LiteLLM Provider** - Ensure tool calling works for all supported underlying providers:
+  - [x] OpenAI models ✅ (already supported)
+  - [x] Google Gemini models ✅ (already supported)
+  - [x] Cohere models ✅ (already supported)
+  - [x] Mistral models ✅ (already supported)
+  - [ ] Anthropic Claude models (currently not supported by LiteLLM)
+- [ ] **MockProvider** - Already supports tools ✅ (for testing)
+- [ ] Implement provider-specific tool calling formats and protocols
+- [ ] Add comprehensive tests for tool functionality across all providers
+- [ ] Update documentation to clearly indicate which providers/models support tools
+
+**MCP Configuration Support 🚧 PENDING**:
+- [ ] Support for `mcp.json` configuration files
+- [ ] Global MCP config in `~/.config/coda/mcp.json`
+- [ ] Local project MCP config in `.coda/mcp.json` or `mcp.json`
+- [ ] MCP server discovery and registration from config files
+- [ ] Tool loading from external MCP servers specified in config
+- [ ] Priority: local project config > global config > built-in tools
 
 ### 2025.7.15 - Advanced Features (Target: July 15)
 
@@ -796,30 +995,27 @@ None currently - all bugs have been resolved!
 
 ## Next Steps
 
-**Current Status**: Phases 1, 2, 3, and 4 are complete. Phase 4.5 (Auto-Save Enhancement) pending. Ready to begin Phase 5.
+**Current Status**: Phases 1, 2, 3, 4, 5, and Agent Integration are complete. Phase 4.6 (Code Quality Refactoring) pending.
 
-1. **Completed - Phase 4**: Session Management ✅
-   - SQLite database stored in `~/.cache/coda/sessions.db`
-   - Message persistence with provider/model metadata
-   - Session branching with parent-child relationships
-   - Full-text search using SQLite FTS5
-   - Complete implementation of `/session` and `/export` commands
-   - MockProvider for deterministic testing
-   - 100+ tests covering all session functionality
-2. **Next - Phase 5**: Tool Integration (MCP) (Target: July 12)
-   - Core tools for file operations
-   - Shell command execution
-   - Web search and fetch capabilities
-   - Git operations
-   - Implementation of `/tools` command
-3. **Following - Phase 6**: Advanced Features (Target: July 15)
+1. **Pending - Phase 4.6**: Code Quality Refactoring
+   - Create `coda/constants.py` for centralized configuration
+   - Create theme/styling configuration system
+   - Remove duplicate code and unnecessary wrappers
+   - Consolidate interactive CLI modules
+   
+2. **Next - Phase 6**: Advanced Features (Target: July 15)
    - Multi-modal support (image understanding)
    - Code screenshot analysis
    - Document support (PDF, Word, PowerPoint, Excel)
    - Enhanced response rendering with live markdown
-4. **Future Phases**:
+   
+3. **Future Phases**:
    - Phase 7: Web UI with Streamlit
-   - Phase 8: Additional features (containerization, repo mapping, telemetry)
+   - Phase 8: Vector Embedding & Semantic Search
+   - Phase 9: Codebase Intelligence
+   - Phase 10: Help Mode Integration
+   - Phase 11: Observability & Performance
+   - Phase 12: DevOps & Automation
 
 ## Notes
 
