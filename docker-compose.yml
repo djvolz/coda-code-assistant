@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  coda:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: coda-code-assistant:latest
+    container_name: coda-dev
+    ports:
+      - "11434:11434"  # Ollama API port
+    volumes:
+      # Mount config directory for persistence
+      - coda-config:/home/coda/.config/coda
+      # Mount cache directory for sessions and models
+      - coda-cache:/home/coda/.cache/coda
+      # Mount data directory for sessions
+      - coda-data:/home/coda/.local/share/coda
+      # Mount local development directory (optional, for development)
+      - ./examples:/app/examples:ro
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_PULL_DEFAULT=true
+      - CODA_LOG_LEVEL=INFO
+    networks:
+      - coda-network
+    restart: unless-stopped
+    # Interactive mode for development
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          memory: 2G
+
+  # Optional: Separate Ollama service for more control
+  ollama-standalone:
+    image: ollama/ollama:latest
+    container_name: ollama-standalone
+    profiles:
+      - standalone
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    networks:
+      - coda-network
+    restart: unless-stopped
+
+  # Development database (PostgreSQL) - optional for advanced features
+  postgres:
+    image: postgres:15-alpine
+    container_name: coda-postgres
+    profiles:
+      - database
+    environment:
+      - POSTGRES_DB=coda_dev
+      - POSTGRES_USER=coda
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - coda-network
+    restart: unless-stopped
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: coda-redis
+    profiles:
+      - cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - coda-network
+    restart: unless-stopped
+
+  # OCI-focused container (lightweight, no Ollama)
+  coda-oci:
+    build:
+      context: .
+      dockerfile: Dockerfile.oci
+    image: coda-code-assistant:oci
+    container_name: coda-oci
+    profiles:
+      - oci
+    volumes:
+      # Mount OCI configuration (read-only)
+      - ~/.oci:/home/coda/.oci:ro
+      # Mount Coda configuration
+      - coda-oci-config:/home/coda/.config/coda
+      # Mount cache and data
+      - coda-oci-cache:/home/coda/.cache/coda
+      - coda-oci-data:/home/coda/.local/share/coda
+      # Mount custom OCI config
+      - ./docker/config/oci-config.toml:/home/coda/.config/coda/config.toml:ro
+    environment:
+      # OCI environment variables
+      - OCI_CLI_COMPARTMENT_ID=${OCI_CLI_COMPARTMENT_ID}
+      - OCI_CLI_REGION=${OCI_CLI_REGION:-us-ashburn-1}
+      - OCI_CLI_TENANCY=${OCI_CLI_TENANCY}
+      - OCI_CLI_USER=${OCI_CLI_USER}
+      - OCI_CLI_FINGERPRINT=${OCI_CLI_FINGERPRINT}
+      - OCI_CLI_KEY_FILE=${OCI_CLI_KEY_FILE}
+      # Coda configuration
+      - CODA_LOG_LEVEL=INFO
+      - CODA_ENV=production
+    networks:
+      - coda-network
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+volumes:
+  coda-config:
+    driver: local
+  coda-cache:
+    driver: local
+  coda-data:
+    driver: local
+  ollama-models:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  coda-oci-config:
+    driver: local
+  coda-oci-cache:
+    driver: local
+  coda-oci-data:
+    driver: local
+
+networks:
+  coda-network:
+    driver: bridge

@@ -1,0 +1,25 @@
+# Development configuration for Coda
+[general]
+autosave = true
+default_provider = "ollama"
+debug = true
+theme = "dark"
+
+[providers.ollama]
+base_url = "http://ollama-dev:11434"
+timeout = 30
+default_model = "llama3.2:3b"
+
+[providers.mock]
+enabled = true
+default_model = "mock-smart"
+
+[session]
+auto_save = true
+max_messages = 1000
+search_limit = 50
+
+[ui]
+interactive_mode = true
+show_token_count = true
+streaming = true

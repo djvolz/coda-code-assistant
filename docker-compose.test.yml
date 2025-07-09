@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Dedicated Ollama service for testing
+  ollama-test:
+    image: ollama/ollama:latest
+    container_name: ollama-test
+    ports:
+      - "11435:11434"  # Different port to avoid conflicts
+    volumes:
+      - ollama-test-models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    networks:
+      - coda-network
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    # Pre-pull lightweight model for testing
+    command: >
+      bash -c "
+        ollama serve &
+        sleep 10 &&
+        ollama pull tinyllama:1.1b &&
+        wait
+      "
+
+volumes:
+  ollama-test-models:
+    driver: local
+
+networks:
+  coda-network:
+    external: true

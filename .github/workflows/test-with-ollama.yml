@@ -1,0 +1,118 @@
+name: LLM Tests with Ollama
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  # Allow manual trigger for expensive LLM tests
+  workflow_dispatch:
+
+jobs:
+  test-with-ollama:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Only run LLM tests on main branch pushes or manual trigger
+    # Skip on PR to save resources (fast tests cover most issues)
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        options: >-
+          --health-cmd "curl -f http://localhost:11434/api/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+
+    - name: Wait for Ollama to be ready
+      run: |
+        echo "Waiting for Ollama service..."
+        timeout 60 bash -c 'until curl -f http://localhost:11434/api/health; do sleep 2; done'
+        echo "Ollama is ready!"
+
+    - name: Pull test model
+      run: |
+        echo "Pulling lightweight model for testing..."
+        curl -X POST http://localhost:11434/api/pull \
+          -H "Content-Type: application/json" \
+          -d '{"name": "tinyllama:1.1b"}'
+        
+        echo "Waiting for model to be available..."
+        timeout 300 bash -c 'until curl -f http://localhost:11434/api/tags | grep -q "tinyllama"; do sleep 5; done'
+
+    - name: Run Ollama integration tests
+      env:
+        OLLAMA_HOST: http://localhost:11434
+        CODA_TEST_PROVIDER: ollama
+        CODA_TEST_MODEL: tinyllama:1.1b
+      run: |
+        uv run pytest tests/integration/test_ollama_integration.py -v \
+          --tb=short \
+          -m "integration"
+
+    - name: Run Docker entrypoint tests
+      run: |
+        uv run pytest tests/integration/test_docker_entrypoints.py -v \
+          --tb=short
+
+    - name: Run shell script tests
+      run: |
+        uv run pytest tests/integration/test_shell_scripts.py -v \
+          --tb=short
+
+    - name: Run full LLM tests
+      env:
+        OLLAMA_HOST: http://localhost:11434
+        CODA_TEST_PROVIDER: ollama
+        CODA_TEST_MODEL: tinyllama:1.1b
+        RUN_LLM_TESTS: true
+      run: |
+        uv run pytest tests/ -v \
+          --tb=short \
+          -m "llm" \
+          --maxfail=3
+
+    - name: Run functional CLI workflow tests
+      env:
+        OLLAMA_HOST: http://localhost:11434
+      run: |
+        uv run pytest tests/functional/test_cli_workflows.py -v \
+          --tb=short
+
+    - name: Run Docker Compose tests
+      run: |
+        uv run pytest tests/functional/test_docker_compose.py -v \
+          --tb=short
+
+    - name: Test CLI with real model
+      env:
+        OLLAMA_HOST: http://localhost:11434
+      run: |
+        echo "Testing CLI with real model..."
+        echo "Hello, how are you?" | uv run coda --provider ollama --model tinyllama:1.1b --one-shot
+
+    - name: Clean up
+      if: always()
+      run: |
+        curl -X DELETE http://localhost:11434/api/delete \
+          -H "Content-Type: application/json" \
+          -d '{"name": "tinyllama:1.1b"}' || true

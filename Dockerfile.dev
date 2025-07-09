@@ -1,0 +1,71 @@
+# Development Dockerfile for Coda
+FROM python:3.11-slim-bullseye as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast Python package management
+RUN pip install uv
+
+# Install Ollama with verification
+RUN curl -fsSL https://ollama.com/install.sh -o /tmp/install-ollama.sh \
+    && chmod +x /tmp/install-ollama.sh \
+    && /tmp/install-ollama.sh \
+    && rm -f /tmp/install-ollama.sh
+
+# Create non-root user
+RUN useradd -m -s /bin/bash coda
+
+# Set working directory
+WORKDIR /app
+
+# Development stage
+FROM base as development
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y \
+    vim \
+    htop \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install all dependencies including dev dependencies
+RUN uv sync --all-extras
+
+# Create necessary directories
+RUN mkdir -p /home/coda/.config/coda \
+    /home/coda/.cache/coda \
+    /home/coda/.local/share/coda \
+    && chown -R coda:coda /home/coda
+
+# Switch to non-root user
+USER coda
+
+# Set environment variables
+ENV HOME=/home/coda
+ENV PATH="$HOME/.local/bin:$PATH"
+ENV CODA_CONFIG_DIR="$HOME/.config/coda"
+ENV CODA_CACHE_DIR="$HOME/.cache/coda"
+ENV CODA_DATA_DIR="$HOME/.local/share/coda"
+ENV PYTHONPATH=/app
+
+# Default Ollama host
+ENV OLLAMA_HOST=ollama-dev:11434
+
+# Expose Ollama port
+EXPOSE 11434
+
+# Development entrypoint
+COPY --chown=coda:coda docker/entrypoint-dev.sh /entrypoint-dev.sh
+RUN chmod +x /entrypoint-dev.sh
+
+ENTRYPOINT ["/entrypoint-dev.sh"]
+CMD ["bash"]

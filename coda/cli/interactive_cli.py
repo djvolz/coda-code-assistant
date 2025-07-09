@@ -24,7 +24,9 @@ from .shared import CommandHandler, CommandResult, DeveloperMode
 class SlashCommand:
     """Represents a slash command with its handler and help text."""
 
-    def __init__(self, name: str, handler: Callable, help_text: str, aliases: list[str] = None):
+    def __init__(
+        self, name: str, handler: Callable, help_text: str, aliases: list[str] | None = None
+    ):
         self.name = name
         self.handler = handler
         self.help_text = help_text
@@ -45,7 +47,7 @@ class SlashCommand:
 class InteractiveCLI(CommandHandler):
     """Interactive CLI with advanced prompt features using prompt-toolkit."""
 
-    def __init__(self, console: Console = None):
+    def __init__(self, console: Console = None) -> None:
         if console:
             super().__init__(console)
         else:
@@ -345,21 +347,13 @@ class InteractiveCLI(CommandHandler):
         # Check direct command match
         if cmd_name in self.commands:
             handler = self.commands[cmd_name].handler
-            # Check if handler is async
-            if asyncio.iscoroutinefunction(handler):
-                await handler(args)
-            else:
-                handler(args)
+            await self._execute_command_handler(handler, args)
             return True
 
         # Check aliases
         for _name, cmd in self.commands.items():
             if cmd_name in cmd.aliases:
-                handler = cmd.handler
-                if asyncio.iscoroutinefunction(handler):
-                    await handler(args)
-                else:
-                    handler(args)
+                await self._execute_command_handler(cmd.handler, args)
                 return True
 
         self.console.print(f"[red]Unknown command: /{cmd_name}[/red]")
@@ -445,6 +439,55 @@ class InteractiveCLI(CommandHandler):
             self.console.print(f"  [cyan]{option}[/cyan] - {description}")
         self.console.print(f"\n[dim]Usage: {usage}[/dim]")
 
+    async def _apply_theme_change(self, theme_name: str) -> None:
+        """Apply theme change and update all necessary components."""
+        from ..configuration import save_config
+        from ..themes import get_theme_manager, get_themed_console
+
+        theme_manager = get_theme_manager()
+        theme_manager.set_theme(theme_name)
+
+        if self.config:
+            self.config.ui["theme"] = theme_name
+            save_config()
+
+        self.console = get_themed_console()
+        self.style = self._create_style()
+
+        if hasattr(self, "session") and self.session:
+            self.session.style = self.style
+
+        self.console.print(f"[green]✓[/] Theme changed to '[cyan]{theme_name}[/]'")
+        if self.config:
+            self.console.print("[dim]Theme preference saved to configuration[/]")
+
+    def _list_available_themes(self) -> None:
+        """List all available themes with current selection indicator."""
+        from ..themes import THEMES, get_theme_manager
+
+        theme_manager = get_theme_manager()
+        self.console.print("\n[bold]Available themes:[/]")
+        for theme_name, theme in THEMES.items():
+            status = (
+                "[green]●[/]" if theme_name == theme_manager.current_theme_name else "[dim]○[/]"
+            )
+            self.console.print(f"  {status} [cyan]{theme_name}[/] - {theme.description}")
+
+    def _show_current_theme(self) -> None:
+        """Display the current theme and its description."""
+        from ..themes import get_theme_manager
+
+        theme_manager = get_theme_manager()
+        self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
+        self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
+
+    async def _execute_command_handler(self, handler: Callable, args: str) -> None:
+        """Execute command handler with proper async handling."""
+        if asyncio.iscoroutinefunction(handler):
+            await handler(args)
+        else:
+            handler(args)
+
     async def _cmd_session(self, args: str):
         """Manage sessions."""
         if not args:
@@ -470,8 +513,7 @@ class InteractiveCLI(CommandHandler):
 
     async def _cmd_theme(self, args: str):
         """Change UI theme."""
-        from ..configuration import save_config
-        from ..themes import THEMES, get_theme_manager
+        from ..themes import get_theme_manager
 
         theme_manager = get_theme_manager()
 
@@ -483,33 +525,8 @@ class InteractiveCLI(CommandHandler):
             new_theme = await selector.select_theme_interactive()
 
             if new_theme:
-                # Set the theme using the same logic as when args are provided
                 try:
-                    # Update theme manager
-                    theme_manager.set_theme(new_theme)
-
-                    # Update configuration and save
-                    if self.config:
-                        self.config.ui["theme"] = new_theme
-                        save_config()
-
-                    # Update console theme
-                    from ..themes import get_themed_console
-
-                    new_console = get_themed_console()
-                    self.console = new_console
-
-                    # Recreate the prompt style with new theme
-                    self.style = self._create_style()
-
-                    # Update the prompt session style
-                    if hasattr(self, "session") and self.session:
-                        self.session.style = self.style
-
-                    self.console.print(f"[green]✓[/] Theme changed to '[cyan]{new_theme}[/]'")
-                    if self.config:
-                        self.console.print("[dim]Theme preference saved to configuration[/]")
-
+                    await self._apply_theme_change(new_theme)
                 except ValueError as e:
                     self.console.print(f"[red]Error:[/] {e}")
             else:
@@ -521,17 +538,11 @@ class InteractiveCLI(CommandHandler):
 
         # Handle subcommands
         if args == "list":
-            self.console.print("\n[bold]Available themes:[/]")
-            for theme_name, theme in THEMES.items():
-                status = (
-                    "[green]●[/]" if theme_name == theme_manager.current_theme_name else "[dim]○[/]"
-                )
-                self.console.print(f"  {status} [cyan]{theme_name}[/] - {theme.description}")
+            self._list_available_themes()
             return
 
         elif args == "current":
-            self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
-            self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
+            self._show_current_theme()
             return
 
         elif args == "reset":
@@ -542,31 +553,7 @@ class InteractiveCLI(CommandHandler):
 
         # Set the theme
         try:
-            # Update theme manager
-            theme_manager.set_theme(args)
-
-            # Update configuration and save
-            if self.config:
-                self.config.ui["theme"] = args
-                save_config()
-
-            # Update console theme
-            from ..themes import get_themed_console
-
-            new_console = get_themed_console()
-            self.console = new_console
-
-            # Recreate the prompt style with new theme
-            self.style = self._create_style()
-
-            # Update the prompt session style
-            if hasattr(self, "session") and self.session:
-                self.session.style = self.style
-
-            self.console.print(f"[green]✓[/] Theme changed to '[cyan]{args}[/]'")
-            if self.config:
-                self.console.print("[dim]Theme preference saved to configuration[/]")
-
+            await self._apply_theme_change(args)
         except ValueError as e:
             self.console.print(f"[red]Error:[/] {e}")
 
