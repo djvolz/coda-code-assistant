@@ -1,13 +1,12 @@
 """Integration tests for Docker entrypoint scripts."""
 
-import pytest
-import subprocess
 import os
-import time
-import signal
-from unittest.mock import Mock, patch, MagicMock
-import tempfile
 import shutil
+import subprocess
+import tempfile
+from unittest.mock import patch
+
+import pytest
 
 
 class TestDockerEntrypoints:
@@ -38,7 +37,7 @@ class TestDockerEntrypoints:
     def test_entrypoint_ollama_startup(self, temp_script_dir, mock_env):
         """Test main entrypoint starts Ollama service."""
         script_path = os.path.join(temp_script_dir, 'entrypoint.sh')
-        
+
         # Create a mock entrypoint script
         script_content = '''#!/bin/bash
 echo "Starting Ollama service..."
@@ -50,14 +49,14 @@ echo "Ollama started with PID: $OLLAMA_PID"
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         # Run the script
         result = subprocess.run(
             ['bash', script_path],
             capture_output=True,
             text=True
         )
-        
+
         assert result.returncode == 0
         assert "Starting Ollama service" in result.stdout
         assert "Ollama started with PID" in result.stdout
@@ -65,7 +64,7 @@ echo "Ollama started with PID: $OLLAMA_PID"
     def test_entrypoint_health_check(self, temp_script_dir, mock_env):
         """Test Ollama health check functionality."""
         script_path = os.path.join(temp_script_dir, 'health_check.sh')
-        
+
         script_content = '''#!/bin/bash
 check_ollama_health() {
     local retries=0
@@ -89,23 +88,23 @@ check_ollama_health
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         # Mock curl to fail (Ollama not running)
         with patch('subprocess.run') as mock_run:
             mock_run.return_value.returncode = 1
-            
+
             result = subprocess.run(
                 ['bash', script_path],
                 capture_output=True,
                 text=True
             )
-            
+
             assert "health check failed" in result.stdout
 
     def test_entrypoint_model_pulling(self, temp_script_dir, mock_env):
         """Test model pulling functionality."""
         script_path = os.path.join(temp_script_dir, 'pull_model.sh')
-        
+
         script_content = '''#!/bin/bash
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama2}"
 
@@ -130,7 +129,7 @@ pull_model
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         # Test with new model
         result = subprocess.run(
             ['bash', script_path],
@@ -138,7 +137,7 @@ pull_model
             text=True,
             env={**mock_env, 'OLLAMA_MODEL': 'new-model'}
         )
-        
+
         assert result.returncode == 0
         assert "Pulling model new-model" in result.stdout
         assert "pulled successfully" in result.stdout
@@ -146,7 +145,7 @@ pull_model
     def test_entrypoint_signal_handling(self, temp_script_dir):
         """Test signal handling in entrypoint."""
         script_path = os.path.join(temp_script_dir, 'signal_handler.sh')
-        
+
         script_content = '''#!/bin/bash
 OLLAMA_PID=""
 CODA_PID=""
@@ -183,13 +182,13 @@ kill -TERM $$
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         result = subprocess.run(
             ['bash', script_path],
             capture_output=True,
             text=True
         )
-        
+
         assert "Received termination signal" in result.stdout
         assert "Stopping Coda" in result.stdout
         assert "Stopping Ollama" in result.stdout
@@ -197,7 +196,7 @@ kill -TERM $$
     def test_entrypoint_dev_external_ollama(self, temp_script_dir, mock_env):
         """Test dev entrypoint with external Ollama."""
         script_path = os.path.join(temp_script_dir, 'entrypoint-dev.sh')
-        
+
         script_content = '''#!/bin/bash
 USE_EXTERNAL_OLLAMA="${USE_EXTERNAL_OLLAMA:-false}"
 EXTERNAL_OLLAMA_HOST="${EXTERNAL_OLLAMA_HOST:-}"
@@ -220,7 +219,7 @@ fi
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         # Test with external Ollama
         result = subprocess.run(
             ['bash', script_path],
@@ -232,14 +231,14 @@ fi
                 'EXTERNAL_OLLAMA_HOST': 'http://external:11434'
             }
         )
-        
+
         assert "Using external Ollama" in result.stdout
         assert "http://external:11434" in result.stdout
 
     def test_entrypoint_oci_config_validation(self, temp_script_dir, mock_env):
         """Test OCI entrypoint configuration validation."""
         script_path = os.path.join(temp_script_dir, 'entrypoint-oci.sh')
-        
+
         script_content = '''#!/bin/bash
 # Required OCI environment variables
 required_vars=("OCI_COMPARTMENT_ID" "OCI_REGION" "OCI_TENANCY_ID")
@@ -267,7 +266,7 @@ validate_oci_config
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         # Test with missing variables
         result = subprocess.run(
             ['bash', script_path],
@@ -275,14 +274,14 @@ validate_oci_config
             text=True,
             env=mock_env  # No OCI vars
         )
-        
+
         assert result.returncode == 1
         assert "Missing required OCI variables" in result.stdout
 
     def test_entrypoint_timeout_handling(self, temp_script_dir):
         """Test timeout handling in entrypoint scripts."""
         script_path = os.path.join(temp_script_dir, 'timeout_test.sh')
-        
+
         script_content = '''#!/bin/bash
 wait_for_service() {
     local service=$1
@@ -313,13 +312,13 @@ wait_for_service "test-service" 5
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         result = subprocess.run(
             ['bash', script_path],
             capture_output=True,
             text=True
         )
-        
+
         assert result.returncode == 0
         assert "test-service is ready" in result.stdout
         assert "Waited" in result.stdout
@@ -327,7 +326,7 @@ wait_for_service "test-service" 5
     def test_entrypoint_error_propagation(self, temp_script_dir):
         """Test error propagation in entrypoint scripts."""
         script_path = os.path.join(temp_script_dir, 'error_test.sh')
-        
+
         script_content = '''#!/bin/bash
 set -e  # Exit on error
 
@@ -348,20 +347,20 @@ start_service || handle_error $?
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         result = subprocess.run(
             ['bash', script_path],
             capture_output=True,
             text=True
         )
-        
+
         assert result.returncode == 1
         assert "Error occurred with exit code: 1" in result.stdout
 
     def test_entrypoint_environment_propagation(self, temp_script_dir):
         """Test environment variable propagation."""
         script_path = os.path.join(temp_script_dir, 'env_test.sh')
-        
+
         script_content = '''#!/bin/bash
 # Export variables for child processes
 export OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
@@ -376,7 +375,7 @@ env | grep -E "(OLLAMA|CODA)" | sort
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         result = subprocess.run(
             ['bash', script_path],
             capture_output=True,
@@ -386,7 +385,7 @@ env | grep -E "(OLLAMA|CODA)" | sort
                 'CODA_LOG_LEVEL': 'DEBUG'
             }
         )
-        
+
         assert result.returncode == 0
         assert "CODA_LOG_LEVEL=DEBUG" in result.stdout
         assert "OLLAMA_HOST=" in result.stdout
@@ -394,7 +393,7 @@ env | grep -E "(OLLAMA|CODA)" | sort
     def test_entrypoint_graceful_shutdown(self, temp_script_dir):
         """Test graceful shutdown sequence."""
         script_path = os.path.join(temp_script_dir, 'shutdown_test.sh')
-        
+
         script_content = '''#!/bin/bash
 SHUTDOWN_GRACE_PERIOD=5
 
@@ -427,13 +426,13 @@ graceful_shutdown
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         result = subprocess.run(
             ['bash', script_path],
             capture_output=True,
             text=True
         )
-        
+
         assert result.returncode == 0
         assert "graceful shutdown" in result.stdout
         assert "All services stopped gracefully" in result.stdout
@@ -446,7 +445,7 @@ graceful_shutdown
     def test_entrypoint_model_variations(self, temp_script_dir, model_name, expected):
         """Test entrypoint with different model configurations."""
         script_path = os.path.join(temp_script_dir, 'model_test.sh')
-        
+
         script_content = '''#!/bin/bash
 MODEL="${OLLAMA_MODEL:-}"
 
@@ -459,7 +458,7 @@ fi
         with open(script_path, 'w') as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        
+
         env = {'OLLAMA_MODEL': model_name} if model_name else {}
         result = subprocess.run(
             ['bash', script_path],
@@ -467,5 +466,5 @@ fi
             text=True,
             env=env
         )
-        
+
         assert expected in result.stdout

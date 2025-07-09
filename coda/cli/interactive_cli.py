@@ -492,20 +492,20 @@ class InteractiveCLI(CommandHandler):
         """Apply theme change and update all necessary components."""
         from ..configuration import save_config
         from ..themes import get_theme_manager, get_themed_console
-        
+
         theme_manager = get_theme_manager()
         theme_manager.set_theme(theme_name)
-        
+
         if self.config:
             self.config.ui["theme"] = theme_name
             save_config()
-        
+
         self.console = get_themed_console()
         self.style = self._create_style()
-        
+
         if hasattr(self, "session") and self.session:
             self.session.style = self.style
-        
+
         self.console.print(f"[green]✓[/] Theme changed to '[cyan]{theme_name}[/]'")
         if self.config:
             self.console.print("[dim]Theme preference saved to configuration[/]")
@@ -513,7 +513,7 @@ class InteractiveCLI(CommandHandler):
     def _list_available_themes(self) -> None:
         """List all available themes with current selection indicator."""
         from ..themes import THEMES, get_theme_manager
-        
+
         theme_manager = get_theme_manager()
         self.console.print("\n[bold]Available themes:[/]")
         for theme_name, theme in THEMES.items():
@@ -525,7 +525,7 @@ class InteractiveCLI(CommandHandler):
     def _show_current_theme(self) -> None:
         """Display the current theme and its description."""
         from ..themes import get_theme_manager
-        
+
         theme_manager = get_theme_manager()
         self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
         self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
