@@ -22,6 +22,7 @@ class TestChatPage:
         return AppTest.from_file(app_path)
 
     @pytest.mark.unit
+    @pytest.mark.slow  # Takes ~1.4s due to Streamlit app loading
     def test_chat_page_loads(self, app):
         """Test that chat page loads without errors."""
         try:

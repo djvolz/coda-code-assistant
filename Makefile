@@ -15,6 +15,8 @@ help:
 	@echo "make test-smoke    - Run critical path smoke tests"
 	@echo "make test-changes  - Run tests for changed files only"
 	@echo "make test-parallel - Run fast unit tests in parallel"
+	@echo "make test-parallel-all - Run all safe parallel tests"
+	@echo "make test-perf     - Run tests with performance tracking"
 	@echo "make test-new      - Run all new tests added for container automation"
 	@echo "make test-cli-input - Run CLI input handling tests"
 	@echo "make test-completion - Run CLI completion tests"
@@ -58,11 +60,19 @@ test-changes:
 
 # Run tests in parallel (requires pytest-xdist)
 test-parallel:
-	uv run pytest tests/ -v -m "unit and fast" -n auto --maxfail=5
+	uv run pytest -c pytest-parallel.ini tests/ -m "unit and fast"
+
+# Run all safe parallel tests
+test-parallel-all:
+	uv run pytest -c pytest-parallel.ini tests/ -m "not integration and not slow and not web"
 
 # Run smoke tests
 test-smoke:
 	uv run pytest tests/ -v -m smoke --maxfail=1
+
+# Run tests with performance tracking
+test-perf:
+	uv run python scripts/track_test_performance.py tests/ -m "unit and fast" --save-history
 
 # Run all tests including integration
 test-all:

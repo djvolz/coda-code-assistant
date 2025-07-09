@@ -47,6 +47,7 @@ class TestVersioning:
         assert version.startswith(f"{now.year}.{now.month}.{now.day}.")
 
     @pytest.mark.cli
+    @pytest.mark.slow  # Takes ~1.1s due to subprocess
     def test_cli_version(self):
         """Test that CLI shows version correctly."""
         import subprocess

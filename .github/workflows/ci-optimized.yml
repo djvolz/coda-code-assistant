@@ -140,6 +140,14 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
       
+      - name: Cache test results
+        uses: actions/cache@v3
+        with:
+          path: .pytest_cache
+          key: pytest-cache-${{ runner.os }}-${{ hashFiles('tests/**/*.py') }}
+          restore-keys: |
+            pytest-cache-${{ runner.os }}-
+      
       - name: Install dependencies
         run: uv sync --all-extras
       
