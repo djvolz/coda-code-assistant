@@ -103,6 +103,8 @@ markers = [
     "slow: Slow running tests",
     "requires_browser: Tests that require Selenium WebDriver",
     "asyncio: Asynchronous tests",
+    "llm: LLM tests (requires real language model)",
+    "ollama: Ollama-specific tests (requires Ollama service)",
 ]
 asyncio_mode = "auto"
 

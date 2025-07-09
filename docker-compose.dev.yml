@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  coda:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    volumes:
+      # Mount source code for live development
+      - .:/app:cached
+      # Mount uv cache for faster dependency installation
+      - uv-cache:/root/.cache/uv
+      # Override config with dev-specific settings
+      - ./docker/config/dev-config.toml:/home/coda/.config/coda/config.toml:ro
+    environment:
+      - CODA_LOG_LEVEL=DEBUG
+      - CODA_ENV=development
+      - OLLAMA_PULL_DEFAULT=false  # Don't auto-pull in dev mode
+    command: ["bash", "-c", "tail -f /dev/null"]  # Keep container running for development
+    depends_on:
+      - postgres
+      - redis
+
+  # Development Ollama with smaller models
+  ollama-dev:
+    image: ollama/ollama:latest
+    container_name: ollama-dev
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-dev-models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_MODELS=/root/.ollama/models
+    networks:
+      - coda-network
+    restart: unless-stopped
+
+volumes:
+  uv-cache:
+    driver: local
+  ollama-dev-models:
+    driver: local

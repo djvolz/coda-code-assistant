@@ -1,0 +1,55 @@
+name: Fast Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Install dependencies
+      run: uv sync --all-extras
+
+    - name: Run unit tests (mock providers)
+      run: |
+        uv run pytest tests/ -v \
+          -m "unit or not integration" \
+          --tb=short \
+          --maxfail=5
+
+    - name: Run CLI input tests
+      run: |
+        uv run pytest tests/cli/test_interactive_cli_input.py -v --tb=short
+
+    - name: Run CLI completion tests
+      run: |
+        uv run pytest tests/cli/test_cli_completion.py -v --tb=short
+
+    - name: Run CLI interrupt tests
+      run: |
+        uv run pytest tests/cli/test_cli_interrupt.py -v --tb=short
+
+    - name: Run lint checks
+      run: |
+        uv run ruff check .
+
+    - name: Test CLI basic functionality
+      run: |
+        # Test with mock provider (no external dependencies)
+        echo "Hello" | uv run coda --provider mock --model mock-smart

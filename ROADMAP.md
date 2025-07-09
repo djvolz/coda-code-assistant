@@ -797,6 +797,15 @@ None currently - all bugs have been resolved!
   - [ ] OpenTelemetry Collector configuration
   - [ ] Development environment documentation
 
+- [ ] **Grafana Docker Container Setup**
+  - [ ] Deploy Grafana with OpenTelemetry data source
+  - [ ] Pre-configured dashboards for Coda metrics
+  - [ ] Integration with Coda's OTLP exporter
+  - [ ] Docker Compose configuration for observability stack
+  - [ ] Prometheus backend for metrics storage
+  - [ ] Jaeger/Tempo integration for distributed tracing
+  - [ ] Custom Coda performance dashboards
+
 #### 11.1.4 Instrumentation Libraries
 
 - [ ] **Auto-Instrumentation**
@@ -866,6 +875,11 @@ None currently - all bugs have been resolved!
   - [ ] CPU profiling correlation
   - [ ] Goroutine/thread analysis
   - [ ] Heap dump integration
+  - [ ] Pyroscope integration for performance profiling
+  - [ ] Debug mode enhancements
+  - [ ] Memory usage tracking
+  - [ ] Bottleneck identification
+  - [ ] Performance analysis tools integration
 
 ### 11.3 Observability Testing ✅ COMPLETED (July 8, 2025)
 
@@ -904,13 +918,23 @@ None currently - all bugs have been resolved!
   - [ ] Docker compose setup for development
   - [ ] Multi-architecture container builds
   - [ ] Container optimization for size and performance
-  - [ ] **Observability Container with Grafana**
+  - [ ] **Observability Stack Integration**
+    - [ ] Docker Compose profile for full observability stack
+    - [ ] Grafana + Prometheus + Jaeger containers
+    - [ ] Pre-configured data sources and dashboards
+    - [ ] Integration with Phase 11 OpenTelemetry features
+    - [ ] Development and production configurations
     - [ ] Pre-configured Grafana instance for monitoring
     - [ ] Dashboards for metrics, traces, errors, and health
     - [ ] Prometheus or OpenTelemetry collector integration
-    - [ ] Docker compose profile for observability stack
     - [ ] Automated datasource configuration
     - [ ] Sample alerts and monitoring rules
+    - [ ] **Pyroscope Profiling Container**
+      - [ ] Deploy Pyroscope for continuous performance profiling
+      - [ ] Integration with Coda application for flame graphs
+      - [ ] Memory and CPU profiling dashboards
+      - [ ] Automatic profiling data retention policies
+      - [ ] Docker Compose profile for profiling stack
 
 ### 12.2 Development Workflow
 
