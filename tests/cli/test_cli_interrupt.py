@@ -126,7 +126,7 @@ class TestInterruptHandling:
 
     def test_interrupt_during_input(self, cli):
         """Test interrupt handling during get_input."""
-        with patch('coda.cli.interactive_cli.PromptSession') as mock_session:
+        with patch('coda.cli.interactive_cli.PromptSession'):
             # Set interrupt flag before input
             cli.interrupted = True
 
