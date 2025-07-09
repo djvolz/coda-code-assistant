@@ -51,20 +51,24 @@ This folder contains the comprehensive plan and resources for rewriting the Coda
 - **Intelligent test selection** based on changed files
 - **Fail-fast behavior** to save resources
 - **Clear module-to-test mapping** for maintenance
+- **Automated coverage analysis** with priority recommendations
+- **Performance tracking** for test execution times
 
 ## 🔧 Related Scripts
 
-The test selection script is located at:
+The test infrastructure includes these scripts:
 - `/scripts/select_tests.py` - Intelligent test selection based on changes
+- `/scripts/analyze_coverage.py` - Coverage gap analysis and reporting
+- `/scripts/track_test_performance.py` - Test performance tracking
 
 ## 📅 Implementation Timeline
 
-| Week | Focus | Deliverable |
-|------|-------|-------------|
-| 1 | Foundation | Test mapping and organization |
-| 2 | CI Migration | New optimized workflows |
-| 3 | Performance | Parallel execution and caching |
-| 4 | Refinement | Metrics and documentation |
+| Week | Focus | Deliverable | Status |
+|------|-------|-------------|--------|
+| 1 | Foundation | Test mapping and organization | ✅ Complete |
+| 2 | CI Migration | New optimized workflows | ✅ Complete |
+| 3 | Performance | Parallel execution and caching | ✅ Complete |
+| 4 | Coverage Analysis | Metrics and documentation | ✅ Complete |
 
 ## 📈 Success Metrics
 
@@ -80,3 +84,9 @@ When updating the test infrastructure:
 2. Follow the test categorization guidelines
 3. Ensure new tests have appropriate markers
 4. Update this documentation as needed
+
+## 📚 Additional Resources
+
+- [Test Coverage Requirements](../../test-coverage-requirements.md) - Coverage goals and analysis
+- [GitHub Actions Optimized CI](.github/workflows/ci-optimized.yml) - Production CI workflow
+- [pytest Configuration](../../../pyproject.toml) - Test markers and settings

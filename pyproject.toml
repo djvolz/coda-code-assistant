@@ -128,23 +128,45 @@ asyncio_mode = "auto"
 [tool.coverage.run]
 source = ["coda"]
 branch = true
+parallel = true
 omit = [
     "*/tests/*",
     "*/__pycache__/*",
     "*/site-packages/*",
+    "*/migrations/*",
+    "*/conftest.py",
+    "*/setup.py",
+    "*/venv/*",
+    "*/.venv/*",
 ]
 
 [tool.coverage.report]
 precision = 2
+show_missing = true
+skip_covered = false
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
+    "if self\\.debug",
     "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "@abstractmethod",
+    "@abc.abstractmethod",
+    "except ImportError:",
+    "except KeyError:",
+    "except AttributeError:",
+    "if sys.platform",
+    "if platform.system",
 ]
+
+[tool.coverage.html]
+directory = "htmlcov"
+title = "Coda Code Assistant Coverage Report"
+
+[tool.coverage.json]
+pretty_print = true
 
 [tool.black]
 line-length = 100

@@ -60,11 +60,11 @@ test-changes:
 
 # Run tests in parallel (requires pytest-xdist)
 test-parallel:
-	uv run pytest -c pytest-parallel.ini tests/ -m "unit and fast"
+	uv run pytest tests/ -m "unit and fast" -n auto --dist loadscope --maxfail=5 -v
 
 # Run all safe parallel tests
 test-parallel-all:
-	uv run pytest -c pytest-parallel.ini tests/ -m "not integration and not slow and not web"
+	uv run pytest tests/ -m "not integration and not slow and not web" -n auto --dist loadscope
 
 # Run smoke tests
 test-smoke:

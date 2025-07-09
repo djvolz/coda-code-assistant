@@ -46,8 +46,11 @@ venv.bak/
 .pytest_cache/
 nosetests.xml
 coverage.xml
+coverage.json
 *.cover
 .hypothesis/
+htmlcov/
+coverage_gaps/
 
 # Type checking
 .mypy_cache/

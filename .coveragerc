@@ -1,0 +1,80 @@
+[run]
+source = coda
+branch = True
+parallel = True
+omit = 
+    */tests/*
+    */__pycache__/*
+    */site-packages/*
+    */migrations/*
+    */conftest.py
+    */setup.py
+    */venv/*
+    */.venv/*
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+exclude_lines =
+    # Standard pragmas
+    pragma: no cover
+    
+    # Debug-only code
+    def __repr__
+    if self\.debug
+    
+    # Defensive programming
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Non-runnable code
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+    
+    # Error handling
+    except ImportError:
+    except KeyError:
+    except AttributeError:
+    
+    # Platform-specific code
+    if sys.platform
+    if platform.system
+
+[coverage:html]
+directory = htmlcov
+title = Coda Code Assistant Coverage Report
+show_contexts = True
+
+[coverage:json]
+pretty_print = True
+show_contexts = True
+
+[coverage:thresholds]
+# Coverage thresholds by module type
+# These are goals, not hard requirements during development
+
+# Critical modules - User-facing and core functionality
+cli = 80
+providers = 80
+agents = 80
+session = 80
+
+# Important modules - Supporting features
+tools = 70
+embeddings = 70
+configuration = 70
+
+# Medium priority - Additional features
+observability = 60
+intelligence = 60
+semantic_search = 60
+
+# Lower priority - UI and specialized features
+web = 50
+vector_stores = 50
+
+# Overall project threshold
+total = 70

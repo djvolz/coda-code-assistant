@@ -161,16 +161,37 @@ jobs:
             TEST_CMD="pytest -m 'unit and fast' --maxfail=1"
           fi
           
+          # Add coverage options
+          TEST_CMD="$TEST_CMD --cov=coda --cov-report=term-missing --cov-report=xml --cov-report=html --cov-report=json"
+          
           echo "::notice::Running: $TEST_CMD"
           eval "$TEST_CMD"
       
-      - name: Upload coverage
+      - name: Generate coverage report
+        if: always()
+        run: |
+          echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          uv run coverage report --skip-covered --show-missing | tail -20 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
           flags: unit-tests
           fail_ci_if_error: false
+      
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage.json
+            htmlcov/
   
   # Stage 5: Parallel specialized tests (only if needed)
   specialized-tests:
@@ -259,6 +280,40 @@ jobs:
             echo "::warning::Integration tests skipped - no credentials"
             # Run mock provider integration tests instead
             uv run pytest tests/integration/ -k "mock" --maxfail=3 -v
+          fi
+  
+  # Coverage analysis job
+  coverage-check:
+    name: Coverage Analysis
+    needs: [unit-tests]
+    if: always() && needs.unit-tests.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage-report
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      
+      - name: Analyze coverage
+        run: |
+          uv run python scripts/analyze_coverage.py --min-coverage 30
+          
+          # Add coverage badge to summary
+          COVERAGE=$(uv run python -c "import json; print(f\"{json.load(open('coverage.json'))['totals']['percent_covered']:.1f}\")")
+          echo "## Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+          
+          # Color code based on coverage
+          if (( $(echo "$COVERAGE < 50" | bc -l) )); then
+            echo "🔴 Coverage is below 50%" >> $GITHUB_STEP_SUMMARY
+          elif (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "🟡 Coverage is between 50-70%" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🟢 Coverage is above 70%" >> $GITHUB_STEP_SUMMARY
           fi
   
   # Summary job for branch protection
