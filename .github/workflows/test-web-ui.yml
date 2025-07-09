@@ -24,6 +24,10 @@ on:
           - chrome
           - firefox
 
+permissions:
+  contents: read
+  pull-requests: write  # For test-reporter
+
 jobs:
   unit-tests:
     name: Web UI Unit Tests
