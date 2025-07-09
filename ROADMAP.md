@@ -583,6 +583,14 @@ None currently - all bugs have been resolved!
   - [ ] Documentation and comment extraction
   - [ ] Session history semantic search
   - [ ] Multi-modal content support (code + docs)
+  - [ ] **Intelligent Chunking Strategies**
+    - [ ] Hybrid chunking approach with configurable size/overlap
+    - [ ] Tree-sitter integration for code-aware chunking
+    - [ ] Semantic boundary detection (functions, classes, blocks)
+    - [ ] Sub-function chunking for large methods
+    - [ ] Configurable chunk size (300-400 tokens) with overlap (50-100 tokens)
+    - [ ] Support for different chunking strategies per file type
+    - [ ] Preserve context across chunk boundaries
 
 - [ ] **Search Interface**
   - [ ] `/search semantic <query>` - Semantic similarity search

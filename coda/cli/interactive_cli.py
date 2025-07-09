@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
+from pathlib import Path
 from threading import Event
 
 from prompt_toolkit import PromptSession
@@ -169,6 +170,9 @@ class InteractiveCLI(CommandHandler):
         # Track terminal dimensions
         self._last_terminal_width = None
 
+        # Initialize semantic search manager (singleton)
+        self._search_manager = None
+
         # Initialize session with all features
         self._init_session()
 
@@ -193,6 +197,7 @@ class InteractiveCLI(CommandHandler):
         # Add handlers for commands not yet implemented
         placeholder_handlers = {
             "tools": self._cmd_tools,
+            "search": self._cmd_search,
         }
         handler_map.update(placeholder_handlers)
 
@@ -618,6 +623,216 @@ class InteractiveCLI(CommandHandler):
         # Use the shared command handler
         result = self.handle_tools_command(args)
         return result
+
+    async def _cmd_search(self, args: str):
+        """Semantic search commands."""
+        parts = args.split(maxsplit=1)
+        subcommand = parts[0] if parts else ""
+        query = parts[1] if len(parts) > 1 else ""
+
+        if not subcommand:
+            from rich.table import Table
+            table = Table(title="[bold cyan]Semantic Search Commands[/bold cyan]", box=None)
+            table.add_column("Command", style="white", no_wrap=True)
+            table.add_column("Description", style="dim")
+
+            table.add_row("/search semantic <query>", "Search indexed content using semantic similarity")
+            table.add_row("/search code <query>", "Search code files with language-aware formatting")
+            table.add_row("/search index [path]", "Index files or directories for search")
+            table.add_row("/search status", "Show search index statistics")
+            table.add_row("/search reset", "Reset search manager and clear index")
+
+            self.console.print()
+            self.console.print(table)
+            self.console.print("\n[dim]Tip: Try '/search index demo' to get started[/dim]")
+            return
+
+        # Import semantic search components
+        try:
+            from coda.embeddings.mock import MockEmbeddingProvider
+            from coda.semantic_search import SemanticSearchManager
+            from coda.semantic_search_coda import create_semantic_search_manager
+
+            from .search_display import (
+                IndexingProgress,
+                SearchResultDisplay,
+                create_search_stats_display,
+            )
+        except ImportError as e:
+            self.console.print(f"[red]Error loading semantic search: {e}[/red]")
+            self.console.print("[yellow]Make sure to install: uv sync --extra embeddings[/yellow]")
+            return
+
+        # Initialize display helpers
+        result_display = SearchResultDisplay(self.console)
+        indexing_progress = IndexingProgress(self.console)
+
+        # Initialize search manager once (singleton pattern) or reinitialize if needed
+        force_reinit = False
+        if self._search_manager is None or force_reinit:
+            try:
+                # Try to use configured provider first
+                self._search_manager = create_semantic_search_manager()
+                # Get provider info
+                provider_info = self._search_manager.embedding_provider.get_model_info()
+                self.console.print(f"[green]Using {provider_info.get('provider', 'configured')} embeddings[/green]")
+            except Exception as e:
+                # Fall back to mock provider
+                self.console.print(f"[yellow]Failed to initialize configured provider: {str(e)}[/yellow]")
+                self.console.print("[yellow]Using mock embeddings for demo purposes[/yellow]")
+                provider = MockEmbeddingProvider(dimension=768)
+                self._search_manager = SemanticSearchManager(embedding_provider=provider)
+
+        manager = self._search_manager
+
+        if subcommand == "semantic":
+            if not query:
+                self.console.print("[red]Please provide a search query[/red]")
+                return
+
+            try:
+                # Show searching indicator
+                with self.console.status(f"[cyan]Searching for: '{query}'...[/cyan]"):
+                    results = await manager.search(query, k=5)
+
+                # Display results with enhanced formatting
+                result_display.display_results(results, query)
+
+            except Exception as e:
+                import traceback
+                self.console.print(f"[red]Search error: {e}[/red]")
+                self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+
+        elif subcommand == "code":
+            if not query:
+                self.console.print("[red]Please provide a search query[/red]")
+                return
+
+            try:
+                # Show searching indicator
+                with self.console.status(f"[cyan]Searching code for: '{query}'...[/cyan]"):
+                    # Add code-specific metadata to results
+                    results = await manager.search(query, k=5)
+
+                    # Enhance results with code metadata (temporary until proper implementation)
+                    for result in results:
+                        if not result.metadata:
+                            result.metadata = {}
+                        result.metadata["type"] = "code"
+                        # Try to detect language from content
+                        if "python" in result.text.lower() or "def " in result.text:
+                            result.metadata["language"] = "python"
+                        elif "javascript" in result.text.lower() or "function " in result.text:
+                            result.metadata["language"] = "javascript"
+
+                # Display results with code formatting
+                result_display.display_results(results, query, show_metadata=True)
+
+            except Exception as e:
+                import traceback
+                self.console.print(f"[red]Code search error: {e}[/red]")
+                self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+
+        elif subcommand == "index":
+            if query == "demo":
+                # Index some demo content with progress
+                demo_docs = [
+                    "Python is great for data science and machine learning",
+                    "JavaScript is the language of the web and runs in browsers",
+                    "Rust provides memory safety without garbage collection",
+                    "Go is designed for concurrent programming and microservices",
+                    "TypeScript adds static typing to JavaScript",
+                    "Docker containers help with application deployment",
+                    "Kubernetes orchestrates containerized applications",
+                    "Git is essential for version control",
+                    "React is a popular frontend framework",
+                    "FastAPI is great for building Python APIs"
+                ]
+
+                try:
+                    with indexing_progress.start_indexing(len(demo_docs)) as progress:
+                        indexed_ids = []
+                        for _i, doc in enumerate(demo_docs):
+                            # Index one at a time to show progress
+                            doc_id = await manager.index_content([doc])
+                            indexed_ids.extend(doc_id)
+                            progress.update(1, f"Indexing: {doc[:50]}...")
+
+                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} demo documents[/green]")
+                except Exception as e:
+                    self.console.print(f"[red]Indexing error: {e}[/red]")
+            else:
+                # Index files in the specified path
+                path = Path(query or ".")
+
+                try:
+                    # Get list of files to index
+                    if path.is_file():
+                        # Single file
+                        files = [path]
+                        self.console.print(f"[cyan]Indexing file: {path}[/cyan]")
+                    else:
+                        # Directory - find all code files
+                        import glob
+
+                        # Common code file extensions
+                        extensions = [
+                            "*.py", "*.js", "*.ts", "*.jsx", "*.tsx",
+                            "*.java", "*.cpp", "*.c", "*.h", "*.hpp",
+                            "*.go", "*.rs", "*.rb", "*.php", "*.swift",
+                            "*.kt", "*.scala", "*.r", "*.m", "*.cs",
+                            "*.sh", "*.bash", "*.zsh", "*.fish",
+                            "*.md", "*.txt", "*.json", "*.yaml", "*.yml", "*.toml"
+                        ]
+
+                        files = []
+                        for ext in extensions:
+                            pattern = str(path / "**" / ext)
+                            files.extend(Path(p) for p in glob.glob(pattern, recursive=True))
+
+                        # Remove duplicates and sort
+                        files = sorted(set(files))
+
+                        if not files:
+                            self.console.print(f"[yellow]No code files found in {path}[/yellow]")
+                            return
+
+                        self.console.print(f"[cyan]Found {len(files)} files to index in {path}[/cyan]")
+
+                    # Index files with progress
+                    with indexing_progress.start_indexing(len(files)) as progress:
+                        indexed_ids = await manager.index_code_files(files)
+                        for _i, file in enumerate(files):
+                            progress.update(
+                                1,
+                                f"Indexed: {file.name}"
+                            )
+
+                    self.console.print(f"\n[green]✓ Successfully indexed {len(indexed_ids)} files[/green]")
+
+                    # Show some stats
+                    stats = await manager.get_stats()
+                    self.console.print(f"[dim]Total vectors in index: {stats['vector_count']}[/dim]")
+
+                except Exception as e:
+                    import traceback
+                    self.console.print(f"[red]Indexing error: {e}[/red]")
+                    self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+
+        elif subcommand == "status":
+            try:
+                stats = await manager.get_stats()
+                create_search_stats_display(stats, self.console)
+            except Exception as e:
+                self.console.print(f"[red]Error getting status: {e}[/red]")
+        
+        elif subcommand == "reset":
+            # Reset the search manager
+            self._search_manager = None
+            self.console.print("[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]")
+
+        else:
+            self.console.print(f"[red]Unknown search subcommand: {subcommand}[/red]")
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
