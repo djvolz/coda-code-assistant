@@ -63,6 +63,15 @@ performance = [
     "pytest-benchmark>=4.0.0",
     "locust>=2.0.0",
 ]
+embeddings = [
+    "numpy>=1.24.0",
+    "faiss-cpu>=1.7.4",
+    "sentence-transformers>=2.2.0",
+    "chromadb>=0.4.0",
+]
+oracle = [
+    "oracledb>=2.0.0",
+]
 
 [tool.uv]
 package = true
