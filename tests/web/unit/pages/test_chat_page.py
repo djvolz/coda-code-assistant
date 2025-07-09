@@ -39,7 +39,7 @@ class TestChatPage:
     @pytest.mark.unit
     def test_provider_selection(self, app):
         """Test provider selection in chat page."""
-        with patch('coda.providers.registry.ProviderFactory') as mock_factory:
+        with patch("coda.providers.registry.ProviderFactory") as mock_factory:
             mock_factory.list_providers.return_value = ["openai", "anthropic", "test"]
 
             app.run()
@@ -74,7 +74,7 @@ class TestChatPage:
             pytest.skip("App test timed out")
 
     @pytest.mark.unit
-    @patch('coda.providers.registry.ProviderFactory')
+    @patch("coda.providers.registry.ProviderFactory")
     def test_message_submission(self, mock_factory, app):
         """Test submitting a chat message."""
         try:
@@ -100,7 +100,7 @@ class TestChatPage:
         # Initialize with messages
         app.session_state["messages"] = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there!"}
+            {"role": "assistant", "content": "Hi there!"},
         ]
 
         app.run()
@@ -114,9 +114,7 @@ class TestChatPage:
         """Test clearing chat history."""
         try:
             # Initialize with messages
-            app.session_state["messages"] = [
-                {"role": "user", "content": "Test message"}
-            ]
+            app.session_state["messages"] = [{"role": "user", "content": "Test message"}]
 
             app.run()
             app.radio[0].set_value("💬 Chat").run()
@@ -153,7 +151,7 @@ class TestChatPage:
     @pytest.mark.unit
     def test_model_selection(self, app):
         """Test model selection within chat."""
-        with patch('coda.providers.registry.ProviderFactory') as mock_factory:
+        with patch("coda.providers.registry.ProviderFactory") as mock_factory:
             mock_factory.list_providers.return_value = ["openai"]
 
             app.run()
@@ -166,7 +164,7 @@ class TestChatPage:
     @pytest.mark.unit
     def test_error_handling(self, app):
         """Test error handling in chat."""
-        with patch('coda.providers.registry.ProviderFactory') as mock_factory:
+        with patch("coda.providers.registry.ProviderFactory") as mock_factory:
             mock_factory.create.side_effect = Exception("Provider error")
 
             app.run()

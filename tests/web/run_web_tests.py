@@ -11,6 +11,7 @@ def check_dependencies():
     try:
         import pytest
         import selenium
+
         return True
     except ImportError:
         return False
@@ -20,8 +21,7 @@ def install_test_dependencies():
     """Install web testing dependencies."""
     print("📦 Installing web testing dependencies...")
     result = subprocess.run(
-        ["uv", "sync", "--extra", "test-web"],
-        cwd=Path(__file__).parent.parent.parent
+        ["uv", "sync", "--extra", "test-web"], cwd=Path(__file__).parent.parent.parent
     )
     return result.returncode == 0
 
@@ -29,11 +29,10 @@ def install_test_dependencies():
 def run_backend_tests():
     """Run backend integration tests (no browser required)."""
     print("🧪 Running backend integration tests...")
-    result = subprocess.run([
-        "uv", "run", "pytest",
-        "tests/web/test_backend_integration.py",
-        "-v"
-    ], cwd=Path(__file__).parent.parent.parent)
+    result = subprocess.run(
+        ["uv", "run", "pytest", "tests/web/test_backend_integration.py", "-v"],
+        cwd=Path(__file__).parent.parent.parent,
+    )
     return result.returncode == 0
 
 
@@ -42,13 +41,18 @@ def run_browser_tests():
     print("🌐 Running browser-based tests...")
     print("⚠️  Note: These tests require Chrome or Firefox WebDriver")
 
-    result = subprocess.run([
-        "uv", "run", "pytest",
-        "tests/web/test_navigation.py",
-        "tests/web/test_functionality.py",
-        "-v",
-        "--tb=short"
-    ], cwd=Path(__file__).parent.parent.parent)
+    result = subprocess.run(
+        [
+            "uv",
+            "run",
+            "pytest",
+            "tests/web/test_navigation.py",
+            "tests/web/test_functionality.py",
+            "-v",
+            "--tb=short",
+        ],
+        cwd=Path(__file__).parent.parent.parent,
+    )
     return result.returncode == 0
 
 
@@ -62,7 +66,7 @@ def main():
         print("❌ Web testing dependencies not found")
         response = input("Install them now? (y/n): ").lower().strip()
 
-        if response in ['y', 'yes']:
+        if response in ["y", "yes"]:
             if not install_test_dependencies():
                 print("❌ Failed to install dependencies")
                 sys.exit(1)
@@ -78,7 +82,7 @@ def main():
     total_tests = 2
 
     # 1. Backend tests (fast, no browser required)
-    print("\n" + "="*40)
+    print("\n" + "=" * 40)
     if run_backend_tests():
         print("✅ Backend tests passed")
         tests_passed += 1
@@ -86,7 +90,7 @@ def main():
         print("❌ Backend tests failed")
 
     # 2. Browser tests (slower, require WebDriver)
-    print("\n" + "="*40)
+    print("\n" + "=" * 40)
     try:
         if run_browser_tests():
             print("✅ Browser tests passed")
@@ -98,7 +102,7 @@ def main():
         print("💡 Make sure Chrome or Firefox WebDriver is installed")
 
     # Summary
-    print("\n" + "="*40)
+    print("\n" + "=" * 40)
     print(f"📊 Test Results: {tests_passed}/{total_tests} test suites passed")
 
     if tests_passed == total_tests:

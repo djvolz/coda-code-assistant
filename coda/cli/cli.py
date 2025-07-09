@@ -35,6 +35,7 @@ def cli(ctx):
 def chat(provider, model, debug, one_shot, basic, mode, no_save, resume):
     """Start an interactive chat session."""
     from .main import main
+
     main(provider, model, debug, one_shot, basic, mode, no_save, resume)
 
 

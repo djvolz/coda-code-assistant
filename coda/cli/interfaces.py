@@ -51,4 +51,3 @@ class ProviderProtocol(Protocol):
     def list_models(self) -> list[Any]:
         """List available models."""
         ...
-

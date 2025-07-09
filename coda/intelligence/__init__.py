@@ -9,8 +9,8 @@ for the coda project, including:
 - Dependency graph generation
 """
 
+from .dependency_graph import DependencyGraph
 from .repo_map import RepoMap
 from .tree_sitter_analyzer import TreeSitterAnalyzer
-from .dependency_graph import DependencyGraph
 
 __all__ = ["RepoMap", "TreeSitterAnalyzer", "DependencyGraph"]

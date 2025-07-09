@@ -26,7 +26,8 @@ class TestProviderIntegration:
 
         # Look for provider configuration elements
         provider_elements = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'Provider') or contains(text(), 'API') or contains(text(), 'Model')]"
+            By.XPATH,
+            "//*[contains(text(), 'Provider') or contains(text(), 'API') or contains(text(), 'Model')]",
         )
         assert len(provider_elements) > 0
 
@@ -44,7 +45,8 @@ class TestProviderIntegration:
 
         # Find API key inputs
         api_key_inputs = driver.find_elements(
-            By.XPATH, "//input[@type='password' or contains(@placeholder, 'API') or contains(@placeholder, 'key')]"
+            By.XPATH,
+            "//input[@type='password' or contains(@placeholder, 'API') or contains(@placeholder, 'key')]",
         )
 
         if api_key_inputs:
@@ -64,7 +66,8 @@ class TestProviderIntegration:
 
                 # Check for success message
                 success_elements = driver.find_elements(
-                    By.XPATH, "//*[contains(text(), 'Saved') or contains(text(), 'Success') or contains(@class, 'success')]"
+                    By.XPATH,
+                    "//*[contains(text(), 'Saved') or contains(text(), 'Success') or contains(@class, 'success')]",
                 )
                 assert len(success_elements) > 0 or True  # Graceful if no feedback
 
@@ -82,9 +85,7 @@ class TestProviderIntegration:
 
         # Find provider selector
         try:
-            provider_selectors = driver.find_elements(
-                By.XPATH, "//div[@data-testid='stSelectbox']"
-            )
+            provider_selectors = driver.find_elements(By.XPATH, "//div[@data-testid='stSelectbox']")
 
             if provider_selectors:
                 # Click on provider selector
@@ -93,9 +94,7 @@ class TestProviderIntegration:
                 time.sleep(1)
 
                 # Get available providers
-                provider_options = driver.find_elements(
-                    By.XPATH, "//li[@role='option']"
-                )
+                provider_options = driver.find_elements(By.XPATH, "//li[@role='option']")
 
                 # Should have at least 2 providers to switch between
                 assert len(provider_options) >= 2
@@ -114,9 +113,7 @@ class TestProviderIntegration:
                         time.sleep(1)
 
                         # Check that models changed
-                        model_options = driver.find_elements(
-                            By.XPATH, "//li[@role='option']"
-                        )
+                        model_options = driver.find_elements(By.XPATH, "//li[@role='option']")
                         assert len(model_options) > 0
 
         except TimeoutException:
@@ -156,16 +153,18 @@ class TestProviderIntegration:
 
             # Verify GPT models are available
             model_options = driver.find_elements(By.XPATH, "//li[@role='option']")
-            gpt_models = [opt for opt in model_options if 'gpt' in opt.text.lower()]
+            gpt_models = [opt for opt in model_options if "gpt" in opt.text.lower()]
             assert len(gpt_models) > 0
 
             # Close dropdown
-            driver.find_element(By.TAG_NAME, 'body').click()
+            driver.find_element(By.TAG_NAME, "body").click()
 
             time.sleep(1)
 
             # Now test Anthropic models
-            provider_selector = driver.find_element(By.XPATH, "//div[@data-testid='stSelectbox'][1]")
+            provider_selector = driver.find_element(
+                By.XPATH, "//div[@data-testid='stSelectbox'][1]"
+            )
             provider_selector.click()
 
             anthropic_option = WebDriverWait(driver, 5).until(
@@ -181,7 +180,7 @@ class TestProviderIntegration:
 
             # Verify Claude models are available
             model_options = driver.find_elements(By.XPATH, "//li[@role='option']")
-            claude_models = [opt for opt in model_options if 'claude' in opt.text.lower()]
+            claude_models = [opt for opt in model_options if "claude" in opt.text.lower()]
             assert len(claude_models) > 0
 
         except TimeoutException:
@@ -202,7 +201,8 @@ class TestProviderIntegration:
 
         # Look for test connection button
         test_buttons = driver.find_elements(
-            By.XPATH, "//button[contains(text(), 'Test') or contains(text(), 'Validate') or contains(text(), 'Check')]"
+            By.XPATH,
+            "//button[contains(text(), 'Test') or contains(text(), 'Validate') or contains(text(), 'Check')]",
         )
 
         if test_buttons:
@@ -212,7 +212,8 @@ class TestProviderIntegration:
 
             # Check for connection status
             status_elements = driver.find_elements(
-                By.XPATH, "//*[contains(text(), 'Connected') or contains(text(), 'Failed') or contains(text(), 'Success') or contains(text(), 'Error')]"
+                By.XPATH,
+                "//*[contains(text(), 'Connected') or contains(text(), 'Failed') or contains(text(), 'Success') or contains(text(), 'Error')]",
             )
             assert len(status_elements) > 0
 
@@ -263,7 +264,8 @@ class TestProviderIntegration:
 
         # Check for error message
         error_elements = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'Error') or contains(text(), 'Failed') or contains(text(), 'Invalid') or contains(@class, 'error')]"
+            By.XPATH,
+            "//*[contains(text(), 'Error') or contains(text(), 'Failed') or contains(text(), 'Invalid') or contains(@class, 'error')]",
         )
         assert len(error_elements) > 0
 
@@ -281,12 +283,13 @@ class TestProviderIntegration:
 
         # Look for provider status indicators
         status_elements = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'Provider') or contains(text(), 'Status') or contains(@class, 'provider-status')]"
+            By.XPATH,
+            "//*[contains(text(), 'Provider') or contains(text(), 'Status') or contains(@class, 'provider-status')]",
         )
         assert len(status_elements) > 0
 
         # Check for specific providers
-        provider_names = ['OpenAI', 'Anthropic', 'Ollama']
+        provider_names = ["OpenAI", "Anthropic", "Ollama"]
         found_providers = 0
 
         for provider in provider_names:
@@ -309,7 +312,8 @@ class TestProviderIntegration:
 
         # Look for pricing or model info
         info_elements = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'token') or contains(text(), 'cost') or contains(text(), 'price') or contains(@class, 'model-info')]"
+            By.XPATH,
+            "//*[contains(text(), 'token') or contains(text(), 'cost') or contains(text(), 'price') or contains(@class, 'model-info')]",
         )
 
         # This might not be implemented, so we don't assert
@@ -330,9 +334,7 @@ class TestProviderIntegration:
         chat_tab.click()
 
         # Check if provider selector is accessible
-        provider_selectors = driver.find_elements(
-            By.XPATH, "//div[@data-testid='stSelectbox']"
-        )
+        provider_selectors = driver.find_elements(By.XPATH, "//div[@data-testid='stSelectbox']")
         assert len(provider_selectors) > 0
 
     def test_provider_settings_persistence(self, web_server, driver, base_url):
@@ -349,7 +351,9 @@ class TestProviderIntegration:
 
         # Select a specific provider and model
         try:
-            provider_selector = driver.find_element(By.XPATH, "//div[@data-testid='stSelectbox'][1]")
+            provider_selector = driver.find_element(
+                By.XPATH, "//div[@data-testid='stSelectbox'][1]"
+            )
             provider_selector.click()
 
             # Select Anthropic (if available)
@@ -375,7 +379,8 @@ class TestProviderIntegration:
 
             # Check if Anthropic is still selected
             selected_provider = driver.find_element(
-                By.XPATH, "//div[@data-testid='stSelectbox'][1]//div[contains(@class, 'selected') or contains(@data-baseweb, 'select')]"
+                By.XPATH,
+                "//div[@data-testid='stSelectbox'][1]//div[contains(@class, 'selected') or contains(@data-baseweb, 'select')]",
             )
 
             assert "anthropic" in selected_provider.text.lower()

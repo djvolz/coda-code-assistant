@@ -158,4 +158,3 @@ class TestSelectorInteraction:
             result = await selector.select_option_interactive()
 
             assert result is None
-

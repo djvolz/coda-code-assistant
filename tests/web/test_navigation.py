@@ -45,7 +45,9 @@ class TestWebUINavigation:
             radio_elements = sidebar.find_elements(By.CSS_SELECTOR, "input[type='radio']")
 
             # Should have at least 4 radio buttons for our 4 tabs
-            assert len(radio_elements) >= 4, f"Expected at least 4 navigation options, found {len(radio_elements)}"
+            assert (
+                len(radio_elements) >= 4
+            ), f"Expected at least 4 navigation options, found {len(radio_elements)}"
 
         except (TimeoutException, NoSuchElementException) as e:
             pytest.fail(f"Navigation elements not found: {e}")
@@ -109,9 +111,13 @@ class TestWebUINavigation:
 
             # Check for dashboard-specific content
             dashboard_indicators = ["dashboard", "provider", "status", "usage"]
-            found_indicators = [indicator for indicator in dashboard_indicators if indicator in content_text]
+            found_indicators = [
+                indicator for indicator in dashboard_indicators if indicator in content_text
+            ]
 
-            assert len(found_indicators) >= 2, f"Dashboard content not found. Found indicators: {found_indicators}"
+            assert (
+                len(found_indicators) >= 2
+            ), f"Dashboard content not found. Found indicators: {found_indicators}"
 
         except TimeoutException:
             pytest.fail("Dashboard content did not load")
@@ -125,7 +131,9 @@ class TestWebUINavigation:
 
             # Look for error indicators
             error_elements = web_page.find_elements(By.CSS_SELECTOR, "[data-testid='stAlert']")
-            error_text = [elem.text.lower() for elem in error_elements if "error" in elem.text.lower()]
+            error_text = [
+                elem.text.lower() for elem in error_elements if "error" in elem.text.lower()
+            ]
 
             # Also check page text for common error patterns
             page_text = main_content.text.lower()
@@ -167,7 +175,9 @@ class TestWebUINavigation:
 
             # At least half the tabs should work
             min_working_tabs = max(1, len(radio_buttons) // 2)
-            assert successful_tabs >= min_working_tabs, f"Only {successful_tabs} of {len(radio_buttons)} tabs loaded successfully"
+            assert (
+                successful_tabs >= min_working_tabs
+            ), f"Only {successful_tabs} of {len(radio_buttons)} tabs loaded successfully"
 
         except (TimeoutException, NoSuchElementException) as e:
             pytest.fail(f"Tab accessibility test failed: {e}")

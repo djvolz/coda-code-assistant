@@ -20,6 +20,7 @@ sys.path.insert(0, project_root)
 def wait_for_server(url: str, timeout: int = 30) -> bool:
     """Wait for Streamlit server to be ready."""
     import requests
+
     start_time = time.time()
 
     while time.time() - start_time < timeout:
@@ -38,7 +39,7 @@ def wait_for_server(url: str, timeout: int = 30) -> bool:
 @pytest.fixture
 def mock_streamlit():
     """Mock Streamlit components for unit testing."""
-    with patch('streamlit') as mock_st:
+    with patch("streamlit") as mock_st:
         # Mock session state
         mock_st.session_state = {}
 
@@ -85,7 +86,7 @@ def mock_streamlit():
 @pytest.fixture
 def mock_provider_registry():
     """Mock provider registry for testing."""
-    with patch('coda.providers.registry.ProviderFactory') as mock_factory:
+    with patch("coda.providers.registry.ProviderFactory") as mock_factory:
         # Create mock provider
         mock_provider = Mock()
         mock_provider.name = "test-provider"
@@ -122,12 +123,12 @@ def app_test():
 @pytest.fixture
 def clean_session_state():
     """Clean session state before each test."""
-    if hasattr(st, 'session_state'):
+    if hasattr(st, "session_state"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
     yield
     # Cleanup after test
-    if hasattr(st, 'session_state'):
+    if hasattr(st, "session_state"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
 
@@ -145,13 +146,10 @@ def pytest_addoption(parser):
         "--browser",
         action="store",
         default="chrome",
-        help="Browser to use for testing: chrome or firefox"
+        help="Browser to use for testing: chrome or firefox",
     )
     parser.addoption(
-        "--headless",
-        action="store_true",
-        default=False,
-        help="Run browser in headless mode"
+        "--headless", action="store_true", default=False, help="Run browser in headless mode"
     )
 
 
@@ -195,16 +193,23 @@ def streamlit_server(unused_tcp_port):
     # Start Streamlit process
     process = subprocess.Popen(
         [
-            sys.executable, "-m", "streamlit", "run",
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
             os.path.join(project_root, "coda/web/app.py"),
-            "--server.port", str(port),
-            "--server.headless", "true",
-            "--server.enableCORS", "false",
-            "--server.enableXsrfProtection", "false"
+            "--server.port",
+            str(port),
+            "--server.headless",
+            "true",
+            "--server.enableCORS",
+            "false",
+            "--server.enableXsrfProtection",
+            "false",
         ],
         env=env,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
     )
 
     # Wait for server to start
@@ -228,7 +233,10 @@ def sample_chat_messages():
         {"role": "user", "content": "Hello, how are you?"},
         {"role": "assistant", "content": "I'm doing well, thank you! How can I help you today?"},
         {"role": "user", "content": "Can you explain what Streamlit is?"},
-        {"role": "assistant", "content": "Streamlit is an open-source Python library that makes it easy to create web applications for data science and machine learning projects."}
+        {
+            "role": "assistant",
+            "content": "Streamlit is an open-source Python library that makes it easy to create web applications for data science and machine learning projects.",
+        },
     ]
 
 
@@ -236,16 +244,8 @@ def sample_chat_messages():
 def sample_provider_config():
     """Sample provider configuration for testing."""
     return {
-        "openai": {
-            "api_key": "test-api-key",
-            "model": "gpt-4",
-            "temperature": 0.7
-        },
-        "anthropic": {
-            "api_key": "test-api-key",
-            "model": "claude-3",
-            "max_tokens": 1000
-        }
+        "openai": {"api_key": "test-api-key", "model": "gpt-4", "temperature": 0.7},
+        "anthropic": {"api_key": "test-api-key", "model": "claude-3", "max_tokens": 1000},
     }
 
 
@@ -264,6 +264,7 @@ def mock_file_upload():
 @pytest.fixture
 def benchmark_timer():
     """Simple timer for performance benchmarking."""
+
     class Timer:
         def __init__(self):
             self.times = []
@@ -285,12 +286,14 @@ def benchmark_timer():
 @pytest.fixture
 def authenticated_session(mock_streamlit):
     """Mock authenticated session state."""
-    mock_streamlit.session_state.update({
-        "authenticated": True,
-        "user_id": "test-user",
-        "current_provider": "openai",
-        "messages": []
-    })
+    mock_streamlit.session_state.update(
+        {
+            "authenticated": True,
+            "user_id": "test-user",
+            "current_provider": "openai",
+            "messages": [],
+        }
+    )
     return mock_streamlit
 
 

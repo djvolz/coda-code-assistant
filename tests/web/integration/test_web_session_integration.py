@@ -27,7 +27,8 @@ class TestSessionIntegration:
 
         # Check for session list or empty state
         session_elements = driver.find_elements(
-            By.XPATH, "//*[contains(@class, 'session') or contains(text(), 'No sessions') or contains(text(), 'Session')]"
+            By.XPATH,
+            "//*[contains(@class, 'session') or contains(text(), 'No sessions') or contains(text(), 'Session')]",
         )
         assert len(session_elements) > 0
 
@@ -69,7 +70,8 @@ class TestSessionIntegration:
 
             # Verify new session was created
             session_items = driver.find_elements(
-                By.XPATH, "//div[contains(@class, 'session-item') or contains(@data-testid, 'session')]"
+                By.XPATH,
+                "//div[contains(@class, 'session-item') or contains(@data-testid, 'session')]",
             )
             assert len(session_items) > 0
 
@@ -159,7 +161,8 @@ class TestSessionIntegration:
 
         # Click on a session to load it
         session_items = driver.find_elements(
-            By.XPATH, "//div[contains(@class, 'session-item') or contains(@data-testid, 'session')]//button"
+            By.XPATH,
+            "//div[contains(@class, 'session-item') or contains(@data-testid, 'session')]//button",
         )
 
         if session_items:
@@ -216,7 +219,8 @@ class TestSessionIntegration:
         # Find and click delete button
         try:
             delete_buttons = driver.find_elements(
-                By.XPATH, "//button[contains(text(), 'Delete') or contains(@title, 'Delete') or contains(@class, 'delete')]"
+                By.XPATH,
+                "//button[contains(text(), 'Delete') or contains(@title, 'Delete') or contains(@class, 'delete')]",
             )
 
             if delete_buttons:
@@ -234,7 +238,8 @@ class TestSessionIntegration:
 
                 # Verify session count decreased
                 final_sessions = driver.find_elements(
-                    By.XPATH, "//div[contains(@class, 'session-item') or contains(@data-testid, 'session')]"
+                    By.XPATH,
+                    "//div[contains(@class, 'session-item') or contains(@data-testid, 'session')]",
                 )
                 assert len(final_sessions) < initial_count
 
@@ -250,7 +255,7 @@ class TestSessionIntegration:
         test_messages = [
             "Python programming question",
             "JavaScript debugging help",
-            "Database query optimization"
+            "Database query optimization",
         ]
 
         for msg in test_messages:
@@ -288,7 +293,10 @@ class TestSessionIntegration:
         try:
             search_input = WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located(
-                    (By.XPATH, "//input[@type='text' and (contains(@placeholder, 'Search') or contains(@placeholder, 'Filter'))]")
+                    (
+                        By.XPATH,
+                        "//input[@type='text' and (contains(@placeholder, 'Search') or contains(@placeholder, 'Filter'))]",
+                    )
                 )
             )
 
@@ -301,7 +309,8 @@ class TestSessionIntegration:
 
             # Verify filtered results
             visible_sessions = driver.find_elements(
-                By.XPATH, "//div[contains(@class, 'session-item') and not(contains(@style, 'display: none'))]"
+                By.XPATH,
+                "//div[contains(@class, 'session-item') and not(contains(@style, 'display: none'))]",
             )
 
             # At least one session should match
@@ -340,7 +349,8 @@ class TestSessionIntegration:
         # Look for export button
         try:
             export_buttons = driver.find_elements(
-                By.XPATH, "//button[contains(text(), 'Export') or contains(@title, 'Export') or contains(@class, 'export')]"
+                By.XPATH,
+                "//button[contains(text(), 'Export') or contains(@title, 'Export') or contains(@class, 'export')]",
             )
 
             if export_buttons:
@@ -382,7 +392,8 @@ class TestSessionIntegration:
 
         # Check for metadata elements
         metadata_elements = driver.find_elements(
-            By.XPATH, "//*[contains(text(), 'Created') or contains(text(), 'Messages') or contains(text(), 'Provider')]"
+            By.XPATH,
+            "//*[contains(text(), 'Created') or contains(text(), 'Messages') or contains(text(), 'Provider')]",
         )
         assert len(metadata_elements) > 0
 
@@ -424,7 +435,8 @@ class TestSessionIntegration:
 
         # Look for pagination controls
         pagination_elements = driver.find_elements(
-            By.XPATH, "//button[contains(text(), 'Next') or contains(text(), 'Previous') or contains(@class, 'pagination')]"
+            By.XPATH,
+            "//button[contains(text(), 'Next') or contains(text(), 'Previous') or contains(@class, 'pagination')]",
         )
 
         if pagination_elements:
