@@ -6,7 +6,9 @@
 1. Follow the naming convention: 
    - Overview: Architecture.md
    - Modules: Architecture-{#}-{Module}.md (e.g., Architecture-1-CLI.md)
-2. Link all file references to GitHub: https://github.com/djvolz/coda-code-assistant/blob/main/{path}
+2. IMPORTANT: Link ALL file references to actual GitHub files: https://github.com/djvolz/coda-code-assistant/blob/main/{path}
+   - Example: [`coda/cli/main.py`](https://github.com/djvolz/coda-code-assistant/blob/main/coda/cli/main.py)
+   - For test directories: https://github.com/djvolz/coda-code-assistant/tree/main/{path}
 3. Hide specific line numbers in HTML comments - they drift quickly
 4. Focus on design decisions and architecture, not implementation details
 5. Remove instruction comments before publishing
