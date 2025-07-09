@@ -26,10 +26,16 @@ on:
       - 'tests/cli/*tool*'
       - '.github/workflows/test-agents.yml'
 
+# Cancel in-progress runs when a new push occurs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   agent-unit-tests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         python-version: ["3.11", "3.12"]
 

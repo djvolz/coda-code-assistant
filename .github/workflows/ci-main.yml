@@ -1,0 +1,249 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+
+permissions:
+  contents: read
+
+# Cancel in-progress runs when a new push occurs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # STAGE 1: Quick validation (fail fast)
+  quick-checks:
+    name: Quick Checks
+    runs-on: ubuntu-latest
+    outputs:
+      should-continue: ${{ steps.decision.outputs.continue }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install minimal dependencies
+      run: uv sync --no-extras
+    
+    - name: Run ruff lint
+      id: lint
+      run: |
+        echo "::group::Running ruff check"
+        uv run ruff check . || exit 1
+        echo "::endgroup::"
+        
+        echo "::group::Running ruff format check"
+        uv run ruff format --check . || exit 1
+        echo "::endgroup::"
+    
+    - name: Check imports
+      run: |
+        echo "::group::Checking for import errors"
+        uv run python -c "import coda; print('Core imports OK')"
+        echo "::endgroup::"
+    
+    - name: Decision to continue
+      id: decision
+      if: success()
+      run: echo "continue=true" >> $GITHUB_OUTPUT
+
+  # STAGE 2: Fast unit tests (no external dependencies)
+  fast-tests:
+    name: Fast Tests (Python ${{ matrix.python-version }})
+    needs: quick-checks
+    if: needs.quick-checks.outputs.should-continue == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run fast unit tests
+      run: |
+        uv run python -m pytest tests/ \
+          -v \
+          -m "unit and not slow and not integration" \
+          --tb=short \
+          --timeout=60 \
+          --cov=coda \
+          --cov-report=xml \
+          --cov-report=term-missing
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: fast-tests
+        name: fast-tests-${{ matrix.python-version }}
+
+  # STAGE 3: Parallel specialized tests
+  agent-tests:
+    name: Agent Tests
+    needs: fast-tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run agent unit tests
+      run: |
+        uv run python -m pytest tests/agents/ tests/tools/ \
+          -v \
+          -m "not integration" \
+          --tb=short \
+          --timeout=120
+
+  web-ui-tests:
+    name: Web UI Tests
+    needs: fast-tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run web UI unit tests
+      run: |
+        uv run python -m pytest tests/web/unit/ \
+          -v \
+          --tb=short \
+          --timeout=60
+
+  # STAGE 4: Integration tests (only if needed)
+  integration-tests:
+    name: Integration Tests
+    needs: [agent-tests, web-ui-tests]
+    if: |
+      github.event_name == 'push' && 
+      (github.ref == 'refs/heads/main' || 
+       contains(github.event.head_commit.message, '[integration]') ||
+       contains(github.event.head_commit.message, '[full]'))
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run integration tests
+      env:
+        OCI_COMPARTMENT_ID: ${{ secrets.OCI_COMPARTMENT_ID }}
+      run: |
+        if [ -n "$OCI_COMPARTMENT_ID" ]; then
+          uv run python -m pytest tests/ -v -m integration --tb=short
+        else
+          echo "::warning::Integration tests skipped - secrets not configured"
+        fi
+
+  # STAGE 5: Expensive operations (only after all tests pass)
+  docker-build:
+    name: Docker Build
+    needs: [fast-tests, agent-tests, web-ui-tests]
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: coda-code-assistant:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Summary job to ensure all required checks pass
+  ci-summary:
+    name: CI Summary
+    if: always()
+    needs: [quick-checks, fast-tests, agent-tests, web-ui-tests]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check all required jobs
+      run: |
+        if [[ "${{ needs.quick-checks.result }}" != "success" ]]; then
+          echo "❌ Quick checks failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.fast-tests.result }}" != "success" ]]; then
+          echo "❌ Fast tests failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.agent-tests.result }}" != "success" ]]; then
+          echo "❌ Agent tests failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.web-ui-tests.result }}" != "success" ]]; then
+          echo "❌ Web UI tests failed"
+          exit 1
+        fi
+        
+        echo "✅ All required checks passed!"
