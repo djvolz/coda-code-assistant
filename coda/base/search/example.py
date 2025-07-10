@@ -14,23 +14,19 @@ When using this module standalone:
 
 from pathlib import Path
 
-# Standalone imports - use these when copying this module to another project
+# When running from coda package (always use this path when running as script)
+from coda.base.search import (
+    DependencyGraph,
+    MockEmbeddingProvider,
+    RepoMap,
+    TreeSitterAnalyzer,
+)
+# Import SemanticSearchManager separately to avoid FAISS issues
 try:
-    # When running as standalone module
-    from repo_map import RepoMap
-    from tree_sitter_analyzer import TreeSitterAnalyzer
-    from dependency_graph import DependencyGraph
-    from semantic_search import SemanticSearchManager
-    from embedding_providers.mock import MockEmbeddingProvider
-except ImportError:
-    # When running from coda package
-    from coda.base.search import (
-        DependencyGraph,
-        MockEmbeddingProvider,
-        RepoMap,
-        SemanticSearchManager,
-        TreeSitterAnalyzer,
-    )
+    from coda.base.search import SemanticSearchManager
+except (ImportError, AttributeError):
+    # FAISS not available, skip semantic search demo
+    SemanticSearchManager = None
 
 
 def print_section(title: str) -> None:

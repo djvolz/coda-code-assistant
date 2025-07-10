@@ -7,9 +7,9 @@ without any Coda-specific dependencies.
 import asyncio
 from pathlib import Path
 
-from .chunking import TextChunker, CodeChunker
-from .embeddings.mock import MockEmbeddingProvider
-from .manager import SemanticSearchManager
+from coda.base.search.vector_search.chunking import TextChunker, CodeChunker
+from coda.base.search.vector_search.embeddings.mock import MockEmbeddingProvider
+from coda.base.search.vector_search.manager import SemanticSearchManager
 
 
 async def basic_search_example():
