@@ -1,8 +1,8 @@
-# Test Infrastructure Phases 7 & 8: Web UI and Observability Tests
+# Test Infrastructure Phases 7-9: Web UI, Observability, and Intelligence Tests
 
 ## Overview
 
-Following the successful completion of Phases 1-6 of the test infrastructure rewrite, we're adding two new phases to properly integrate testing for the Web UI and Observability modules. These modules have been temporarily excluded from the test suite to allow the core infrastructure to stabilize.
+Following the successful completion of Phases 1-6 of the test infrastructure rewrite, we're adding three new phases to properly integrate testing for the Web UI, Observability, and Intelligence modules. These test suites have been temporarily excluded to allow the core infrastructure to stabilize.
 
 ## Phase 7: Web UI Test Integration
 
@@ -90,8 +90,39 @@ Following the successful completion of Phases 1-6 of the test infrastructure rew
 - Performance overhead < 5% in benchmarks
 - Clear debugging documentation
 
+## Phase 9: Intelligence Test Integration
+
+**Target Date**: After Phase 8 completion
+
+### Objectives
+
+1. **Fix Repository Scanning Issues**
+   - Resolve file discovery problems in test environment
+   - Fix tree-sitter query validation errors
+   - Ensure proper test data setup
+
+2. **Improve Test Reliability**
+   - Add proper test fixtures for repository structures
+   - Mock external dependencies appropriately
+   - Ensure deterministic test execution
+
+3. **Test Coverage**
+   - Unit tests for code analysis components
+   - Integration tests for repository mapping
+   - Query validation test suite
+
+### Deliverables
+
+- Fixed intelligence test suite
+- Repository scanning test fixtures
+- Query validation framework
+- CI integration for intelligence tests
+
 ## Notes
 
 - These phases were added after the initial 6-phase plan to properly address the complexity of these modules
-- Both modules remain in the codebase and functional; only their tests are temporarily disabled
+- All modules remain in the codebase and functional; only their tests are temporarily disabled
 - The modular approach allows the core test infrastructure to stabilize before tackling these specialized areas
+- Additional test exclusions:
+  - `test_mode_integration.py` - Click command compatibility issues
+  - Intelligence tests - Repository scanning and query validation issues
