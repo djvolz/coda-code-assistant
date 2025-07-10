@@ -27,6 +27,9 @@ dependencies = [
     # Tree-sitter intelligence dependencies
     "grep-ast>=0.9.0",
     "tree-sitter-language-pack>=0.8.0",
+    # Vector search dependencies
+    "faiss-cpu>=1.7.4",
+    "numpy>=1.24.0",
     # Web UI dependencies
     "streamlit>=1.40.0",
     "streamlit-ace>=0.1.1",
@@ -67,8 +70,6 @@ performance = [
     "locust>=2.0.0",
 ]
 embeddings = [
-    "numpy>=1.24.0",
-    "faiss-cpu>=1.7.4",
     "sentence-transformers>=2.2.0",
     "chromadb>=0.4.0",
 ]
