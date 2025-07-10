@@ -34,7 +34,7 @@ except ImportError:
     except ImportError:
         tomllib = None
 
-from coda.providers.base import (
+from .base import (
     BaseProvider,
     ChatCompletion,
     ChatCompletionChunk,

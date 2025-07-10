@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Iterator
 
 import httpx
 
-from coda.providers.base import (
+from .base import (
     BaseProvider,
     ChatCompletion,
     ChatCompletionChunk,

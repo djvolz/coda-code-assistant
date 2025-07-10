@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Iterator
 import litellm
 from litellm import acompletion, completion
 
-from coda.providers.base import (
+from .base import (
     BaseProvider,
     ChatCompletion,
     ChatCompletionChunk,

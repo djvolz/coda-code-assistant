@@ -2,11 +2,8 @@
 
 from typing import Any
 
-from ..constants import (
-    DEFAULT_CONTEXT_LENGTH,
-    DEFAULT_TEMPERATURE,
-)
 from .base import Message
+from .constants import DEFAULT_CONTEXT_LENGTH, DEFAULT_TEMPERATURE
 
 
 def convert_messages_basic(messages: list[Message]) -> list[dict[str, Any]]:
