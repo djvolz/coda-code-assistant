@@ -505,7 +505,7 @@ class TreeSitterQueryAnalyzer:
         directory: str | Path,
         recursive: bool = True,
         file_patterns: list[str] | None = None,
-        progress_callback: callable | None = None,
+        progress_callback: "callable | None" = None,
     ) -> dict[str, FileAnalysis]:
         """
         Analyze all matching files in a directory.
