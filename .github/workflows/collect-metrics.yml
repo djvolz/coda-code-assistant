@@ -1,0 +1,118 @@
+name: Collect CI Metrics
+
+on:
+  schedule:
+    # Run every day at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Number of days to collect'
+        required: false
+        default: '7'
+      workflow_filter:
+        description: 'Filter by workflow name'
+        required: false
+        default: ''
+
+permissions:
+  actions: read
+  contents: write
+  
+jobs:
+  collect-metrics:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
+          
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install requests rich
+          
+      - name: Collect metrics
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          DAYS="${{ github.event.inputs.days || '7' }}"
+          WORKFLOW="${{ github.event.inputs.workflow_filter || '' }}"
+          
+          echo "Collecting metrics for the last $DAYS days..."
+          
+          if [ -n "$WORKFLOW" ]; then
+            uv run python scripts/collect_ci_metrics.py --days "$DAYS" --workflow "$WORKFLOW" --export metrics-report.json
+          else
+            uv run python scripts/collect_ci_metrics.py --days "$DAYS" --export metrics-report.json
+          fi
+          
+      - name: Generate metrics summary
+        run: |
+          # Create markdown summary for GitHub
+          cat > metrics-summary.md << 'EOF'
+          # CI/CD Metrics Report
+          
+          Generated on: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          EOF
+          
+          # Add the JSON report content in a code block
+          echo '```json' >> metrics-summary.md
+          cat metrics-report.json >> metrics-summary.md
+          echo '```' >> metrics-summary.md
+          
+      - name: Upload metrics report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics-report
+          path: |
+            metrics-report.json
+            metrics-summary.md
+          retention-days: 90
+          
+      - name: Update metrics in repository (optional)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # This step could commit metrics to a dedicated branch
+          # or update a GitHub Pages dashboard
+          echo "Metrics collected and stored as artifacts"
+          
+      - name: Post summary to PR (if triggered by PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metricsData = JSON.parse(fs.readFileSync('metrics-report.json', 'utf8'));
+            
+            // Create a summary comment
+            const summary = metricsData.summary;
+            const comment = `## 📊 CI/CD Metrics Summary
+            
+            **Success Rate**: ${(summary.success_rate * 100).toFixed(1)}%
+            **Average PR Validation Time**: ${(summary.avg_pr_validation_time / 60).toFixed(1)} minutes
+            **Test Flakiness Rate**: ${(summary.flakiness_rate * 100).toFixed(2)}%
+            
+            Generated at: ${metricsData.generated_at}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
