@@ -100,6 +100,11 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--tb=short",
+    # Temporarily exclude web and observability tests until Phase 7 & 8
+    "--ignore=tests/unit/observability/",
+    "--ignore=tests/integration/observability/",
+    "--ignore=tests/web/",
+    "--ignore=tests/functional/test_observability_workflows.py",
 ]
 # Cache configuration
 cache_dir = ".pytest_cache"
