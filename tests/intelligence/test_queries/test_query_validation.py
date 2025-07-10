@@ -60,9 +60,9 @@ class TestQueryValidation:
             language = query_file.stem.replace("-tags", "")
             if language in ["python", "javascript", "java", "go"]:
                 # These languages should have function definitions
-                assert "function" in content.lower() or "def" in content.lower(), (
-                    f"{query_file.name} missing function patterns"
-                )
+                assert (
+                    "function" in content.lower() or "def" in content.lower()
+                ), f"{query_file.name} missing function patterns"
 
     @pytest.mark.skipif(not TREE_SITTER_AVAILABLE, reason="tree-sitter not available")
     def test_query_syntax_validity(self):
@@ -101,9 +101,9 @@ class TestQueryValidation:
             has_references = any("reference." in c or "name.reference." in c for c in captures)
             has_imports = any("import" in c for c in captures)
 
-            assert has_definitions or has_references or has_imports, (
-                f"{query_file.name} doesn't use any definition, reference, or import captures"
-            )
+            assert (
+                has_definitions or has_references or has_imports
+            ), f"{query_file.name} doesn't use any definition, reference, or import captures"
 
     def test_python_query_specifics(self):
         """Test Python-specific query patterns."""

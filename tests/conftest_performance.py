@@ -4,19 +4,20 @@ This module provides optimized fixtures that reduce test setup time
 by using appropriate scopes and caching strategies.
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
 
-from coda.providers.mock_provider import MockProvider
+import pytest
+
 from coda.configuration import ConfigManager
+from coda.providers.mock_provider import MockProvider
 
 
 @pytest.fixture(scope="session")
 def mock_provider():
     """Session-scoped mock provider for tests.
-    
+
     Reuses the same mock provider instance across all tests in a session,
     reducing initialization overhead.
     """
@@ -26,7 +27,7 @@ def mock_provider():
 @pytest.fixture(scope="session")
 def temp_dir_session():
     """Session-scoped temporary directory.
-    
+
     Creates a temporary directory that persists for the entire test session.
     Useful for tests that can share temporary files.
     """
@@ -39,7 +40,7 @@ def temp_dir_session():
 @pytest.fixture(scope="module")
 def config_manager_module(tmp_path_factory):
     """Module-scoped configuration manager.
-    
+
     Creates a configuration manager that persists for all tests in a module,
     reducing repeated file I/O operations.
     """
@@ -51,7 +52,7 @@ def config_manager_module(tmp_path_factory):
 @pytest.fixture
 def fast_mock_provider(mock_provider):
     """Fast mock provider that reuses session instance.
-    
+
     This fixture provides test isolation while reusing the underlying
     provider instance for performance.
     """
@@ -64,20 +65,16 @@ def fast_mock_provider(mock_provider):
 @pytest.fixture(scope="session")
 def performance_tracker():
     """Track test performance metrics across the session."""
-    metrics = {
-        "slow_tests": [],
-        "fixture_times": {},
-        "total_time": 0
-    }
+    metrics = {"slow_tests": [], "fixture_times": {}, "total_time": 0}
     yield metrics
-    
+
     # Report slow tests at end of session
     if metrics["slow_tests"]:
         print("\n\nSlow Tests Report:")
         print("==================")
-        for test_name, duration in sorted(metrics["slow_tests"], 
-                                        key=lambda x: x[1], 
-                                        reverse=True)[:10]:
+        for test_name, duration in sorted(metrics["slow_tests"], key=lambda x: x[1], reverse=True)[
+            :10
+        ]:
             print(f"{test_name}: {duration:.2f}s")
 
 
@@ -85,10 +82,11 @@ def performance_tracker():
 def track_test_duration(request, performance_tracker):
     """Automatically track duration of each test."""
     import time
+
     start_time = time.time()
-    
+
     yield
-    
+
     duration = time.time() - start_time
     if duration > 0.5:  # Track tests slower than 500ms
         test_name = request.node.nodeid

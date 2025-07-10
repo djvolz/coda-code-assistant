@@ -14,7 +14,7 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # HTML template for the dashboard
 DASHBOARD_TEMPLATE = """<!DOCTYPE html>
@@ -134,26 +134,26 @@ DASHBOARD_TEMPLATE = """<!DOCTYPE html>
 <body>
     <div class="dashboard">
         <h1>🚀 Coda CI/CD Metrics Dashboard</h1>
-        
+
         <div class="metrics-grid">
             {metric_cards}
         </div>
-        
+
         <div class="chart-container">
             <div class="chart-title">Success Rate Trend (7 Days)</div>
             <canvas id="successTrendChart" height="100"></canvas>
         </div>
-        
+
         <div class="chart-container">
             <div class="chart-title">Average Workflow Duration (minutes)</div>
             <canvas id="durationChart" height="100"></canvas>
         </div>
-        
+
         <div class="chart-container">
             <div class="chart-title">Daily Run Volume</div>
             <canvas id="volumeChart" height="100"></canvas>
         </div>
-        
+
         <div class="workflow-table">
             <div class="chart-title">Workflow Performance</div>
             <table>
@@ -171,12 +171,12 @@ DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                 </tbody>
             </table>
         </div>
-        
+
         <div class="timestamp">
             Generated at: {timestamp}
         </div>
     </div>
-    
+
     <script>
         // Chart configuration
         const chartOptions = {
@@ -193,7 +193,7 @@ DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                 }
             }
         };
-        
+
         // Success rate trend chart
         const successCtx = document.getElementById('successTrendChart').getContext('2d');
         new Chart(successCtx, {
@@ -223,7 +223,7 @@ DASHBOARD_TEMPLATE = """<!DOCTYPE html>
                 }
             }
         });
-        
+
         // Duration chart
         const durationCtx = document.getElementById('durationChart').getContext('2d');
         new Chart(durationCtx, {
@@ -238,7 +238,7 @@ DASHBOARD_TEMPLATE = """<!DOCTYPE html>
             },
             options: chartOptions
         });
-        
+
         // Volume chart
         const volumeCtx = document.getElementById('volumeChart').getContext('2d');
         new Chart(volumeCtx, {
@@ -262,8 +262,8 @@ DASHBOARD_TEMPLATE = """<!DOCTYPE html>
 def generate_metric_card(label: str, value: str, target: str = None, status: str = "good") -> str:
     """Generate HTML for a metric card."""
     status_class = f"metric-{status}"
-    target_html = f'<div class="metric-target">Target: {target}</div>' if target else ''
-    
+    target_html = f'<div class="metric-target">Target: {target}</div>' if target else ""
+
     return f"""
         <div class="metric-card">
             <div class="metric-label">{label}</div>
@@ -291,13 +291,13 @@ def determine_status(value: float, target: float, higher_is_better: bool = True)
             return "bad"
 
 
-def generate_workflow_row(name: str, metrics: Dict[str, Any]) -> str:
+def generate_workflow_row(name: str, metrics: dict[str, Any]) -> str:
     """Generate table row for workflow metrics."""
     success_rate = metrics.get("success_rate", 0) * 100
     avg_duration = metrics.get("avg_duration", 0) / 60
-    
+
     status_icon = "✅" if success_rate > 95 else "⚠️" if success_rate > 80 else "❌"
-    
+
     return f"""
         <tr>
             <td>{name}</td>
@@ -309,63 +309,63 @@ def generate_workflow_row(name: str, metrics: Dict[str, Any]) -> str:
     """
 
 
-def generate_dashboard(metrics_data: Dict[str, Any], output_file: Path):
+def generate_dashboard(metrics_data: dict[str, Any], output_file: Path):
     """Generate HTML dashboard from metrics data."""
     summary = metrics_data.get("summary", {})
-    
+
     # Generate metric cards
     metric_cards = []
-    
+
     # Success rate
     success_rate = summary.get("success_rate", 0) * 100
-    metric_cards.append(generate_metric_card(
-        "Success Rate",
-        f"{success_rate:.1f}%",
-        ">95%",
-        determine_status(success_rate, 95)
-    ))
-    
+    metric_cards.append(
+        generate_metric_card(
+            "Success Rate", f"{success_rate:.1f}%", ">95%", determine_status(success_rate, 95)
+        )
+    )
+
     # PR validation time
     pr_time = summary.get("avg_pr_validation_time", 0) / 60
-    metric_cards.append(generate_metric_card(
-        "Avg PR Validation",
-        f"{pr_time:.1f}m",
-        "<2m",
-        determine_status(pr_time, 2, higher_is_better=False)
-    ))
-    
+    metric_cards.append(
+        generate_metric_card(
+            "Avg PR Validation",
+            f"{pr_time:.1f}m",
+            "<2m",
+            determine_status(pr_time, 2, higher_is_better=False),
+        )
+    )
+
     # Test flakiness
     flakiness = summary.get("flakiness_rate", 0) * 100
-    metric_cards.append(generate_metric_card(
-        "Test Flakiness",
-        f"{flakiness:.2f}%",
-        "<1%",
-        determine_status(flakiness, 1, higher_is_better=False)
-    ))
-    
+    metric_cards.append(
+        generate_metric_card(
+            "Test Flakiness",
+            f"{flakiness:.2f}%",
+            "<1%",
+            determine_status(flakiness, 1, higher_is_better=False),
+        )
+    )
+
     # Total runs
     total_runs = summary.get("total_runs", 0)
-    metric_cards.append(generate_metric_card(
-        "Total Runs (7d)",
-        str(total_runs)
-    ))
-    
+    metric_cards.append(generate_metric_card("Total Runs (7d)", str(total_runs)))
+
     # Prepare chart data
     by_day = summary.get("by_day", {})
     dates = sorted(by_day.keys())[-7:]  # Last 7 days
     success_rates = [by_day[date]["success_rate"] * 100 for date in dates]
     daily_volumes = [by_day[date]["total_runs"] for date in dates]
-    
+
     # Workflow data
     by_workflow = summary.get("by_workflow", {})
     workflow_names = list(by_workflow.keys())
     workflow_durations = [by_workflow[w]["avg_duration"] / 60 for w in workflow_names]
-    
+
     # Generate workflow rows
     workflow_rows = []
     for name, metrics in sorted(by_workflow.items(), key=lambda x: x[1]["count"], reverse=True):
         workflow_rows.append(generate_workflow_row(name, metrics))
-    
+
     # Fill in template
     html = DASHBOARD_TEMPLATE.format(
         metric_cards="".join(metric_cards),
@@ -375,9 +375,9 @@ def generate_dashboard(metrics_data: Dict[str, Any], output_file: Path):
         daily_volumes=json.dumps(daily_volumes),
         workflow_names=json.dumps(workflow_names),
         workflow_durations=json.dumps(workflow_durations),
-        timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+        timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
     )
-    
+
     # Write dashboard
     output_file.write_text(html)
     print(f"Dashboard generated: {output_file}")
@@ -388,18 +388,18 @@ def main():
     parser = argparse.ArgumentParser(description="Generate HTML dashboard from CI metrics")
     parser.add_argument("metrics_file", help="Path to metrics JSON file")
     parser.add_argument("-o", "--output", default="metrics-dashboard.html", help="Output HTML file")
-    
+
     args = parser.parse_args()
-    
+
     # Load metrics
     metrics_file = Path(args.metrics_file)
     if not metrics_file.exists():
         print(f"Error: Metrics file not found: {metrics_file}")
         sys.exit(1)
-    
-    with open(metrics_file, "r") as f:
+
+    with open(metrics_file) as f:
         metrics_data = json.load(f)
-    
+
     # Generate dashboard
     output_file = Path(args.output)
     generate_dashboard(metrics_data, output_file)

@@ -19,11 +19,11 @@ class TestSmoke:
         """Test that core modules can be imported without errors."""
         try:
             import coda
+            import coda.agents
             import coda.cli
             import coda.providers
-            import coda.agents
             import coda.session
-            
+
             assert coda is not None
         except ImportError as e:
             pytest.fail(f"Failed to import core modules: {e}")
@@ -60,9 +60,9 @@ class TestSmoke:
     @pytest.mark.smoke
     def test_mock_provider(self):
         """Test that mock provider works correctly."""
-        from coda.providers.mock_provider import MockProvider
         from coda.providers.base import Message, Role
-        
+        from coda.providers.mock_provider import MockProvider
+
         provider = MockProvider()
         messages = [Message(role=Role.USER, content="test")]
         response = provider.chat(messages, "mock-echo")
@@ -83,39 +83,40 @@ class TestSmoke:
 @pytest.mark.fast
 class TestSmokeConfiguration:
     """Smoke tests for configuration system."""
-    
+
     def test_configuration_import(self):
         """Test that configuration module imports correctly."""
         try:
-            from coda.configuration import get_config, CodaConfig, ConfigManager
+            from coda.configuration import CodaConfig, ConfigManager, get_config
+
             assert get_config is not None
             assert CodaConfig is not None
             assert ConfigManager is not None
         except ImportError as e:
             pytest.fail(f"Failed to import configuration: {e}")
-    
+
     def test_default_configuration(self):
         """Test that default configuration loads correctly."""
         from coda.configuration import get_config
-        
+
         config = get_config()
         assert config is not None
-        assert hasattr(config, 'default_provider')
-        assert hasattr(config, 'providers')
+        assert hasattr(config, "default_provider")
+        assert hasattr(config, "providers")
 
 
 @pytest.mark.smoke
-@pytest.mark.fast  
+@pytest.mark.fast
 class TestSmokeSessions:
     """Smoke tests for session management."""
-    
+
     def test_session_imports(self):
         """Test that session modules import correctly."""
         try:
-            from coda.session.manager import SessionManager
-            from coda.session.database import SessionDatabase
             from coda.session.context import ContextManager, ContextWindow
-            
+            from coda.session.database import SessionDatabase
+            from coda.session.manager import SessionManager
+
             assert SessionManager is not None
             assert SessionDatabase is not None
             assert ContextManager is not None
@@ -128,13 +129,13 @@ class TestSmokeSessions:
 @pytest.mark.fast
 class TestSmokeTools:
     """Smoke tests for tools system."""
-    
+
     def test_tools_import(self):
         """Test that tools modules import correctly."""
         try:
             from coda.tools.base import BaseTool
             from coda.tools.mcp_server import MCPServer
-            
+
             assert BaseTool is not None
             assert MCPServer is not None
         except ImportError as e:
@@ -145,14 +146,14 @@ class TestSmokeTools:
 @pytest.mark.fast
 class TestSmokeAgents:
     """Smoke tests for agent system."""
-    
+
     def test_agent_imports(self):
         """Test that agent modules import correctly."""
         try:
             from coda.agents.agent import Agent
             from coda.agents.builtin_tools import get_builtin_tools
             from coda.agents.decorators import tool
-            
+
             assert Agent is not None
             assert get_builtin_tools is not None
             assert tool is not None
