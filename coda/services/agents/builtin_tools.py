@@ -6,8 +6,8 @@ import subprocess
 from datetime import datetime
 from typing import Any
 
-from coda.agents.decorators import tool
-from coda.agents.intelligence_tools import (
+from .decorators import tool
+from .intelligence_tools import (
     analyze_code,
     code_stats,
     find_definition,

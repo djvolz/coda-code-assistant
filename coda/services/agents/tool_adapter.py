@@ -3,9 +3,9 @@
 import json
 from typing import Any
 
-from coda.agents.decorators import tool
-from coda.agents.function_tool import FunctionTool
-from coda.tools.base import BaseTool, tool_registry
+from .decorators import tool
+from .function_tool import FunctionTool
+from ..tools.base import BaseTool, tool_registry
 
 
 class MCPToolAdapter:
