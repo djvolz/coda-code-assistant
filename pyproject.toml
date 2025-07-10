@@ -100,20 +100,8 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--tb=short",
-    # Temporarily exclude web and observability tests until Phase 7 & 8
-    "--ignore=tests/unit/observability/",
-    "--ignore=tests/integration/observability/",
-    "--ignore=tests/web/",
-    "--ignore=tests/functional/test_observability_workflows.py",
-    # Also exclude failing mode integration tests (compatibility issues)
-    "--ignore=tests/cli/test_mode_integration.py",
-    # Exclude intelligence tests with repo scanning issues
-    "--ignore=tests/intelligence/",
-    "--ignore=tests/tools/test_intelligence_tools.py",
-    "--ignore=tests/unit/cli/test_observability_commands.py",
-    # Exclude configuration tests with observability settings  
-    "--deselect=tests/unit/test_configuration.py::TestCodaConfigEnhancements",
-    "--deselect=tests/unit/test_configuration.py::TestConfigManagerEnhancements",
+    # Ignore disabled tests directory
+    "--ignore=tests/disabled/",
 ]
 # Cache configuration
 cache_dir = ".pytest_cache"
