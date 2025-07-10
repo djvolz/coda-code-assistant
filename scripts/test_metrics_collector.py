@@ -141,7 +141,7 @@ class TestMetricsCollector:
         print("TEST METRICS SUMMARY")
         print("=" * 60)
         print(f"Total Tests: {total_tests}")
-        print(f"Passed: {passed} ({passed/total_tests*100:.1f}%)")
+        print(f"Passed: {passed} ({passed / total_tests * 100:.1f}%)")
         print(f"Failed: {failed}")
         print(f"Skipped: {skipped}")
         print(f"Duration: {self.session_end_time - self.session_start_time:.2f}s")

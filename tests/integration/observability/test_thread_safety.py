@@ -328,14 +328,14 @@ class TestObservabilityThreadSafety:
 
         # Check if all threads completed
         active_threads = [t for t in threads if t.is_alive()]
-        assert (
-            len(active_threads) == 0
-        ), f"Deadlock detected! {len(active_threads)} threads still running"
+        assert len(active_threads) == 0, (
+            f"Deadlock detected! {len(active_threads)} threads still running"
+        )
 
         completion_time = time.time() - start_time
-        assert (
-            completion_time < 10
-        ), f"Operations took too long ({completion_time}s), possible lock contention"
+        assert completion_time < 10, (
+            f"Operations took too long ({completion_time}s), possible lock contention"
+        )
 
     def test_concurrent_configuration_updates(self, config_manager):
         """Test thread safety during configuration updates."""

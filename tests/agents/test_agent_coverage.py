@@ -421,7 +421,9 @@ class TestAgentAdditional:
     async def test_run_async_empty_instructions(self, mock_provider):
         """Test run_async with empty instructions."""
         agent = Agent(
-            provider=mock_provider, model="test.model", instructions=""  # Empty instructions
+            provider=mock_provider,
+            model="test.model",
+            instructions="",  # Empty instructions
         )
 
         await agent.run_async("Test")

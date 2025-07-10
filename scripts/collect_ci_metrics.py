@@ -308,8 +308,8 @@ def display_dashboard(summary: dict[str, Any]):
     avg_pr_time = summary.get("avg_pr_validation_time", 0)
     overall_table.add_row(
         "Avg PR Validation Time",
-        f"{avg_pr_time/60:.1f}m",
-        f"{TARGETS['avg_pr_validation_time']/60}m",
+        f"{avg_pr_time / 60:.1f}m",
+        f"{TARGETS['avg_pr_validation_time'] / 60}m",
         "✅" if avg_pr_time < TARGETS["avg_pr_validation_time"] else "❌",
     )
 
@@ -318,7 +318,7 @@ def display_dashboard(summary: dict[str, Any]):
     overall_table.add_row(
         "Test Flakiness Rate",
         f"{flakiness:.2f}%",
-        f"{TARGETS['test_flakiness_rate']*100}%",
+        f"{TARGETS['test_flakiness_rate'] * 100}%",
         "✅" if flakiness < TARGETS["test_flakiness_rate"] * 100 else "❌",
     )
 
@@ -337,8 +337,8 @@ def display_dashboard(summary: dict[str, Any]):
             workflow_table.add_row(
                 name,
                 str(metrics["count"]),
-                f"{metrics['success_rate']*100:.1f}%",
-                f"{metrics['avg_duration']/60:.1f}m",
+                f"{metrics['success_rate'] * 100:.1f}%",
+                f"{metrics['avg_duration'] / 60:.1f}m",
             )
 
         console.print(workflow_table)
@@ -358,8 +358,8 @@ def display_dashboard(summary: dict[str, Any]):
             trend_table.add_row(
                 date,
                 str(metrics["total_runs"]),
-                f"{metrics['success_rate']*100:.1f}%",
-                f"{metrics['avg_duration']/60:.1f}m" if metrics["avg_duration"] > 0 else "N/A",
+                f"{metrics['success_rate'] * 100:.1f}%",
+                f"{metrics['avg_duration'] / 60:.1f}m" if metrics["avg_duration"] > 0 else "N/A",
             )
 
         console.print(trend_table)
