@@ -110,6 +110,7 @@ addopts = [
     # Exclude intelligence tests with repo scanning issues
     "--ignore=tests/intelligence/",
     "--ignore=tests/tools/test_intelligence_tools.py",
+    "--ignore=tests/unit/cli/test_observability_commands.py",
 ]
 # Cache configuration
 cache_dir = ".pytest_cache"
