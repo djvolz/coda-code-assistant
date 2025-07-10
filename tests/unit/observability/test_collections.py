@@ -1,6 +1,7 @@
 """Unit tests for memory-aware collections."""
 
 import time
+
 import pytest
 
 from coda.observability.collections import BoundedCache, MemoryAwareDeque, MemoryStats
