@@ -6,7 +6,7 @@ from textwrap import dedent
 
 import pytest
 
-from coda.intelligence.cli import IntelligenceCommands
+from coda.base.search.cli import IntelligenceCommands
 
 
 class TestIntelligenceCommands:

@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from coda.session import SessionCommands, SessionDatabase, SessionManager
+from coda.base.session import SessionCommands, SessionDatabase, SessionManager
 
 
 class TestSessionCommands:

@@ -10,7 +10,7 @@ from rich.table import Table
 # Add project to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from coda.providers import OCIGenAIProvider
+from coda.base.providers import OCIGenAIProvider
 from coda.themes import get_themed_console
 
 console = get_themed_console()

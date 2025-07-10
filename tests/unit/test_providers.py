@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from coda.providers import (
+from coda.base.providers import (
     ChatCompletion,
     LiteLLMProvider,
     Message,

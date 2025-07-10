@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from coda.intelligence import TreeSitterAnalyzer
+from coda.base.search import TreeSitterAnalyzer
 
 
 class TestKotlinSupport:

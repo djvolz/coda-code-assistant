@@ -1,0 +1,33 @@
+"""Constants for the observability module.
+
+All observability-specific constants are defined here to make the module self-contained.
+"""
+
+# Default configuration values
+ENABLED: bool = False
+METRICS_FLUSH_INTERVAL: int = 300  # 5 minutes
+TRACING_SAMPLE_RATE: float = 1.0  # 100% sampling
+TRACING_MAX_SPANS: int = 1000
+TRACING_FLUSH_INTERVAL: int = 60  # 1 minute
+HEALTH_CHECK_INTERVAL: int = 30  # 30 seconds
+HEALTH_UNHEALTHY_THRESHOLD: int = 3
+HEALTH_DEGRADED_THRESHOLD: float = 5000.0  # 5 seconds
+
+# Environment variable names
+ENV_PREFIX: str = "CODA_"
+ENV_OBSERVABILITY_ENABLED: str = "CODA_OBSERVABILITY_ENABLED"
+ENV_OBSERVABILITY_EXPORT_DIR: str = "CODA_OBSERVABILITY_EXPORT_DIR"
+ENV_METRICS_FLUSH_INTERVAL: str = "CODA_METRICS_FLUSH_INTERVAL"
+ENV_TRACING_SAMPLE_RATE: str = "CODA_TRACING_SAMPLE_RATE"
+ENV_TRACING_MAX_SPANS: str = "CODA_TRACING_MAX_SPANS"
+ENV_TRACING_FLUSH_INTERVAL: str = "CODA_TRACING_FLUSH_INTERVAL"
+ENV_HEALTH_CHECK_INTERVAL: str = "CODA_HEALTH_CHECK_INTERVAL"
+ENV_HEALTH_UNHEALTHY_THRESHOLD: str = "CODA_HEALTH_UNHEALTHY_THRESHOLD"
+ENV_HEALTH_DEGRADED_THRESHOLD: str = "CODA_HEALTH_DEGRADED_THRESHOLD"
+
+# Directory names
+OBSERVABILITY_DIR: str = "observability"
+
+# File names
+METRICS_FILE: str = "metrics.json"
+TRACES_FILE: str = "traces.json"

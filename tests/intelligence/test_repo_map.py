@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from coda.intelligence.repo_map import FileInfo, RepoMap, RepoStats
+from coda.base.search.map.repo_map import FileInfo, RepoMap, RepoStats
 
 
 class TestRepoMap:

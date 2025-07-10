@@ -7,13 +7,13 @@ from textwrap import dedent
 
 import pytest
 
-from coda.intelligence.dependency_graph import (
+from coda.base.search.map.dependency_graph import (
     DependencyEdge,
     DependencyGraph,
     DependencyGraphStats,
     DependencyNode,
 )
-from coda.intelligence.tree_sitter_analyzer import TreeSitterAnalyzer
+from coda.base.search.map.tree_sitter_analyzer import TreeSitterAnalyzer
 
 
 class TestDependencyGraph:

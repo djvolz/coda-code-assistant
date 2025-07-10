@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from coda.intelligence.tree_sitter_query_analyzer import (
+from coda.base.search.map.tree_sitter_query_analyzer import (
     TREE_SITTER_AVAILABLE,
     TreeSitterQueryAnalyzer,
 )
@@ -16,7 +16,7 @@ class TestQueryValidation:
     def setup_method(self):
         """Set up test fixtures."""
         self.query_dir = (
-            Path(__file__).parent.parent.parent.parent / "coda" / "intelligence" / "queries"
+            Path(__file__).parent.parent.parent.parent / "coda" / "search" / "queries"
         )
         self.analyzer = TreeSitterQueryAnalyzer()
 

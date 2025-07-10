@@ -1,17 +1,18 @@
 """
-Coda-specific semantic search functionality.
+Coda integration layer for search module.
 
 This module provides wrappers and utilities that integrate the self-contained
-semantic search components with Coda's configuration system.
+vector search components with Coda's configuration system. This acts as the
+bridge between the standalone search module and Coda-specific features.
 """
 
 import logging
 
 from .configuration import CodaConfig, get_config
 from .constants import get_cache_dir
-from .embeddings import create_oci_provider_from_coda_config
-from .embeddings.factory import create_embedding_provider
-from .semantic_search import SemanticSearchManager
+from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
+from .base.search.vector_search.embeddings.factory import create_embedding_provider
+from .base.search.vector_search.manager import SemanticSearchManager
 
 logger = logging.getLogger(__name__)
 

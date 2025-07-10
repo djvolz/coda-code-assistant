@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from coda.session import SessionDatabase, SessionManager
-from coda.session.models import SessionStatus
+from coda.base.session import SessionDatabase, SessionManager
+from coda.base.session.models import SessionStatus
 
 
 class TestSessionManager:

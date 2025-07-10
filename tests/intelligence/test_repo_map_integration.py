@@ -4,8 +4,8 @@ import tempfile
 from pathlib import Path
 from textwrap import dedent
 
-from coda.intelligence.repo_map import RepoMap
-from coda.intelligence.tree_sitter_analyzer import TreeSitterAnalyzer
+from coda.base.search.map.repo_map import RepoMap
+from coda.base.search.map.tree_sitter_analyzer import TreeSitterAnalyzer
 
 
 class TestRepoMapIntegration:

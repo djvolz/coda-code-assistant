@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from coda.agents import Agent, FunctionTool, tool
-from coda.providers.base import ChatCompletion, ToolCall
+from coda.services.agents import Agent, FunctionTool, tool
+from coda.base.providers.base import ChatCompletion, ToolCall
 
 
 # Test tools

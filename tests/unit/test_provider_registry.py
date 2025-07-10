@@ -2,7 +2,7 @@
 
 import pytest
 
-from coda.providers import (
+from coda.base.providers import (
     BaseProvider,
     LiteLLMProvider,
     OCIGenAIProvider,

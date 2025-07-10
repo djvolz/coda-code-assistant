@@ -6,7 +6,7 @@ from textwrap import dedent
 
 import pytest
 
-from coda.intelligence.tree_sitter_query_analyzer import (
+from coda.base.search.map.tree_sitter_query_analyzer import (
     TREE_SITTER_AVAILABLE,
     DefinitionKind,
     TreeSitterQueryAnalyzer,

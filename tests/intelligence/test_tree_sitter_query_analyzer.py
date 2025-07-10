@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from coda.intelligence.tree_sitter_query_analyzer import (
+from coda.base.search.map.tree_sitter_query_analyzer import (
     TREE_SITTER_AVAILABLE,
     DefinitionKind,
     TreeSitterQueryAnalyzer,
@@ -82,7 +82,7 @@ class TestTreeSitterQueryAnalyzer:
         if not TREE_SITTER_AVAILABLE:
             pytest.skip("tree-sitter not available")
 
-        with patch("coda.intelligence.tree_sitter_query_analyzer.get_parser") as mock_get_parser:
+        with patch("coda.base.search.map.tree_sitter_query_analyzer.get_parser") as mock_get_parser:
             mock_parser = Mock()
             mock_get_parser.return_value = mock_parser
 
@@ -138,8 +138,8 @@ class TestTreeSitterQueryAnalyzer:
 
         # Mock the tree-sitter components
         with (
-            patch("coda.intelligence.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
-            patch("coda.intelligence.tree_sitter_query_analyzer.get_language") as mock_get_language,
+            patch("coda.base.search.map.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
+            patch("coda.base.search.map.tree_sitter_query_analyzer.get_language") as mock_get_language,
         ):
 
             # Setup mock parser
@@ -190,7 +190,7 @@ class TestTreeSitterQueryAnalyzer:
         file_path = self.create_test_file("test.py", code)
 
         # Force tree-sitter to fail
-        with patch("coda.intelligence.tree_sitter_query_analyzer.TREE_SITTER_AVAILABLE", False):
+        with patch("coda.base.search.map.tree_sitter_query_analyzer.TREE_SITTER_AVAILABLE", False):
             analyzer = TreeSitterQueryAnalyzer(query_dir=self.query_dir)
             analysis = analyzer.analyze_file(file_path)
 
@@ -247,15 +247,15 @@ class TestTreeSitterQueryAnalyzer:
         """Test language detection from file paths."""
         # Test with tree-sitter available
         with (
-            patch("coda.intelligence.tree_sitter_query_analyzer.TREE_SITTER_AVAILABLE", True),
-            patch("coda.intelligence.tree_sitter_query_analyzer.filename_to_lang") as mock_lang,
+            patch("coda.base.search.map.tree_sitter_query_analyzer.TREE_SITTER_AVAILABLE", True),
+            patch("coda.base.search.map.tree_sitter_query_analyzer.filename_to_lang") as mock_lang,
         ):
             mock_lang.return_value = "python"
             assert self.analyzer.detect_language(Path("test.py")) == "python"
             mock_lang.assert_called_once()
 
         # Test fallback to extension map
-        with patch("coda.intelligence.tree_sitter_query_analyzer.TREE_SITTER_AVAILABLE", False):
+        with patch("coda.base.search.map.tree_sitter_query_analyzer.TREE_SITTER_AVAILABLE", False):
             analyzer = TreeSitterQueryAnalyzer()
             assert analyzer.detect_language(Path("test.py")) == "python"
             assert analyzer.detect_language(Path("test.js")) == "javascript"
@@ -461,8 +461,8 @@ class TestTreeSitterQueryAnalyzer:
 
         # Mock the tree-sitter components for Rust
         with (
-            patch("coda.intelligence.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
-            patch("coda.intelligence.tree_sitter_query_analyzer.get_language") as mock_get_language,
+            patch("coda.base.search.map.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
+            patch("coda.base.search.map.tree_sitter_query_analyzer.get_language") as mock_get_language,
         ):
 
             # Setup mocks

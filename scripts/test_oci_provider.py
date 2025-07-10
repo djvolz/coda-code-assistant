@@ -12,7 +12,7 @@ from coda.themes import get_themed_console
 # Add project to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from coda.providers import Message, OCIGenAIProvider, Role
+from coda.base.providers import Message, OCIGenAIProvider, Role
 
 console = get_themed_console()
 

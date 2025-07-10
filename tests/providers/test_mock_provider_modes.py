@@ -2,7 +2,7 @@
 
 import pytest
 
-from coda.providers import Message, MockProvider, Role
+from coda.base.providers import Message, MockProvider, Role
 
 
 @pytest.mark.unit

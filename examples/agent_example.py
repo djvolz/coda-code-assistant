@@ -3,9 +3,9 @@
 
 import asyncio
 
-from coda.agents import Agent, tool
+from coda.services.agents import Agent, tool
 from coda.configuration import get_config
-from coda.providers import ProviderFactory
+from coda.base.providers import ProviderFactory
 
 
 # Define custom tools using the @tool decorator
@@ -75,7 +75,7 @@ async def main():
     print(f"Result: {response.content}\n")
 
     # Example 4: Using built-in tools
-    from coda.agents.builtin_tools import get_builtin_tools
+    from coda.services.agents.builtin_tools import get_builtin_tools
 
     agent_with_builtin = Agent(
         provider=provider,

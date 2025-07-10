@@ -23,7 +23,7 @@ def get_imports_from_file(filepath):
 
 def test_config_module_independence():
     """Ensure config module has no Coda dependencies."""
-    config_dir = Path(__file__).parent.parent / "coda" / "config"
+    config_dir = Path(__file__).parent.parent / "coda" / "base" / "config"
 
     # Files to check
     files_to_check = [
@@ -53,12 +53,12 @@ def test_config_module_independence():
 
             # Check for forbidden imports
             for forbidden in forbidden_imports:
-                if imp.startswith(forbidden) and not imp.startswith("coda.config"):
+                if imp.startswith(forbidden) and not imp.startswith("coda.base.config"):
                     print(f"❌ Forbidden import in {filepath.name}: {imp}")
                     all_good = False
 
             # Check for non-stdlib imports (basic check)
-            if "." in imp and not imp.startswith("coda.config"):
+            if "." in imp and not imp.startswith("coda.base.config"):
                 # Could be a third-party import
                 base_module = imp.split(".")[0]
                 stdlib_modules = {
@@ -108,7 +108,7 @@ def test_config_basic_functionality():
 
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
-    from coda.config import Config
+    from coda.base.config import Config
 
     # Test basic functionality
     config = Config(
@@ -137,7 +137,7 @@ def test_config_copy_paste():
     import tempfile
     import subprocess
 
-    config_dir = Path(__file__).parent.parent / "coda" / "config"
+    config_dir = Path(__file__).parent.parent / "coda" / "base" / "config"
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy config module

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from coda.intelligence.cli import IntelligenceCommands
-from coda.providers import Message, MockProvider, Role
+from coda.base.search.cli import IntelligenceCommands
+from coda.base.providers import Message, MockProvider, Role
 
 
 @pytest.mark.integration

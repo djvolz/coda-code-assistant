@@ -2,8 +2,8 @@
 
 import pytest
 
-from coda.providers import Message, MockProvider, Role
-from coda.providers.base import ChatCompletion
+from coda.base.providers import Message, MockProvider, Role
+from coda.base.providers.base import ChatCompletion
 
 
 @pytest.mark.unit

@@ -11,7 +11,7 @@ import asyncio
 from rich.panel import Panel
 from rich.text import Text
 
-from coda.providers import Message, OllamaProvider, Role
+from coda.base.providers import Message, OllamaProvider, Role
 from coda.themes import get_themed_console
 
 console = get_themed_console()
