@@ -3,6 +3,7 @@
 import click
 
 from ..__version__ import __version__
+from .web_command import web as web_command
 
 
 @click.group(invoke_without_command=True)
@@ -38,6 +39,7 @@ def chat(provider, model, debug, one_shot, basic, mode, no_save, resume):
     main(provider, model, debug, one_shot, basic, mode, no_save, resume)
 
 
+cli.add_command(web_command, name="web")
 
 
 if __name__ == "__main__":

@@ -60,6 +60,8 @@ class CodaConfig:
     # Debug settings
     debug: bool = False
 
+    # Observability settings
+    observability: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CodaConfig":
@@ -74,6 +76,7 @@ class CodaConfig:
             "session": self.session,
             "ui": self.ui,
             "debug": self.debug,
+            "observability": self.observability,
         }
 
     def merge(self, other: dict[str, Any]) -> None:
@@ -96,6 +99,8 @@ class CodaConfig:
         if "debug" in other:
             self.debug = other["debug"]
 
+        if "observability" in other:
+            self.observability.update(other["observability"])
 
 
 class ConfigManager:
