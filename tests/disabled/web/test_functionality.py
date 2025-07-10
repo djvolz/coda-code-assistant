@@ -50,9 +50,9 @@ class TestWebUIFunctionality:
             expected_elements = ["provider", "model", "chat", "message"]
             found_elements = [elem for elem in expected_elements if elem in content_text]
 
-            assert len(found_elements) >= 2, (
-                f"Chat interface elements not found. Found: {found_elements}"
-            )
+            assert (
+                len(found_elements) >= 2
+            ), f"Chat interface elements not found. Found: {found_elements}"
 
             # Look for form elements (dropdowns, inputs)
             dropdowns = web_page.find_elements(
@@ -62,9 +62,9 @@ class TestWebUIFunctionality:
                 By.CSS_SELECTOR, "input, textarea, [data-testid='stTextInput']"
             )
 
-            assert len(dropdowns) > 0 or len(inputs) > 0, (
-                "No interactive elements found in chat interface"
-            )
+            assert (
+                len(dropdowns) > 0 or len(inputs) > 0
+            ), "No interactive elements found in chat interface"
 
         except (TimeoutException, NoSuchElementException) as e:
             pytest.fail(f"Chat interface test failed: {e}")
@@ -84,9 +84,9 @@ class TestWebUIFunctionality:
                 indicator for indicator in session_indicators if indicator in content_text
             ]
 
-            assert len(found_indicators) >= 2, (
-                f"Session management elements not found. Found: {found_indicators}"
-            )
+            assert (
+                len(found_indicators) >= 2
+            ), f"Session management elements not found. Found: {found_indicators}"
 
         except (TimeoutException, NoSuchElementException) as e:
             pytest.fail(f"Sessions interface test failed: {e}")
@@ -113,9 +113,9 @@ class TestWebUIFunctionality:
                 indicator for indicator in settings_indicators if indicator in content_text
             ]
 
-            assert len(found_indicators) >= 2, (
-                f"Settings elements not found. Found: {found_indicators}"
-            )
+            assert (
+                len(found_indicators) >= 2
+            ), f"Settings elements not found. Found: {found_indicators}"
 
         except (TimeoutException, NoSuchElementException) as e:
             pytest.fail(f"Settings interface test failed: {e}")
@@ -160,9 +160,9 @@ class TestWebUIFunctionality:
             # Filter for actual errors (not warnings or info)
             errors = [log for log in final_logs if log["level"] == "SEVERE"]
 
-            assert len(errors) == 0, (
-                f"JavaScript errors found: {[error['message'] for error in errors]}"
-            )
+            assert (
+                len(errors) == 0
+            ), f"JavaScript errors found: {[error['message'] for error in errors]}"
 
         except Exception as e:
             # Some drivers don't support log collection, skip this test

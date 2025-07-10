@@ -69,7 +69,9 @@ class TestOCIGenAIProviderAdditional:
 
         with patch("coda.providers.oci_genai.Path") as mock_path_class:
             mock_path_class.home.return_value = Path("/home/user")
-            mock_path_class.return_value.__truediv__.return_value.__truediv__.return_value.__truediv__.return_value = mock_path
+            mock_path_class.return_value.__truediv__.return_value.__truediv__.return_value.__truediv__.return_value = (
+                mock_path
+            )
 
             # Mock toml load
             mock_tomllib.load.return_value = {
@@ -443,7 +445,9 @@ class TestOCIGenAIProviderAdditional:
         with patch("coda.providers.oci_genai.Path") as mock_path:
             mock_path_instance = Mock()
             mock_path_instance.exists.return_value = False
-            mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value.__truediv__.return_value = mock_path_instance
+            mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value.__truediv__.return_value = (
+                mock_path_instance
+            )
 
             # Call the private method directly
             result = provider._get_from_coda_config()
@@ -454,7 +458,9 @@ class TestOCIGenAIProviderAdditional:
         with patch("coda.providers.oci_genai.Path") as mock_path:
             mock_path_instance = Mock()
             mock_path_instance.exists.return_value = True
-            mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value.__truediv__.return_value = mock_path_instance
+            mock_path.home.return_value.__truediv__.return_value.__truediv__.return_value.__truediv__.return_value = (
+                mock_path_instance
+            )
 
             with patch("builtins.open", side_effect=Exception("Read error")):
                 result = provider._get_from_coda_config()
