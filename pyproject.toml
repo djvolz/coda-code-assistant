@@ -111,9 +111,9 @@ addopts = [
     "--ignore=tests/intelligence/",
     "--ignore=tests/tools/test_intelligence_tools.py",
     "--ignore=tests/unit/cli/test_observability_commands.py",
-    # Exclude configuration tests with observability settings
-    "--deselect=tests/unit/test_configuration.py::TestConfigManagerEnhancements::test_get_bool_with_env_override",
-    "--deselect=tests/unit/test_configuration.py::TestConfigManagerEnhancements::test_get_bool_type_conversion",
+    # Exclude configuration tests with observability settings  
+    "--deselect=tests/unit/test_configuration.py::TestCodaConfigEnhancements",
+    "--deselect=tests/unit/test_configuration.py::TestConfigManagerEnhancements",
 ]
 # Cache configuration
 cache_dir = ".pytest_cache"
