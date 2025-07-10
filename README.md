@@ -20,7 +20,7 @@ Coda is your AI pair programmer that lives in your terminal, supporting multiple
 
 ```bash
 # Clone the repository
-git clone https://github.com/dannyl1u/coda-code-assistant.git
+git clone https://github.com/djvolz/coda-code-assistant.git
 cd coda-code-assistant
 
 # Install with uv (recommended)
