@@ -191,14 +191,14 @@ class TestThemeIntegration:
         # Mock the session manager
         with patch.object(session_commands, "manager") as mock_manager:
             # Mock finding auto-saved sessions with correct prefix
-            from coda.constants import AUTO_SESSION_PREFIX
+            from coda.constants import SESSION
 
             mock_session1 = Mock()
             mock_session1.id = "1"
-            mock_session1.name = f"{AUTO_SESSION_PREFIX}20241205-143022"
+            mock_session1.name = f"{SESSION.AUTO_PREFIX}20241205-143022"
             mock_session2 = Mock()
             mock_session2.id = "2"
-            mock_session2.name = f"{AUTO_SESSION_PREFIX}20241205-151545"
+            mock_session2.name = f"{SESSION.AUTO_PREFIX}20241205-151545"
             mock_manager.get_active_sessions.return_value = [mock_session1, mock_session2]
             mock_manager.delete_session.return_value = None
 

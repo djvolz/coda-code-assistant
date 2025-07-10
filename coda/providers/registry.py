@@ -2,12 +2,7 @@
 
 from typing import Any
 
-from coda.constants import (
-    PROVIDER_LITELLM,
-    PROVIDER_MOCK,
-    PROVIDER_OCI_GENAI,
-    PROVIDER_OLLAMA,
-)
+from coda.constants import PROVIDERS
 from coda.providers.base import BaseProvider
 from coda.providers.litellm_provider import LiteLLMProvider
 from coda.providers.mock_provider import MockProvider
@@ -120,10 +115,10 @@ class ProviderRegistry:
 
 
 # Register built-in providers
-ProviderRegistry.register(PROVIDER_OCI_GENAI, OCIGenAIProvider)
-ProviderRegistry.register(PROVIDER_LITELLM, LiteLLMProvider)
-ProviderRegistry.register(PROVIDER_OLLAMA, OllamaProvider)
-ProviderRegistry.register(PROVIDER_MOCK, MockProvider)
+ProviderRegistry.register(PROVIDERS.OCI_GENAI, OCIGenAIProvider)
+ProviderRegistry.register(PROVIDERS.LITELLM, LiteLLMProvider)
+ProviderRegistry.register(PROVIDERS.OLLAMA, OllamaProvider)
+ProviderRegistry.register(PROVIDERS.MOCK, MockProvider)
 
 
 class ProviderFactory:

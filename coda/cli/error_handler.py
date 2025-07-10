@@ -5,10 +5,7 @@ import traceback
 
 from rich.console import Console
 
-from coda.constants import (
-    ERROR_COMPARTMENT_ID_MISSING,
-    HELP_COMPARTMENT_ID,
-)
+from coda.constants import ERRORS
 from coda.themes import get_console_theme
 
 
@@ -26,10 +23,10 @@ class CLIErrorHandler:
 
         if "compartment_id is required" in error_str:
             self.console.print(
-                f"\n[{self.theme.error}]Error:[/{self.theme.error}] {ERROR_COMPARTMENT_ID_MISSING}"
+                f"\n[{self.theme.error}]Error:[/{self.theme.error}] {ERRORS.COMPARTMENT_ID_MISSING}"
             )
             self.console.print("\nPlease set it via one of these methods:")
-            self.console.print(HELP_COMPARTMENT_ID)
+            self.console.print(ERRORS.HELP_COMPARTMENT_ID)
         elif "Unknown provider" in error_str and factory:
             self.console.print(
                 f"\n[{self.theme.error}]Error:[/{self.theme.error}] Provider '{provider_name}' not found"

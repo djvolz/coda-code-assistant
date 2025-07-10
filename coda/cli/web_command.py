@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from coda.configuration import get_config
-from coda.constants import PANEL_BORDER_STYLE
+from coda.constants import UI
 
 console = Console()
 
@@ -22,7 +22,7 @@ console = Console()
 def web(port: int, host: str, browser: bool, debug: bool):
     """Launch the Coda Assistant web interface."""
     try:
-        config = get_config()
+        get_config()  # Validate config loads successfully
     except Exception as e:
         console.print(f"[red]Error loading configuration: {e}[/red]")
         sys.exit(1)
@@ -32,7 +32,7 @@ def web(port: int, host: str, browser: bool, debug: bool):
             f"[green]Starting Coda Web UI on http://{host}:{port}[/green]\n"
             f"[dim]Press Ctrl+C to stop the server[/dim]",
             title="Web UI",
-            border_style=PANEL_BORDER_STYLE,
+            border_style=UI.PANEL_BORDER_STYLE,
         )
     )
 
