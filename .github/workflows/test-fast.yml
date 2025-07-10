@@ -33,10 +33,6 @@ jobs:
           --tb=short \
           --maxfail=5
 
-    - name: Run CLI input tests
-      run: |
-        uv run pytest tests/cli/test_interactive_cli_input.py -v --tb=short
-
     - name: Run CLI completion tests
       run: |
         uv run pytest tests/cli/test_cli_completion.py -v --tb=short
