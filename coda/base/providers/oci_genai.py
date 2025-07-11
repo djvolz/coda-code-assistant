@@ -6,6 +6,7 @@ import os
 from collections.abc import AsyncIterator, Iterator
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import oci
 from oci.generative_ai import GenerativeAiClient
@@ -88,6 +89,9 @@ class OCIGenAIProvider(BaseProvider):
 
         # Validate config
         oci.config.validate_config(self.config)
+        
+        # Store region from config
+        self.region = self.config.get("region", "us-phoenix-1")
 
         # Initialize the Generative AI clients
         self.inference_client = GenerativeAiInferenceClient(self.config)
@@ -275,12 +279,23 @@ class OCIGenAIProvider(BaseProvider):
             error_msg = str(e)
             if "NotAuthorizedOrNotFound" in error_msg or "Authorization failed" in error_msg:
                 # This is a critical auth error - don't provide fallback models
+                # Extract region from error if available
+                import re
+                region_match = re.search(r'https://generativeai\.([^.]+)\.oci', error_msg)
+                region = region_match.group(1) if region_match else self.region
+                
                 raise Exception(
-                    f"OCI GenAI authorization failed. Please check:\n"
-                    f"1. Your OCI configuration and credentials\n"
-                    f"2. IAM policies for accessing OCI Generative AI service\n"
-                    f"3. The service is available in your region\n"
-                    f"Error: {error_msg}"
+                    f"OCI GenAI authorization failed. Please check:\n\n"
+                    f"1. **IAM Policy**: Ensure your user/group has a policy like:\n"
+                    f"   Allow group <your-group> to use generative-ai-family in compartment <compartment-name>\n\n"
+                    f"2. **Service Availability**: Verify GenAI is available in '{region}' region:\n"
+                    f"   https://docs.oracle.com/en-us/iaas/Content/generative-ai/overview.htm#regions\n\n"
+                    f"3. **Compartment Access**: Verify you have access to compartment:\n"
+                    f"   {self.compartment_id}\n\n"
+                    f"4. **Quick Test**: Try running this OCI CLI command:\n"
+                    f"   oci generative-ai model list --compartment-id {self.compartment_id}\n\n"
+                    f"If the CLI command also fails, the issue is with OCI permissions, not Coda.\n"
+                    f"Original error: {e.__class__.__name__}: {str(e)}"
                 )
             else:
                 # For other errors, we might still try fallback
@@ -943,3 +958,38 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                     print(f"  - {r['model_id']}: {r['error']}")
 
         return results
+    
+    def check_service_access(self) -> dict[str, Any]:
+        """Check if the OCI GenAI service is accessible with current configuration.
+        
+        Returns diagnostic information about service access.
+        """
+        diagnostics = {
+            "config_valid": False,
+            "service_accessible": False,
+            "compartment_id": self.compartment_id,
+            "region": self.region,
+            "errors": []
+        }
+        
+        # Check 1: Configuration is loaded
+        try:
+            if not self.compartment_id:
+                diagnostics["errors"].append("No compartment ID configured")
+            else:
+                diagnostics["config_valid"] = True
+        except Exception as e:
+            diagnostics["errors"].append(f"Config error: {str(e)}")
+            
+        # Check 2: Try to list models (this is what's failing)
+        if diagnostics["config_valid"]:
+            try:
+                self.genai_client.list_models(
+                    compartment_id=self.compartment_id,
+                    limit=1
+                )
+                diagnostics["service_accessible"] = True
+            except Exception as e:
+                diagnostics["errors"].append(f"Service access error: {str(e)}")
+                
+        return diagnostics
