@@ -8,7 +8,7 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 
-from coda.configuration import get_config
+from coda.base.config.compat import get_config
 from .constants import PANEL_BORDER_STYLE
 
 console = Console()

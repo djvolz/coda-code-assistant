@@ -63,24 +63,6 @@ def print_developer_modes(console: Console):
     console.print()
 
 
-def print_basic_keyboard_shortcuts(console: Console):
-    """Print basic keyboard shortcuts available in basic mode."""
-    theme = get_console_theme()
-
-    console.print(f"[{theme.bold}]Keyboard Shortcuts:[/{theme.bold}]")
-    console.print(
-        f"  [{theme.command}]Ctrl+C[/{theme.command}] - Clear input line (during input) / Interrupt AI response"
-    )
-    console.print(f"  [{theme.command}]Ctrl+D[/{theme.command}] - Exit the application (EOF)")
-    console.print()
-    console.print(f"[{theme.dim}]Note: Basic mode has limited keyboard shortcuts.[/{theme.dim}]")
-    console.print(
-        f"[{theme.dim}]For command history, tab completion, and advanced editing,[/{theme.dim}]"
-    )
-    console.print(
-        f"[{theme.dim}]run without the --basic flag to use interactive mode.[/{theme.dim}]"
-    )
-    console.print()
 
 
 def print_interactive_keyboard_shortcuts(console: Console):

@@ -2,7 +2,7 @@
 
 from rich.console import Console
 
-from coda.base.configuration import CodaConfig
+from coda.base.config.compat import CodaConfig
 from coda.base.providers import BaseProvider, Model, ProviderFactory
 from coda.base.themes import get_console_theme
 
@@ -94,11 +94,13 @@ class ProviderManager:
             )
             return selected
 
-        # Use basic model selector for interactive selection
+        # Use interactive model selector
         from .model_selector import ModelSelector
+        import asyncio
 
         selector = ModelSelector(unique_models, self.console)
-        return selector.select_model_basic()
+        # Run the async selector in a new event loop
+        return asyncio.run(selector.select_model_interactive())
 
     def get_provider_error_message(
         self, error: Exception, provider_name: str

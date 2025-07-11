@@ -44,7 +44,7 @@ dependencies = [
 ]
 
 [project.scripts]
-coda = "coda.cli.cli:cli"
+coda = "coda.apps.cli.cli:cli"
 
 [project.optional-dependencies]
 dev = [

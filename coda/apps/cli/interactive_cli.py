@@ -445,7 +445,7 @@ class InteractiveCLI(CommandHandler):
 
     async def _apply_theme_change(self, theme_name: str) -> None:
         """Apply theme change and update all necessary components."""
-        from ..configuration import save_config
+        from coda.base.config.compat import save_config
         from coda.base.theme import ThemeManager
 
         theme_manager = ThemeManager()
@@ -878,7 +878,7 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_observability(self, args: str):
         """Manage observability and telemetry settings."""
-        from ..configuration import get_config_manager
+        from coda.base.config.compat import get_config_manager
         from coda.base.observability.commands import ObservabilityCommands
         from coda.base.observability.manager import ObservabilityManager
 

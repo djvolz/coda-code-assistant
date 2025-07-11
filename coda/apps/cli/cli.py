@@ -23,12 +23,12 @@ def cli(ctx):
 @click.option("--model", "-m", help="Model to use")
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--one-shot", help="Execute a single prompt and exit")
-@click.option("--basic", is_flag=True, help="Use basic CLI mode (no prompt-toolkit)")
+@click.option("--basic", is_flag=True, help="[DEPRECATED] Basic mode is no longer supported", hidden=True)
 @click.option(
     "--mode",
     type=click.Choice(["general", "code", "debug", "explain", "review", "refactor", "plan"]),
     default="general",
-    help="Initial developer mode (basic mode only)",
+    help="Initial developer mode",
 )
 @click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.option("--resume", is_flag=True, help="Resume the most recent session")

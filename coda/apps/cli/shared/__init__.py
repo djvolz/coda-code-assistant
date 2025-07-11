@@ -1,8 +1,7 @@
-"""Shared CLI components for both basic and interactive modes."""
+"""Shared CLI components for interactive mode."""
 
 from .commands import CommandHandler, CommandResult
 from .help import (
-    print_basic_keyboard_shortcuts,
     print_command_help,
     print_developer_modes,
     print_interactive_keyboard_shortcuts,
@@ -22,7 +21,6 @@ __all__ = [
     "CommandResult",
     "print_command_help",
     "print_developer_modes",
-    "print_basic_keyboard_shortcuts",
     "print_interactive_keyboard_shortcuts",
     "print_interactive_only_commands",
 ]

@@ -248,7 +248,7 @@ async def _handle_chat_interaction(
     try:
         # Get generation parameters from config or defaults
         if not config:
-            from coda.base.configuration import get_config
+            from coda.base.config.compat import get_config
 
             config = get_config()
         temperature = config.to_dict().get("temperature", 0.7)
@@ -386,7 +386,7 @@ async def run_interactive_session(
     cli = InteractiveCLI(console)
 
     # Load configuration
-    from coda.base.configuration import get_config
+    from coda.base.config.compat import get_config
     from coda.base.providers import ProviderFactory
 
     config = get_config()

@@ -1,62 +1,38 @@
-"""Interactive model selection using prompt-toolkit."""
+"""Model selection UI for interactive CLI."""
+
+import asyncio
+from functools import partial
 
 from prompt_toolkit import Application
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout import FormattedTextControl, HSplit, Layout, Window
-from prompt_toolkit.widgets import TextArea
+from prompt_toolkit.layout import (
+    ConditionalContainer,
+    HSplit,
+    Layout,
+    ScrollablePane,
+    Window,
+    WindowAlign,
+)
+from prompt_toolkit.widgets import Frame, Label, TextArea
 from rich.console import Console
 
-from .constants import (
-    MAX_MODELS_BASIC_DISPLAY,
-    MAX_MODELS_DISPLAY,
-)
-from ..theme import ThemeManager
+from coda.base.providers import Model
+from coda.base.theme import ThemeManager
+
 
 
 class ModelSelector:
-    """Interactive model selector with search and navigation."""
+    """Interactive model selector for CLI."""
 
-    def __init__(self, models: list, console: Console = None):
+    def __init__(self, models: list[Model], console: Console | None = None):
         self.models = models
-        if console:
-            self.console = console
-        else:
-            # TODO: Update to use new theme manager
-            from rich.console import Console
-            self.console = Console()
-        self.filtered_models = models
         self.selected_index = 0
         self.search_text = ""
-        # Use theme-based style
-        theme_manager = ThemeManager()
-        self.style = theme_manager.get_prompt_theme().to_prompt_toolkit_style()
-        self.theme = theme_manager.get_console_theme()
-
-    def create_model_list_text(self) -> HTML:
-        """Create formatted text for model list."""
-        lines = ["<title>Select a Model</title>\n"]
-
-        # Add search info
-        if self.search_text:
-            lines.append(f"<info>Filter: {self.search_text}</info>\n")
-
-        # Add model list
-        for i, model in enumerate(self.filtered_models[:20]):  # Show max 20
-            if i == self.selected_index:
-                lines.append(f"<selected>▶ {model.id} ({model.provider})</selected>")
-            else:
-                lines.append(f"  {model.id} <provider>({model.provider})</provider>")
-
-        if len(self.filtered_models) > MAX_MODELS_DISPLAY:
-            lines.append(
-                f"\n<info>... and {len(self.filtered_models) - MAX_MODELS_DISPLAY} more</info>"
-            )
-
-        # Add help text
-        lines.append("\n<info>↑/↓: Navigate  Enter: Select  /: Search  Esc: Cancel</info>")
-
-        return HTML("\n".join(lines))
+        self.console = console or Console()
+        self.theme_manager = ThemeManager()
+        self.theme = self.theme_manager.current_theme
+        self.filtered_models = self.models
 
     def filter_models(self):
         """Filter models based on search text."""
@@ -69,114 +45,118 @@ class ModelSelector:
                 for m in self.models
                 if search_lower in m.id.lower() or search_lower in m.provider.lower()
             ]
-        self.selected_index = 0
 
-    async def select_model_interactive(self) -> str | None:
-        """Show interactive model selection and return selected model ID."""
-        selected_model = None
+        # Adjust selected index if needed
+        if self.selected_index >= len(self.filtered_models):
+            self.selected_index = max(0, len(self.filtered_models) - 1)
 
-        # Key bindings
+    def get_model_list_text(self) -> str:
+        """Get formatted model list for display."""
+        if not self.filtered_models:
+            return "[No matching models]"
+
+        lines = []
+        for i, model in enumerate(self.filtered_models):
+            # Determine selection indicator
+            if i == self.selected_index:
+                prefix = "▶ "
+                style = f"fg:{self.theme.highlight} bold"
+            else:
+                prefix = "  "
+                style = ""
+
+            # Format model info
+            model_text = f"{prefix}{model.id} ({model.provider})"
+            if style:
+                lines.append(f'<style {style}>{model_text}</style>')
+            else:
+                lines.append(model_text)
+
+        return "\n".join(lines)
+
+    def get_status_text(self) -> str:
+        """Get status bar text."""
+        total = len(self.models)
+        shown = len(self.filtered_models)
+        if shown < total:
+            return f"Showing {shown} of {total} models"
+        return f"{total} models available"
+
+    async def select_model_interactive(self) -> str:
+        """Interactive model selection using prompt-toolkit."""
+        # Create key bindings
         kb = KeyBindings()
 
+        @kb.add("c-c")
+        @kb.add("escape")
+        def exit_app(event):
+            """Exit without selecting."""
+            event.app.exit(result=None)
+
+        @kb.add("enter")
+        def select_model(event):
+            """Select current model."""
+            if self.filtered_models:
+                event.app.exit(result=self.filtered_models[self.selected_index].id)
+
         @kb.add("up")
-        def _up(event):
+        @kb.add("c-p")
+        def move_up(event):
+            """Move selection up."""
             if self.selected_index > 0:
                 self.selected_index -= 1
                 event.app.invalidate()
 
         @kb.add("down")
-        def _down(event):
-            if self.selected_index < min(len(self.filtered_models) - 1, 19):
+        @kb.add("c-n")
+        def move_down(event):
+            """Move selection down."""
+            if self.selected_index < len(self.filtered_models) - 1:
                 self.selected_index += 1
                 event.app.invalidate()
 
-        @kb.add("enter")
-        def _select(event):
-            nonlocal selected_model
-            if self.filtered_models:
-                selected_model = self.filtered_models[self.selected_index].id
-            event.app.exit()
-
-        @kb.add("escape")
-        @kb.add("c-c")
-        def _cancel(event):
-            event.app.exit()
-
-        @kb.add("/")
-        def _search(event):
-            # Start search mode
-            self.search_text = ""
-            self.filter_models()
-            event.app.layout.focus(search_field)
-
-        # Search field
+        # Create search field
         search_field = TextArea(
             height=1,
-            prompt="Search: ",
-            style="class:search",
+            prompt=HTML(f'<style fg="{self.theme.prompt}">Search: </style>'),
             multiline=False,
+            focus_on_click=True,
+        )
+
+        def on_search_change(buf):
+            """Handle search text changes."""
+            self.search_text = search_field.text
+            self.filter_models()
+            app.invalidate()
+
+        search_field.buffer.on_text_changed += on_search_change
+
+        # Create layout
+        model_list_window = Window(
+            content=partial(lambda: HTML(self.get_model_list_text())),
             wrap_lines=False,
         )
 
-        def on_search_change():
-            self.search_text = search_field.text
-            self.filter_models()
-
-        search_field.buffer.on_text_changed += lambda _: on_search_change()
-
-        # Layout
-        model_list = Window(
-            FormattedTextControl(
-                lambda: self.create_model_list_text(),
-                focusable=True,
-            ),
-            height=25,
+        status_window = Window(
+            content=partial(lambda: HTML(f'<style fg="{self.theme.dim}">{self.get_status_text()}</style>')),
+            height=1,
+            align=WindowAlign.RIGHT,
         )
 
         layout = Layout(
             HSplit(
                 [
-                    model_list,
+                    Label(text=HTML(f'<style fg="{self.theme.info} bold">Select Model</style>')),
                     search_field,
+                    Frame(ScrollablePane(model_list_window), title="Available Models"),
+                    status_window,
                 ]
-            ),
-            focused_element=model_list,
+            )
         )
 
-        # Create and run application
-        app = Application(
-            layout=layout,
-            key_bindings=kb,
-            style=self.style,
-            mouse_support=True,
-            full_screen=False,
-        )
+        # Create application
+        app = Application(layout=layout, key_bindings=kb, full_screen=False, mouse_support=True)
 
-        await app.run_async()
+        # Run and get result
+        selected_model = await app.run_async()
         return selected_model
-
-    def select_model_basic(self) -> str:
-        """Basic model selection for non-interactive mode."""
-        self.console.print("\n[bold]Available models:[/bold]")
-        for i, m in enumerate(self.models[:MAX_MODELS_BASIC_DISPLAY], 1):
-            self.console.print(f"{i:2d}. {m.id} ({m.provider})")
-
-        if len(self.models) > MAX_MODELS_BASIC_DISPLAY:
-            self.console.print(f"    ... and {len(self.models) - MAX_MODELS_BASIC_DISPLAY} more")
-
-        while True:
-            try:
-                choice = self.console.input("\nSelect model number [1]: ") or "1"
-                index = int(choice) - 1
-                if 0 <= index < len(self.models):
-                    return self.models[index].id
-                else:
-                    self.console.print(
-                        f"[{self.theme.error}]Invalid selection. Please try again.[/{self.theme.error}]"
-                    )
-            except ValueError:
-                self.console.print(
-                    f"[{self.theme.error}]Please enter a number.[/{self.theme.error}]"
-                )
-            except KeyboardInterrupt:
-                raise SystemExit(0) from None
