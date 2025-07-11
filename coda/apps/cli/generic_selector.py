@@ -10,7 +10,7 @@ from prompt_toolkit.layout import (
 from prompt_toolkit.layout.controls import FormattedTextControl
 from rich.console import Console
 
-from coda.base.theme import get_console_theme
+from coda.base.theme import ThemeManager
 
 
 class GenericSelector:
@@ -32,7 +32,8 @@ class GenericSelector:
         self.selected_option = None
 
         # Get theme colors
-        self.theme = get_console_theme()
+        theme_manager = ThemeManager()
+        self.theme = theme_manager.get_console_theme()
 
     def create_bindings(self) -> KeyBindings:
         """Create key bindings for the selector."""
@@ -103,10 +104,10 @@ class GenericSelector:
 
         # Define custom style based on theme
         style = {
-            "title": f"{self.theme.console.info} bold",
-            "option": self.theme.console.dim,
-            "selected": f"{self.theme.console.success} bold",
-            "help": self.theme.console.dim,
+            "title": f"{self.theme.info} bold",
+            "option": self.theme.dim,
+            "selected": f"{self.theme.success} bold",
+            "help": self.theme.dim,
         }
 
         # Create application
