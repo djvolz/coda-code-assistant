@@ -18,11 +18,7 @@ from .constants import HISTORY_FILE
 from .completers import CodaCompleter
 from .shared import CommandHandler, CommandResult, DeveloperMode
 
-# TODO: HISTORY_FILE_PATH should be computed from config module
-# For now, use a temporary path
-from pathlib import Path
-import os
-HISTORY_FILE_PATH = Path(os.path.expanduser("~/.config/coda")) / HISTORY_FILE
+# Import moved to where it's used to avoid circular imports
 
 
 class SlashCommand:
@@ -176,8 +172,15 @@ class InteractiveCLI(CommandHandler):
 
     def _init_session(self):
         """Initialize the prompt session with all features."""
+        # Get history file path from config
+        if self.config:
+            history_file_path = self.config.get_config_dir() / HISTORY_FILE
+        else:
+            # Fallback if config not available yet
+            history_file_path = Path.home() / ".config" / "coda" / HISTORY_FILE
+        
         # Create history directory if it doesn't exist
-        HISTORY_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        history_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Create key bindings
         kb = KeyBindings()
@@ -194,7 +197,7 @@ class InteractiveCLI(CommandHandler):
         )
 
         self.session = PromptSession(
-            history=FileHistory(str(HISTORY_FILE_PATH)),
+            history=FileHistory(str(history_file_path)),
             auto_suggest=None,  # Disable auto-suggestions from history
             completer=completer,
             style=self.style,

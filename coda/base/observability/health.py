@@ -345,10 +345,15 @@ class HealthMonitor(ObservabilityComponent):
         start_time = time.time()
 
         try:
-            # This is a placeholder - would need actual database connection
-            # For now, just check if the database file exists
-            # TODO: Get session DB path from config module
-            # For now, return a placeholder healthy status
+            # Check if the database file exists
+            # Get session DB path from config if available
+            if self.config_manager:
+                session_db_path = self.config_manager.get_data_dir() / "sessions.db"
+                db_exists = session_db_path.exists()
+                message = f"Database {'exists' if db_exists else 'not found'} at {session_db_path}"
+            else:
+                message = "Database check pending (config manager not available)"
+            
             response_time = (time.time() - start_time) * 1000
 
             return HealthCheck(
@@ -356,7 +361,7 @@ class HealthMonitor(ObservabilityComponent):
                 status="healthy",
                 response_time_ms=response_time,
                 timestamp=datetime.now(UTC),
-                message="Database check placeholder (pending config module integration)",
+                message=message,
             )
 
         except Exception as e:
@@ -373,9 +378,14 @@ class HealthMonitor(ObservabilityComponent):
         start_time = time.time()
 
         try:
-            # TODO: Get directories from config module
-            # For now, skip this check
+            # Get directories from config module if available
             directories = []
+            if self.config_manager:
+                directories = [
+                    self.config_manager.get_config_dir(),
+                    self.config_manager.get_data_dir(),
+                    self.config_manager.get_cache_dir(),
+                ]
 
             for directory in directories:
                 directory.mkdir(parents=True, exist_ok=True)

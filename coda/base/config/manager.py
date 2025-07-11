@@ -215,10 +215,14 @@ class ConfigManager:
             for part in parts[:-1]:
                 if part not in current:
                     current[part] = {}
+                elif not isinstance(current[part], dict):
+                    # Skip if we hit a non-dict value
+                    continue
                 current = current[part]
 
-            # Parse value
-            current[parts[-1]] = self._parse_env_value(value)
+            # Parse value (only if current is still a dict)
+            if isinstance(current, dict):
+                current[parts[-1]] = self._parse_env_value(value)
 
         if env_config:
             self.config.add_layer(env_config, ConfigSource.ENVIRONMENT)
@@ -341,6 +345,48 @@ class ConfigManager:
     def to_dict(self) -> dict[str, Any]:
         """Get the entire configuration as a dictionary."""
         return self.config.get_merged()
+
+    def get_config_dir(self) -> Path:
+        """Get the configuration directory path.
+        
+        Returns:
+            Path to configuration directory
+        """
+        # Check XDG_CONFIG_HOME first
+        xdg_config = os.environ.get("XDG_CONFIG_HOME")
+        if xdg_config:
+            return Path(xdg_config) / self.app_name
+        
+        # Default to ~/.config/app_name
+        return Path.home() / ".config" / self.app_name
+    
+    def get_data_dir(self) -> Path:
+        """Get the data directory path.
+        
+        Returns:
+            Path to data directory
+        """
+        # Check XDG_DATA_HOME first
+        xdg_data = os.environ.get("XDG_DATA_HOME")
+        if xdg_data:
+            return Path(xdg_data) / self.app_name
+        
+        # Default to ~/.local/share/app_name
+        return Path.home() / ".local" / "share" / self.app_name
+    
+    def get_cache_dir(self) -> Path:
+        """Get the cache directory path.
+        
+        Returns:
+            Path to cache directory
+        """
+        # Check XDG_CACHE_HOME first
+        xdg_cache = os.environ.get("XDG_CACHE_HOME")
+        if xdg_cache:
+            return Path(xdg_cache) / self.app_name
+        
+        # Default to ~/.cache/app_name
+        return Path.home() / ".cache" / self.app_name
 
     def save(self, path: Path, format: ConfigFormat = ConfigFormat.JSON) -> None:
         """Save configuration to a file.

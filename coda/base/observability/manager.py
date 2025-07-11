@@ -10,7 +10,6 @@ from typing import Any
 
 from ..config import ConfigManager
 from .constants import ENV_PREFIX
-# TODO: get_cache_dir should come from config module
 from .error_tracker import ErrorCategory, ErrorSeverity, ErrorTracker
 from .health import HealthMonitor
 from .metrics import MetricsCollector
@@ -61,15 +60,14 @@ class ObservabilityManager:
 
     def _get_export_directory(self) -> Path:
         """Get the directory for exporting observability data."""
-        # TODO: Use config module's get_cache_dir when available
-        default_dir = Path.home() / ".cache" / "coda" / "observability"
         # Check environment variable first
         import os
         env_value = os.environ.get(f"{ENV_PREFIX}OBSERVABILITY_EXPORT_DIR")
         if env_value:
-            export_dir = env_value
+            export_dir = Path(env_value)
         else:
-            # Fall back to config file
+            # Fall back to config file, then cache dir
+            default_dir = self.config_manager.get_cache_dir() / "observability"
             export_dir = self.config_manager.get_string(
                 "observability.export_directory",
                 default=str(default_dir)
