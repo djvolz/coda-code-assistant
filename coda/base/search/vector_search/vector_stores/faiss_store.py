@@ -57,7 +57,7 @@ class FAISSVectorStore(BaseVectorStore):
         self.id_to_idx: dict[str, int] = {}
         self.idx_to_id: dict[int, str] = {}
 
-    def _create_index(self) -> faiss.Index:
+    def _create_index(self) -> Any:
         """Create FAISS index based on configuration."""
         # Normalize vectors for cosine similarity
         if self.metric == "cosine":

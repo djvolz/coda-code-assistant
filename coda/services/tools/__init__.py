@@ -32,6 +32,9 @@ __all__ = [
     "get_available_tools",
     "execute_tool",
     "get_tool_categories",
+    "get_tool_info",
+    "get_tool_stats",
+    "list_tools_by_category",
 ]
 
 

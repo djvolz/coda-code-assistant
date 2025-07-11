@@ -7,7 +7,7 @@ from prompt_toolkit.layout import FormattedTextControl, HSplit, Layout, Window
 from prompt_toolkit.widgets import TextArea
 from rich.console import Console
 
-from ..themes import THEMES, get_prompt_style
+from coda.base.theme import THEMES
 
 
 class ThemeSelector:
@@ -17,7 +17,7 @@ class ThemeSelector:
         if console:
             self.console = console
         else:
-            from ..themes import get_themed_console
+            from coda.base.theme.compat import get_themed_console
 
             self.console = get_themed_console()
 
@@ -26,8 +26,13 @@ class ThemeSelector:
         self.filtered_themes = self.themes
         self.selected_index = 0
         self.search_text = ""
-        # Use theme-based style
-        self.style = get_prompt_style()
+        # Get theme-based style
+        from coda.base.theme import ThemeManager
+        from prompt_toolkit.styles import Style
+        
+        theme_mgr = ThemeManager()
+        theme_style_dict = theme_mgr.current_theme.prompt.to_dict()
+        self.style = Style.from_dict(theme_style_dict)
 
     def create_theme_list_text(self) -> HTML:
         """Create formatted text for theme list."""

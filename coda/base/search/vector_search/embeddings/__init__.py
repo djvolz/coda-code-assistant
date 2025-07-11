@@ -8,23 +8,47 @@ including OCI GenAI, Ollama, and HuggingFace models.
 from .base import BaseEmbeddingProvider, EmbeddingResult
 from .factory import EmbeddingProviderFactory, create_embedding_provider
 from .mock import MockEmbeddingProvider
-from .oci import (
-    OCIEmbeddingProvider,
-    create_oci_provider_from_coda_config,
-    create_standalone_oci_provider,
-)
-from .ollama import OllamaEmbeddingProvider
-from .sentence_transformers import SentenceTransformersProvider
+
+# Optional providers (conditionally imported)
+try:
+    from .oci import (
+        OCIEmbeddingProvider,
+        create_oci_provider_from_coda_config,
+        create_standalone_oci_provider,
+    )
+except ImportError:
+    OCIEmbeddingProvider = None
+    create_oci_provider_from_coda_config = None
+    create_standalone_oci_provider = None
+
+try:
+    from .ollama import OllamaEmbeddingProvider
+except ImportError:
+    OllamaEmbeddingProvider = None
+
+try:
+    from .sentence_transformers import SentenceTransformersProvider
+except ImportError:
+    SentenceTransformersProvider = None
 
 __all__ = [
     "BaseEmbeddingProvider",
     "EmbeddingResult",
-    "OCIEmbeddingProvider",
     "MockEmbeddingProvider",
-    "SentenceTransformersProvider",
-    "OllamaEmbeddingProvider",
     "EmbeddingProviderFactory",
     "create_embedding_provider",
-    "create_oci_provider_from_coda_config",
-    "create_standalone_oci_provider",
 ]
+
+# Add optional exports if available
+if OCIEmbeddingProvider is not None:
+    __all__.extend([
+        "OCIEmbeddingProvider",
+        "create_oci_provider_from_coda_config",
+        "create_standalone_oci_provider",
+    ])
+
+if SentenceTransformersProvider is not None:
+    __all__.append("SentenceTransformersProvider")
+
+if OllamaEmbeddingProvider is not None:
+    __all__.append("OllamaEmbeddingProvider")

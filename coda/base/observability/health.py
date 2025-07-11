@@ -16,7 +16,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from ..configuration import ConfigManager
+from ..config import ConfigManager
 from .constants import ENV_PREFIX
 from .base import ObservabilityComponent
 

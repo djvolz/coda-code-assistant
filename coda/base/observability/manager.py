@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from ..configuration import ConfigManager
+from ..config import ConfigManager
 from .constants import ENV_PREFIX
 # TODO: get_cache_dir should come from config module
 from .error_tracker import ErrorCategory, ErrorSeverity, ErrorTracker

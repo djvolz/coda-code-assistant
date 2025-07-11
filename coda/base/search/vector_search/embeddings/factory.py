@@ -10,9 +10,22 @@ from typing import Any
 
 from .base import BaseEmbeddingProvider
 from .mock import MockEmbeddingProvider
-from .oci import OCIEmbeddingProvider
-from .ollama import OllamaEmbeddingProvider
-from .sentence_transformers import SentenceTransformersProvider
+
+# Optional providers (conditionally imported)
+try:
+    from .oci import OCIEmbeddingProvider
+except ImportError:
+    OCIEmbeddingProvider = None
+
+try:
+    from .ollama import OllamaEmbeddingProvider
+except ImportError:
+    OllamaEmbeddingProvider = None
+
+try:
+    from .sentence_transformers import SentenceTransformersProvider
+except ImportError:
+    SentenceTransformersProvider = None
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +34,16 @@ class EmbeddingProviderFactory:
     """Factory for creating embedding providers."""
 
     # Registry of available providers
-    PROVIDERS = {
-        "oci": OCIEmbeddingProvider,
-        "mock": MockEmbeddingProvider,
-        "sentence-transformers": SentenceTransformersProvider,
-        "ollama": OllamaEmbeddingProvider,
-    }
+    PROVIDERS = {}
+    
+    # Add providers that are available
+    if OCIEmbeddingProvider is not None:
+        PROVIDERS["oci"] = OCIEmbeddingProvider
+    PROVIDERS["mock"] = MockEmbeddingProvider  # Always available
+    if SentenceTransformersProvider is not None:
+        PROVIDERS["sentence-transformers"] = SentenceTransformersProvider
+    if OllamaEmbeddingProvider is not None:
+        PROVIDERS["ollama"] = OllamaEmbeddingProvider
 
     # Aliases for convenience
     ALIASES = {
@@ -79,6 +96,8 @@ class EmbeddingProviderFactory:
         try:
             if provider_type == "oci":
                 # OCI requires special initialization
+                if OCIEmbeddingProvider is None:
+                    raise ImportError("OCI provider not available. Install oci package.")
                 from .oci import create_standalone_oci_provider
 
                 return create_standalone_oci_provider(

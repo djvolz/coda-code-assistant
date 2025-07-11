@@ -421,7 +421,7 @@ def instrument_cli_command(command_name: str | None = None):
             # Check for global observability manager
             if not obs_manager:
                 try:
-                    from ..configuration import ConfigManager
+                    from ..config import ConfigManager
 
                     config_manager = ConfigManager()
                     obs_manager = ObservabilityManager(config_manager)

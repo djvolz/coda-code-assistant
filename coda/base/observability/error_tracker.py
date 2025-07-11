@@ -14,7 +14,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from ..configuration import ConfigManager
+from ..config import ConfigManager
 from .constants import ENV_PREFIX
 from .base import ObservabilityComponent
 from .sanitizer import DataSanitizer

@@ -4,9 +4,9 @@ CLI commands for codebase intelligence features.
 
 from pathlib import Path
 
-from .dependency_graph import DependencyGraph
-from .repo_map import RepoMap
-from .tree_sitter_analyzer import TreeSitterAnalyzer
+from .map.dependency_graph import DependencyGraph
+from .map.repo_map import RepoMap
+from .map.tree_sitter_analyzer import TreeSitterAnalyzer
 
 
 class IntelligenceCommands:
