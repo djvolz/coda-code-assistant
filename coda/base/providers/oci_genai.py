@@ -271,9 +271,21 @@ class OCIGenAIProvider(BaseProvider):
             return discovered_models
 
         except Exception as e:
-            # If discovery fails, fall back to a basic set of known models
-            print(f"Warning: Model discovery failed ({e}), using fallback models")
-            return self._get_fallback_models()
+            # Check if this is an authorization error
+            error_msg = str(e)
+            if "NotAuthorizedOrNotFound" in error_msg or "Authorization failed" in error_msg:
+                # This is a critical auth error - don't provide fallback models
+                raise Exception(
+                    f"OCI GenAI authorization failed. Please check:\n"
+                    f"1. Your OCI configuration and credentials\n"
+                    f"2. IAM policies for accessing OCI Generative AI service\n"
+                    f"3. The service is available in your region\n"
+                    f"Error: {error_msg}"
+                )
+            else:
+                # For other errors, we might still try fallback
+                # But let's be more cautious and just fail
+                raise Exception(f"Failed to discover OCI GenAI models: {e}")
 
     def _get_fallback_models(self) -> list[Model]:
         """Get fallback models if discovery fails."""

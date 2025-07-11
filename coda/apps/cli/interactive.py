@@ -96,8 +96,12 @@ async def _initialize_provider(factory: "ProviderFactory", provider: str, consol
 async def _get_chat_models(provider_instance, console: Console):
     """Get and filter available chat models from the provider."""
     # List models
-    models = provider_instance.list_models()
-    console.print(f"[green]✓ Found {len(models)} available models[/green]")
+    try:
+        models = provider_instance.list_models()
+        console.print(f"[green]✓ Found {len(models)} available models[/green]")
+    except Exception as e:
+        # Re-raise the exception to be handled by the caller
+        raise
 
     # Filter for chat models - different providers use different indicators
     chat_models = [
@@ -498,7 +502,12 @@ async def run_interactive_session(
         console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
         sys.exit(0)
     except Exception as e:
-        console.print(f"\n[red]Error:[/red] {e}")
+        error_msg = str(e)
+        if "OCI GenAI authorization failed" in error_msg:
+            # Show the formatted error message from the provider
+            console.print(f"\n[red]Error:[/red] {error_msg}")
+        else:
+            console.print(f"\n[red]Error:[/red] {e}")
         if debug:
             import traceback
 
