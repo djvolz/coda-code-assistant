@@ -8,6 +8,6 @@ This service provides application-level configuration management by:
 - Handling environment variable overrides
 """
 
-from .config_service import ConfigService, get_config_service
+from .app_config import AppConfig, get_config_service
 
-__all__ = ["ConfigService", "get_config_service"]
+__all__ = ["AppConfig", "get_config_service"]

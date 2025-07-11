@@ -24,7 +24,7 @@ The config service provides:
 - Backward compatibility during migration
 
 **Key Components**:
-- `ConfigService` - Main service class integrating config and theme management
+- `AppConfig` - Main service class integrating config and theme management
 - `get_config_service()` - Get the global configuration instance
 - Migration utilities for old configuration formats
 

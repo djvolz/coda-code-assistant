@@ -68,10 +68,10 @@ config.save()
 
 ```python
 from pathlib import Path
-from coda.services.config import ConfigService
+from coda.services.config import AppConfig
 
 # Use custom config file
-custom_config = ConfigService(config_path=Path("/custom/path/config.toml"))
+custom_config = AppConfig(config_path=Path("/custom/path/config.toml"))
 ```
 
 ## Configuration Structure
@@ -149,7 +149,7 @@ ollama_settings = providers["ollama"]
 
 ## Integration with Base Modules
 
-The ConfigService integrates two base modules:
+The AppConfig service integrates two base modules:
 
 1. **base.config.Config** - Handles TOML file I/O and value management
 2. **base.theme.ThemeManager** - Manages color themes and console styling
@@ -195,7 +195,7 @@ provider = factory.create(config.default_provider)
 
 ## Thread Safety
 
-The ConfigService is NOT thread-safe. If you need to use it in a multi-threaded environment, you should:
+The AppConfig service is NOT thread-safe. If you need to use it in a multi-threaded environment, you should:
 - Create separate instances per thread, or
 - Add your own synchronization primitives
 

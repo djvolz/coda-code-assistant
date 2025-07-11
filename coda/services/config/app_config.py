@@ -15,8 +15,12 @@ from coda.base.theme import ThemeManager
 _config_service = None
 
 
-class ConfigService:
-    """High-level configuration service for Coda applications."""
+class AppConfig:
+    """Application-specific configuration service for Coda.
+    
+    This integrates the base config module with themes and provides
+    Coda-specific defaults and behaviors.
+    """
     
     def __init__(self, config_path: Path | None = None):
         """Initialize configuration service.
@@ -28,7 +32,7 @@ class ConfigService:
         if config_path is None:
             config_path = self._get_default_config_path()
         
-        self.config = Config(config_path=config_path)
+        self.config = Config(config_file=config_path)
         self.theme_manager = ThemeManager()
         
         # Apply theme from config if set
@@ -156,9 +160,13 @@ class ConfigService:
         return self.get_data_dir() / "history.txt"
 
 
-def get_config_service() -> ConfigService:
-    """Get the global configuration service instance."""
+def get_config_service() -> AppConfig:
+    """Get or create the global application configuration instance.
+    
+    Returns:
+        Global AppConfig instance
+    """
     global _config_service
     if _config_service is None:
-        _config_service = ConfigService()
+        _config_service = AppConfig()
     return _config_service

@@ -2,7 +2,7 @@
 
 from rich.console import Console
 
-from coda.services.config import ConfigService
+from coda.services.config import AppConfig
 from coda.base.providers import BaseProvider, Model, ProviderFactory
 # Theme is now passed in via constructor
 
@@ -10,7 +10,7 @@ from coda.base.providers import BaseProvider, Model, ProviderFactory
 class ProviderManager:
     """Manages provider initialization and model discovery."""
 
-    def __init__(self, config: ConfigService, console: Console):
+    def __init__(self, config: AppConfig, console: Console):
         self.config = config
         self.console = console
         self.factory = ProviderFactory(config.to_dict())

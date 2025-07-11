@@ -1,6 +1,8 @@
-# Coda Config Module
+# Base Config Module
 
 A standalone, flexible configuration management module that can be used in any Python project.
+
+> **Note**: This is the low-level configuration module with zero dependencies. If you're building a Coda application, you probably want to use `coda.services.config.AppConfig` instead, which integrates this module with themes and provides application-specific defaults.
 
 ## Features
 

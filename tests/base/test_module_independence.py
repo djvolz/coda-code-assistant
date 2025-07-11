@@ -172,7 +172,7 @@ def test_all_base_modules_found():
     # Get all subdirectories in base/
     actual_modules = {
         d.name for d in base_path.iterdir() 
-        if d.is_dir() and not d.name.startswith("__")
+        if d.is_dir() and not d.name.startswith("__") and not d.name.startswith(".")
     }
     
     # Modules we're testing
@@ -197,7 +197,7 @@ def test_no_circular_imports_in_base():
     module_imports = {}
     
     for module_dir in base_path.iterdir():
-        if module_dir.is_dir() and not module_dir.name.startswith("__"):
+        if module_dir.is_dir() and not module_dir.name.startswith("__") and not module_dir.name.startswith("."):
             imports = get_all_imports_in_module(module_dir)
             # Filter to only base module imports
             base_imports = {
@@ -205,6 +205,8 @@ def test_no_circular_imports_in_base():
                 for imp in imports 
                 if imp.startswith("coda.base.") and "." in imp.replace("coda.base.", "")
             }
+            # Remove self-imports (e.g., config importing from config)
+            base_imports.discard(module_dir.name)
             module_imports[module_dir.name] = base_imports
     
     # Check for circular dependencies
