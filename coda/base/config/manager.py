@@ -37,7 +37,10 @@ class ConfigManager:
         self.env_prefix = env_prefix
         self.config = LayeredConfig()
 
-        # Add default layer
+        # First, try to load package default.toml
+        self._load_package_defaults()
+
+        # Add provided defaults (if any)
         if defaults:
             self.config.add_layer(defaults, ConfigSource.DEFAULT)
 
@@ -51,6 +54,53 @@ class ConfigManager:
 
         # Apply environment variables
         self._load_environment_vars()
+
+    def _load_package_defaults(self) -> None:
+        """Load default.toml from the package if it exists."""
+        try:
+            import importlib.resources
+            # For Python 3.9+
+            if hasattr(importlib.resources, 'files'):
+                # Try multiple locations for default.toml
+                locations = [
+                    self.app_name,  # package root
+                    f"{self.app_name}.config",  # config subpackage
+                    f"{self.app_name}.services.config",  # services.config subpackage
+                ]
+                
+                for location in locations:
+                    try:
+                        files = importlib.resources.files(location)
+                        if files and (files / 'default.toml').is_file():
+                            default_content = (files / 'default.toml').read_text()
+                            default_config = self._parse_toml(default_content)
+                            self.config.add_layer(default_config, ConfigSource.DEFAULT)
+                            return  # Found it, stop looking
+                    except Exception:
+                        continue
+            else:
+                # Fallback for Python 3.8
+                import pkg_resources
+                locations = [
+                    (self.app_name, 'default.toml'),
+                    (f"{self.app_name}.config", 'default.toml'),
+                    (f"{self.app_name}.services.config", 'default.toml'),
+                ]
+                
+                for package, resource in locations:
+                    try:
+                        if pkg_resources.resource_exists(package, resource):
+                            default_content = pkg_resources.resource_string(
+                                package, resource
+                            ).decode('utf-8')
+                            default_config = self._parse_toml(default_content)
+                            self.config.add_layer(default_config, ConfigSource.DEFAULT)
+                            return  # Found it, stop looking
+                    except Exception:
+                        continue
+        except Exception:
+            # If loading package defaults fails, continue
+            pass
 
     def _load_default_configs(self) -> None:
         """Load configuration from default locations."""

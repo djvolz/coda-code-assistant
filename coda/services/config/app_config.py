@@ -62,21 +62,21 @@ class AppConfig:
         """Get configuration value."""
         return self.config.get(key, default)
     
-    def get_bool(self, key: str, default: bool = False) -> bool:
+    def get_bool(self, key: str, default: bool = None) -> bool:
         """Get boolean configuration value."""
-        return self.config.get_bool(key, default)
+        return self.config.get_bool(key, default) if default is not None else self.config.get_bool(key)
     
-    def get_string(self, key: str, default: str = "") -> str:
+    def get_string(self, key: str, default: str = None) -> str:
         """Get string configuration value."""
-        return self.config.get_string(key, default)
+        return self.config.get_string(key, default) if default is not None else self.config.get_string(key)
     
-    def get_int(self, key: str, default: int = 0) -> int:
+    def get_int(self, key: str, default: int = None) -> int:
         """Get integer configuration value."""
-        return self.config.get_int(key, default)
+        return self.config.get_int(key, default) if default is not None else self.config.get_int(key)
     
-    def get_float(self, key: str, default: float = 0.0) -> float:
+    def get_float(self, key: str, default: float = None) -> float:
         """Get float configuration value."""
-        return self.config.get_float(key, default)
+        return self.config.get_float(key, default) if default is not None else self.config.get_float(key)
     
     def get_list(self, key: str, default: list | None = None) -> list:
         """Get list configuration value."""
@@ -121,7 +121,7 @@ class AppConfig:
         if env_provider:
             return env_provider
         
-        return self.get_string("default_provider", "mock")
+        return self.get_string("default_provider")
     
     @property
     def debug(self) -> bool:
@@ -131,17 +131,17 @@ class AppConfig:
         if env_debug:
             return env_debug.lower() in ("true", "1", "yes", "on")
         
-        return self.get_bool("debug", False)
+        return self.get_bool("debug")
     
     @property
     def temperature(self) -> float:
         """Get default temperature for LLM generation."""
-        return self.get_float("temperature", 0.7)
+        return self.get_float("temperature")
     
     @property
     def max_tokens(self) -> int:
         """Get default max tokens for LLM generation."""
-        return self.get_int("max_tokens", 4096)
+        return self.get_int("max_tokens")
     
     def get_provider_config(self, provider: str) -> dict[str, Any]:
         """Get configuration for a specific provider."""
@@ -171,11 +171,21 @@ class AppConfig:
     
     def get_session_db_path(self) -> Path:
         """Get session database path."""
-        return self.get_data_dir() / "sessions.db"
+        db_name = self.get_string("session.db_name", "sessions.db")
+        return self.get_data_dir() / db_name
     
     def get_history_file_path(self) -> Path:
         """Get CLI history file path."""
-        return self.get_data_dir() / "history.txt"
+        history_file = self.get_string("session.history_file")
+        if history_file and history_file.startswith("~/"):
+            # Expand home directory
+            return Path(history_file).expanduser()
+        elif history_file and Path(history_file).is_absolute():
+            # Use absolute path as-is
+            return Path(history_file)
+        else:
+            # Default to data directory
+            return self.get_data_dir() / "history.txt"
 
 
 def get_config_service() -> AppConfig:
