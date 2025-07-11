@@ -114,7 +114,7 @@ class InteractiveCLI(CommandHandler):
             "theme": self._cmd_theme,
             "clear": self._cmd_clear,
             "exit": self._cmd_exit,
-            "intel": self._cmd_intel,
+            "map": self._cmd_map,
             "observability": self._cmd_observability,
         }
 
@@ -593,8 +593,8 @@ class InteractiveCLI(CommandHandler):
         result = self.handle_tools_command(args)
         return result
 
-    def _cmd_intel(self, args: str):
-        """Handle codebase intelligence commands."""
+    def _cmd_map(self, args: str):
+        """Handle codebase intelligence and mapping commands."""
         from coda.base.search.cli import IntelligenceCommands
 
         if not hasattr(self, "_intelligence_commands"):

@@ -10,7 +10,7 @@ from prompt_toolkit.layout import (
 from prompt_toolkit.layout.controls import FormattedTextControl
 from rich.console import Console
 
-from ..themes import get_console_theme
+from coda.base.theme import get_console_theme
 
 
 class GenericSelector:

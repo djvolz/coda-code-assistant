@@ -48,7 +48,7 @@ class IntelligenceCommands:
     def _handle_analyze(self, args: list[str]) -> str:
         """Handle file analysis command."""
         if not args:
-            return "Usage: /intel analyze <file_path>"
+            return "Usage: /map analyze <file_path>"
 
         file_path = Path(args[0])
         if not file_path.exists():
@@ -177,7 +177,7 @@ class IntelligenceCommands:
     def _handle_stats(self, args: list[str]) -> str:
         """Handle statistics command."""
         if not self.repo_map:
-            return "No repository mapped. Use '/intel map' first."
+            return "No repository mapped. Use '/map' first."
 
         try:
             language_stats = self.repo_map.get_language_stats()
@@ -200,7 +200,7 @@ class IntelligenceCommands:
     def _handle_find(self, args: list[str]) -> str:
         """Handle find definition command."""
         if not args:
-            return "Usage: /intel find <name>"
+            return "Usage: /map find <name>"
 
         name = args[0]
 
@@ -230,12 +230,12 @@ class IntelligenceCommands:
             except Exception as e:
                 return f"Error finding definition: {e}"
         else:
-            return "No repository mapped. Use '/intel map' first."
+            return "No repository mapped. Use '/map' first."
 
     def _handle_deps(self, args: list[str]) -> str:
         """Handle dependencies command."""
         if not args:
-            return "Usage: /intel deps <file_path>"
+            return "Usage: /map deps <file_path>"
 
         file_path = Path(args[0])
         if not file_path.exists():
@@ -259,7 +259,7 @@ class IntelligenceCommands:
     def _handle_graph(self, args: list[str]) -> str:
         """Handle dependency graph command."""
         if not args:
-            return "Usage: /intel graph <directory> [--format=json|dot] [--output=filename]"
+            return "Usage: /map graph <directory> [--format=json|dot] [--output=filename]"
 
         directory = Path(args[0])
         if not directory.exists():
@@ -331,15 +331,15 @@ class IntelligenceCommands:
     def get_help(self) -> str:
         """Get help text for intelligence commands."""
         help_text = """
-Intelligence Commands:
-  /intel analyze <file>     - Analyze a single file
-  /intel map [path]         - Map repository structure
-  /intel scan [dir]         - Scan directory for code files
-  /intel stats              - Show language statistics
-  /intel find <name>        - Find definitions by name
-  /intel deps <file>        - Show file dependencies
-  /intel graph <dir>        - Generate dependency graph
-  /intel help               - Show this help
+Map Commands:
+  /map analyze <file>     - Analyze a single file
+  /map [path]             - Map repository structure
+  /map scan [dir]         - Scan directory for code files
+  /map stats              - Show language statistics
+  /map find <name>        - Find definitions by name
+  /map deps <file>        - Show file dependencies
+  /map graph <dir>        - Generate dependency graph
+  /map help               - Show this help
 
 Graph Options:
   --format=json|dot         - Output format (default: json)

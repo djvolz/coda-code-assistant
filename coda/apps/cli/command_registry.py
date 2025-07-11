@@ -398,11 +398,11 @@ class CommandRegistry:
             examples=["/tools", "/tools list"],
         ),
         CommandDefinition(
-            name="intel",
+            name="map",
             description="Codebase intelligence and analysis",
-            aliases=["intelligence", "code"],
+            aliases=["intelligence", "code", "intel"],
             subcommands=INTELLIGENCE_SUBCOMMANDS,
-            examples=["/intel analyze file.py", "/intel map", "/intel scan src/"],
+            examples=["/map analyze file.py", "/map scan src/", "/map stats"],
         ),
         CommandDefinition(
             name="search",
