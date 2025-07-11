@@ -7,10 +7,30 @@ The services layer contains higher-level modules that orchestrate and coordinate
 ```
 services/
 ├── agents/      # AI agent framework with tool calling
+├── config/      # Configuration management service
 └── tools/       # MCP-based tool system for various operations
 ```
 
 ## Modules
+
+### ⚙️ config/
+**Purpose**: Unified configuration management integrating base config and theme modules
+
+The config service provides:
+- High-level configuration API with sensible defaults
+- Theme management integration
+- XDG directory standard support
+- Environment variable overrides
+- Backward compatibility during migration
+
+**Key Components**:
+- `ConfigService` - Main service class integrating config and theme management
+- `get_config_service()` - Get the global configuration instance
+- Migration utilities for old configuration formats
+
+**Dependencies**:
+- `coda.base.config` - For TOML file management
+- `coda.base.theme` - For theme management
 
 ### 🤖 agents/
 **Purpose**: Orchestrates AI providers with tool execution capabilities
@@ -102,9 +122,11 @@ class TimeTool(BaseTool):
 - More verbose to create
 - Requires understanding MCP
 
-## Integration Example
+## Integration Examples
 
-The two systems can work together via the adapter:
+### Tool Systems Working Together
+
+The two tool systems can work together via the adapter:
 
 ```python
 from coda.services.agents import Agent
@@ -126,6 +148,33 @@ agent = Agent(
 
 # Run agent
 response = await agent.run_async("Analyze this codebase")
+```
+
+### Configuration-Driven Services
+
+All services can be configured through the config service:
+
+```python
+from coda.services.config import get_config_service
+from coda.services.agents import Agent
+from coda.base.providers import ProviderFactory
+
+# Get configuration
+config = get_config_service()
+
+# Create provider with config
+factory = ProviderFactory(config.to_dict())
+provider = factory.create(config.default_provider)
+
+# Create agent with themed console
+agent = Agent(
+    provider=provider,
+    model="llama3",
+    console=config.theme_manager.get_console()
+)
+
+# Agent uses configured defaults
+# (temperature, max_tokens, etc from config)
 ```
 
 ## Design Principles

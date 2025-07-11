@@ -80,6 +80,29 @@ class ThemeManager:
         """Get prompt theme configuration."""
         return self.current_theme.prompt
 
+    def get_console(self) -> "Console":
+        """Get a Rich console with the current theme applied."""
+        from rich.console import Console
+        from rich.theme import Theme as RichTheme
+        
+        console_theme = self.get_console_theme()
+        
+        # Build Rich theme from our console theme colors
+        style_dict = {
+            "info": console_theme.info,
+            "warning": console_theme.warning,
+            "error": console_theme.error,
+            "success": console_theme.success,
+            "dim": console_theme.dim,
+            "bold": console_theme.bold,
+            "panel.border": console_theme.panel_border,
+            "panel.title": console_theme.panel_title,
+            "command": console_theme.command,
+        }
+        
+        rich_theme = RichTheme(style_dict)
+        return Console(theme=rich_theme)
+
     def list_themes(self) -> dict[str, str]:
         """List available themes with descriptions.
 

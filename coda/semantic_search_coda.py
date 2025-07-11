@@ -8,8 +8,29 @@ bridge between the standalone search module and Coda-specific features.
 
 import logging
 
-from .base.config.compat import CodaConfig, get_config
+from typing import Any
 from .base.constants import get_cache_dir
+from .services.config import get_config_service
+
+# Minimal compatibility type for transition
+class CodaConfig:
+    """Compatibility type for semantic search integration."""
+    def __init__(self, config_dict: dict[str, Any]):
+        self._dict = config_dict
+        for key, value in config_dict.items():
+            setattr(self, key, value)
+    
+    def to_dict(self) -> dict[str, Any]:
+        return self._dict
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._dict.get(key, default)
+
+def get_config() -> CodaConfig:
+    """Get config in compatibility format."""
+    config_service = get_config_service()
+    return CodaConfig(config_service.to_dict())
+
 from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
 from .base.search.vector_search.embeddings.factory import create_embedding_provider
 from .base.search.vector_search.manager import SemanticSearchManager

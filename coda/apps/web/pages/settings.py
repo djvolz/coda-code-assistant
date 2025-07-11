@@ -5,7 +5,7 @@ from typing import Any
 
 import streamlit as st
 
-from coda.base.config.compat import get_config
+from coda.services.config import get_config_service
 from coda.apps.web.utils.state import get_state_value, set_state_value
 
 
@@ -246,20 +246,17 @@ def render_advanced_settings():
 
 def save_provider_config(config: dict[str, Any], updates: dict[str, Any]):
     """Save provider configuration updates."""
-    # Get the global config object
-    from coda.base.config.compat import save_config as save_global_config
-
-    global_config = get_config()
+    # Get the global config service
+    config_service = get_config_service()
 
     # Update the providers in the global config
     for provider, settings in updates.items():
-        if provider not in global_config.providers:
-            global_config.providers[provider] = {}
-        global_config.providers[provider].update(settings)
+        for key, value in settings.items():
+            config_service.set(f"providers.{provider}.{key}", value)
 
     try:
-        save_global_config()  # No arguments needed
-        set_state_value("config", global_config.to_dict())
+        config_service.save()  # Save the configuration
+        set_state_value("config", config_service.to_dict())
         st.success("Provider settings saved successfully!")
         st.rerun()
     except Exception as e:

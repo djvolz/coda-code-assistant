@@ -21,10 +21,11 @@ except ImportError:
     __version__ = "dev"
 
 # Create themed console that respects user's theme configuration
-from coda.base.theme.compat import get_console_theme, get_themed_console
+from coda.services.config import get_config_service
 
-console = get_themed_console()
-theme = get_console_theme()
+config_service = get_config_service()
+console = config_service.theme_manager.get_console()
+theme = config_service.theme_manager.get_console_theme()
 
 
 async def _check_first_run(console: Console, auto_save_enabled: bool):
@@ -248,11 +249,11 @@ async def _handle_chat_interaction(
     try:
         # Get generation parameters from config or defaults
         if not config:
-            from coda.base.config.compat import get_config
+            from coda.services.config import get_config_service
 
-            config = get_config()
-        temperature = config.to_dict().get("temperature", 0.7)
-        max_tokens = config.to_dict().get("max_tokens", 2000)
+            config = get_config_service()
+        temperature = config.get("temperature", 0.7)
+        max_tokens = config.get("max_tokens", 2000)
 
         # Check if we should use tools (only for Cohere models and when enabled)
         model_supports_tools = cli.current_model.startswith("cohere.")
@@ -386,10 +387,10 @@ async def run_interactive_session(
     cli = InteractiveCLI(console)
 
     # Load configuration
-    from coda.base.config.compat import get_config
+    from coda.services.config import get_config_service
     from coda.base.providers import ProviderFactory
 
-    config = get_config()
+    config = get_config_service()
 
     # Set auto-save based on config and CLI flag
     # CLI flag takes precedence over config
@@ -397,7 +398,7 @@ async def run_interactive_session(
         cli.session_commands.auto_save_enabled = False
     else:
         # Use config value, defaulting to True if not specified
-        cli.session_commands.auto_save_enabled = config.session.get("autosave", True)
+        cli.session_commands.auto_save_enabled = config.get("session.autosave", True)
 
     # Check for first run and show auto-save notification
     await _check_first_run(console, cli.session_commands.auto_save_enabled)
@@ -414,7 +415,7 @@ async def run_interactive_session(
 
     # Apply debug override
     if debug:
-        config.debug = True
+        config.set("debug", True)
 
     # Use default provider if not specified
     if not provider:

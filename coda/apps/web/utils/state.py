@@ -5,7 +5,7 @@ from typing import Any
 
 import streamlit as st
 
-from coda.base.config.compat import get_config
+from coda.services.config import get_config_service
 from coda.base.session.manager import SessionManager
 
 
@@ -15,8 +15,8 @@ def init_session_state():
         st.session_state.initialized = True
 
         try:
-            config = get_config()
-            st.session_state.config = config.to_dict()
+            config_service = get_config_service()
+            st.session_state.config = config_service.to_dict()
         except Exception as e:
             # Store error for later display, don't show in UI during init
             st.session_state.config = None

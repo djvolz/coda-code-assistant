@@ -2,13 +2,14 @@
 
 from rich.console import Console
 
-from coda.base.theme.compat import get_console_theme
+from coda.services.config import get_config_service
 from .modes import DeveloperMode, get_mode_description
 
 
 def print_command_help(console: Console, mode: str = ""):
     """Print the command help section."""
-    theme = get_console_theme()
+    config_service = get_config_service()
+    theme = config_service.theme_manager.get_console_theme()
 
     # Try to use command registry
     try:
@@ -54,7 +55,8 @@ def print_command_help(console: Console, mode: str = ""):
 
 def print_developer_modes(console: Console):
     """Print the developer modes section."""
-    theme = get_console_theme()
+    config_service = get_config_service()
+    theme = config_service.theme_manager.get_console_theme()
 
     console.print(f"[{theme.bold}]Developer Modes:[/{theme.bold}]")
     for mode in DeveloperMode:
@@ -67,7 +69,8 @@ def print_developer_modes(console: Console):
 
 def print_interactive_keyboard_shortcuts(console: Console):
     """Print enhanced keyboard shortcuts for interactive mode."""
-    theme = get_console_theme()
+    config_service = get_config_service()
+    theme = config_service.theme_manager.get_console_theme()
 
     console.print(
         f"[{theme.bold}]Keyboard Shortcuts:[/{theme.bold}] [{theme.dim}](Interactive mode features)[/{theme.dim}]"
@@ -99,7 +102,8 @@ def print_interactive_keyboard_shortcuts(console: Console):
 
 def print_interactive_only_commands(console: Console):
     """Print commands that are only available in interactive mode."""
-    theme = get_console_theme()
+    config_service = get_config_service()
+    theme = config_service.theme_manager.get_console_theme()
 
     console.print(
         f"[{theme.bold}]Session:[/{theme.bold}] [{theme.dim}](Interactive mode only)[/{theme.dim}]"

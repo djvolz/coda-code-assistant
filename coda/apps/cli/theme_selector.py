@@ -17,9 +17,10 @@ class ThemeSelector:
         if console:
             self.console = console
         else:
-            from coda.base.theme.compat import get_themed_console
+            from coda.services.config import get_config_service
 
-            self.console = get_themed_console()
+            config_service = get_config_service()
+            self.console = config_service.theme_manager.get_console()
 
         # Get all available themes
         self.themes = list(THEMES.items())  # List of (name, theme) tuples

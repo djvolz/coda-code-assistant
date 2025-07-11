@@ -8,7 +8,7 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 
-from coda.base.config.compat import get_config
+from coda.services.config import get_config_service
 from .constants import PANEL_BORDER_STYLE
 
 console = Console()
@@ -22,7 +22,7 @@ console = Console()
 def web(port: int, host: str, browser: bool, debug: bool):
     """Launch the Coda Assistant web interface."""
     try:
-        get_config()  # Validate config loads successfully
+        config = get_config_service()  # Validate config loads successfully
     except Exception as e:
         console.print(f"[red]Error loading configuration: {e}[/red]")
         sys.exit(1)

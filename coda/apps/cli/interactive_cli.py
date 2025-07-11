@@ -444,15 +444,14 @@ class InteractiveCLI(CommandHandler):
 
     async def _apply_theme_change(self, theme_name: str) -> None:
         """Apply theme change and update all necessary components."""
-        from coda.base.config.compat import save_config
-        from coda.base.theme import ThemeManager
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
-        theme_manager.set_theme(theme_name)
+        config_service = get_config_service()
+        config_service.theme_manager.set_theme(theme_name)
 
-        if self.config:
-            self.config.ui["theme"] = theme_name
-            save_config()
+        # Update config and save
+        config_service.set("ui.theme", theme_name)
+        config_service.save()
 
         # TODO: Update this to use the new theme manager approach
         # For now, keep existing console
@@ -877,15 +876,15 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_observability(self, args: str):
         """Manage observability and telemetry settings."""
-        from coda.base.config.compat import get_config_manager
+        from coda.services.config import get_config_service
         from coda.base.observability.commands import ObservabilityCommands
         from coda.base.observability.manager import ObservabilityManager
 
         # Initialize observability manager if not already available
         if not hasattr(self, "observability_manager"):
-            # Get the global ConfigManager instance which has loaded the config files
-            config_manager = get_config_manager()
-            self.observability_manager = ObservabilityManager(config_manager)
+            # Get the global ConfigService instance which has loaded the config files
+            config_service = get_config_service()
+            self.observability_manager = ObservabilityManager(config_service.config)
 
         # Initialize observability commands
         obs_commands = ObservabilityCommands(self.observability_manager, self.console)

@@ -2,19 +2,19 @@
 
 from rich.console import Console
 
-from coda.base.config.compat import CodaConfig
+from coda.services.config import ConfigService
 from coda.base.providers import BaseProvider, Model, ProviderFactory
-from coda.base.themes import get_console_theme
+# Theme is now passed in via constructor
 
 
 class ProviderManager:
     """Manages provider initialization and model discovery."""
 
-    def __init__(self, config: CodaConfig, console: Console):
+    def __init__(self, config: ConfigService, console: Console):
         self.config = config
         self.console = console
         self.factory = ProviderFactory(config.to_dict())
-        self.theme = get_console_theme()
+        self.theme = config.theme_manager.get_console_theme()
 
     def initialize_provider(self, provider_name: str | None = None) -> BaseProvider:
         """Initialize and connect to a provider."""

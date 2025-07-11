@@ -45,13 +45,6 @@ def main(
     # Initialize error handler
     error_handler = CLIErrorHandler(console, debug or config.debug)
 
-    # Show deprecation message if --basic was used
-    if basic:
-        console.print(
-            f"[{theme.warning}]Warning: --basic flag is deprecated. "
-            f"Using interactive mode instead.[/{theme.warning}]"
-        )
-
     # Always use interactive mode
     try:
         from .interactive import run_interactive_session
