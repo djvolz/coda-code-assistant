@@ -32,7 +32,8 @@ class AppConfig:
         if config_path is None:
             config_path = self._get_default_config_path()
         
-        self.config = Config(config_file=config_path)
+        self.config_path = config_path  # Store for save()
+        self.config = Config(app_name="coda", config_file=config_path)
         self.theme_manager = ThemeManager()
         
         # Apply theme from config if set
@@ -87,7 +88,24 @@ class AppConfig:
     
     def save(self) -> None:
         """Save configuration to file."""
-        self.config.save()
+        from coda.base.config.models import ConfigFormat
+        
+        # Ensure directory exists
+        self.config_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Determine format from file extension
+        suffix = self.config_path.suffix.lower()
+        if suffix == '.toml':
+            format = ConfigFormat.TOML
+        elif suffix == '.json':
+            format = ConfigFormat.JSON
+        elif suffix in ('.yml', '.yaml'):
+            format = ConfigFormat.YAML
+        else:
+            format = ConfigFormat.TOML  # Default to TOML
+        
+        # Save to the same path we loaded from
+        self.config.save(self.config_path, format=format)
     
     def to_dict(self) -> dict[str, Any]:
         """Get full configuration as dictionary."""

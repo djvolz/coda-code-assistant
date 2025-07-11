@@ -450,15 +450,16 @@ class InteractiveCLI(CommandHandler):
         from coda.services.config import get_config_service
 
         config_service = get_config_service()
+        
+        # Update theme in theme manager
         config_service.theme_manager.set_theme(theme_name)
-
+        
         # Update config and save
         config_service.set("ui.theme", theme_name)
         config_service.save()
-
-        # TODO: Update this to use the new theme manager approach
-        # For now, keep existing console
-        # self.console = get_themed_console()
+        
+        # Update console from the config service's theme manager
+        self.console = config_service.theme_manager.get_console()
         self.style = self._create_style()
 
         if hasattr(self, "session") and self.session:

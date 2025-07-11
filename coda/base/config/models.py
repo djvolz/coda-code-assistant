@@ -92,9 +92,19 @@ class LayeredConfig:
     _merged: dict[str, Any] | None = field(default=None, init=False)
 
     def add_layer(self, config: dict[str, Any], source: ConfigSource) -> None:
-        """Add a configuration layer."""
-        self.layers.append(config)
-        self.sources.append(source)
+        """Add a configuration layer.
+        
+        Runtime configs are prepended (highest priority),
+        others are appended (lower priority).
+        """
+        if source == ConfigSource.RUNTIME:
+            # Runtime configs have highest priority, add to beginning
+            self.layers.insert(0, config)
+            self.sources.insert(0, source)
+        else:
+            # Other configs are added in order
+            self.layers.append(config)
+            self.sources.append(source)
         self._merged = None  # Invalidate cache
 
     def get_merged(self) -> dict[str, Any]:
