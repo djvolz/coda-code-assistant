@@ -101,7 +101,7 @@ class SlashCommandCompleter(BaseCompleter):
 
     def _complete_all_commands(self):
         """Complete all available commands when no input given."""
-        from coda.base.theme import get_console_theme
+        from coda.base.theme.compat import get_console_theme
 
         theme = get_console_theme()
 
@@ -117,7 +117,7 @@ class SlashCommandCompleter(BaseCompleter):
     def _complete_subcommands(self, cmd_part: str, parts: list[str]):
         """Complete subcommands for the given command."""
         # Import here to avoid circular imports
-        from coda.base.theme import get_console_theme
+        from coda.base.theme.compat import get_console_theme
 
         from .command_registry import CommandRegistry
 
@@ -140,7 +140,7 @@ class SlashCommandCompleter(BaseCompleter):
 
     def _complete_command_names(self, cmd_part: str, text: str):
         """Complete command names with fuzzy matching."""
-        from coda.base.theme import get_console_theme
+        from coda.base.theme.compat import get_console_theme
 
         theme = get_console_theme()
 
@@ -212,7 +212,7 @@ class DynamicValueCompleter(BaseCompleter):
 
     def _complete_main_command_value(self, text: str, parts: list[str], main_cmd):
         """Complete values for main command."""
-        from coda.base.theme import get_console_theme
+        from coda.base.theme.compat import get_console_theme
 
         theme = get_console_theme()
 
@@ -227,7 +227,7 @@ class DynamicValueCompleter(BaseCompleter):
 
     def _complete_subcommand_value(self, text: str, parts: list[str], main_cmd):
         """Complete values for subcommands."""
-        from coda.base.theme import get_console_theme
+        from coda.base.theme.compat import get_console_theme
 
         theme = get_console_theme()
 
