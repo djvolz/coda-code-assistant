@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Config module provides centralized configuration management for Coda applications. It handles loading configuration from multiple sources, environment variable resolution, and type-safe access to settings.
+The Config module provides centralized configuration management for Coda applications. It handles loading configuration from multiple sources including a comprehensive `default.toml`, environment variable resolution, and type-safe access to settings.
 
 ## Installation
 
@@ -17,12 +17,16 @@ pip install coda-assistant
 ```python
 from coda.base.config import Config
 
-# Load default configuration
-config = Config()
+# Load configuration (automatically includes default.toml)
+config = Config(app_name="coda")
+
+# For Coda applications, use the service layer:
+from coda.services.config import get_config_service
+config = get_config_service()
 
 # Access configuration values
-api_key = config.get("openai.api_key")
-theme = config.get("theme.name", default="monokai")
+provider = config.get("default_provider")  # No fallback needed - defined in default.toml
+theme = config.get("ui.theme")
 
 # Convert to dictionary
 config_dict = config.to_dict()
@@ -124,51 +128,79 @@ openai_config = config.get_provider_config("openai")
 
 Configuration is loaded from multiple sources in order of precedence:
 
-1. **Environment Variables** (highest priority)
+1. **Runtime Changes** (highest priority)
+   - Values set via `config.set()` during execution
+
+2. **Environment Variables**
    ```bash
-   export CODA_OPENAI_API_KEY="sk-..."
-   export CODA_THEME_NAME="monokai"
+   export CODA_DEBUG=true
+   export CODA_DEFAULT_PROVIDER=ollama
+   export OCI_COMPARTMENT_ID="ocid1.compartment..."
    ```
 
-2. **User Config File**
+3. **Project Config File**
+   - `.coda/config.toml` in current directory
+
+4. **User Config File**
    - Linux/Mac: `~/.config/coda/config.toml`
    - Windows: `%APPDATA%/coda/config.toml`
 
-3. **Project Config File**
-   - `.coda/config.toml` in current directory or parents
+5. **System Config File**
+   - `/etc/coda/config.toml` (Linux/Mac)
 
-4. **Default Values** (lowest priority)
+6. **Package Defaults** (`default.toml`)
+   - Comprehensive defaults shipped with the package
+   - Located in `coda/services/config/default.toml`
+   - Contains all user-configurable options
+
+7. **Constructor Defaults** (lowest priority)
+   - Hardcoded defaults in the code
 
 ### Configuration File Format
 
-Configuration files use TOML format:
+Configuration files use TOML format. The package includes a comprehensive `default.toml` with all available settings:
 
 ```toml
-# Theme configuration
-[theme]
-name = "monokai"
-show_line_numbers = true
+# General settings (from default.toml)
+default_provider = "mock"
+debug = false
+temperature = 0.7
+max_tokens = 2000
 
 # Provider configuration
-[providers.openai]
-api_key = "sk-..."
-model = "gpt-4"
-temperature = 0.7
+[providers.oci_genai]
+enabled = false
+compartment_id = ""
+profile = "DEFAULT"
+region = "us-chicago-1"
+default_model = "cohere.command-r-plus"
 
-[providers.anthropic]
-api_key = "sk-ant-..."
-model = "claude-3-opus-20240229"
+[providers.ollama]
+enabled = false
+base_url = "http://localhost:11434"
+default_model = "llama3.2:3b"
+
+# UI settings
+[ui]
+theme = "default"
+show_model_info = true
+streaming = true
 
 # Session configuration
 [session]
+history_file = "~/.local/share/coda/history.txt"
+max_history = 1000
 autosave = true
-history_limit = 1000
 
 # Search configuration
 [search]
-index_extensions = [".py", ".js", ".ts", ".md"]
-exclude_patterns = ["**/node_modules/**", "**/.git/**"]
+chunk_size = 1000
+search_k = 5
+similarity_threshold = 0.7
+exclude_patterns = ["__pycache__", ".git", "node_modules"]
 ```
+
+Users only need to override the settings they want to change in their config files.
 
 ### Environment Variable Resolution
 
@@ -212,9 +244,9 @@ if not config.has("openai.api_key"):
     print("Please set CODA_OPENAI_API_KEY environment variable")
     exit(1)
 
-# Get configuration with defaults
-theme_name = config.get("theme.name", default="monokai")
-model = config.get("openai.model", default="gpt-4")
+# Get configuration (defaults from default.toml)
+theme_name = config.get("ui.theme")  # Returns "default" from default.toml
+model = config.get("providers.ollama.default_model")  # Returns "llama3.2:3b"
 ```
 
 ### Custom Configuration Path

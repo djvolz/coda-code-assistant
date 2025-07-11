@@ -111,7 +111,17 @@ Configuration sources are merged in priority order (highest to lowest):
 3. **Project Config** - `.myapp/config.toml` in current directory
 4. **User Config** - `~/.config/myapp/config.toml`
 5. **System Config** - `/etc/myapp/config.toml`
-6. **Defaults** - Provided in constructor
+6. **Package Defaults** - `default.toml` in the package (if exists)
+7. **Constructor Defaults** - Provided in constructor
+
+### Package Default Loading
+
+The ConfigManager automatically looks for `default.toml` in these locations:
+- `{app_name}/default.toml` - Package root
+- `{app_name}/config/default.toml` - Config subpackage
+- `{app_name}/services/config/default.toml` - Services config subpackage
+
+This allows packages to ship with comprehensive default configurations.
 
 ## API Reference
 

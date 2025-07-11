@@ -4,7 +4,8 @@ The Configuration Service provides a high-level interface for managing Coda's co
 
 ## Overview
 
-The `ConfigService` class acts as a facade that:
+The `AppConfig` class acts as a facade that:
+- Loads comprehensive defaults from `default.toml`
 - Manages configuration loading and saving
 - Integrates theme management
 - Provides XDG directory support
@@ -15,9 +16,10 @@ The `ConfigService` class acts as a facade that:
 ```
 services/config/
 ├── __init__.py          # Public API exports
-├── config_service.py    # Main ConfigService implementation
-├── example.py          # Usage examples
-└── migrate.py          # Migration tool for old configs
+├── app_config.py        # Main AppConfig implementation
+├── default.toml         # Comprehensive default configuration
+├── example.py           # Usage examples
+└── README.md           # This file
 ```
 
 ## Usage
@@ -76,47 +78,74 @@ custom_config = AppConfig(config_path=Path("/custom/path/config.toml"))
 
 ## Configuration Structure
 
-The configuration follows this structure:
+All default configuration values are defined in `default.toml`. Here's a summary of the main sections:
 
 ```toml
-# Provider settings
-default_provider = "ollama"
+# General settings
+default_provider = "mock"    # Default LLM provider
+debug = false               # Debug mode
+temperature = 0.7           # LLM temperature
+max_tokens = 2000          # Max tokens for generation
+
+# Provider configurations
+[providers.oci_genai]
+enabled = false
+compartment_id = ""
+profile = "DEFAULT"
+region = "us-chicago-1"
+default_model = "cohere.command-r-plus"
 
 [providers.ollama]
+enabled = false
 base_url = "http://localhost:11434"
-timeout = 300
-
-[providers.oci_genai]
-compartment_id = "ocid1.compartment.oc1..."
-endpoint = "https://generativeai.aiservice.us-chicago-1.oci.oraclecloud.com"
+default_model = "llama3.2:3b"
 
 # UI settings
 [ui]
-theme = "dracula"
-
-# Model parameters
-temperature = 0.7
-max_tokens = 2000
+theme = "default"
+show_model_info = true
+streaming = true
+console_width = 80
 
 # Session settings
 [session]
+history_file = "~/.local/share/coda/history.txt"
+max_history = 1000
 autosave = true
-history_limit = 100
 
-# Debug settings
-debug = false
+# Search settings
+[search]
+chunk_size = 1000
+search_k = 5
+similarity_threshold = 0.7
+
+# And many more...
 ```
+
+See `default.toml` for the complete list of available settings.
 
 ## Key Features
 
-### 1. XDG Directory Support
+### 1. Configuration Hierarchy
+
+Configuration values are loaded and merged in this order (highest priority first):
+1. Runtime changes via `config.set()`
+2. Environment variables (e.g., `CODA_DEBUG=true`)
+3. Project config (`.coda/config.toml`)
+4. User config (`~/.config/coda/config.toml`)
+5. System config (`/etc/coda/config.toml`)
+6. Package defaults (`default.toml`)
+
+This means user settings override defaults, and environment variables override everything except runtime changes.
+
+### 2. XDG Directory Support
 
 The service automatically uses XDG directory standards:
 - Config: `~/.config/coda/config.toml` (or `$XDG_CONFIG_HOME/coda/config.toml`)
 - Data: `~/.local/share/coda/` (or `$XDG_DATA_HOME/coda/`)
 - Cache: `~/.cache/coda/` (or `$XDG_CACHE_HOME/coda/`)
 
-### 2. Environment Variable Support
+### 3. Environment Variable Support
 
 Configuration values can be overridden with environment variables:
 - `CODA_DEBUG=true` - Enable debug mode
