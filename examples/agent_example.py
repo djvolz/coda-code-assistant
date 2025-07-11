@@ -4,7 +4,7 @@
 import asyncio
 
 from coda.services.agents import Agent, tool
-from coda.configuration import get_config
+from coda.services.config import get_config_service
 from coda.base.providers import ProviderFactory
 
 
@@ -37,7 +37,7 @@ async def get_city_info(city: str) -> dict:
 async def main():
     """Run example agent interactions."""
     # Load configuration
-    config = get_config()
+    config = get_config_service()
     factory = ProviderFactory(config.to_dict())
 
     # Use OCI provider with Cohere model (supports tools)

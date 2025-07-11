@@ -8,14 +8,14 @@ except ImportError:
     # Fallback for when package structure isn't available
     __version__ = "dev"
 
-from coda.base.config.compat import get_config
+from coda.services.config import get_config_service
 
-# Create themed console that respects user's theme configuration
-from coda.base.theme.compat import get_console_theme, get_themed_console
+# Import error handler
 from .error_handler import CLIErrorHandler
 
-console = get_themed_console()
-theme = get_console_theme()
+# Console and theme will be initialized after loading config
+console = None
+theme = None
 
 
 def main(
@@ -31,14 +31,19 @@ def main(
     """Coda - A multi-provider code assistant main entry point."""
 
     # Load configuration
-    config = get_config()
+    config = get_config_service()
 
     # Apply debug override
     if debug:
-        config.debug = True
+        config.set("debug", True)
 
+    # Initialize console with theme from config
+    global console, theme
+    console = config.theme_manager.get_console()
+    theme = config.theme_manager.get_console_theme()
+    
     # Initialize error handler
-    error_handler = CLIErrorHandler(console, debug)
+    error_handler = CLIErrorHandler(console, debug or config.debug)
 
     # Show deprecation message if --basic was used
     if basic:
