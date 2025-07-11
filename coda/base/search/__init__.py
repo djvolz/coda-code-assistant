@@ -5,14 +5,14 @@ This module provides both repository search and semantic search capabilities:
 
 ## Repository Mapping (map/)
 - Repository structure analysis
-- Tree-sitter code parsing  
+- Tree-sitter code parsing
 - Dependency graph generation
 - Multi-language support
 
 ## Vector Search (vector_search/)
 - Text chunking and preprocessing for embeddings
 - Multiple embedding providers
-- Vector storage and similarity search  
+- Vector storage and similarity search
 - Semantic/vector search coordination
 
 The module is designed to be fully independent and can be copy-pasted
@@ -23,11 +23,11 @@ Example usage:
     from coda.search.map import RepoMap
     repo = RepoMap("/path/to/project")
     analysis = repo.analyze()
-    
+
     # Vector search
     from coda.search.vector_search import SemanticSearchManager
     from coda.search.vector_search.embeddings.mock import MockEmbeddingProvider
-    
+
     provider = MockEmbeddingProvider(dimension=768)
     search = SemanticSearchManager(embedding_provider=provider)
 """
@@ -35,14 +35,13 @@ Example usage:
 # Repository mapping components
 from .map import DependencyGraph, RepoMap, TreeSitterAnalyzer
 
-# Vector search components  
+# Vector search components
 from .vector_search import SemanticSearchManager
-from .vector_search.chunking import Chunk, TextChunker, CodeChunker
+from .vector_search.chunking import Chunk, CodeChunker, TextChunker
 from .vector_search.embeddings.base import BaseEmbeddingProvider
 from .vector_search.embeddings.mock import MockEmbeddingProvider
 from .vector_search.vector_stores.base import BaseVectorStore, SearchResult
 from .vector_search.vector_stores.faiss_store import FAISSVectorStore
-
 
 # Optional vector search providers (conditionally imported)
 try:
@@ -62,27 +61,23 @@ except ImportError:
 
 __all__ = [
     # Repository mapping
-    "RepoMap", 
-    "TreeSitterAnalyzer", 
+    "RepoMap",
+    "TreeSitterAnalyzer",
     "DependencyGraph",
-    
     # Vector search core
     "SemanticSearchManager",
     "Chunk",
-    "TextChunker", 
+    "TextChunker",
     "CodeChunker",
-    
     # Vector search base classes
     "BaseEmbeddingProvider",
     "BaseVectorStore",
     "SearchResult",
-    
     # Always available providers
     "MockEmbeddingProvider",
     "FAISSVectorStore",
-    
     # Optional providers (may be None if dependencies not available)
     "OCIEmbeddingProvider",
-    "OllamaEmbeddingProvider", 
+    "OllamaEmbeddingProvider",
     "SentenceTransformersProvider",
 ]

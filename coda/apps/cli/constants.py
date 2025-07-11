@@ -22,9 +22,11 @@ PANEL_TITLE_STYLE: str = "bold"
 COMING_SOON: str = "(Coming soon)"
 NOT_IMPLEMENTED: str = "Not implemented yet"
 
+
 # Developer modes
 class DeveloperMode:
     """Developer mode identifiers."""
+
     GENERAL: str = "general"
     CODE: str = "code"
     DEBUG: str = "debug"
@@ -32,7 +34,7 @@ class DeveloperMode:
     REVIEW: str = "review"
     REFACTOR: str = "refactor"
     PLAN: str = "plan"
-    
+
     @classmethod
     def all(cls) -> list[str]:
         """Get all available modes."""
@@ -46,14 +48,16 @@ class DeveloperMode:
             cls.PLAN,
         ]
 
+
 # Export formats
 class ExportFormat:
     """Export format identifiers."""
+
     JSON: str = "json"
     MARKDOWN: str = "markdown"
     TXT: str = "txt"
     HTML: str = "html"
-    
+
     @classmethod
     def all(cls) -> list[str]:
         """Get all export formats."""
@@ -63,6 +67,7 @@ class ExportFormat:
             cls.TXT,
             cls.HTML,
         ]
+
 
 # File names
 HISTORY_FILE: str = "history.txt"

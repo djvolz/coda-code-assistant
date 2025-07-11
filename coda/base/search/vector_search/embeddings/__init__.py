@@ -41,11 +41,13 @@ __all__ = [
 
 # Add optional exports if available
 if OCIEmbeddingProvider is not None:
-    __all__.extend([
-        "OCIEmbeddingProvider",
-        "create_oci_provider_from_coda_config",
-        "create_standalone_oci_provider",
-    ])
+    __all__.extend(
+        [
+            "OCIEmbeddingProvider",
+            "create_oci_provider_from_coda_config",
+            "create_standalone_oci_provider",
+        ]
+    )
 
 if SentenceTransformersProvider is not None:
     __all__.append("SentenceTransformersProvider")

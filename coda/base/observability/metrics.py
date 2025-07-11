@@ -16,9 +16,9 @@ from pathlib import Path
 from typing import Any
 
 from ..config import ConfigManager
-from .constants import ENV_PREFIX
 from .base import ObservabilityComponent
 from .collections import MemoryAwareDeque
+from .constants import ENV_PREFIX
 
 logger = logging.getLogger(__name__)
 

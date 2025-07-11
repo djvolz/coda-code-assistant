@@ -2,10 +2,10 @@
 
 from rich.console import Console
 
+from coda.base.providers.base import BaseProvider, Message
 from coda.services.agents import Agent
 from coda.services.agents.builtin_tools import get_builtin_tools
 from coda.services.agents.tool_adapter import MCPToolAdapter
-from coda.base.providers.base import BaseProvider, Message
 
 
 class AgentChatHandler:

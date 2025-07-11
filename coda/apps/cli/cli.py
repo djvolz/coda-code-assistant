@@ -3,6 +3,7 @@
 import click
 
 from coda.__version__ import __version__
+
 from .web_command import web as web_command
 
 
@@ -35,7 +36,9 @@ def chat(provider, model, debug, one_shot, mode, no_save, resume):
     """Start an interactive chat session."""
     from .main import main
 
-    main(provider, model, debug, one_shot, False, mode, no_save, resume)  # False for removed basic flag
+    main(
+        provider, model, debug, one_shot, False, mode, no_save, resume
+    )  # False for removed basic flag
 
 
 cli.add_command(web_command, name="web")

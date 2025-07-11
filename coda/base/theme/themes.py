@@ -4,7 +4,6 @@ This module contains all built-in theme definitions.
 Zero dependencies - uses only theme models.
 """
 
-
 try:
     from .models import ConsoleTheme, PromptTheme, Theme, ThemeNames
 except ImportError:

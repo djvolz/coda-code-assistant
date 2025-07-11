@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from ..config import ConfigManager
-from .constants import ENV_PREFIX
 from .base import ObservabilityComponent
+from .constants import ENV_PREFIX
 from .sanitizer import DataSanitizer
 
 

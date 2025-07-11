@@ -1,13 +1,12 @@
 """Model selection UI for interactive CLI."""
 
-import asyncio
+
 # Removed unused import: from functools import partial
 
 from prompt_toolkit import Application
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import (
-    ConditionalContainer,
     HSplit,
     Layout,
     ScrollablePane,
@@ -19,7 +18,6 @@ from rich.console import Console
 
 from coda.base.providers import Model
 from coda.base.theme import ThemeManager
-
 
 
 class ModelSelector:
@@ -131,12 +129,10 @@ class ModelSelector:
         # Create layout
         # Import FormattedTextControl
         from prompt_toolkit.layout.controls import FormattedTextControl
-        
+
         # Use FormattedTextControl with a callable
         model_list_window = Window(
-            content=FormattedTextControl(
-                text=lambda: HTML(self.get_model_list_text())
-            ),
+            content=FormattedTextControl(text=lambda: HTML(self.get_model_list_text())),
             wrap_lines=False,
         )
 
@@ -162,17 +158,13 @@ class ModelSelector:
 
         # Create application with theme style
         from prompt_toolkit.styles import Style
-        
+
         # Get theme style from prompt theme
         theme_style_dict = self.theme.prompt.to_dict()
         style = Style.from_dict(theme_style_dict)
-        
+
         app = Application(
-            layout=layout, 
-            key_bindings=kb, 
-            style=style,
-            full_screen=False, 
-            mouse_support=True
+            layout=layout, key_bindings=kb, style=style, full_screen=False, mouse_support=True
         )
 
         # Run and get result

@@ -118,8 +118,9 @@ class SlashCommandCompleter(BaseCompleter):
     def _complete_subcommands(self, cmd_part: str, parts: list[str]):
         """Complete subcommands for the given command."""
         # Import here to avoid circular imports
-        from .command_registry import CommandRegistry
         from coda.services.config import get_config_service
+
+        from .command_registry import CommandRegistry
 
         config_service = get_config_service()
         theme = config_service.theme_manager.get_console_theme()

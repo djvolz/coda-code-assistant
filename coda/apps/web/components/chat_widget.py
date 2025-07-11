@@ -5,8 +5,8 @@ from datetime import datetime
 
 import streamlit as st
 
-from coda.base.providers.registry import ProviderFactory
 from coda.apps.web.utils.state import get_state_value, set_state_value
+from coda.base.providers.registry import ProviderFactory
 
 
 def render_chat_interface(provider: str, model: str):

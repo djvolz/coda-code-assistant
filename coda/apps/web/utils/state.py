@@ -5,8 +5,8 @@ from typing import Any
 
 import streamlit as st
 
-from coda.services.config import get_config_service
 from coda.base.session.manager import SessionManager
+from coda.services.config import get_config_service
 
 
 def init_session_state():

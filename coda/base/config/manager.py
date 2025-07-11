@@ -59,20 +59,21 @@ class ConfigManager:
         """Load default.toml from the package if it exists."""
         try:
             import importlib.resources
+
             # For Python 3.9+
-            if hasattr(importlib.resources, 'files'):
+            if hasattr(importlib.resources, "files"):
                 # Try multiple locations for default.toml
                 locations = [
                     self.app_name,  # package root
                     f"{self.app_name}.config",  # config subpackage
                     f"{self.app_name}.services.config",  # services.config subpackage
                 ]
-                
+
                 for location in locations:
                     try:
                         files = importlib.resources.files(location)
-                        if files and (files / 'default.toml').is_file():
-                            default_content = (files / 'default.toml').read_text()
+                        if files and (files / "default.toml").is_file():
+                            default_content = (files / "default.toml").read_text()
                             default_config = self._parse_toml(default_content)
                             self.config.add_layer(default_config, ConfigSource.DEFAULT)
                             return  # Found it, stop looking
@@ -81,18 +82,19 @@ class ConfigManager:
             else:
                 # Fallback for Python 3.8
                 import pkg_resources
+
                 locations = [
-                    (self.app_name, 'default.toml'),
-                    (f"{self.app_name}.config", 'default.toml'),
-                    (f"{self.app_name}.services.config", 'default.toml'),
+                    (self.app_name, "default.toml"),
+                    (f"{self.app_name}.config", "default.toml"),
+                    (f"{self.app_name}.services.config", "default.toml"),
                 ]
-                
+
                 for package, resource in locations:
                     try:
                         if pkg_resources.resource_exists(package, resource):
                             default_content = pkg_resources.resource_string(
                                 package, resource
-                            ).decode('utf-8')
+                            ).decode("utf-8")
                             default_config = self._parse_toml(default_content)
                             self.config.add_layer(default_config, ConfigSource.DEFAULT)
                             return  # Found it, stop looking
@@ -398,7 +400,7 @@ class ConfigManager:
 
     def get_config_dir(self) -> Path:
         """Get the configuration directory path.
-        
+
         Returns:
             Path to configuration directory
         """
@@ -406,13 +408,13 @@ class ConfigManager:
         xdg_config = os.environ.get("XDG_CONFIG_HOME")
         if xdg_config:
             return Path(xdg_config) / self.app_name
-        
+
         # Default to ~/.config/app_name
         return Path.home() / ".config" / self.app_name
-    
+
     def get_data_dir(self) -> Path:
         """Get the data directory path.
-        
+
         Returns:
             Path to data directory
         """
@@ -420,13 +422,13 @@ class ConfigManager:
         xdg_data = os.environ.get("XDG_DATA_HOME")
         if xdg_data:
             return Path(xdg_data) / self.app_name
-        
+
         # Default to ~/.local/share/app_name
         return Path.home() / ".local" / "share" / self.app_name
-    
+
     def get_cache_dir(self) -> Path:
         """Get the cache directory path.
-        
+
         Returns:
             Path to cache directory
         """
@@ -434,7 +436,7 @@ class ConfigManager:
         xdg_cache = os.environ.get("XDG_CACHE_HOME")
         if xdg_cache:
             return Path(xdg_cache) / self.app_name
-        
+
         # Default to ~/.cache/app_name
         return Path.home() / ".cache" / self.app_name
 

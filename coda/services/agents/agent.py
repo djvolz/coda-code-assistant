@@ -8,14 +8,15 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 
-from .function_tool import FunctionTool
+from coda.base.providers.base import BaseProvider, Message, Role, Tool, ToolCall
+
 from .agent_types import (
     PerformedAction,
     PerformedActionType,
     RequiredAction,
     RunResponse,
 )
-from coda.base.providers.base import BaseProvider, Message, Role, Tool, ToolCall
+from .function_tool import FunctionTool
 
 
 class Agent:
@@ -287,24 +288,25 @@ class Agent:
 
             except Exception as e:
                 from ..errors import ErrorHandler, ProviderError
-                
+
                 # Wrap the error appropriately
                 if "provider" in str(e).lower() or "api" in str(e).lower():
                     wrapped_error = ProviderError(
                         f"Provider error during execution: {str(e)}",
-                        provider_name=self.provider.__class__.__name__
+                        provider_name=self.provider.__class__.__name__,
                     )
                 else:
                     wrapped_error = ErrorHandler.wrap_error(e, "agent_execution")
-                
+
                 error_msg = wrapped_error.user_message()
                 self.console.print(f"[red]{error_msg}[/red]")
-                
+
                 # Log detailed error for debugging
                 if wrapped_error.severity.value in ["error", "critical"]:
                     import logging
+
                     logging.error(ErrorHandler.format_error_chain(wrapped_error))
-                
+
                 final_response = type("obj", (object,), {"content": error_msg, "model": self.model})
                 break
 
@@ -675,15 +677,11 @@ class Agent:
             )
 
         except Exception as e:
-            from ..errors import ToolExecutionError, ErrorHandler
-            
+            from ..errors import ToolExecutionError
+
             # Create a proper tool execution error
-            tool_error = ToolExecutionError(
-                message=str(e),
-                tool_name=tool_call.name,
-                cause=e
-            )
-            
+            tool_error = ToolExecutionError(message=str(e), tool_name=tool_call.name, cause=e)
+
             return PerformedAction(
                 action_id=action_id,
                 performed_action_type=PerformedActionType.FUNCTION_CALLING,

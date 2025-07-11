@@ -4,7 +4,6 @@ This module provides color validation for themes.
 Zero dependencies - uses only Python standard library.
 """
 
-
 try:
     from .models import Theme
 except ImportError:

@@ -21,14 +21,44 @@ DEFAULT_SIMILARITY_THRESHOLD: float = 0.7
 
 # File processing
 SUPPORTED_TEXT_EXTENSIONS: list[str] = [
-    ".txt", ".md", ".rst", ".doc", ".docx", 
-    ".pdf", ".html", ".xml", ".json", ".yaml", ".yml"
+    ".txt",
+    ".md",
+    ".rst",
+    ".doc",
+    ".docx",
+    ".pdf",
+    ".html",
+    ".xml",
+    ".json",
+    ".yaml",
+    ".yml",
 ]
 
 SUPPORTED_CODE_EXTENSIONS: list[str] = [
-    ".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".cpp", ".c", ".h",
-    ".hpp", ".go", ".rs", ".rb", ".php", ".swift", ".kt", ".scala",
-    ".r", ".m", ".cs", ".sh", ".bash", ".zsh", ".fish"
+    ".py",
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx",
+    ".java",
+    ".cpp",
+    ".c",
+    ".h",
+    ".hpp",
+    ".go",
+    ".rs",
+    ".rb",
+    ".php",
+    ".swift",
+    ".kt",
+    ".scala",
+    ".r",
+    ".m",
+    ".cs",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".fish",
 ]
 
 # Embedding provider types

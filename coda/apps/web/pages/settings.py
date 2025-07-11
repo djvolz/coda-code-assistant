@@ -5,8 +5,8 @@ from typing import Any
 
 import streamlit as st
 
-from coda.services.config import get_config_service
 from coda.apps.web.utils.state import get_state_value, set_state_value
+from coda.services.config import get_config_service
 
 
 def render():

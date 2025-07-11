@@ -93,7 +93,7 @@ class LayeredConfig:
 
     def add_layer(self, config: dict[str, Any], source: ConfigSource) -> None:
         """Add a configuration layer.
-        
+
         Runtime configs are prepended (highest priority),
         others are appended (lower priority).
         """

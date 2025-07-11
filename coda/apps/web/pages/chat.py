@@ -1,9 +1,7 @@
 """Chat interface page."""
 
-
 import streamlit as st
 
-from coda.base.providers.registry import get_provider_registry
 from coda.apps.web.components.chat_widget import render_chat_interface
 from coda.apps.web.components.file_manager import (
     render_file_download_section,
@@ -11,6 +9,7 @@ from coda.apps.web.components.file_manager import (
 )
 from coda.apps.web.components.model_selector import render_model_selector
 from coda.apps.web.utils.state import clear_chat_state, get_state_value, set_state_value
+from coda.base.providers.registry import get_provider_registry
 
 
 def render_provider_selector() -> str | None:

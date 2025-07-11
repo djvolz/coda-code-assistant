@@ -17,8 +17,8 @@ from pathlib import Path
 from typing import Any
 
 from ..config import ConfigManager
-from .constants import ENV_PREFIX
 from .base import ObservabilityComponent
+from .constants import ENV_PREFIX
 
 
 @dataclass
@@ -353,7 +353,7 @@ class HealthMonitor(ObservabilityComponent):
                 message = f"Database {'exists' if db_exists else 'not found'} at {session_db_path}"
             else:
                 message = "Database check pending (config manager not available)"
-            
+
             response_time = (time.time() - start_time) * 1000
 
             return HealthCheck(

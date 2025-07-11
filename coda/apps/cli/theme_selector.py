@@ -28,9 +28,10 @@ class ThemeSelector:
         self.selected_index = 0
         self.search_text = ""
         # Get theme-based style
-        from coda.base.theme import ThemeManager
         from prompt_toolkit.styles import Style
-        
+
+        from coda.base.theme import ThemeManager
+
         theme_mgr = ThemeManager()
         theme_style_dict = theme_mgr.current_theme.prompt.to_dict()
         self.style = Style.from_dict(theme_style_dict)

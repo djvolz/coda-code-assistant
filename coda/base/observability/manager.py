@@ -51,10 +51,11 @@ class ObservabilityManager:
         """Check if observability is enabled via configuration."""
         # Check environment variable first
         import os
+
         env_value = os.environ.get(f"{ENV_PREFIX}OBSERVABILITY_ENABLED")
         if env_value is not None:
             return env_value.lower() in ("true", "1", "yes", "on")
-        
+
         # Fall back to config file
         return self.config_manager.get_bool("observability.enabled", default=False)
 
@@ -62,6 +63,7 @@ class ObservabilityManager:
         """Get the directory for exporting observability data."""
         # Check environment variable first
         import os
+
         env_value = os.environ.get(f"{ENV_PREFIX}OBSERVABILITY_EXPORT_DIR")
         if env_value:
             export_dir = Path(env_value)
@@ -69,8 +71,7 @@ class ObservabilityManager:
             # Fall back to config file, then cache dir
             default_dir = self.config_manager.get_cache_dir() / "observability"
             export_dir = self.config_manager.get_string(
-                "observability.export_directory",
-                default=str(default_dir)
+                "observability.export_directory", default=str(default_dir)
             )
         path = Path(export_dir)
         path.mkdir(parents=True, exist_ok=True)

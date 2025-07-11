@@ -2,8 +2,9 @@
 
 from rich.console import Console
 
-from coda.services.config import AppConfig
 from coda.base.providers import BaseProvider, Model, ProviderFactory
+from coda.services.config import AppConfig
+
 # Theme is now passed in via constructor
 
 
@@ -95,8 +96,9 @@ class ProviderManager:
             return selected
 
         # Use interactive model selector
-        from .model_selector import ModelSelector
         import asyncio
+
+        from .model_selector import ModelSelector
 
         selector = ModelSelector(unique_models, self.console)
         # Run the async selector in a new event loop

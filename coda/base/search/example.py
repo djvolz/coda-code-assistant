@@ -17,10 +17,10 @@ from pathlib import Path
 # When running from coda package (always use this path when running as script)
 from coda.base.search import (
     DependencyGraph,
-    MockEmbeddingProvider,
     RepoMap,
     TreeSitterAnalyzer,
 )
+
 # Import SemanticSearchManager separately to avoid FAISS issues
 try:
     from coda.base.search import SemanticSearchManager

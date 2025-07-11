@@ -3,6 +3,7 @@
 import json
 
 from coda.base.providers.base import Tool, ToolCall, ToolResult
+
 from .base import tool_registry
 
 
@@ -28,7 +29,7 @@ class ToolExecutor:
             tool = self.tool_registry.get_tool(tool_call.name)
             if not tool:
                 from ..errors import ToolNotFoundError
-                
+
                 error = ToolNotFoundError(tool_call.name)
                 return ToolResult(
                     tool_call_id=tool_call.id,
@@ -39,13 +40,13 @@ class ToolExecutor:
             # Check if tool requires approval (dangerous tools)
             if hasattr(tool, "dangerous") and tool.dangerous:
                 from ..errors import PermissionError
-                
+
                 # For now, we'll reject dangerous tools in automatic mode
                 # In the future, we can add user approval flow
                 error = PermissionError(
                     message=f"Tool '{tool_call.name}' requires manual approval",
                     operation="execute_dangerous_tool",
-                    resource=tool_call.name
+                    resource=tool_call.name,
                 )
                 return ToolResult(
                     tool_call_id=tool_call.id,
@@ -71,19 +72,13 @@ class ToolExecutor:
                 )
 
         except Exception as e:
-            from ..errors import ToolExecutionError, ErrorHandler
-            
+            from ..errors import ToolExecutionError
+
             # Create proper error with context
-            error = ToolExecutionError(
-                message=str(e),
-                tool_name=tool_call.name,
-                cause=e
-            )
-            
+            error = ToolExecutionError(message=str(e), tool_name=tool_call.name, cause=e)
+
             return ToolResult(
-                tool_call_id=tool_call.id, 
-                content=error.user_message(), 
-                is_error=True
+                tool_call_id=tool_call.id, content=error.user_message(), is_error=True
             )
 
     def get_available_tools(self) -> list[Tool]:

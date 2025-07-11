@@ -5,6 +5,7 @@ from typing import Any
 
 try:
     import tiktoken
+
     HAS_TIKTOKEN = True
 except ImportError:
     HAS_TIKTOKEN = False
@@ -64,7 +65,7 @@ class ContextManager:
         if not HAS_TIKTOKEN:
             self.tokenizer = None
             return
-            
+
         try:
             # Try to use tiktoken for accurate token counting
             self.tokenizer = tiktoken.encoding_for_model(self.model)

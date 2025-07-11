@@ -84,9 +84,9 @@ class ThemeManager:
         """Get a Rich console with the current theme applied."""
         from rich.console import Console
         from rich.theme import Theme as RichTheme
-        
+
         console_theme = self.get_console_theme()
-        
+
         # Build Rich theme from our console theme colors
         style_dict = {
             "info": console_theme.info,
@@ -99,7 +99,7 @@ class ThemeManager:
             "panel.title": console_theme.panel_title,
             "command": console_theme.command,
         }
-        
+
         rich_theme = RichTheme(style_dict)
         return Console(theme=rich_theme)
 

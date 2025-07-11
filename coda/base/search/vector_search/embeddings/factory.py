@@ -35,7 +35,7 @@ class EmbeddingProviderFactory:
 
     # Registry of available providers
     PROVIDERS = {}
-    
+
     # Add providers that are available
     if OCIEmbeddingProvider is not None:
         PROVIDERS["oci"] = OCIEmbeddingProvider

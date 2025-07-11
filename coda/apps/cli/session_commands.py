@@ -8,16 +8,28 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from coda.base.session import Session, SessionManager
 from coda.base.session.constants import (
     AUTO_DATE_FORMAT as AUTO_SESSION_DATE_FORMAT,
+)
+from coda.base.session.constants import (
     AUTO_PREFIX as AUTO_SESSION_PREFIX,
+)
+from coda.base.session.constants import (
     LIMIT_DELETE as SESSION_DELETE_LIMIT,
+)
+from coda.base.session.constants import (
     LIMIT_INFO as SESSION_INFO_LIMIT,
+)
+from coda.base.session.constants import (
     LIMIT_LAST as SESSION_LAST_LIMIT,
+)
+from coda.base.session.constants import (
     LIMIT_LIST as SESSION_LIST_LIMIT,
+)
+from coda.base.session.constants import (
     LIMIT_SEARCH as SESSION_SEARCH_LIMIT,
 )
-from coda.base.session import SessionManager, Session
 
 
 class SessionCommands:
@@ -32,6 +44,7 @@ class SessionCommands:
         self.manager = session_manager or SessionManager()
         # Get themed console from the app layer
         from coda.services.config import get_config_service
+
         config = get_config_service()
         self.console = config.theme_manager.get_console()
         self.current_session_id: str | None = None
@@ -351,9 +364,7 @@ class SessionCommands:
         # Base modules should not use themed output - just return plain text
 
         self.console.print(
-            Panel(
-                "\n".join(info_lines), title="Session Information", border_style="cyan"
-            )
+            Panel("\n".join(info_lines), title="Session Information", border_style="cyan")
         )
         return None
 

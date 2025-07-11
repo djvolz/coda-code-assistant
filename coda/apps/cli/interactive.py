@@ -99,7 +99,7 @@ async def _get_chat_models(provider_instance, console: Console):
     try:
         models = provider_instance.list_models()
         console.print(f"[green]✓ Found {len(models)} available models[/green]")
-    except Exception as e:
+    except Exception:
         # Re-raise the exception to be handled by the caller
         raise
 
@@ -391,8 +391,8 @@ async def run_interactive_session(
     cli = InteractiveCLI(console)
 
     # Load configuration
-    from coda.services.config import get_config_service
     from coda.base.providers import ProviderFactory
+    from coda.services.config import get_config_service
 
     config = get_config_service()
 

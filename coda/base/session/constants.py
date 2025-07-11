@@ -3,7 +3,6 @@
 All session-specific constants are defined here to make the module self-contained.
 """
 
-from pathlib import Path
 
 # Session status values
 STATUS_ACTIVE: str = "active"

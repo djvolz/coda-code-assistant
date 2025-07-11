@@ -25,15 +25,16 @@ class SessionDatabase:
             # Compute default path using XDG conventions
             import os
             from pathlib import Path
+
             from .constants import SESSION_DB
-            
+
             # Use XDG_DATA_HOME if set, otherwise ~/.local/share
             xdg_data_home = os.environ.get("XDG_DATA_HOME")
             if xdg_data_home:
                 data_dir = Path(xdg_data_home) / "coda"
             else:
                 data_dir = Path.home() / ".local" / "share" / "coda"
-            
+
             db_path = data_dir / SESSION_DB
 
         self.db_path = db_path

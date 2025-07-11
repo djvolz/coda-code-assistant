@@ -12,10 +12,9 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-from .session_commands import SessionCommands
-
-from .constants import HISTORY_FILE
 from .completers import CodaCompleter
+from .constants import HISTORY_FILE
+from .session_commands import SessionCommands
 from .shared import CommandHandler, CommandResult, DeveloperMode
 
 # Import moved to where it's used to avoid circular imports
@@ -53,6 +52,7 @@ class InteractiveCLI(CommandHandler):
         else:
             # TODO: Update to use new theme manager
             from rich.console import Console
+
             super().__init__(Console())
         self.session = None
         self.config = None  # Will be set by interactive.py
@@ -178,7 +178,7 @@ class InteractiveCLI(CommandHandler):
         else:
             # Fallback if config not available yet
             history_file_path = Path.home() / ".config" / "coda" / HISTORY_FILE
-        
+
         # Create history directory if it doesn't exist
         history_file_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -450,14 +450,14 @@ class InteractiveCLI(CommandHandler):
         from coda.services.config import get_config_service
 
         config_service = get_config_service()
-        
+
         # Update theme in theme manager
         config_service.theme_manager.set_theme(theme_name)
-        
+
         # Update config and save
         config_service.set("ui.theme", theme_name)
         config_service.save()
-        
+
         # Update console from the config service's theme manager
         self.console = config_service.theme_manager.get_console()
         self.style = self._create_style()
@@ -880,9 +880,9 @@ class InteractiveCLI(CommandHandler):
 
     def _cmd_observability(self, args: str):
         """Manage observability and telemetry settings."""
-        from coda.services.config import get_config_service
         from coda.base.observability.commands import ObservabilityCommands
         from coda.base.observability.manager import ObservabilityManager
+        from coda.services.config import get_config_service
 
         # Initialize observability manager if not already available
         if not hasattr(self, "observability_manager"):

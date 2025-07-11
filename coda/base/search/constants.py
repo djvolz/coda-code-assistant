@@ -8,13 +8,13 @@ All search-related constants are defined here to make the module self-contained.
 # Supported file extensions for analysis
 SUPPORTED_LANGUAGES = {
     ".py": "python",
-    ".js": "javascript", 
+    ".js": "javascript",
     ".ts": "typescript",
     ".jsx": "javascript",
     ".tsx": "typescript",
     ".java": "java",
     ".cpp": "cpp",
-    ".c": "c", 
+    ".c": "c",
     ".h": "c",
     ".hpp": "cpp",
     ".go": "go",
@@ -38,7 +38,7 @@ DEFAULT_MAX_FILE_SIZE: int = 1024 * 1024  # 1MB
 DEFAULT_MAX_FILES: int = 10000
 DEFAULT_EXCLUDE_PATTERNS: list[str] = [
     "__pycache__",
-    ".git", 
+    ".git",
     ".pytest_cache",
     "node_modules",
     ".mypy_cache",
@@ -54,7 +54,7 @@ QUERIES_DIR: str = "queries"
 
 # === Search and Embedding Constants ===
 
-# Default chunking parameters  
+# Default chunking parameters
 DEFAULT_CHUNK_SIZE: int = 1000
 DEFAULT_CHUNK_OVERLAP: int = 200
 MIN_CHUNK_SIZE: int = 100
@@ -72,8 +72,17 @@ DEFAULT_SIMILARITY_THRESHOLD: float = 0.7
 
 # File processing for search
 SUPPORTED_TEXT_EXTENSIONS: list[str] = [
-    ".txt", ".md", ".rst", ".doc", ".docx", 
-    ".pdf", ".html", ".xml", ".json", ".yaml", ".yml"
+    ".txt",
+    ".md",
+    ".rst",
+    ".doc",
+    ".docx",
+    ".pdf",
+    ".html",
+    ".xml",
+    ".json",
+    ".yaml",
+    ".yml",
 ]
 
 SUPPORTED_CODE_EXTENSIONS: list[str] = list(SUPPORTED_LANGUAGES.keys())
@@ -101,8 +110,9 @@ RETRY_DELAY: float = 1.0  # seconds
 # Default index directory name
 DEFAULT_INDEX_DIR: str = "search_index"
 
+
 # Analysis modes
 class AnalysisMode:
     STRUCTURE_ONLY: str = "structure"  # Just code structure
-    SEMANTIC_ONLY: str = "semantic"   # Just semantic search  
-    FULL: str = "full"                # Both structure + semantic
+    SEMANTIC_ONLY: str = "semantic"  # Just semantic search
+    FULL: str = "full"  # Both structure + semantic

@@ -1,7 +1,5 @@
 import sys
 
-from rich.console import Console
-
 try:
     from coda.__version__ import __version__
 except ImportError:
@@ -41,16 +39,18 @@ def main(
     global console, theme
     console = config.theme_manager.get_console()
     theme = config.theme_manager.get_console_theme()
-    
+
     # Initialize error handler
     error_handler = CLIErrorHandler(console, debug or config.debug)
 
     # Always use interactive mode
     try:
-        from .interactive import run_interactive_session
         import asyncio
+
         from rich.panel import Panel
         from rich.text import Text
+
+        from .interactive import run_interactive_session
 
         # Show welcome banner
         welcome_text = Text.from_markup(
@@ -58,7 +58,7 @@ def main(
             f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
             f"[dim]Interactive mode with prompt-toolkit[/dim]"
         )
-        
+
         console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
 
         if one_shot:
@@ -73,7 +73,9 @@ def main(
         console.print(
             f"[{theme.error}]Error: Interactive mode requires prompt-toolkit[/{theme.error}]"
         )
-        console.print(f"[{theme.info}]Please install with: pip install prompt-toolkit[/{theme.info}]")
+        console.print(
+            f"[{theme.info}]Please install with: pip install prompt-toolkit[/{theme.info}]"
+        )
         console.print(f"[{theme.dim}]Error details: {e}[/{theme.dim}]")
         sys.exit(1)
     except Exception as e:

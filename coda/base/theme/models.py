@@ -95,6 +95,7 @@ class PromptTheme:
 
     def to_dict(self) -> dict[str, str]:
         """Convert theme to dictionary format for prompt-toolkit."""
+
         # Convert styles with spaces to prompt-toolkit format
         # "bg:#444444 #ffffff" becomes "bg:#444444 fg:#ffffff"
         def convert_style(style: str) -> str:
@@ -102,7 +103,7 @@ class PromptTheme:
                 return style
             parts = style.split()
             result_parts = []
-            
+
             for part in parts:
                 if part.startswith("bg:#"):
                     result_parts.append(part)
@@ -112,9 +113,9 @@ class PromptTheme:
                 else:
                     # Other attributes like bold, italic, reverse
                     result_parts.append(part)
-            
+
             return " ".join(result_parts)
-        
+
         return {
             # Input field
             "": convert_style(self.input_field),

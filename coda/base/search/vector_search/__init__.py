@@ -2,7 +2,7 @@
 
 This module provides comprehensive vector-based search capabilities including:
 - Text chunking and preprocessing for embeddings
-- Multiple embedding provider backends  
+- Multiple embedding provider backends
 - Vector storage and similarity search
 - Semantic/vector search coordination
 
@@ -12,23 +12,23 @@ to other projects without any Coda-specific dependencies.
 Example usage:
     from coda.search.vector_search import SemanticSearchManager
     from coda.search.vector_search.embeddings.mock import MockEmbeddingProvider
-    
+
     # Create provider and search manager
     provider = MockEmbeddingProvider(dimension=768)
     search = SemanticSearchManager(embedding_provider=provider)
-    
+
     # Index and search content
     await search.index_content(["Document content here"])
     results = await search.search("query", k=5)
 """
 
 # Core search functionality
-from .manager import SemanticSearchManager
-from .chunking import Chunk, TextChunker, CodeChunker
+from .chunking import Chunk, CodeChunker, TextChunker
 
 # Embedding providers
 from .embeddings.base import BaseEmbeddingProvider
 from .embeddings.mock import MockEmbeddingProvider
+from .manager import SemanticSearchManager
 
 # Vector stores
 from .vector_stores.base import BaseVectorStore, SearchResult
@@ -54,20 +54,17 @@ __all__ = [
     # Core components
     "SemanticSearchManager",
     "Chunk",
-    "TextChunker", 
+    "TextChunker",
     "CodeChunker",
-    
     # Base classes
     "BaseEmbeddingProvider",
     "BaseVectorStore",
     "SearchResult",
-    
     # Always available providers
     "MockEmbeddingProvider",
     "FAISSVectorStore",
-    
     # Optional providers (may be None if dependencies not available)
     "OCIEmbeddingProvider",
-    "OllamaEmbeddingProvider", 
+    "OllamaEmbeddingProvider",
     "SentenceTransformersProvider",
 ]

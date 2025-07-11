@@ -2,7 +2,7 @@
 Repository Mapping and Code Analysis Module
 
 This module provides repository structure analysis and code understanding capabilities:
-- Repository mapping and structure analysis  
+- Repository mapping and structure analysis
 - Tree-sitter integration for code parsing
 - Multi-language support
 - Dependency graph generation
@@ -23,12 +23,12 @@ from .tree_sitter_query_analyzer import (
 )
 
 __all__ = [
-    "RepoMap", 
+    "RepoMap",
     "TreeSitterAnalyzer",
-    "TreeSitterQueryAnalyzer", 
+    "TreeSitterQueryAnalyzer",
     "DependencyGraph",
     "CodeElement",
-    "FileAnalysis", 
+    "FileAnalysis",
     "DefinitionKind",
     "TREE_SITTER_AVAILABLE",
 ]

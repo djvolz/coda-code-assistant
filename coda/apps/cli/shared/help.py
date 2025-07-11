@@ -3,6 +3,7 @@
 from rich.console import Console
 
 from coda.services.config import get_config_service
+
 from .modes import DeveloperMode, get_mode_description
 
 
@@ -63,8 +64,6 @@ def print_developer_modes(console: Console):
         desc = get_mode_description(mode)
         console.print(f"  [{theme.command}]{mode.value}[/{theme.command}] - {desc}")
     console.print()
-
-
 
 
 def print_interactive_keyboard_shortcuts(console: Console):

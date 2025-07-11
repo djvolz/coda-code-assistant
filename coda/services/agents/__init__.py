@@ -6,9 +6,9 @@ Requires: coda.providers, coda.search
 """
 
 from .agent import Agent
+from .agent_types import FunctionCall, PerformedAction, RequiredAction
 from .decorators import tool
 from .function_tool import FunctionTool
-from .agent_types import FunctionCall, PerformedAction, RequiredAction
 
 __all__ = [
     "Agent",

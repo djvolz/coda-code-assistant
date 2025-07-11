@@ -7,6 +7,7 @@ from typing import Any
 
 from coda.base.search import DependencyGraph, RepoMap, TreeSitterAnalyzer
 from coda.base.search.map.tree_sitter_query_analyzer import DefinitionKind
+
 from .base import (
     BaseTool,
     ToolParameter,

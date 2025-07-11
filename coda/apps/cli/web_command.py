@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from coda.services.config import get_config_service
+
 from .constants import PANEL_BORDER_STYLE
 
 console = Console()
