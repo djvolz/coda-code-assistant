@@ -8,6 +8,7 @@ from prompt_toolkit.layout import (
     WindowAlign,
 )
 from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.styles import Style
 from rich.console import Console
 
 from coda.base.theme import ThemeManager
@@ -103,12 +104,13 @@ class GenericSelector:
         layout = Layout(content)
 
         # Define custom style based on theme
-        style = {
+        style_dict = {
             "title": f"{self.theme.info} bold",
             "option": self.theme.dim,
             "selected": f"{self.theme.success} bold",
             "help": self.theme.dim,
         }
+        style = Style.from_dict(style_dict)
 
         # Create application
         app = Application(
