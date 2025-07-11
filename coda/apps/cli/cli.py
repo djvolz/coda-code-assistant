@@ -2,7 +2,7 @@
 
 import click
 
-from ..__version__ import __version__
+from coda.__version__ import __version__
 from .web_command import web as web_command
 
 

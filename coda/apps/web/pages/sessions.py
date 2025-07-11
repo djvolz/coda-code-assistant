@@ -4,8 +4,8 @@ from datetime import datetime
 
 import streamlit as st
 
-from coda.session.models import Session
-from coda.web.utils.state import get_state_value
+from coda.base.session.models import Session
+from coda.apps.web.utils.state import get_state_value
 
 
 def render():

@@ -111,7 +111,7 @@ class SlashCommandCompleter(BaseCompleter):
                 start_position=0,
                 display=f"/{cmd_name}",
                 display_meta=cmd.help_text,
-                style=theme.info + " bold",
+                style=theme.console.info + " bold",
             )
 
     def _complete_subcommands(self, cmd_part: str, parts: list[str]):
@@ -158,7 +158,7 @@ class SlashCommandCompleter(BaseCompleter):
                             start_position=-len(text),
                             display=f"/{cmd_name}",
                             display_meta=cmd.help_text,
-                            style=theme.info + " bold" if score >= 0.9 else theme.info,
+                            style=theme.console.info + " bold" if score >= 0.9 else theme.console.info,
                         ),
                     )
                 )

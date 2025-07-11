@@ -5,8 +5,8 @@ from datetime import datetime
 
 import streamlit as st
 
-from coda.providers.registry import ProviderFactory
-from coda.web.utils.state import get_state_value, set_state_value
+from coda.base.providers.registry import ProviderFactory
+from coda.apps.web.utils.state import get_state_value, set_state_value
 
 
 def render_chat_interface(provider: str, model: str):
@@ -27,7 +27,7 @@ def render_chat_interface(provider: str, model: str):
         # Check for uploaded files and include in context
         uploaded_files = st.session_state.get("uploaded_files", [])
         if uploaded_files:
-            from coda.web.components.file_manager import create_file_context_prompt
+            from coda.apps.web.components.file_manager import create_file_context_prompt
 
             file_context = create_file_context_prompt(uploaded_files)
             full_prompt = file_context + prompt
@@ -87,7 +87,7 @@ def get_ai_response(provider: str, model: str, messages: list[dict[str, str]]) -
         provider_instance = factory.create(provider)
 
         # Convert messages to Message objects
-        from coda.providers.base import Message, Role
+        from coda.base.providers.base import Message, Role
 
         provider_messages = []
         for msg in messages:

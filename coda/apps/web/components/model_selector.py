@@ -3,8 +3,8 @@
 
 import streamlit as st
 
-from coda.providers.registry import ProviderFactory
-from coda.web.utils.state import get_state_value, set_state_value
+from coda.base.providers.registry import ProviderFactory
+from coda.apps.web.utils.state import get_state_value, set_state_value
 
 
 def render_model_selector(provider: str | None) -> str | None:

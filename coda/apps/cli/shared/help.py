@@ -2,7 +2,7 @@
 
 from rich.console import Console
 
-from ...themes import get_console_theme
+from coda.base.theme.compat import get_console_theme
 from .modes import DeveloperMode, get_mode_description
 
 
@@ -12,7 +12,7 @@ def print_command_help(console: Console, mode: str = ""):
 
     # Try to use command registry
     try:
-        from coda.cli.command_registry import CommandRegistry
+        from ..command_registry import CommandRegistry
 
         help_text = CommandRegistry.get_command_help(mode=mode)
         console.print(help_text)

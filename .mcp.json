@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git"],
+      "env": {}
+    },
+    "lsp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "docker.io/jonrad/lsp-mcp:0.3.1"]
+    }
+  }
+}
+

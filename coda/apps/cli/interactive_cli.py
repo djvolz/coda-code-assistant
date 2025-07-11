@@ -41,7 +41,7 @@ class SlashCommand:
         """Get autocomplete options for this command."""
         if self._autocomplete_options is None:
             # Load options from command registry
-            from coda.cli.command_registry import CommandRegistry
+            from .command_registry import CommandRegistry
 
             options = CommandRegistry.get_autocomplete_options()
             self._autocomplete_options = [opt[0] for opt in options.get(self.name, [])]
@@ -105,7 +105,7 @@ class InteractiveCLI(CommandHandler):
 
     def _init_commands(self) -> dict[str, SlashCommand]:
         """Initialize slash commands from the command registry."""
-        from coda.cli.command_registry import CommandRegistry
+        from .command_registry import CommandRegistry
 
         # Map command names to their handlers
         handler_map = {
@@ -147,14 +147,13 @@ class InteractiveCLI(CommandHandler):
         from coda.base.theme import ThemeManager
 
         theme_manager = ThemeManager()
-        theme_style = theme_manager.current_theme.prompt.to_prompt_toolkit_style()
+        theme_style = theme_manager.current_theme.prompt.to_dict()
 
         # Get the base style dictionary and add custom styles
         combined_styles = {}
 
-        # Add theme styles (if they have a style_dict attribute)
-        if hasattr(theme_style, "style_dict"):
-            combined_styles.update(theme_style.style_dict)
+        # Add theme styles (theme_style is already a dict from to_dict())
+        combined_styles.update(theme_style)
 
         # Add custom additions
         combined_styles.update(
@@ -162,11 +161,11 @@ class InteractiveCLI(CommandHandler):
                 # Additional prompt-specific styles
                 "prompt.mode": "#888888",
                 # Completion menu enhancements
-                "completion-menu": "bg:#2c2c2c #ffffff",
-                "completion-menu.completion": "bg:#2c2c2c #ffffff",
-                "completion-menu.completion.current": "bg:#005588 #ffffff bold",
-                "completion-menu.meta.completion": "bg:#2c2c2c #888888",
-                "completion-menu.meta.completion.current": "bg:#005588 #aaaaaa",
+                "completion-menu": "bg:#2c2c2c fg:#ffffff",
+                "completion-menu.completion": "bg:#2c2c2c fg:#ffffff",
+                "completion-menu.completion.current": "bg:#005588 fg:#ffffff bold",
+                "completion-menu.meta.completion": "bg:#2c2c2c fg:#888888",
+                "completion-menu.meta.completion.current": "bg:#005588 fg:#aaaaaa",
                 # Scrollbar
                 "scrollbar.background": "bg:#2c2c2c",
                 "scrollbar.button": "bg:#888888",
@@ -367,7 +366,7 @@ class InteractiveCLI(CommandHandler):
     # Command handlers
     def show_help(self) -> CommandResult:
         """Show help for commands - interactive mode specific."""
-        from coda.cli.shared import (
+        from .shared import (
             print_command_help,
             print_developer_modes,
             print_interactive_keyboard_shortcuts,

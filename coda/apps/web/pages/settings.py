@@ -5,8 +5,8 @@ from typing import Any
 
 import streamlit as st
 
-from coda.configuration import get_config
-from coda.web.utils.state import get_state_value, set_state_value
+from coda.base.config.compat import get_config
+from coda.apps.web.utils.state import get_state_value, set_state_value
 
 
 def render():
@@ -247,7 +247,7 @@ def render_advanced_settings():
 def save_provider_config(config: dict[str, Any], updates: dict[str, Any]):
     """Save provider configuration updates."""
     # Get the global config object
-    from coda.configuration import save_config as save_global_config
+    from coda.base.config.compat import save_config as save_global_config
 
     global_config = get_config()
 

@@ -3,8 +3,8 @@
 
 import streamlit as st
 
-from coda.web.pages import chat, dashboard, sessions, settings
-from coda.web.utils.state import init_session_state
+from coda.apps.web.pages import chat, dashboard, sessions, settings
+from coda.apps.web.utils.state import init_session_state
 
 
 def configure_page():

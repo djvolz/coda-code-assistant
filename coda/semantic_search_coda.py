@@ -8,8 +8,8 @@ bridge between the standalone search module and Coda-specific features.
 
 import logging
 
-from .configuration import CodaConfig, get_config
-from .constants import get_cache_dir
+from .base.config.compat import CodaConfig, get_config
+from .base.constants import get_cache_dir
 from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
 from .base.search.vector_search.embeddings.factory import create_embedding_provider
 from .base.search.vector_search.manager import SemanticSearchManager

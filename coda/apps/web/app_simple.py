@@ -4,8 +4,8 @@ import streamlit as st
 
 # Import pages
 try:
-    from coda.web.pages import chat, dashboard, sessions, settings
-    from coda.web.utils.state import init_session_state
+    from coda.apps.web.pages import chat, dashboard, sessions, settings
+    from coda.apps.web.utils.state import init_session_state
 
     PAGES_AVAILABLE = True
 except Exception as e:

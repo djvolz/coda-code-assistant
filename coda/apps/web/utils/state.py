@@ -5,7 +5,7 @@ from typing import Any
 
 import streamlit as st
 
-from coda.configuration import get_config
+from coda.base.config.compat import get_config
 from coda.base.session.manager import SessionManager
 
 

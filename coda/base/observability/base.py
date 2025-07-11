@@ -5,7 +5,7 @@ import threading
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from coda.configuration import ConfigManager
+from coda.base.config.manager import Config as ConfigManager
 
 from .scheduler import PeriodicTaskScheduler
 from .storage import FileStorageBackend, StorageBackend

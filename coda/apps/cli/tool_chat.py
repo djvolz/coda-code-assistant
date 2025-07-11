@@ -7,8 +7,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 
-from coda.providers.base import Message, Role, Tool
-from coda.tools.executor import ToolExecutor
+from coda.base.providers.base import Message, Role, Tool
+from coda.services.tools.executor import ToolExecutor
 
 
 class ToolChatHandler:

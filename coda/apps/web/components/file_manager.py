@@ -7,7 +7,7 @@ from typing import Any
 
 import streamlit as st
 
-from coda.web.utils.state import get_state_value
+from coda.apps.web.utils.state import get_state_value
 
 
 def render_file_upload_widget() -> list[dict[str, Any]] | None:

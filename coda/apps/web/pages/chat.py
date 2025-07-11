@@ -3,14 +3,14 @@
 
 import streamlit as st
 
-from coda.providers.registry import get_provider_registry
-from coda.web.components.chat_widget import render_chat_interface
-from coda.web.components.file_manager import (
+from coda.base.providers.registry import get_provider_registry
+from coda.apps.web.components.chat_widget import render_chat_interface
+from coda.apps.web.components.file_manager import (
     render_file_download_section,
     render_file_upload_widget,
 )
-from coda.web.components.model_selector import render_model_selector
-from coda.web.utils.state import clear_chat_state, get_state_value, set_state_value
+from coda.apps.web.components.model_selector import render_model_selector
+from coda.apps.web.utils.state import clear_chat_state, get_state_value, set_state_value
 
 
 def render_provider_selector() -> str | None:

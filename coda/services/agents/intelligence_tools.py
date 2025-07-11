@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from coda.agents.decorators import tool
+from coda.services.agents.decorators import tool
 from coda.base.search import TreeSitterAnalyzer
 
 # Initialize analyzer once for all tools

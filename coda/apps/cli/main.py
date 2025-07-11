@@ -1,10 +1,9 @@
 import sys
 
-import click
 from rich.console import Console
 
 try:
-    from ..__version__ import __version__
+    from coda.__version__ import __version__
 except ImportError:
     # Fallback for when package structure isn't available
     __version__ = "dev"
@@ -19,21 +18,6 @@ console = get_themed_console()
 theme = get_console_theme()
 
 
-@click.command()
-@click.option("--provider", "-p", help="LLM provider to use (oci_genai, ollama, litellm)")
-@click.option("--model", "-m", help="Model to use")
-@click.option("--debug", is_flag=True, help="Enable debug output")
-@click.option("--one-shot", help="Execute a single prompt and exit")
-@click.option("--basic", is_flag=True, help="[DEPRECATED] Basic mode is no longer supported", hidden=True)
-@click.option(
-    "--mode",
-    type=click.Choice(["general", "code", "debug", "explain", "review", "refactor", "plan"]),
-    default="general",
-    help="Initial developer mode",
-)
-@click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
-@click.option("--resume", is_flag=True, help="Resume the most recent session")
-@click.version_option(version=__version__, prog_name="coda")
 def main(
     provider: str,
     model: str,
@@ -44,7 +28,7 @@ def main(
     no_save: bool,
     resume: bool,
 ):
-    """Coda - A multi-provider code assistant"""
+    """Coda - A multi-provider code assistant main entry point."""
 
     # Load configuration
     config = get_config()
@@ -65,20 +49,27 @@ def main(
 
     # Always use interactive mode
     try:
-        from .interactive import interactive_main
+        from .interactive import run_interactive_session
+        import asyncio
+        from rich.panel import Panel
+        from rich.text import Text
 
-        # Pass control to the interactive CLI
-        ctx = click.get_current_context()
-        ctx.invoke(
-            interactive_main,
-            provider=provider,
-            model=model,
-            debug=debug,
-            one_shot=one_shot,
-            mode=mode,
-            no_save=no_save,
-            resume=resume,
+        # Show welcome banner
+        welcome_text = Text.from_markup(
+            f"[bold cyan]Coda[/bold cyan] - Code Assistant\n"
+            f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
+            f"[dim]Interactive mode with prompt-toolkit[/dim]"
         )
+        
+        console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
+
+        if one_shot:
+            # Handle one-shot mode
+            console.print("[yellow]One-shot mode not yet updated for enhanced CLI[/yellow]")
+            console.print(f"Would execute: {one_shot}")
+        else:
+            # Run interactive session
+            asyncio.run(run_interactive_session(provider, model, debug, no_save, resume))
     except ImportError as e:
         # If prompt-toolkit is not available, show error
         console.print(
@@ -90,7 +81,3 @@ def main(
     except Exception as e:
         error_handler.handle_general_error(e)
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

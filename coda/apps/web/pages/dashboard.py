@@ -7,8 +7,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from coda.providers.registry import get_provider_registry
-from coda.web.utils.state import get_state_value
+from coda.base.providers.registry import get_provider_registry
+from coda.apps.web.utils.state import get_state_value
 
 
 def render():

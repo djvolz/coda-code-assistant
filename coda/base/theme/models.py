@@ -94,30 +94,50 @@ class PromptTheme:
     model_info: str = "#888888 italic"
 
     def to_dict(self) -> dict[str, str]:
-        """Convert theme to dictionary format."""
+        """Convert theme to dictionary format for prompt-toolkit."""
+        # Convert styles with spaces to prompt-toolkit format
+        # "bg:#444444 #ffffff" becomes "bg:#444444 fg:#ffffff"
+        def convert_style(style: str) -> str:
+            if not style:
+                return style
+            parts = style.split()
+            result_parts = []
+            
+            for part in parts:
+                if part.startswith("bg:#"):
+                    result_parts.append(part)
+                elif part.startswith("#"):
+                    # Color without prefix, assume it's foreground
+                    result_parts.append(f"fg:{part}")
+                else:
+                    # Other attributes like bold, italic, reverse
+                    result_parts.append(part)
+            
+            return " ".join(result_parts)
+        
         return {
             # Input field
-            "": self.input_field,
-            "cursor": self.cursor,
-            "selected-text": self.selection,
+            "": convert_style(self.input_field),
+            "cursor": convert_style(self.cursor),
+            "selected-text": convert_style(self.selection),
             # Completions
-            "completion": self.completion,
-            "completion.current": self.completion_selected,
-            "completion.meta": self.completion_meta,
+            "completion": convert_style(self.completion),
+            "completion.current": convert_style(self.completion_selected),
+            "completion.meta": convert_style(self.completion_meta),
             # Search
-            "search": self.search,
-            "search.current": self.search_match,
+            "search": convert_style(self.search),
+            "search.current": convert_style(self.search_match),
             # Toolbar and status
-            "bottom-toolbar": self.toolbar,
-            "status": self.status,
+            "bottom-toolbar": convert_style(self.toolbar),
+            "status": convert_style(self.status),
             # Prompts
-            "prompt": self.prompt,
-            "continuation": self.continuation,
+            "prompt": convert_style(self.prompt),
+            "continuation": convert_style(self.continuation),
             # Model selector
-            "selected": self.model_selected,
-            "provider": self.model_provider,
-            "info": self.model_info,
-            "title": self.model_title,
+            "selected": convert_style(self.model_selected),
+            "provider": convert_style(self.model_provider),
+            "info": convert_style(self.model_info),
+            "title": convert_style(self.model_title),
         }
 
 

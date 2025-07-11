@@ -16,12 +16,12 @@ from .agent_chat import AgentChatHandler
 from .interactive_cli import DeveloperMode, InteractiveCLI
 
 try:
-    from ..__version__ import __version__
+    from coda.__version__ import __version__
 except ImportError:
     __version__ = "dev"
 
 # Create themed console that respects user's theme configuration
-from coda.base.themes import get_console_theme, get_themed_console
+from coda.base.theme.compat import get_console_theme, get_themed_console
 
 console = get_themed_console()
 theme = get_console_theme()

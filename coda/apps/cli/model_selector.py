@@ -1,7 +1,7 @@
 """Model selection UI for interactive CLI."""
 
 import asyncio
-from functools import partial
+# Removed unused import: from functools import partial
 
 from prompt_toolkit import Application
 from prompt_toolkit.formatted_text import HTML
@@ -60,17 +60,14 @@ class ModelSelector:
             # Determine selection indicator
             if i == self.selected_index:
                 prefix = "▶ "
-                style = f"fg:{self.theme.highlight} bold"
+                style = "fg:cyan bold"  # Use a fixed color for now
             else:
                 prefix = "  "
                 style = ""
 
             # Format model info
             model_text = f"{prefix}{model.id} ({model.provider})"
-            if style:
-                lines.append(f'<style {style}>{model_text}</style>')
-            else:
-                lines.append(model_text)
+            lines.append(model_text)
 
         return "\n".join(lines)
 
@@ -118,7 +115,7 @@ class ModelSelector:
         # Create search field
         search_field = TextArea(
             height=1,
-            prompt=HTML(f'<style fg="{self.theme.prompt}">Search: </style>'),
+            prompt="Search: ",  # Use plain text for prompt
             multiline=False,
             focus_on_click=True,
         )
@@ -132,13 +129,22 @@ class ModelSelector:
         search_field.buffer.on_text_changed += on_search_change
 
         # Create layout
+        # Import FormattedTextControl
+        from prompt_toolkit.layout.controls import FormattedTextControl
+        
+        # Use FormattedTextControl with a callable
         model_list_window = Window(
-            content=partial(lambda: HTML(self.get_model_list_text())),
+            content=FormattedTextControl(
+                text=lambda: HTML(self.get_model_list_text())
+            ),
             wrap_lines=False,
         )
 
+        # Use FormattedTextControl for status window too
         status_window = Window(
-            content=partial(lambda: HTML(f'<style fg="{self.theme.dim}">{self.get_status_text()}</style>')),
+            content=FormattedTextControl(
+                text=lambda: self.get_status_text()  # Plain text for status
+            ),
             height=1,
             align=WindowAlign.RIGHT,
         )
@@ -146,7 +152,7 @@ class ModelSelector:
         layout = Layout(
             HSplit(
                 [
-                    Label(text=HTML(f'<style fg="{self.theme.info} bold">Select Model</style>')),
+                    Label(text="Select Model"),
                     search_field,
                     Frame(ScrollablePane(model_list_window), title="Available Models"),
                     status_window,
@@ -154,8 +160,20 @@ class ModelSelector:
             )
         )
 
-        # Create application
-        app = Application(layout=layout, key_bindings=kb, full_screen=False, mouse_support=True)
+        # Create application with theme style
+        from prompt_toolkit.styles import Style
+        
+        # Get theme style from prompt theme
+        theme_style_dict = self.theme.prompt.to_dict()
+        style = Style.from_dict(theme_style_dict)
+        
+        app = Application(
+            layout=layout, 
+            key_bindings=kb, 
+            style=style,
+            full_screen=False, 
+            mouse_support=True
+        )
 
         # Run and get result
         selected_model = await app.run_async()

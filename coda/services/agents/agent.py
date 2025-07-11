@@ -738,7 +738,7 @@ class Agent:
         Returns:
             FunctionTool representing this agent
         """
-        from coda.agents.decorators import tool
+        from coda.services.agents.decorators import tool
 
         name = tool_name or self.name or "run_sub_agent"
         description = tool_description or self.description or "Run a sub-agent"

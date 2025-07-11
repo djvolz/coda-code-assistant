@@ -31,7 +31,7 @@ class SessionCommands:
             session_manager: SessionManager instance. If None, creates a new one.
         """
         self.manager = session_manager or SessionManager()
-        from ..theme import get_themed_console
+        from ..theme.compat import get_themed_console
 
         self.console = get_themed_console()
         self.current_session_id: str | None = None
@@ -80,7 +80,7 @@ class SessionCommands:
 
     def _show_session_help(self) -> str:
         """Show session command help."""
-        from coda.cli.command_registry import CommandRegistry
+        from coda.apps.cli.command_registry import CommandRegistry
 
         session_cmd = CommandRegistry.get_command("session")
         if session_cmd:

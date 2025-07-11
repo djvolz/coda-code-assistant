@@ -103,10 +103,10 @@ class GenericSelector:
 
         # Define custom style based on theme
         style = {
-            "title": f"{self.theme.info} bold",
-            "option": self.theme.dim,
-            "selected": f"{self.theme.success} bold",
-            "help": self.theme.dim,
+            "title": f"{self.theme.console.info} bold",
+            "option": self.theme.console.dim,
+            "selected": f"{self.theme.console.success} bold",
+            "help": self.theme.console.dim,
         }
 
         # Create application

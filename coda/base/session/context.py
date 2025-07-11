@@ -5,7 +5,7 @@ from typing import Any
 
 import tiktoken
 
-from coda.providers.base import BaseProvider
+from coda.base.providers.base import BaseProvider
 
 
 @dataclass
