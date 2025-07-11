@@ -98,11 +98,11 @@ class ProviderManager:
         # Use interactive model selector
         import asyncio
 
-        from .model_selector import ModelSelector
+        from .completion_selector import CompletionModelSelector
 
-        selector = ModelSelector(unique_models, self.console)
+        selector = CompletionModelSelector(unique_models, self.console)
         # Run the async selector in a new event loop
-        return asyncio.run(selector.select_model_interactive())
+        return asyncio.run(selector.select_interactive())
 
     def get_provider_error_message(
         self, error: Exception, provider_name: str

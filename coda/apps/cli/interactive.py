@@ -129,12 +129,12 @@ async def _get_chat_models(provider_instance, console: Console):
 async def _select_model(unique_models, model: str, console: Console):
     """Handle model selection with interactive UI if needed."""
     if not model:
-        from .model_selector import ModelSelector
+        from .completion_selector import CompletionModelSelector
 
-        selector = ModelSelector(unique_models, console)
+        selector = CompletionModelSelector(unique_models, console)
 
         # Use interactive selector
-        model = await selector.select_model_interactive()
+        model = await selector.select_interactive()
 
         if not model:
             console.print("\n[yellow]No model selected. Exiting.[/yellow]")

@@ -398,11 +398,11 @@ class InteractiveCLI(CommandHandler):
 
         if not args:
             # Show interactive model selector
-            from .model_selector import ModelSelector
+            from .completion_selector import CompletionModelSelector
 
-            selector = ModelSelector(self.available_models, self.console)
+            selector = CompletionModelSelector(self.available_models, self.console)
 
-            new_model = await selector.select_model_interactive()
+            new_model = await selector.select_interactive()
             if new_model:
                 self.current_model = new_model
                 self.console.print(f"\n[green]Switched to model: {new_model}[/green]")
@@ -420,10 +420,10 @@ class InteractiveCLI(CommandHandler):
         """Change developer mode."""
         if not args:
             # Show interactive mode selector
-            from .generic_selector import ModeSelector
+            from .selector import ModeSelector
 
             selector = ModeSelector(self.console)
-            mode_choice = await selector.select_option_interactive()
+            mode_choice = await selector.select_interactive()
 
             if mode_choice:
                 self.switch_mode(mode_choice)
@@ -500,10 +500,10 @@ class InteractiveCLI(CommandHandler):
         """Manage sessions."""
         if not args:
             # Show interactive session command selector
-            from .generic_selector import SessionCommandSelector
+            from .selector import SessionCommandSelector
 
             selector = SessionCommandSelector(self.console)
-            cmd_choice = await selector.select_option_interactive()
+            cmd_choice = await selector.select_interactive()
 
             if cmd_choice:
                 # Execute selected command
@@ -527,10 +527,10 @@ class InteractiveCLI(CommandHandler):
 
         if not args:
             # Show interactive theme selector
-            from .theme_selector import ThemeSelector
+            from .completion_selector import CompletionThemeSelector
 
-            selector = ThemeSelector(self.console)
-            new_theme = await selector.select_theme_interactive()
+            selector = CompletionThemeSelector(self.console)
+            new_theme = await selector.select_interactive()
 
             if new_theme:
                 try:
@@ -569,10 +569,10 @@ class InteractiveCLI(CommandHandler):
         """Export conversation."""
         if not args:
             # Show interactive export format selector
-            from .generic_selector import ExportSelector
+            from .selector import ExportSelector
 
             selector = ExportSelector(self.console)
-            format_choice = await selector.select_option_interactive()
+            format_choice = await selector.select_interactive()
 
             if format_choice:
                 # Export with selected format
