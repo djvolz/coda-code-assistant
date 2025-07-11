@@ -1,12 +1,36 @@
 # Coda Wiki Staging Documentation
 
-This directory contains documentation **staged** for the project wiki. These documents are drafts and working copies that can be reviewed before being added to the actual wiki module. They provide in-depth information about features, design decisions, and usage guides.
+This directory contains comprehensive documentation **staged** for the project wiki. All documentation should be written verbosely here - the wiki writer process will extract and format the most important information for the actual wiki.
 
-**Note: This is NOT the wiki module itself, but a staging area for documentation that may be added to the wiki.**
+**Note: This is NOT the wiki module itself, but a staging area for documentation that will be processed and added to the wiki.**
+
+## Directory Structure
+
+```
+wiki-staging/
+├── getting-started/     # Installation, setup, first steps
+├── user-guide/         # Feature documentation for end users
+├── developer-guide/    # Architecture, API, contribution guides
+├── tutorials/          # Step-by-step guides and examples
+└── reference/          # CLI commands, config options, troubleshooting
+```
 
 ## Current Staged Documents
 
-*No documents currently staged - Tree-Sitter Intelligence documentation has been moved to the wiki.*
+### Getting Started
+*Pending documentation for new modular architecture*
+
+### User Guide
+*Pending documentation for modular features*
+
+### Developer Guide
+*Pending API reference and architecture documentation*
+
+### Tutorials
+*Pending example applications and integration guides*
+
+### Reference
+*Pending command and configuration documentation*
 
 ## Contributing to Documentation
 
