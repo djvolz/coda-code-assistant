@@ -288,7 +288,13 @@ class OCIGenAIProvider(BaseProvider):
                 raise Exception(f"Failed to discover OCI GenAI models: {e}")
 
     def _get_fallback_models(self) -> list[Model]:
-        """Get fallback models if discovery fails."""
+        """Get fallback models if discovery fails.
+        
+        NOTE: This method is currently not used because authorization
+        failures mean fallback models won't work either. Kept for
+        potential future use cases where temporary discovery issues
+        might benefit from a fallback list.
+        """
         models = [
             {
                 "id": "cohere.command-r-plus-08-2024",
