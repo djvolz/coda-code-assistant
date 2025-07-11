@@ -5,6 +5,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
+from prompt_toolkit.application import get_app
 from rich.console import Console
 
 from coda.services.config import get_config_service
@@ -68,7 +69,7 @@ class CompletionSelector:
         self.options = options
         self.console = console or Console()
         self.prompt_text = prompt_text
-        self.instruction_text = instruction_text or "Type to search, Tab to complete, Enter to select"
+        self.instruction_text = instruction_text or "Select an option (arrow keys to navigate, Enter to select)"
         
         # Get theme from config service
         config_service = get_config_service()
@@ -112,8 +113,12 @@ class CompletionSelector:
             complete_style='MULTI_COLUMN',  # or 'COLUMN' for single column
         )
     
-    async def select_interactive(self) -> Optional[str]:
-        """Show interactive selector and return selected value."""
+    async def select_interactive(self, auto_complete: bool = True) -> Optional[str]:
+        """Show interactive selector and return selected value.
+        
+        Args:
+            auto_complete: If True, automatically show completions on start
+        """
         # Display title and instructions using theme colors
         self.console.print(f"\n[{self.console_theme.panel_title}]{self.title}[/{self.console_theme.panel_title}]")
         self.console.print(f"[{self.console_theme.dim}]{self.instruction_text}[/{self.console_theme.dim}]\n")
@@ -122,8 +127,19 @@ class CompletionSelector:
         session = self.create_prompt_session()
         
         try:
+            # Custom pre_run to trigger completions
+            def trigger_completions():
+                """Trigger completion menu on startup."""
+                if auto_complete:
+                    app = get_app()
+                    if app and app.current_buffer:
+                        app.current_buffer.start_completion(select_first=False)
+            
             # Get user input
-            result = await session.prompt_async(self.prompt_text)
+            result = await session.prompt_async(
+                self.prompt_text,
+                pre_run=trigger_completions if auto_complete else None
+            )
             
             # Validate the result is one of our options
             valid_values = [opt[0] for opt in self.options]
@@ -171,7 +187,7 @@ class CompletionModelSelector(CompletionSelector):
             title="Select Model",
             options=options,
             console=console,
-            instruction_text="Start typing to filter models, Tab to autocomplete",
+            instruction_text="Select a model (type to filter, arrow keys to navigate)",
         )
 
 
@@ -190,5 +206,5 @@ class CompletionThemeSelector(CompletionSelector):
             title="Select Theme",
             options=options,
             console=console,
-            instruction_text="Start typing to filter themes, Tab to autocomplete",
+            instruction_text="Select a theme (type to filter, arrow keys to navigate)",
         )

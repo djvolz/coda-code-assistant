@@ -3,15 +3,15 @@ name: Test Interactive Selector
 on:
   push:
     paths:
-      - 'coda/apps/cli/selector.py'
       - 'coda/apps/cli/completion_selector.py'
+      - 'coda/apps/cli/generic_command_selector.py'
       - 'coda/apps/cli/interactive*.py'
       - 'tests/apps/test_*selector*.py'
       - '.github/workflows/test-selector.yml'
   pull_request:
     paths:
-      - 'coda/apps/cli/selector.py'
       - 'coda/apps/cli/completion_selector.py'
+      - 'coda/apps/cli/generic_command_selector.py'
       - 'coda/apps/cli/interactive*.py'
       - 'tests/apps/test_*selector*.py'
 
@@ -34,8 +34,8 @@ jobs:
         
     - name: Run unit tests
       run: |
-        uv run pytest tests/apps/test_selector_unit.py -v
         uv run pytest tests/apps/test_completion_selector.py -v
+        uv run pytest tests/apps/test_generic_command_selector.py -v
         
     - name: Run interactive tests (non-CI)
       if: github.event_name == 'workflow_dispatch'
@@ -47,11 +47,11 @@ jobs:
     - name: Test selector imports
       run: |
         uv run python -c "
-from coda.apps.cli.selector import (
-    Selector, ModeSelector, ExportSelector, SessionCommandSelector
-)
 from coda.apps.cli.completion_selector import (
     CompletionSelector, CompletionModelSelector, CompletionThemeSelector
+)
+from coda.apps.cli.generic_command_selector import (
+    GenericCommandSelector, create_command_selector
 )
 print('✓ All selector imports work correctly')
 "

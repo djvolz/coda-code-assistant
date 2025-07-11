@@ -158,6 +158,10 @@ class TestCompletionSelector:
             mock_session = Mock()
             # Create an async function that returns the value
             async def mock_prompt_async(*args, **kwargs):
+                # Check that pre_run was passed when auto_complete is True
+                if 'pre_run' in kwargs and kwargs['pre_run'] is not None:
+                    # Simulate pre_run being called
+                    pass
                 return "theme1"
             mock_session.prompt_async = mock_prompt_async
             mock_create.return_value = mock_session
@@ -165,6 +169,49 @@ class TestCompletionSelector:
             result = await selector.select_interactive()
             
             assert result == "theme1"
+    
+    @pytest.mark.asyncio
+    async def test_auto_complete_feature(self):
+        """Test that auto_complete parameter works."""
+        options = [("opt1", "Option 1", None)]
+        selector = CompletionSelector(
+            title="Test",
+            options=options,
+        )
+        
+        # Test with auto_complete=True (default)
+        with patch.object(selector, 'create_prompt_session') as mock_create:
+            mock_session = Mock()
+            pre_run_called = False
+            
+            async def mock_prompt_async(*args, **kwargs):
+                nonlocal pre_run_called
+                if 'pre_run' in kwargs and kwargs['pre_run'] is not None:
+                    pre_run_called = True
+                return "opt1"
+            
+            mock_session.prompt_async = mock_prompt_async
+            mock_create.return_value = mock_session
+            
+            await selector.select_interactive(auto_complete=True)
+            assert pre_run_called  # pre_run should be set
+        
+        # Test with auto_complete=False
+        with patch.object(selector, 'create_prompt_session') as mock_create:
+            mock_session = Mock()
+            pre_run_called = False
+            
+            async def mock_prompt_async(*args, **kwargs):
+                nonlocal pre_run_called
+                if 'pre_run' in kwargs and kwargs['pre_run'] is not None:
+                    pre_run_called = True
+                return "opt1"
+            
+            mock_session.prompt_async = mock_prompt_async
+            mock_create.return_value = mock_session
+            
+            await selector.select_interactive(auto_complete=False)
+            assert not pre_run_called  # pre_run should be None
     
     @pytest.mark.asyncio
     async def test_select_interactive_case_insensitive(self):

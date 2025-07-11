@@ -419,16 +419,20 @@ class InteractiveCLI(CommandHandler):
     async def _cmd_mode(self, args: str):
         """Change developer mode."""
         if not args:
-            # Show interactive mode selector
-            from .selector import ModeSelector
+            # Use generic command selector
+            from .generic_command_selector import create_command_selector
+            from .command_registry import CommandRegistry
 
-            selector = ModeSelector(self.console)
-            mode_choice = await selector.select_interactive()
-
-            if mode_choice:
-                self.switch_mode(mode_choice)
+            selector = create_command_selector("mode", CommandRegistry.COMMANDS, self.console)
+            if selector:
+                mode_choice = await selector.select_interactive()
+                if mode_choice:
+                    self.switch_mode(mode_choice)
+                else:
+                    # Show current mode if cancelled
+                    self.console.print(f"[yellow]Current mode: {self.current_mode.value}[/yellow]")
             else:
-                # Show current mode if cancelled
+                # Fallback
                 self.console.print(f"[yellow]Current mode: {self.current_mode.value}[/yellow]")
         else:
             self.switch_mode(args)
@@ -499,20 +503,24 @@ class InteractiveCLI(CommandHandler):
     async def _cmd_session(self, args: str):
         """Manage sessions."""
         if not args:
-            # Show interactive session command selector
-            from .selector import SessionCommandSelector
+            # Use generic command selector
+            from .generic_command_selector import create_command_selector
+            from .command_registry import CommandRegistry
 
-            selector = SessionCommandSelector(self.console)
-            cmd_choice = await selector.select_interactive()
-
-            if cmd_choice:
-                # Execute selected command
-                result = self.session_commands.handle_session_command([cmd_choice])
-                if result:
-                    self.console.print(result)
+            selector = create_command_selector("session", CommandRegistry.COMMANDS, self.console)
+            if selector:
+                cmd_choice = await selector.select_interactive()
+                if cmd_choice:
+                    # Execute selected command
+                    result = self.session_commands.handle_session_command([cmd_choice])
+                    if result:
+                        self.console.print(result)
+                else:
+                    # Show available commands if cancelled
+                    self.console.print("[yellow]Session command cancelled[/yellow]")
             else:
-                # Show available commands if cancelled
-                self.console.print("[yellow]Session command cancelled[/yellow]")
+                # Fallback
+                self.console.print("[red]Could not create session selector[/red]")
         else:
             # Pass the arguments to session commands handler
             result = self.session_commands.handle_session_command(args.split() if args else [])
@@ -568,19 +576,23 @@ class InteractiveCLI(CommandHandler):
     async def _cmd_export(self, args: str):
         """Export conversation."""
         if not args:
-            # Show interactive export format selector
-            from .selector import ExportSelector
+            # Use generic command selector
+            from .generic_command_selector import create_command_selector
+            from .command_registry import CommandRegistry
 
-            selector = ExportSelector(self.console)
-            format_choice = await selector.select_interactive()
-
-            if format_choice:
-                # Export with selected format
-                result = self.session_commands.handle_export_command([format_choice])
-                if result:
-                    self.console.print(result)
+            selector = create_command_selector("export", CommandRegistry.COMMANDS, self.console)
+            if selector:
+                format_choice = await selector.select_interactive()
+                if format_choice:
+                    # Export with selected format
+                    result = self.session_commands.handle_export_command([format_choice])
+                    if result:
+                        self.console.print(result)
+                else:
+                    self.console.print("[yellow]Export cancelled[/yellow]")
             else:
-                self.console.print("[yellow]Export cancelled[/yellow]")
+                # Fallback if selector creation fails
+                self.console.print("[red]Could not create export selector[/red]")
         else:
             # Pass the arguments to session commands handler for export
             result = self.session_commands.handle_export_command(args.split() if args else [])
