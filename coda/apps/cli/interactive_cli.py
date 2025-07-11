@@ -12,7 +12,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-from coda.base.session import SessionCommands
+from .session_commands import SessionCommands
 
 from .constants import HISTORY_FILE
 from .completers import CodaCompleter

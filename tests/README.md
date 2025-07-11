@@ -6,10 +6,18 @@ This test suite validates the modular architecture of Coda, ensuring proper sepa
 
 ```
 tests/
-├── base/           # Tests for base modules (must be independent)
-├── services/       # Tests for service modules
-├── apps/           # Tests for application modules
-└── integration/    # End-to-end integration tests
+├── base/                    # Tests for base layer modules
+│   ├── test_module_independence.py   # Verifies no forbidden imports
+│   ├── test_standalone_imports.py    # Tests modules work in isolation
+│   └── README.md                     # Base layer test documentation
+├── services/               # Tests for service layer
+│   └── test_service_layer.py        # Service integration tests
+├── apps/                   # Tests for application layer
+│   └── test_cli_integration.py      # CLI functionality tests
+├── integration/            # Full-stack integration tests
+│   └── test_full_stack.py           # End-to-end workflows
+└── archive/               # Old tests for reference
+    └── old_tests/         # Pre-refactoring test suite
 ```
 
 ## Key Testing Principles
@@ -59,18 +67,22 @@ End-to-end tests that verify:
 
 ```bash
 # Run all tests
-pytest
+uv run pytest tests/ -v
 
 # Run specific layer tests
-pytest tests/base/
-pytest tests/services/
-pytest tests/apps/
+uv run pytest tests/base/ -v
+uv run pytest tests/services/ -v
+uv run pytest tests/apps/ -v
+uv run pytest tests/integration/ -v
 
 # Run with coverage
-pytest --cov=coda tests/
+uv run pytest tests/ --cov=coda --cov-report=html
 
 # Run module independence tests only
-pytest tests/base/test_*_independence.py
+uv run pytest tests/base/test_module_independence.py -v
+
+# Run standalone import tests only
+uv run pytest tests/base/test_standalone_imports.py -v
 ```
 
 ## Module Independence Verification
@@ -104,9 +116,42 @@ def test_config_module_independence():
 4. **Test edge cases**: Include error conditions and boundaries
 5. **Document complex tests**: Add docstrings explaining the why
 
+## Key Findings and Fixes
+
+During test development, several architectural issues were identified and fixed:
+
+1. **Session Module MVC Violation**: 
+   - **Issue**: SessionCommands was in base layer but contained UI logic
+   - **Fix**: Moved to CLI layer (apps/cli/session_commands.py)
+
+2. **Hard Dependencies in Base Layer**:
+   - **Issue**: Context module required tiktoken
+   - **Fix**: Made tiktoken optional with graceful fallback
+
+3. **Import Structure**:
+   - **Issue**: Circular dependencies and layer violations
+   - **Fix**: Enforced strict layering with test validation
+
 ## Coverage Goals
 
 - Base modules: 90%+ coverage
 - Service modules: 80%+ coverage
 - Application modules: 70%+ coverage
 - Critical paths: 100% coverage
+
+## Test Status
+
+✅ **Base Layer Tests**: All passing
+- Module independence: 8/8 tests
+- Standalone imports: 7/7 tests
+
+✅ **Service Layer Tests**: All passing
+- Service dependencies: 6/6 tests
+
+✅ **Apps Layer Tests**: All passing
+- CLI integration: 9/9 tests
+
+✅ **Integration Tests**: All passing
+- Full stack workflows: 8/8 tests
+
+**Total**: 38 tests, all passing

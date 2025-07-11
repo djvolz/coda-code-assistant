@@ -8,7 +8,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-from .constants import (
+from coda.base.session.constants import (
     AUTO_DATE_FORMAT as AUTO_SESSION_DATE_FORMAT,
     AUTO_PREFIX as AUTO_SESSION_PREFIX,
     LIMIT_DELETE as SESSION_DELETE_LIMIT,
@@ -17,8 +17,7 @@ from .constants import (
     LIMIT_LIST as SESSION_LIST_LIMIT,
     LIMIT_SEARCH as SESSION_SEARCH_LIMIT,
 )
-from .manager import SessionManager
-from .models import Session
+from coda.base.session import SessionManager, Session
 
 
 class SessionCommands:
@@ -31,10 +30,10 @@ class SessionCommands:
             session_manager: SessionManager instance. If None, creates a new one.
         """
         self.manager = session_manager or SessionManager()
-        from rich.console import Console
-        
-        # Base layer should not depend on theme, just use plain console
-        self.console = Console()
+        # Get themed console from the app layer
+        from coda.services.config import get_config_service
+        config = get_config_service()
+        self.console = config.theme_manager.get_console()
         self.current_session_id: str | None = None
         self.current_messages: list[dict[str, Any]] = []
         self.auto_save_enabled: bool = True  # Auto-save by default

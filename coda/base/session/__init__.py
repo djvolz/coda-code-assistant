@@ -5,7 +5,6 @@ This module provides session and conversation management with zero Coda dependen
 Can be copy-pasted to any project for session handling.
 """
 
-from .commands import SessionCommands
 from .context import ContextManager, ContextWindow
 from .database import SessionDatabase
 from .manager import SessionManager
@@ -16,7 +15,6 @@ __all__ = [
     "SessionManager",
     "Session",
     "Message",
-    "SessionCommands",
     "ContextManager",
     "ContextWindow",
 ]

@@ -3,7 +3,11 @@
 from dataclasses import dataclass
 from typing import Any
 
-import tiktoken
+try:
+    import tiktoken
+    HAS_TIKTOKEN = True
+except ImportError:
+    HAS_TIKTOKEN = False
 
 from coda.base.providers.base import BaseProvider
 
@@ -57,6 +61,10 @@ class ContextManager:
 
     def _init_tokenizer(self):
         """Initialize the tokenizer for token counting."""
+        if not HAS_TIKTOKEN:
+            self.tokenizer = None
+            return
+            
         try:
             # Try to use tiktoken for accurate token counting
             self.tokenizer = tiktoken.encoding_for_model(self.model)

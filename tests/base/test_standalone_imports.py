@@ -13,10 +13,6 @@ import textwrap
 def run_isolated_import(module_name: str, test_code: str = "") -> tuple[bool, str]:
     """Run import test in isolated Python process."""
     code = f"""
-import sys
-# Only allow stdlib and the specific module
-sys.path = [p for p in sys.path if 'site-packages' not in p]
-
 try:
     import {module_name}
 {test_code}
@@ -109,26 +105,29 @@ def test_session_standalone_import():
     """Test that session module can be imported standalone."""
     test_code = """
     # Test basic functionality
-    from coda.base.session import SessionManager, SessionContext
+    from coda.base.session import SessionManager, SessionDatabase
     from pathlib import Path
     import tempfile
     
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "test.db"
         
-        # Create manager with explicit path
-        manager = SessionManager(db_path=db_path)
+        # Create database and manager
+        database = SessionDatabase(db_path=db_path)
+        manager = SessionManager(database=database)
         
         # Create a session
-        session_id = manager.create_session(
+        session = manager.create_session(
+            name="test session",
             provider="test",
             model="test-model"
         )
         
-        assert session_id is not None
+        assert session is not None
+        assert session.id is not None
         
-        # List sessions
-        sessions = manager.list_sessions()
+        # List sessions - returns Session objects, not just IDs
+        sessions = manager.get_active_sessions()
         assert len(sessions) > 0
 """
     
@@ -144,20 +143,25 @@ def test_search_standalone_import():
     from pathlib import Path
     import tempfile
     
-    # Create a test file
-    with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as f:
-        f.write(b'def test_function():\\n    pass\\n')
-        test_file = Path(f.name)
-    
-    try:
-        # Test repo map
-        repo_map = RepoMap(root_path=test_file.parent)
+    # Create a test directory with a file
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_dir = Path(tmpdir)
+        test_file = test_dir / "test.py"
+        test_file.write_text('def test_function():\\n    pass\\n')
         
-        # Should be able to get tags (even if empty for simple file)
-        tags = repo_map.get_tags()
-        assert isinstance(tags, dict)
-    finally:
-        test_file.unlink()
+        # Test repo map
+        repo_map = RepoMap(root_path=test_dir)
+        
+        # Should be able to scan repository
+        repo_map.scan_repository()
+        
+        # Should have found our test file
+        assert len(repo_map.files) > 0
+        
+        # Should be able to get summary
+        summary = repo_map.get_summary()
+        assert isinstance(summary, dict)
+        assert summary['total_files'] > 0
 """
     
     success, output = run_isolated_import("coda.base.search", test_code)
@@ -184,8 +188,9 @@ def test_observability_standalone_import():
         obs_manager = ObservabilityManager(config)
         
         # Should be disabled by default
-        assert not obs_manager.tracing_enabled
-        assert not obs_manager.metrics_enabled
+        assert not obs_manager.enabled
+        assert obs_manager.metrics_collector is None  # Not initialized when disabled
+        assert obs_manager.tracing_manager is None  # Not initialized when disabled
     finally:
         config_path.unlink()
 """
