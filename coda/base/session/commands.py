@@ -81,14 +81,8 @@ class SessionCommands:
 
     def _show_session_help(self) -> str:
         """Show session command help."""
-        from coda.apps.cli.command_registry import CommandRegistry
-
-        session_cmd = CommandRegistry.get_command("session")
-        if session_cmd:
-            help_text = CommandRegistry.get_command_help("session")
-        else:
-            # Fallback if registry not available
-            help_text = """
+        # Base layer cannot depend on apps layer, so we define help directly
+        help_text = """
 [bold]Session Management Commands[/bold]
 
 [cyan]/session save [name][/cyan] - Save current conversation
@@ -105,11 +99,7 @@ class SessionCommands:
 
 [dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r, tools→t[/dim]
 """
-
-        from ..themes import get_console_theme
-
-        theme = get_console_theme()
-        self.console.print(Panel(help_text, title="Session Help", border_style=theme.panel_border))
+        self.console.print(Panel(help_text, title="Session Help", border_style="cyan"))
         return None
 
     def _save_session(self, args: list[str]) -> str:
@@ -359,12 +349,11 @@ class SessionCommands:
             if parent:
                 info_lines.append(f"\n[bold]Branched from:[/bold] {parent.name}")
 
-        from ..themes import get_console_theme
+        # Base modules should not use themed output - just return plain text
 
-        theme = get_console_theme()
         self.console.print(
             Panel(
-                "\n".join(info_lines), title="Session Information", border_style=theme.panel_border
+                "\n".join(info_lines), title="Session Information", border_style="cyan"
             )
         )
         return None
@@ -552,11 +541,10 @@ class SessionCommands:
             self.current_messages = []
             self._has_user_message = False
 
-        from ..themes import get_console_theme
+        # Base modules should not use themed output - just return plain text
 
-        theme = get_console_theme()
         with self.console.status(
-            f"[{theme.info}]Deleting {session_count} sessions...[/{theme.info}]", spinner="dots"
+            f"[cyan]Deleting {session_count} sessions...[/cyan]", spinner="dots"
         ):
             for session in sessions:
                 try:
@@ -751,10 +739,9 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
 [dim]If no session specified, exports current session[/dim]
 [dim]Files saved to: ~/Documents/coda_exports/[/dim]
 """
-        from ..themes import get_console_theme
+        # Base modules should not use themed output - just return plain text
 
-        theme = get_console_theme()
-        self.console.print(Panel(help_text, title="Export Help", border_style=theme.panel_border))
+        self.console.print(Panel(help_text, title="Export Help", border_style="cyan"))
         return None
 
     def add_message(self, role: str, content: str, metadata: dict[str, Any] | None = None):
