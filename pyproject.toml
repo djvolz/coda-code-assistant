@@ -27,6 +27,9 @@ dependencies = [
     # Tree-sitter intelligence dependencies
     "grep-ast>=0.9.0",
     "tree-sitter-language-pack>=0.8.0",
+    # Vector search dependencies
+    "faiss-cpu>=1.7.4",
+    "numpy>=1.24.0",
     # Web UI dependencies
     "streamlit>=1.40.0",
     "streamlit-ace>=0.1.1",
@@ -41,7 +44,7 @@ dependencies = [
 ]
 
 [project.scripts]
-coda = "coda.cli.cli:cli"
+coda = "coda.apps.cli.cli:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -52,6 +55,7 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "pre-commit>=3.5.0",
+    "pexpect>=4.8.0",
 ]
 test-web = [
     "pytest>=8.0.0",
@@ -67,8 +71,6 @@ performance = [
     "locust>=2.0.0",
 ]
 embeddings = [
-    "numpy>=1.24.0",
-    "faiss-cpu>=1.7.4",
     "sentence-transformers>=2.2.0",
     "chromadb>=0.4.0",
 ]
@@ -139,4 +141,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "B", "UP"]
-ignore = ["E501"]  # Line too long handled by black
+ignore = [
+    "E501",  # Line too long handled by black
+    "N802",  # Function name should be lowercase - we use ALL for constants
+]

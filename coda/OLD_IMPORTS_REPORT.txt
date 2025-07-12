@@ -1,0 +1,163 @@
+=== OLD-STYLE IMPORTS REQUIRING MIGRATION ===
+Generated: 2025-07-11
+
+This report identifies all imports that don't follow the new modular structure:
+- coda.apps.*
+- coda.base.*
+- coda.services.*
+
+Files are grouped by the type of import they contain.
+
+==============================================================================
+1. VERSION IMPORTS (coda.__version__)
+==============================================================================
+These files import the version directly:
+
+./apps/cli/cli.py:5:from coda.__version__ import __version__
+./apps/cli/interactive.py:19:    from coda.__version__ import __version__
+./apps/cli/main.py:6:    from coda.__version__ import __version__
+
+Migration: Move __version__ to a proper location (e.g., coda/apps/cli/version.py)
+
+==============================================================================
+2. CLI IMPORTS (coda.cli.*)
+==============================================================================
+These files use old CLI module paths:
+
+./apps/cli/interactive_cli.py:44:            from coda.cli.command_registry import CommandRegistry
+./apps/cli/interactive_cli.py:108:        from coda.cli.command_registry import CommandRegistry
+./apps/cli/interactive_cli.py:370:        from coda.cli.shared import (
+./apps/cli/shared/help.py:15:        from coda.cli.command_registry import CommandRegistry
+./base/session/commands.py:83:        from coda.cli.command_registry import CommandRegistry
+
+Migration: Update to coda.apps.cli.* paths
+
+==============================================================================
+3. PROVIDER IMPORTS (coda.providers.*)
+==============================================================================
+These files use old provider paths:
+
+./apps/cli/tool_chat.py:10:from coda.providers.base import Message, Role, Tool
+./apps/web/components/chat_widget.py:8:from coda.providers.registry import ProviderFactory
+./apps/web/components/chat_widget.py:90:        from coda.providers.base import Message, Role
+./apps/web/components/model_selector.py:6:from coda.providers.registry import ProviderFactory
+./apps/web/pages/chat.py:6:from coda.providers.registry import get_provider_registry
+./apps/web/pages/dashboard.py:10:from coda.providers.registry import get_provider_registry
+
+Migration: Update to coda.base.providers.* paths
+
+==============================================================================
+4. TOOLS IMPORTS (coda.tools.*)
+==============================================================================
+These files use old tools paths:
+
+./apps/cli/tool_chat.py:11:from coda.tools.executor import ToolExecutor
+
+Migration: Update to coda.services.tools.* paths
+
+==============================================================================
+5. WEB IMPORTS (coda.web.*)
+==============================================================================
+These files use old web paths (internal to web app, might be acceptable):
+
+./apps/web/app.py:6:from coda.web.pages import chat, dashboard, sessions, settings
+./apps/web/app.py:7:from coda.web.utils.state import init_session_state
+./apps/web/app_simple.py:7:    from coda.web.pages import chat, dashboard, sessions, settings
+./apps/web/app_simple.py:8:    from coda.web.utils.state import init_session_state
+./apps/web/components/chat_widget.py:9:from coda.web.utils.state import get_state_value, set_state_value
+./apps/web/components/chat_widget.py:30:            from coda.web.components.file_manager import create_file_context_prompt
+./apps/web/components/file_manager.py:10:from coda.web.utils.state import get_state_value
+./apps/web/components/model_selector.py:7:from coda.web.utils.state import get_state_value, set_state_value
+./apps/web/pages/chat.py:7:from coda.web.components.chat_widget import render_chat_interface
+./apps/web/pages/chat.py:8:from coda.web.components.file_manager import (
+./apps/web/pages/chat.py:12:from coda.web.components.model_selector import render_model_selector
+./apps/web/pages/chat.py:13:from coda.web.utils.state import clear_chat_state, get_state_value, set_state_value
+./apps/web/pages/dashboard.py:11:from coda.web.utils.state import get_state_value
+./apps/web/pages/sessions.py:8:from coda.web.utils.state import get_state_value
+./apps/web/pages/settings.py:9:from coda.web.utils.state import get_state_value, set_state_value
+
+Migration: Update to coda.apps.web.* paths
+
+==============================================================================
+6. CONFIGURATION IMPORTS (coda.configuration)
+==============================================================================
+These files use the old configuration module:
+
+./apps/web/pages/settings.py:8:from coda.configuration import get_config
+./apps/web/pages/settings.py:250:    from coda.configuration import save_config as save_global_config
+./apps/web/utils/state.py:8:from coda.configuration import get_config
+./base/observability/base.py:8:from coda.configuration import ConfigManager
+./semantic_search_coda.py:11:from .configuration import CodaConfig, get_config
+
+Migration: Update to use coda.base.config.compat or the new ConfigManager
+
+==============================================================================
+7. SESSION IMPORTS (coda.session.*)
+==============================================================================
+These files use old session paths:
+
+./apps/web/pages/sessions.py:7:from coda.session.models import Session
+
+Migration: Update to coda.base.session.* paths
+
+==============================================================================
+8. SEARCH IMPORTS (coda.search.*)
+==============================================================================
+These files use old search paths (in __init__.py fallbacks):
+
+./base/search/__init__.py:23:    from coda.search.map import RepoMap
+./base/search/__init__.py:28:    from coda.search.vector_search import SemanticSearchManager
+./base/search/__init__.py:29:    from coda.search.vector_search.embeddings.mock import MockEmbeddingProvider
+./base/search/vector_search/__init__.py:13:    from coda.search.vector_search import SemanticSearchManager
+./base/search/vector_search/__init__.py:14:    from coda.search.vector_search.embeddings.mock import MockEmbeddingProvider
+
+Migration: These are in fallback blocks - might be intentional for backward compatibility
+
+==============================================================================
+9. THEME IMPORTS (coda.theme)
+==============================================================================
+These files use old theme paths:
+
+./base/theme/__init__.py:11:    from coda.theme import Theme, ThemeManager
+
+Migration: This is in a fallback block - might be intentional for backward compatibility
+
+==============================================================================
+10. OTHER IMPORTS
+==============================================================================
+
+./apps/cli/interactive_cli.py:651:            from coda.semantic_search_coda import create_semantic_search_manager
+./base/config/__init__.py:12:    from coda.config import Config
+
+Migration: Update to appropriate new paths
+
+==============================================================================
+PRIORITY FILES TO MIGRATE
+==============================================================================
+
+High Priority (Breaking imports in app layer):
+1. All files in apps/cli/ using old imports
+2. All files in apps/web/ using old imports
+3. ./semantic_search_coda.py (integration file)
+
+Medium Priority (Base modules with fallbacks):
+1. base/observability/base.py (uses old ConfigManager)
+2. base/session/commands.py (uses old CLI paths)
+
+Low Priority (Intentional fallbacks):
+1. base/*/init.py files with try/except blocks
+2. Example files (might be for documentation)
+
+==============================================================================
+MIGRATION PATTERNS
+==============================================================================
+
+1. coda.__version__ → Store version in each app module
+2. coda.cli.* → coda.apps.cli.*
+3. coda.providers.* → coda.base.providers.*
+4. coda.tools.* → coda.services.tools.*
+5. coda.web.* → coda.apps.web.*
+6. coda.configuration → coda.base.config.compat
+7. coda.session.* → coda.base.session.*
+8. coda.search.* → coda.base.search.*
+9. coda.theme → coda.base.theme

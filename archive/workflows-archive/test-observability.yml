@@ -1,0 +1,213 @@
+name: Observability Tests
+
+on:
+  push:
+    branches: [ main, develop, feature/*observability* ]
+    paths:
+      - 'coda/base/observability/**'
+      - 'coda/apps/cli/**'
+      - 'coda/services/config/app_config.py'
+      - 'tests/**/observability/**'
+      - 'tests/**/cli/**'
+      - 'tests/**/test_configuration.py'
+      - '.github/workflows/test-observability.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'coda/base/observability/**'
+      - 'coda/apps/cli/**'
+      - 'coda/services/config/app_config.py'
+      - 'tests/**/observability/**'
+      - 'tests/**/cli/**'
+      - 'tests/**/test_configuration.py'
+
+jobs:
+  observability-unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run observability unit tests
+      run: |
+        uv run python -m pytest tests/unit/observability/ tests/unit/cli/ tests/unit/test_configuration.py \
+          -v --cov=coda.base.observability --cov=coda.apps.cli --cov=coda.services.config \
+          --cov-report=xml --cov-report=term-missing \
+          --cov-fail-under=80
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: observability-unit
+        name: observability-codecov-${{ matrix.python-version }}
+
+  observability-integration-tests:
+    runs-on: ubuntu-latest
+    needs: observability-unit-tests
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run observability integration tests
+      run: |
+        uv run python -m pytest tests/integration/observability/ \
+          -v -m integration \
+          --cov=coda.base.observability --cov=coda.apps.cli \
+          --cov-report=xml --cov-report=term-missing \
+          --cov-fail-under=70
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: observability-integration
+        name: observability-integration-codecov
+
+  observability-functional-tests:
+    runs-on: ubuntu-latest
+    needs: observability-integration-tests
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[functional]'))
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run observability functional tests
+      run: |
+        uv run python -m pytest tests/functional/test_observability_workflows.py \
+          -v -m functional \
+          --tb=short
+    
+    - name: Generate test report
+      if: always()
+      run: |
+        uv run python -m pytest tests/functional/test_observability_workflows.py \
+          -v -m functional \
+          --html=functional-test-report.html \
+          --self-contained-html || true
+    
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: functional-test-report
+        path: functional-test-report.html
+
+  observability-performance-tests:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '[perf]')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run performance tests
+      run: |
+        if [ -d "tests/performance" ]; then
+          uv run python -m pytest tests/performance/ -v --tb=short || echo "No performance tests found"
+        else
+          echo "No performance tests directory found"
+        fi
+    
+    - name: Generate performance report
+      if: always()
+      run: |
+        echo "# Performance Test Results" > performance-report.md
+        echo "Generated on: $(date)" >> performance-report.md
+        echo "" >> performance-report.md
+        # Add actual performance metrics here when tests are implemented
+    
+    - name: Upload performance report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-report
+        path: performance-report.md
+
+  check-coverage:
+    runs-on: ubuntu-latest
+    needs: [observability-unit-tests, observability-integration-tests]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Generate combined coverage report
+      run: |
+        uv run python -m pytest \
+          tests/unit/observability/ tests/unit/cli/ tests/unit/test_configuration.py \
+          tests/integration/observability/ \
+          -v --cov=coda.base.observability --cov=coda.apps.cli --cov=coda.services.config \
+          --cov-report=html --cov-report=term
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov/
+    
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: py-cov-action/python-coverage-comment-action@v3
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        MINIMUM_GREEN: 80
+        MINIMUM_ORANGE: 60

@@ -1,0 +1,239 @@
+name: Web UI Tests
+
+on:
+  push:
+    branches: [ main, develop, feature/*-web-ui ]
+    paths:
+      - 'coda/apps/web/**'
+      - 'tests/web/**'
+      - '.github/workflows/test-web-ui.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'coda/apps/web/**'
+      - 'tests/web/**'
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to test with'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - chrome
+          - firefox
+
+permissions:
+  contents: read
+  pull-requests: write  # For test-reporter
+
+jobs:
+  unit-tests:
+    name: Web UI Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+        uv pip install pytest-cov
+    
+    - name: Run unit tests
+      run: |
+        uv run python -m pytest tests/web/unit/ -v --cov=coda.apps.web --cov-report=xml --cov-report=term-missing
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: web-ui-unit
+        name: web-ui-unit-coverage
+
+  browser-tests:
+    name: Browser Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJson(github.event.inputs.browser == 'all' && '["chrome", "firefox"]' || format('["{0}"]', github.event.inputs.browser || 'chrome')) }}
+        test-type: [integration, functional]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+        uv pip install selenium pytest-selenium pytest-timeout
+    
+    - name: Setup Chrome
+      if: matrix.browser == 'chrome'
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
+    
+    - name: Setup Firefox
+      if: matrix.browser == 'firefox'
+      uses: browser-actions/setup-firefox@v1
+      with:
+        firefox-version: latest
+    
+    - name: Install ChromeDriver
+      if: matrix.browser == 'chrome'
+      uses: nanasess/setup-chromedriver@v2
+    
+    - name: Install GeckoDriver
+      if: matrix.browser == 'firefox'
+      uses: browser-actions/setup-geckodriver@latest
+    
+    - name: Create test directories
+      run: |
+        mkdir -p tests/web/screenshots
+        mkdir -p tests/web/logs
+    
+    - name: Start Streamlit server
+      run: |
+        # Generate random port to avoid conflicts
+        PORT=$(shuf -i 8000-8999 -n 1)
+        echo "PORT=$PORT" >> $GITHUB_ENV
+        
+        # Start server with proper configuration
+        uv run streamlit run coda/apps/web/app.py \
+          --server.headless true \
+          --server.port $PORT \
+          --server.enableCORS false \
+          --server.enableXsrfProtection false \
+          > tests/web/logs/streamlit-${{ matrix.test-type }}.log 2>&1 &
+        
+        echo "SERVER_PID=$!" >> $GITHUB_ENV
+        
+        # Wait for server to be ready
+        echo "Waiting for Streamlit server to start on port $PORT..."
+        for i in {1..30}; do
+          if curl -s http://localhost:$PORT > /dev/null; then
+            echo "Server is ready!"
+            break
+          fi
+          echo "Waiting... (attempt $i/30)"
+          sleep 2
+        done
+    
+    - name: Run ${{ matrix.test-type }} tests
+      env:
+        BROWSER: ${{ matrix.browser }}
+        BASE_URL: http://localhost:${{ env.PORT }}
+        HEADLESS: true
+      run: |
+        uv run python -m pytest tests/web/${{ matrix.test-type }}/ \
+          -v \
+          --tb=short \
+          --timeout=60 \
+          --junit-xml=test-results-${{ matrix.browser }}-${{ matrix.test-type }}.xml
+    
+    - name: Stop Streamlit server
+      if: always()
+      run: |
+        if [ ! -z "$SERVER_PID" ]; then
+          kill $SERVER_PID || true
+          wait $SERVER_PID 2>/dev/null || true
+        fi
+    
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: web-ui-test-artifacts-${{ matrix.browser }}-${{ matrix.test-type }}
+        path: |
+          tests/web/screenshots/
+          tests/web/logs/
+          test-results-*.xml
+    
+    - name: Upload test results
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: Web UI Tests - ${{ matrix.browser }} - ${{ matrix.test-type }}
+        path: test-results-*.xml
+        reporter: java-junit
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+        uv pip install locust pytest-benchmark
+    
+    - name: Run performance tests
+      run: |
+        # Start Streamlit server
+        uv run streamlit run coda/apps/web/app.py --server.headless true --server.port 8503 &
+        SERVER_PID=$!
+        
+        # Wait for server
+        sleep 15
+        
+        # Run performance tests if they exist
+        if [ -d "tests/web/performance" ]; then
+          uv run python -m pytest tests/web/performance/ -v --benchmark-json=benchmark.json || true
+        fi
+        
+        # Kill server
+        kill $SERVER_PID || true
+    
+    - name: Upload benchmark results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: benchmark.json
+
+  all-tests-passed:
+    name: All Web UI Tests Passed
+    runs-on: ubuntu-latest
+    needs: [unit-tests, browser-tests]
+    if: always()
+    
+    steps:
+    - name: Check test results
+      run: |
+        if [ "${{ needs.unit-tests.result }}" != "success" ] || \
+           [ "${{ needs.browser-tests.result }}" != "success" ]; then
+          echo "Some tests failed!"
+          exit 1
+        fi
+        echo "All tests passed!"
