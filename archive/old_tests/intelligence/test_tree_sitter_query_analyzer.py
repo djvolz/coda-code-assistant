@@ -139,9 +139,10 @@ class TestTreeSitterQueryAnalyzer:
         # Mock the tree-sitter components
         with (
             patch("coda.base.search.map.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
-            patch("coda.base.search.map.tree_sitter_query_analyzer.get_language") as mock_get_language,
+            patch(
+                "coda.base.search.map.tree_sitter_query_analyzer.get_language"
+            ) as mock_get_language,
         ):
-
             # Setup mock parser
             mock_parser = Mock()
             mock_tree = Mock()
@@ -462,9 +463,10 @@ class TestTreeSitterQueryAnalyzer:
         # Mock the tree-sitter components for Rust
         with (
             patch("coda.base.search.map.tree_sitter_query_analyzer.get_parser") as mock_get_parser,
-            patch("coda.base.search.map.tree_sitter_query_analyzer.get_language") as mock_get_language,
+            patch(
+                "coda.base.search.map.tree_sitter_query_analyzer.get_language"
+            ) as mock_get_language,
         ):
-
             # Setup mocks
             mock_parser = Mock()
             mock_tree = Mock()

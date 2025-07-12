@@ -49,7 +49,7 @@ def run_test_suite():
     overall_success = True
 
     for test_group in test_groups:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Running: {test_group['name']}")
         print("=" * 60)
 

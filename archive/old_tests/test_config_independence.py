@@ -134,8 +134,8 @@ def test_config_basic_functionality():
 def test_config_copy_paste():
     """Test that config module works when copy-pasted."""
     import shutil
-    import tempfile
     import subprocess
+    import tempfile
 
     config_dir = Path(__file__).parent.parent / "coda" / "base" / "config"
 

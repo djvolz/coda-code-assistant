@@ -3,8 +3,8 @@
 from rich.console import Console
 from rich.prompt import Prompt
 
-from coda.configuration import CodaConfig
 from coda.base.providers import BaseProvider, Message, Model, Role
+from coda.configuration import CodaConfig
 
 from .basic_commands import BasicCommandProcessor
 from .shared import DeveloperMode

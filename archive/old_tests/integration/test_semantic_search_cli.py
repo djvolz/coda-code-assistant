@@ -120,7 +120,6 @@ class TestSemanticSearchCLI:
             "coda.semantic_search_coda.create_semantic_search_manager",
             side_effect=ValueError("No embedding provider configured"),
         ):
-
             # Run semantic search command
             await command_registry.run_command("search", ["semantic", "test"])
 

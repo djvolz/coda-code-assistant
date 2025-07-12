@@ -10,10 +10,10 @@ except ImportError:
     # Fallback for when package structure isn't available
     __version__ = "dev"
 
-from coda.configuration import get_config
-
 # Create themed console that respects user's theme configuration
 from coda.base.theme import get_console_theme, get_themed_console
+from coda.configuration import get_config
+
 from .chat_session import ChatSession
 from .error_handler import CLIErrorHandler
 from .provider_manager import ProviderManager
