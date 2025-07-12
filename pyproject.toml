@@ -117,6 +117,7 @@ omit = [
     "*/tests/*",
     "*/__pycache__/*",
     "*/site-packages/*",
+    "*/archive/*",
 ]
 
 [tool.coverage.report]
@@ -134,10 +135,16 @@ exclude_lines = [
 [tool.black]
 line-length = 100
 target-version = ['py311', 'py312', 'py313']
+extend-exclude = '''
+(
+  archive/
+)
+'''
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["archive/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "B", "UP"]
@@ -145,3 +152,7 @@ ignore = [
     "E501",  # Line too long handled by black
     "N802",  # Function name should be lowercase - we use ALL for constants
 ]
+
+[tool.mypy]
+python_version = "3.11"
+exclude = ["archive/"]
