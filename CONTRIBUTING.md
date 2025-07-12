@@ -86,9 +86,9 @@ make test-cov
 ## Release Process
 
 Releases are automated based on conventional commits:
-- `feat:` commits trigger minor releases
-- `fix:` commits trigger patch releases
-- Breaking changes trigger major releases
+- `feat:`, `fix:`, `perf:`, and `refactor:` commits trigger releases
+- Each release gets a new timestamp-based version (year.month.day.HHMM)
+- No semantic versioning - versions are date-based
 
 See [Release Documentation](docs/RELEASE.md) for details.
 
