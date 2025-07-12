@@ -36,7 +36,8 @@ def repo_map_demo():
     # Analyze repository structure
     print("\nGenerating repository map...")
     summary = repo_map.generate_map(
-        max_files=10, show_types=["function", "class"]  # Limit for demo
+        max_files=10,
+        show_types=["function", "class"],  # Limit for demo
     )
 
     print("\nRepository summary:")

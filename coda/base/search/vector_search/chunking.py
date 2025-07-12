@@ -259,7 +259,6 @@ class CodeChunker(TextChunker):
                 or func_pattern.match(line)
                 or arrow_func_pattern.match(line)
             ):
-
                 # Save previous chunk if exists
                 if current_chunk and len("\n".join(current_chunk)) >= self.min_chunk_size:
                     chunks.append(

@@ -3,9 +3,9 @@
 
 import asyncio
 
+from coda.base.providers import ProviderFactory
 from coda.services.agents import Agent, tool
 from coda.services.config import get_config_service
-from coda.base.providers import ProviderFactory
 
 
 # Define custom tools using the @tool decorator

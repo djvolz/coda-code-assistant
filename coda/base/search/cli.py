@@ -297,7 +297,7 @@ class IntelligenceCommands:
             if stats.circular_dependencies:
                 result.append(f"\nCircular dependencies found: {len(stats.circular_dependencies)}")
                 for i, cycle in enumerate(stats.circular_dependencies[:3]):  # Show first 3
-                    result.append(f"  Cycle {i+1}: {' -> '.join(Path(p).name for p in cycle)}")
+                    result.append(f"  Cycle {i + 1}: {' -> '.join(Path(p).name for p in cycle)}")
                 if len(stats.circular_dependencies) > 3:
                     result.append(f"  ... and {len(stats.circular_dependencies) - 3} more")
 

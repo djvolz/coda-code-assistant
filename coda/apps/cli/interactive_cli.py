@@ -420,8 +420,8 @@ class InteractiveCLI(CommandHandler):
         """Change developer mode."""
         if not args:
             # Use generic command selector
-            from .generic_command_selector import create_command_selector
             from .command_registry import CommandRegistry
+            from .generic_command_selector import create_command_selector
 
             selector = create_command_selector("mode", CommandRegistry.COMMANDS, self.console)
             if selector:
@@ -504,8 +504,8 @@ class InteractiveCLI(CommandHandler):
         """Manage sessions."""
         if not args:
             # Use generic command selector
-            from .generic_command_selector import create_command_selector
             from .command_registry import CommandRegistry
+            from .generic_command_selector import create_command_selector
 
             selector = create_command_selector("session", CommandRegistry.COMMANDS, self.console)
             if selector:
@@ -577,8 +577,8 @@ class InteractiveCLI(CommandHandler):
         """Export conversation."""
         if not args:
             # Use generic command selector
-            from .generic_command_selector import create_command_selector
             from .command_registry import CommandRegistry
+            from .generic_command_selector import create_command_selector
 
             selector = create_command_selector("export", CommandRegistry.COMMANDS, self.console)
             if selector:

@@ -3,11 +3,10 @@ Test that base modules can be imported and used standalone.
 
 This verifies that each base module works without requiring other layers.
 """
+
 import subprocess
 import sys
 from pathlib import Path
-import tempfile
-import textwrap
 
 
 def run_isolated_import(module_name: str, test_code: str = "") -> tuple[bool, str]:
@@ -22,17 +21,17 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 """
-    
+
     result = subprocess.run(
         [sys.executable, "-c", code],
         capture_output=True,
         text=True,
-        cwd=Path(__file__).parent.parent.parent  # Project root
+        cwd=Path(__file__).parent.parent.parent,  # Project root
     )
-    
+
     success = "SUCCESS" in result.stdout
     output = result.stdout + result.stderr
-    
+
     return success, output
 
 
@@ -54,7 +53,7 @@ def test_config_standalone_import():
     # Cleanup
     config_path.unlink()
 """
-    
+
     success, output = run_isolated_import("coda.base.config", test_code)
     assert success, f"Config standalone import failed:\n{output}"
 
@@ -76,7 +75,7 @@ def test_theme_standalone_import():
     themes = manager.list_themes()
     assert len(themes) > 0
 """
-    
+
     success, output = run_isolated_import("coda.base.theme", test_code)
     assert success, f"Theme standalone import failed:\n{output}"
 
@@ -96,7 +95,7 @@ def test_providers_standalone_import():
     available = factory.list_available()
     assert 'mock' in available  # Mock provider should always be available
 """
-    
+
     success, output = run_isolated_import("coda.base.providers", test_code)
     assert success, f"Providers standalone import failed:\n{output}"
 
@@ -130,7 +129,7 @@ def test_session_standalone_import():
         sessions = manager.get_active_sessions()
         assert len(sessions) > 0
 """
-    
+
     success, output = run_isolated_import("coda.base.session", test_code)
     assert success, f"Session standalone import failed:\n{output}"
 
@@ -163,7 +162,7 @@ def test_search_standalone_import():
         assert isinstance(summary, dict)
         assert summary['total_files'] > 0
 """
-    
+
     success, output = run_isolated_import("coda.base.search", test_code)
     assert success, f"Search standalone import failed:\n{output}"
 
@@ -194,7 +193,7 @@ def test_observability_standalone_import():
     finally:
         config_path.unlink()
 """
-    
+
     success, output = run_isolated_import("coda.base.observability", test_code)
     assert success, f"Observability standalone import failed:\n{output}"
 
@@ -215,11 +214,12 @@ def test_cross_base_module_imports():
     # All imports should work
     print("All cross-base imports successful")
 """
-    
+
     success, output = run_isolated_import("coda.base", test_code)
     assert success, f"Cross-base module imports failed:\n{output}"
 
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__, "-v"])
