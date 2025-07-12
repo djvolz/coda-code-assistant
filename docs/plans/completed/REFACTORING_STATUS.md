@@ -61,49 +61,40 @@
 - ✅ Established default.toml as single source of truth for user settings
 - ✅ Implemented proper configuration hierarchy: default.toml → system → user → project → env → runtime
 
-## 🚧 Remaining Tasks
+### 10. **CLI Improvements**
+- ✅ Fixed theme import error in generic_selector.py preventing /mode command
+- ✅ Created unified completion-based selector for consistent UI
+- ✅ Integrated user's configured theme into completion selectors
+- ✅ Created flexible command selection system that auto-discovers commands
+- ✅ Added auto-trigger tab completion for command selectors
+- ✅ Renamed `/intel` command to `/map` to better reflect functionality
 
-### Critical Tasks (from TODO.md)
-1. ✅ ~~**Config Defaults Centralization**~~ - COMPLETED
-   - ~~Create a `default.toml` file with all default configuration values~~
-   - ~~Remove hardcoded defaults throughout the codebase~~
-   - ~~Centralize all configuration options for better discoverability~~
+## 📋 Tracked as GitHub Issues
 
-2. **Command Naming**
-   - Rename `/intel` command to `/map` to better reflect its functionality
-   - Update all references and help text
+The remaining tasks have been organized into GitHub issues for better tracking:
 
-3. **Web Dashboard**
-   - Fix the web UI which may be broken after refactoring
-   - Test all functionality and update for new architecture
-
-4. **CLI Testing**
-   - Write comprehensive tests for all CLI commands and subcommands
-   - Verify command display in help and autocomplete
-   - Test that help text is accurate for all commands
-
-5. **CI/CD Pipeline**
+### Critical Tasks
+1. ✅ **Config Defaults Centralization** - COMPLETED
+2. ✅ **Command Naming** - COMPLETED (renamed `/intel` to `/map`)
+3. **Web Dashboard** - [GitHub Issue #31](https://github.com/djvolz/coda-code-assistant/issues/31)
+   - Fix web UI after refactoring
+   - Address duplicate sidebar items
+   - Move Chat to top instead of Dashboard
+   - Add comprehensive documentation
+4. **CLI Testing** - [GitHub Issue #32](https://github.com/djvolz/coda-code-assistant/issues/32)
+   - Write comprehensive tests for all CLI commands
+   - Verify command display and autocomplete
+   - Test help text accuracy
+5. **CI/CD Pipeline** - [GitHub Issue #34](https://github.com/djvolz/coda-code-assistant/issues/34)
    - Archive existing CI pipeline files
-   - Create new CI configuration for refactored architecture
+   - Create new CI configuration
    - Set up automated testing for all modules
+6. **Docker Setup Refactoring** - [GitHub Issue #33](https://github.com/djvolz/coda-code-assistant/issues/33)
+   - Update Dockerfiles for modular architecture
+   - Optimize builds and caching
+   - Update docker-compose configurations
 
-6. **Docker Setup Refactoring**
-   - Update Dockerfiles for new modular architecture
-   - Simplify multi-stage builds with better caching
-   - Update docker-compose configurations for refactored structure
-   - Remove outdated services and add new module-specific configurations
-   - Update environment variables to use new config paths (XDG standards)
-   - Create development-specific Docker setup
-   - Add health checks for new service architecture
-   - Update volume mounts for new directory structure
-   - Optimize image sizes with proper dependency management
-
-### Phase 3: Integration Layer & CLI Wrapper
-1. ✅ ~~**Create a unified API surface** for the modular components~~
-2. ✅ ~~**Document the integration patterns** for using modules together~~
-3. ✅ ~~**Create example applications** showing how to use the modules~~
-
-### Documentation Updates
+### Documentation Updates - [GitHub Issue #35](https://github.com/djvolz/coda-code-assistant/issues/35)
 1. **API Documentation**
    - Document each base module's API
    - Create usage examples for each module
@@ -123,6 +114,10 @@
    - Update main README with new structure
    - Add module-specific READMEs
    - Update installation instructions
+
+### Minor UI Enhancement
+- **Escape Key Support** - [GitHub Issue #30](https://github.com/djvolz/coda-code-assistant/issues/30)
+  - Consider allowing Escape key to exit completion menu in selectors
 
 ### Optional Enhancements
 1. **Additional Base Modules**
@@ -159,14 +154,14 @@
 4. ✅ **Maintainability** - Clean, organized code structure
 5. ✅ **Extensibility** - Easy to add new modules/providers
 
-## 📝 Next Steps (Priority Order)
+## 📝 Next Steps
 
-1. **Config Defaults Centralization** - Create default.toml and remove hardcoded defaults
-2. **Rename /intel to /map** - Quick command naming fix
-3. **CLI Testing Suite** - Comprehensive tests for all commands
-4. **Fix Web Dashboard** - Ensure web UI works with refactored architecture
-5. **Docker Setup Refactoring** - Update for new modular architecture
-6. **CI/CD Pipeline Refresh** - New automated testing setup
+All critical remaining tasks have been converted to GitHub issues for tracking:
+- [Issue #31](https://github.com/djvolz/coda-code-assistant/issues/31) - Web Dashboard improvements
+- [Issue #32](https://github.com/djvolz/coda-code-assistant/issues/32) - CLI Testing Suite
+- [Issue #33](https://github.com/djvolz/coda-code-assistant/issues/33) - Docker Setup Refactoring
+- [Issue #34](https://github.com/djvolz/coda-code-assistant/issues/34) - CI/CD Pipeline Update
+- [Issue #35](https://github.com/djvolz/coda-code-assistant/issues/35) - Documentation Updates
 
 ## 🎉 Major Achievements
 
@@ -183,4 +178,8 @@ The refactoring has successfully:
 - **Phase 1**: ✅ Base Layer Modules - Complete
 - **Phase 2**: ✅ Service & Apps Layer - Complete  
 - **Phase 3**: ✅ Documentation & Examples - Complete
-- **Phase 4**: 🚧 Polish & Testing - In Progress (6 tasks remaining)
+- **Phase 4**: ✅ Polish & Testing - Complete (remaining tasks tracked as GitHub issues)
+
+## 🏁 Refactoring Complete
+
+The major refactoring effort has been successfully completed. All architectural changes are in place, and remaining polish tasks are tracked as GitHub issues for ongoing development.

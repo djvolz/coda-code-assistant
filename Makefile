@@ -156,12 +156,12 @@ version:
 
 # Build production Docker image (with Ollama)
 docker-build:
-	docker build -t coda-code-assistant:latest .
+	docker build -f docker/Dockerfile -t coda-code-assistant:latest .
 	@echo "Production Docker image built ✓"
 
 # Build lightweight OCI-focused image
 docker-build-oci:
-	docker build -f Dockerfile.oci -t coda-code-assistant:oci .
+	docker build -f docker/Dockerfile.oci -t coda-code-assistant:oci .
 	@echo "OCI-focused Docker image built ✓"
 
 # Build multi-architecture Docker image
@@ -196,7 +196,7 @@ docker-run-oci:
 
 # Build and run development container
 docker-dev:
-	docker build -f Dockerfile.dev -t coda-code-assistant:dev .
+	docker build -f docker/Dockerfile.dev -t coda-code-assistant:dev .
 	docker run -it --rm \
 		-p 11434:11434 \
 		-v $(PWD):/app \
@@ -207,14 +207,14 @@ docker-dev:
 
 # Start development environment with docker-compose
 docker-dev-up:
-	docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+	docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d
 	@echo "Development environment started ✓"
 	@echo "Access Coda: docker-compose exec coda bash"
 	@echo "Access Ollama: http://localhost:11434"
 
 # Stop development environment
 docker-dev-down:
-	docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
+	docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml down
 	@echo "Development environment stopped ✓"
 
 # Start OCI-focused environment
@@ -230,7 +230,7 @@ docker-oci-down:
 
 # Run tests in Docker container
 docker-test:
-	docker build -f Dockerfile.dev -t coda-code-assistant:test .
+	docker build -f docker/Dockerfile.dev -t coda-code-assistant:test .
 	docker run --rm \
 		-v $(PWD):/app \
 		-e RUN_TESTS=true \
@@ -240,18 +240,18 @@ docker-test:
 # Run LLM tests with Docker Ollama
 docker-test-llm:
 	@echo "Starting Docker-based LLM tests..."
-	docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d ollama-test
+	docker-compose -f docker/docker-compose.yml -f docker/docker-compose.test.yml up -d ollama-test
 	@echo "Waiting for Ollama to be ready..."
 	@timeout 60 bash -c 'until curl -s http://localhost:11435/api/health > /dev/null 2>&1; do sleep 2; done'
 	@echo "✅ Ollama is ready, running LLM tests..."
 	RUN_LLM_TESTS=1 OLLAMA_HOST=http://localhost:11435 \
 		CODA_TEST_MODEL=tinyllama:1.1b \
 		uv run pytest tests/llm/ -v -m llm --tb=short
-	docker-compose -f docker-compose.yml -f docker-compose.test.yml down
+	docker-compose -f docker/docker-compose.yml -f docker/docker-compose.test.yml down
 
 # Clean Docker images and containers
 docker-clean:
-	docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v --remove-orphans
+	docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml down -v --remove-orphans
 	docker image prune -f
 	docker volume prune -f
 	@echo "Docker cleanup completed ✓"

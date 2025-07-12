@@ -51,6 +51,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
+        file: ./docker/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
@@ -85,7 +86,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile.dev
+        file: ./docker/Dockerfile.dev
         platforms: linux/amd64,linux/arm64
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
