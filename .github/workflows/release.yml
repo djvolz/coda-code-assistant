@@ -132,7 +132,7 @@ jobs:
     - name: Run tests
       if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
       run: |
-        uv run python -m pytest tests/ -v -m "unit or not integration"
+        make test-all
     
     - name: Build package
       if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'

@@ -63,7 +63,7 @@ Fixes #123
 
 1. **Automatic Trigger**: When commits are pushed to main, the release workflow checks for releasable commits
 2. **Version Update**: The version is automatically updated to the current timestamp
-3. **Tests Run**: All unit tests are executed to ensure quality
+3. **Tests Run**: ALL tests (unit and integration) are executed to ensure quality
 4. **Build**: The package is built using `uv build`
 5. **Changelog Generation**: A changelog is automatically generated from commit messages
 6. **GitHub Release**: A new release is created with the changelog and built artifacts
@@ -120,6 +120,26 @@ Before major releases:
 - Ensure `PYPI_API_TOKEN` is set in repository secrets
 - Check that the package name is available on PyPI
 - Verify the build artifacts are valid
+
+## Branch Protection Setup
+
+To ensure only quality code gets released, configure branch protection rules for the `main` branch:
+
+1. Go to Settings → Branches in your GitHub repository
+2. Add a branch protection rule for `main`
+3. Enable these settings:
+   - **Require a pull request before merging**
+   - **Require status checks to pass before merging**
+     - Select: `quality` (from quality-checks.yml)
+     - Select any other critical workflows
+   - **Require branches to be up to date before merging**
+   - **Include administrators** (optional but recommended)
+
+This ensures:
+- All code goes through PR review
+- Quality checks must pass before merge
+- Only tested, validated code reaches main
+- Releases only happen with quality-assured code
 
 ## Best Practices
 
