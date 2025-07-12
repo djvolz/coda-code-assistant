@@ -148,10 +148,14 @@ jobs:
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Pull latest changes to avoid conflicts
-        git pull --rebase origin main
-        
+        # Stage the version file changes
         git add coda/__version__.py
+        
+        # Stash any other changes, pull latest, then unstash
+        git stash --keep-index
+        git pull --rebase origin main
+        git stash pop || true
+        
         git commit -m "chore: release v${{ steps.version.outputs.NEW_VERSION }} [skip ci]" || echo "No changes to commit"
         git push
     
