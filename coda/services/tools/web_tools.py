@@ -193,8 +193,8 @@ class FetchUrlTool(BaseTool):
     def _html_to_text(self, html: str) -> str:
         """Convert HTML to plain text."""
         # Remove script and style elements
-        html = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE)
-        html = re.sub(r"<style[^>]*>.*?</style>", "", html, flags=re.DOTALL | re.IGNORECASE)
+        html = re.sub(r"<script[^>]*>.*?</script\s*>", "", html, flags=re.DOTALL | re.IGNORECASE)
+        html = re.sub(r"<style[^>]*>.*?</style\s*>", "", html, flags=re.DOTALL | re.IGNORECASE)
 
         # Remove HTML tags
         text = re.sub(r"<[^>]+>", "", html)
@@ -208,8 +208,8 @@ class FetchUrlTool(BaseTool):
     def _html_to_markdown(self, html: str) -> str:
         """Convert HTML to markdown format."""
         # Remove script and style elements
-        html = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE)
-        html = re.sub(r"<style[^>]*>.*?</style>", "", html, flags=re.DOTALL | re.IGNORECASE)
+        html = re.sub(r"<script[^>]*>.*?</script\s*>", "", html, flags=re.DOTALL | re.IGNORECASE)
+        html = re.sub(r"<style[^>]*>.*?</style\s*>", "", html, flags=re.DOTALL | re.IGNORECASE)
 
         # Convert common HTML elements to markdown
         conversions = [

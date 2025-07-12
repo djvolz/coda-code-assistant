@@ -33,7 +33,7 @@ class AppConfig:
             config_path = self._get_default_config_path()
 
         self.config_path = config_path  # Store for save()
-        
+
         # If the config file doesn't exist, let Config load from defaults
         if config_path.exists():
             self.config = Config(app_name="coda", config_file=config_path)
