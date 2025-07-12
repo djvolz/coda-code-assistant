@@ -155,3 +155,9 @@ The project uses automated releases triggered by conventional commits on the mai
 
 ### Skip Release
 - Add `[skip ci]` or `[skip release]` to commit message
+
+### Important: Merge Strategy
+- **DO NOT SQUASH COMMITS** when merging PRs
+- Use "Create a merge commit" to preserve individual commit messages
+- The release workflow needs to see conventional commits to trigger releases
+- Squashing would lose the commit type information (feat:, fix:, etc.)

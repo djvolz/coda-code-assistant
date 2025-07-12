@@ -148,3 +148,4 @@ This ensures:
 3. **Group related changes**: Use feature branches to group related commits
 4. **Test before merging**: Ensure all tests pass before merging to main
 5. **Document breaking changes**: Use the `BREAKING CHANGE:` footer when needed
+6. **DO NOT SQUASH COMMITS**: When merging PRs, use "Create a merge commit" to preserve individual commit messages. The release workflow needs to see the conventional commit types (feat:, fix:, etc.) to trigger releases properly
