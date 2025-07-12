@@ -33,7 +33,13 @@ class AppConfig:
             config_path = self._get_default_config_path()
 
         self.config_path = config_path  # Store for save()
-        self.config = Config(app_name="coda", config_file=config_path)
+        
+        # If the config file doesn't exist, let Config load from defaults
+        if config_path.exists():
+            self.config = Config(app_name="coda", config_file=config_path)
+        else:
+            # Don't specify config_file so it will load defaults
+            self.config = Config(app_name="coda")
         self.theme_manager = ThemeManager()
 
         # Apply theme from config if set
