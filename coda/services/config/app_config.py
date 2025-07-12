@@ -34,12 +34,29 @@ class AppConfig:
 
         self.config_path = config_path  # Store for save()
 
-        # If the config file doesn't exist, let Config load from defaults
+        # Always create config without specifying the file
+        # This ensures defaults are loaded first, then user config is layered on top
+        self.config = Config(app_name="coda")
+
+        # If user config exists, load it as an additional layer
         if config_path.exists():
-            self.config = Config(app_name="coda", config_file=config_path)
-        else:
-            # Don't specify config_file so it will load defaults
-            self.config = Config(app_name="coda")
+            from coda.base.config.models import ConfigSource
+
+            # Parse TOML directly
+            try:
+                import tomllib
+
+                with open(config_path, "rb") as f:
+                    user_config = tomllib.load(f)
+            except ImportError:
+                import toml
+
+                with open(config_path) as f:
+                    user_config = toml.load(f)
+
+            # Add user config as a layer with higher priority
+            # Use RUNTIME source to ensure it overrides defaults
+            self.config.config.add_layer(user_config, ConfigSource.RUNTIME)
         self.theme_manager = ThemeManager()
 
         # Apply theme from config if set
