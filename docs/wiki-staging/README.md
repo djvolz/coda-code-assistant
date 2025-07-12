@@ -24,7 +24,9 @@ wiki-staging/
 *Pending documentation for modular features*
 
 ### Developer Guide
-*Pending API reference and architecture documentation*
+- [Release Process](developer-guide/release-process.md) - Automated release workflow and versioning
+- [Integration Guide](developer-guide/integration-guide.md) - How to integrate Coda modules
+*Additional API reference and architecture documentation pending*
 
 ### Tutorials
 *Pending example applications and integration guides*

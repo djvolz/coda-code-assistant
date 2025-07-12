@@ -121,6 +121,7 @@ coda --version
 - Use conventional commits for version management
 - The mock provider is essential for testing - use it for predictable test scenarios
 - Tree-sitter grammars are automatically downloaded as needed for code search
+- When adding new features or documentation, also create corresponding wiki-style documentation in `docs/wiki-staging/`
 
 ## Release Process
 
