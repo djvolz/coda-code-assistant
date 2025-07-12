@@ -7,12 +7,14 @@ on:
       - 'docs/**'
       - '*.md'
       - 'LICENSE'
+      - 'archive/**'
   pull_request:
     branches: [ main ]
     paths-ignore:
       - 'docs/**'
       - '*.md'
       - 'LICENSE'
+      - 'archive/**'
 
 permissions:
   contents: read
@@ -34,8 +36,8 @@ jobs:
     
     - name: Run lint checks
       run: |
-        uv run ruff check .
+        uv run ruff check . --exclude archive
     
     - name: Check code formatting
       run: |
-        uv run ruff format --check .
+        uv run ruff format --check . --exclude archive
