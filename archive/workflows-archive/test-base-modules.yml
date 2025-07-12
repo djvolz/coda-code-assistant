@@ -1,0 +1,80 @@
+name: Base Module Tests
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths:
+      - 'coda/base/**'
+      - 'tests/base/**'
+      - '.github/workflows/test-base-modules.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'coda/base/**'
+      - 'tests/base/**'
+
+jobs:
+  test-base-modules:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+        module: [config, theme, providers, search, session, observability]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Test ${{ matrix.module }} module independence
+      run: |
+        # Test that the module can be imported independently
+        uv run python -c "from coda.base.${{ matrix.module }} import *"
+    
+    - name: Run ${{ matrix.module }} tests
+      run: |
+        if [ -d "tests/base/${{ matrix.module }}" ]; then
+          uv run python -m pytest tests/base/${{ matrix.module }}/ -v \
+            --cov=coda.base.${{ matrix.module }} \
+            --cov-report=xml \
+            --cov-report=term-missing
+        else
+          echo "No tests found for ${{ matrix.module }}"
+        fi
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: base-${{ matrix.module }}
+        name: base-${{ matrix.module }}-coverage
+
+  check-module-independence:
+    runs-on: ubuntu-latest
+    needs: test-base-modules
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run module independence tests
+      run: |
+        uv run python -m pytest tests/test_module_independence.py -v

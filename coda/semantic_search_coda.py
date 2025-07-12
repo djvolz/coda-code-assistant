@@ -1,17 +1,42 @@
 """
-Coda-specific semantic search functionality.
+Coda integration layer for search module.
 
 This module provides wrappers and utilities that integrate the self-contained
-semantic search components with Coda's configuration system.
+vector search components with Coda's configuration system. This acts as the
+bridge between the standalone search module and Coda-specific features.
 """
 
 import logging
+from typing import Any
 
-from .configuration import CodaConfig, get_config
-from .constants import get_cache_dir
-from .embeddings import create_oci_provider_from_coda_config
-from .embeddings.factory import create_embedding_provider
-from .semantic_search import SemanticSearchManager
+from .base.constants import get_cache_dir
+from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
+from .base.search.vector_search.embeddings.factory import create_embedding_provider
+from .base.search.vector_search.manager import SemanticSearchManager
+from .services.config import get_config_service
+
+
+# Minimal compatibility type for transition
+class CodaConfig:
+    """Compatibility type for semantic search integration."""
+
+    def __init__(self, config_dict: dict[str, Any]):
+        self._dict = config_dict
+        for key, value in config_dict.items():
+            setattr(self, key, value)
+
+    def to_dict(self) -> dict[str, Any]:
+        return self._dict
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._dict.get(key, default)
+
+
+def get_config() -> CodaConfig:
+    """Get config in compatibility format."""
+    config_service = get_config_service()
+    return CodaConfig(config_service.to_dict())
+
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +145,7 @@ def create_semantic_search_manager(
                 error_messages.append(f"Mock: {str(e)}")
 
     if embedding_provider is None:
-        raise ValueError("No embedding provider available. " f"Errors: {'; '.join(error_messages)}")
+        raise ValueError(f"No embedding provider available. Errors: {'; '.join(error_messages)}")
 
     # Use Coda's cache directory for indexes
     index_dir = get_cache_dir() / "semantic_search"

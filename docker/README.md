@@ -1,6 +1,29 @@
 # Docker Setup for Coda
 
-This directory contains Docker configuration files for running Coda with Ollama bundled.
+This directory contains all Docker-related files for building and running Coda in containers.
+
+## 📁 Directory Structure
+
+```
+docker/
+├── Dockerfile              # Main production Dockerfile
+├── Dockerfile.dev          # Development Dockerfile with hot reload
+├── Dockerfile.oci          # OCI-specific Dockerfile
+├── docker-compose.yml      # Main compose configuration
+├── docker-compose.dev.yml  # Development compose overrides
+├── docker-compose.test.yml # Testing compose configuration
+├── entrypoint.sh          # Main container entrypoint
+├── entrypoint-dev.sh      # Development entrypoint
+├── entrypoint-oci.sh      # OCI-specific entrypoint
+├── config/                # Docker-specific configurations
+│   ├── dev-config.toml    # Development config
+│   └── oci-config.toml    # OCI config
+└── examples/              # Example configurations
+    ├── docker-compose-oci.yml
+    └── docker-run-oci.sh
+```
+
+**Note**: The `.dockerignore` file remains in the project root as required by Docker.
 
 ## Quick Start
 

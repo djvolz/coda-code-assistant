@@ -1,0 +1,43 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - 'archive/**'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - 'archive/**'
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run lint checks
+      run: |
+        uv run ruff check . --exclude archive
+    
+    - name: Check code formatting
+      run: |
+        uv run ruff format --check . --exclude archive

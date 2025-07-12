@@ -1,0 +1,243 @@
+# Coda Default Configuration
+# This file contains all user-configurable options with their default values.
+# Copy this file to ~/.config/coda/config.toml and customize as needed.
+# Settings can also be overridden via environment variables (see documentation).
+
+# General Settings
+# Default LLM provider to use
+default_provider = "mock"  # Options: "oci_genai", "litellm", "ollama", "mock", "openai"
+
+# Debug mode
+debug = false
+
+# Default temperature for LLM generation (0.0-1.0)
+temperature = 0.7
+
+# Default max tokens for LLM generation
+max_tokens = 2000
+
+# Auto-save configuration changes
+autosave = true
+
+# Provider Configurations
+# Each provider can be enabled/disabled and configured independently
+
+[providers.oci_genai]
+# Enable/disable this provider
+enabled = false
+
+# OCI compartment ID (can also be set via OCI_COMPARTMENT_ID env var)
+compartment_id = ""
+
+# OCI config profile
+profile = "DEFAULT"
+
+# OCI config file location
+config_file_path = "~/.oci/config"
+
+# OCI region
+region = "us-chicago-1"
+
+# Service endpoint (optional, auto-generated if not provided)
+endpoint = ""
+
+# Default model for this provider
+default_model = "cohere.command-r-plus"
+
+# Request timeout in seconds
+timeout = 30
+
+[providers.ollama]
+# Enable/disable this provider
+enabled = false
+
+# Ollama base URL
+base_url = "http://localhost:11434"
+
+# Default model for this provider
+default_model = "llama3.2:3b"
+
+# Request timeout in seconds
+timeout = 30
+
+[providers.litellm]
+# Enable/disable this provider
+enabled = false
+
+# LiteLLM API base URL
+api_base = "http://localhost:8000"
+
+# Default model for this provider
+default_model = "gpt-4"
+
+# Request timeout in seconds
+timeout = 30
+
+[providers.openai]
+# Enable/disable this provider
+enabled = false
+
+# OpenAI API key (better to use environment variable OPENAI_API_KEY)
+api_key = ""
+
+# Default model for this provider
+default_model = "gpt-4"
+
+# Request timeout in seconds
+timeout = 30
+
+[providers.mock]
+# Enable/disable this provider (useful for testing)
+enabled = true
+
+# Default model for this provider
+default_model = "mock-smart"
+
+# Session Settings
+[session]
+# Session history file location
+history_file = "~/.local/share/coda/history.txt"
+
+# Maximum number of history entries to keep
+max_history = 1000
+
+# Auto-save sessions
+autosave = true
+
+# Maximum messages per session
+max_messages = 1000
+
+# Default search result limit
+search_limit = 50
+
+# Default export limit
+export_limit = 50
+
+# UI Settings
+[ui]
+# UI theme
+# Options: default, dark, light, minimal, vibrant, monokai_dark, 
+# monokai_light, dracula_dark, dracula_light, gruvbox_dark, gruvbox_light
+theme = "default"
+
+# Show model information in UI
+show_model_info = true
+
+# Show token usage information
+show_token_usage = false
+show_token_count = false
+
+# Enable interactive mode
+interactive_mode = true
+
+# Enable streaming responses
+streaming = true
+
+# Console width (for CLI)
+console_width = 80
+
+# Maximum models to display in lists
+max_models_display = 20
+
+# Search and Analysis Settings
+[search]
+# Default chunk size for text splitting
+chunk_size = 1000
+
+# Chunk overlap for context continuity
+chunk_overlap = 200
+
+# Minimum chunk size
+min_chunk_size = 100
+
+# Default number of search results
+search_k = 5
+
+# Similarity threshold for search results (0.0-1.0)
+similarity_threshold = 0.7
+
+# Maximum file size to analyze (in bytes)
+max_file_size = 1048576  # 1MB
+
+# Maximum number of files to process
+max_files = 10000
+
+# File patterns to exclude from analysis
+exclude_patterns = [
+    "__pycache__",
+    ".git",
+    ".pytest_cache",
+    "node_modules",
+    ".mypy_cache",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    ".DS_Store",
+    "Thumbs.db"
+]
+
+# Default embedding dimension
+embedding_dimension = 768
+
+# FAISS index type
+index_type = "Flat"
+
+# Similarity metric (cosine, euclidean, etc.)
+similarity_metric = "cosine"
+
+# Batch size for processing
+batch_size = 100
+
+# Cache TTL in seconds
+cache_ttl = 3600
+
+# Maximum cache size
+max_cache_size = 1000
+
+# Observability Settings
+[observability]
+# Enable observability features
+enabled = false
+
+# Export directory for observability data
+export_dir = "~/.local/share/coda/observability"
+
+# Metrics flush interval in seconds
+metrics_flush_interval = 300  # 5 minutes
+
+# Tracing sample rate (0.0 to 1.0)
+tracing_sample_rate = 1.0
+
+# Maximum spans to keep
+tracing_max_spans = 1000
+
+# Tracing flush interval in seconds
+tracing_flush_interval = 60
+
+# Health check interval in seconds
+health_check_interval = 30
+
+# Number of failures before marking unhealthy
+health_unhealthy_threshold = 3
+
+# Response time threshold for degraded state in ms
+health_degraded_threshold = 5000.0
+
+# Tool Settings
+[tools]
+# Enable/disable tool calling functionality
+enabled = true
+
+# Development Settings
+[development]
+# Available developer modes
+modes = ["general", "code", "debug", "explain", "review", "refactor", "plan"]
+
+# Default developer mode
+default_mode = "general"
+
+# Export formats
+export_formats = ["json", "markdown", "txt", "html"]
+
+# Default export format
+default_export_format = "markdown"

@@ -1,0 +1,203 @@
+name: Agent Tests
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths:
+      - 'coda/services/agents/**'
+      - 'coda/services/tools/**'
+      - 'coda/apps/cli/agent_chat.py'
+      - 'coda/apps/cli/tool_chat.py'
+      - 'tests/agents/**'
+      - 'tests/tools/**'
+      - 'tests/cli/*agent*'
+      - 'tests/cli/*tool*'
+      - '.github/workflows/test-agents.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'coda/services/agents/**'
+      - 'coda/services/tools/**'
+      - 'coda/apps/cli/agent_chat.py'
+      - 'coda/apps/cli/tool_chat.py'
+      - 'tests/agents/**'
+      - 'tests/tools/**'
+      - 'tests/cli/*agent*'
+      - 'tests/cli/*tool*'
+      - '.github/workflows/test-agents.yml'
+
+jobs:
+  agent-unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run agent unit tests
+      run: |
+        rm -f .coverage* coverage.xml
+        uv run python -m pytest tests/agents/ -v --cov=coda/services/agents --cov-report=xml --cov-report=term-missing
+    
+    - name: Run tool unit tests
+      run: |
+        # Note: Using --cov-append to combine with agent coverage
+        uv run python -m pytest tests/tools/ -v --cov=coda/services/tools --cov-append --cov-report=xml --cov-report=term-missing
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: agent-tests
+        name: agent-coverage-${{ matrix.python-version }}
+
+  agent-integration-tests:
+    runs-on: ubuntu-latest
+    needs: agent-unit-tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run agent integration tests
+      run: |
+        uv run python -m pytest tests/agents/test_agent_tool_integration.py -v
+    
+    - name: Run CLI agent workflow tests
+      run: |
+        uv run python -m pytest tests/cli/test_agent_chat_workflow.py tests/cli/test_tool_chat_workflow.py -v
+
+  agent-functional-tests:
+    runs-on: ubuntu-latest
+    needs: agent-unit-tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Create test environment
+      run: |
+        mkdir -p test_workspace
+        echo "Test file content" > test_workspace/test.txt
+    
+    - name: Run functional tests
+      run: |
+        # Test agent with file operations
+        uv run python -m pytest tests/cli/test_agent_chat_workflow.py::TestAgentChatWorkflow::test_file_operation_workflow -v
+        
+        # Test tool workflows
+        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tools_basic_workflow -v
+        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tool_execution_workflow -v
+        uv run python -m pytest tests/cli/test_tool_chat_workflow.py::TestToolChatWorkflow::test_tools_with_cohere_model -v
+
+  agent-performance-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [agent-unit-tests, agent-integration-tests]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run performance benchmarks
+      run: |
+        # Create performance test script
+        cat > test_agent_performance.py << 'EOF'
+        import asyncio
+        import time
+        from coda.services.agents.agent import Agent
+        from coda.services.agents.builtin_tools import get_builtin_tools
+        from unittest.mock import Mock, AsyncMock
+
+        async def benchmark_tool_execution():
+            """Benchmark tool execution performance."""
+            provider = Mock()
+            provider.chat = AsyncMock(return_value=Mock(content="Done", tool_calls=[]))
+            
+            agent = Agent(provider=provider)
+            for tool in get_builtin_tools():
+                agent.add_tool(tool)
+            
+            start = time.time()
+            for i in range(10):
+                await agent.run(f"Test message {i}")
+            end = time.time()
+            
+            print(f"10 agent runs completed in {end - start:.2f} seconds")
+            assert (end - start) < 5.0, "Agent execution too slow"
+
+        asyncio.run(benchmark_tool_execution())
+        EOF
+        
+        uv run python test_agent_performance.py
+
+  test-coverage-report:
+    runs-on: ubuntu-latest
+    needs: [agent-unit-tests, agent-integration-tests, agent-functional-tests]
+    if: always()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Generate coverage report
+      run: |
+        # Clean any existing coverage data to avoid combination errors
+        rm -f .coverage* coverage.xml
+        # Run all agent-related tests with coverage
+        uv run python -m pytest tests/agents/ tests/tools/ tests/cli/*agent* tests/cli/*tool* \
+          -v --cov=coda/services/agents --cov=coda/services/tools --cov=coda/apps/cli/agent_chat --cov=coda/apps/cli/tool_chat \
+          --cov-report=html --cov-report=term
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: agent-coverage-report
+        path: htmlcov/
