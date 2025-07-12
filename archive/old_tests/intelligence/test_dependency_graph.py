@@ -54,7 +54,7 @@ class TestDependencyGraph:
             """
         from utils import helper_function
         import os
-        
+
         def main():
             result = helper_function()
             print(result)
@@ -163,7 +163,7 @@ class TestDependencyGraph:
         from utils import calculate
         from .helpers import format_output
         import json
-        
+
         def main():
             result = calculate(10, 20)
             output = format_output(result)
@@ -171,7 +171,7 @@ class TestDependencyGraph:
         """,
         )
 
-        utils_py = self.create_test_file(
+        self.create_test_file(
             "utils.py",
             """
         def calculate(a, b):
@@ -179,7 +179,7 @@ class TestDependencyGraph:
         """,
         )
 
-        helpers_py = self.create_test_file(
+        self.create_test_file(
             "helpers.py",
             """
         def format_output(value):
@@ -194,7 +194,7 @@ class TestDependencyGraph:
         # Check that dependencies were resolved
         main_path = str(main_py)
         if main_path in self.dep_graph.nodes:
-            main_node = self.dep_graph.nodes[main_path]
+            self.dep_graph.nodes[main_path]
             # Should have resolved at least some dependencies
             # Note: The exact number depends on how well the import resolution works
             assert len(self.dep_graph.edges) >= 0  # May be 0 if resolution doesn't work perfectly
@@ -206,7 +206,7 @@ class TestDependencyGraph:
             "a.py",
             """
         from b import function_b
-        
+
         def function_a():
             return function_b()
         """,
@@ -216,7 +216,7 @@ class TestDependencyGraph:
             "b.py",
             """
         from a import function_a
-        
+
         def function_b():
             return "from b"
         """,

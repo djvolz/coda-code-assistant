@@ -38,12 +38,12 @@ class TestRepoMapIntegration:
             """
         import os
         from src.utils import helper
-        
+
         def main():
             '''Main entry point'''
             print("Hello World")
             helper()
-        
+
         if __name__ == "__main__":
             main()
         """,
@@ -55,7 +55,7 @@ class TestRepoMapIntegration:
         def helper():
             '''Helper function'''
             return 42
-        
+
         class Config:
             '''Configuration class'''
             def __init__(self):
@@ -69,11 +69,11 @@ class TestRepoMapIntegration:
             """
         import React from 'react';
         import { Button } from './components';
-        
+
         function App() {
             return <div>Hello</div>;
         }
-        
+
         export default App;
         """,
         )
@@ -84,7 +84,7 @@ class TestRepoMapIntegration:
         export const Button = ({ label }) => {
             return <button>{label}</button>;
         };
-        
+
         export class Widget {
             render() {
                 return '<div>Widget</div>';
@@ -99,7 +99,7 @@ class TestRepoMapIntegration:
             """
         import pytest
         from src.main import main
-        
+
         def test_main():
             assert main() is None
         """,
@@ -134,7 +134,7 @@ class TestRepoMapIntegration:
             "README.md",
             """
         # Test Project
-        
+
         This is a test project for integration testing.
         """,
         )
@@ -417,7 +417,7 @@ class TestRepoMapIntegration:
 
         # Step 3: Find specific definitions across the codebase
         all_functions = []
-        for path, analysis in analysis_results.items():
+        for _path, analysis in analysis_results.items():
             functions = [d for d in analysis.definitions if d.kind.value in ["function", "method"]]
             all_functions.extend(functions)
 

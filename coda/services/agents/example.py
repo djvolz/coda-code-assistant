@@ -156,15 +156,15 @@ async def example_mixed_tools():
         all_mcp = MCPToolAdapter.get_all_tools()
         # Just get file-related tools
         mcp_tools = [t for t in all_mcp if "file" in t.name.lower()][:3]
-    except:
+    except Exception:
         pass
 
     # Combine with custom tools
     all_tools = [get_current_time, add_numbers, get_weather, read_file_async, *mcp_tools]
 
     print(f"Agent has {len(all_tools)} tools:")
-    for tool in all_tools:
-        print(f"  - {tool.name if hasattr(tool, 'name') else tool.__name__}")
+    for t in all_tools:
+        print(f"  - {t.name if hasattr(t, 'name') else t.__name__}")
 
     # Create agent
     provider = MockProvider()

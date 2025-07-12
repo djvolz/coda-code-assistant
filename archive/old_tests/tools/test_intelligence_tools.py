@@ -35,11 +35,11 @@ from typing import List
 
 class TestClass:
     """A test class."""
-    
+
     def method1(self):
         """Test method."""
         return 42
-    
+
     def method2(self, arg: str) -> str:
         return arg.upper()
 
@@ -62,7 +62,7 @@ export class Component {
     constructor() {
         this.state = {};
     }
-    
+
     render() {
         return <div>Hello</div>;
     }

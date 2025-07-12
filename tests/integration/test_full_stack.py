@@ -201,7 +201,7 @@ def test_agent_service_integration():
         from coda.services.agents import Agent, AgentCapability, AgentManager
         from coda.services.config import get_config_service
 
-        config = get_config_service()
+        get_config_service()
 
         # Create agent manager
         manager = AgentManager()

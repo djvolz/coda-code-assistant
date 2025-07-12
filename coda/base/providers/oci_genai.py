@@ -297,11 +297,11 @@ class OCIGenAIProvider(BaseProvider):
                     f"   oci generative-ai model list --compartment-id {self.compartment_id}\n\n"
                     f"If the CLI command also fails, the issue is with OCI permissions, not Coda.\n"
                     f"Original error: {e.__class__.__name__}: {str(e)}"
-                )
+                ) from e
             else:
                 # For other errors, we might still try fallback
                 # But let's be more cautious and just fail
-                raise Exception(f"Failed to discover OCI GenAI models: {e}")
+                raise Exception(f"Failed to discover OCI GenAI models: {e}") from e
 
     def _get_fallback_models(self) -> list[Model]:
         """Get fallback models if discovery fails.

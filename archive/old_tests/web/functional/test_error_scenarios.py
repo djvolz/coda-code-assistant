@@ -139,7 +139,7 @@ class TestErrorScenarios:
         time.sleep(3)
 
         # Check for rate limit handling
-        rate_limit_indicators = driver.find_elements(
+        driver.find_elements(
             By.XPATH,
             "//*[contains(text(), 'rate') or contains(text(), 'limit') or contains(text(), 'slow down') or contains(text(), 'Too many')]",
         )
@@ -246,7 +246,6 @@ class TestErrorScenarios:
 
         # Verify no XSS execution
         try:
-            alert = driver.switch_to.alert
             pytest.fail("XSS vulnerability detected - alert was shown")
         except:
             # Good - no alert
@@ -285,7 +284,7 @@ class TestErrorScenarios:
         chat_tab.click()
 
         # Check if session is shared or isolated
-        chat_messages = driver.find_elements(By.XPATH, "//div[@data-testid='stChatMessage']")
+        driver.find_elements(By.XPATH, "//div[@data-testid='stChatMessage']")
 
         # Close second tab
         driver.close()
@@ -355,7 +354,7 @@ class TestErrorScenarios:
         time.sleep(2)
 
         # Should either work or show session expired message
-        error_messages = driver.find_elements(
+        driver.find_elements(
             By.XPATH,
             "//*[contains(text(), 'Session') or contains(text(), 'expired') or contains(text(), 'timeout')]",
         )

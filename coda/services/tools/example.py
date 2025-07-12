@@ -223,12 +223,6 @@ async def example_permission_handling():
     print()
 
     # Example with path restrictions
-    test_paths = [
-        "/tmp/test.txt",
-        "/etc/passwd",
-        "../../../etc/passwd",
-        "~/Documents/file.txt",
-    ]
 
     print("\nChecking user permissions:")
     user_id = "test-user"

@@ -38,21 +38,21 @@ class TestIntelligenceInteractiveCLI:
         from utils import calculate_fibonacci
         from data_processing import DataProcessor
         import json
-        
+
         def main():
             '''Main entry point.'''
             processor = DataProcessor()
             result = processor.process_data([1, 2, 3, 4, 5])
-            
+
             fib_10 = calculate_fibonacci(10)
-            
+
             output = {
                 "processed_data": result,
                 "fibonacci_10": fib_10
             }
-            
+
             print(json.dumps(output, indent=2))
-        
+
         if __name__ == "__main__":
             main()
         """
@@ -64,19 +64,19 @@ class TestIntelligenceInteractiveCLI:
             dedent(
                 """
         '''Utility functions for mathematical operations.'''
-        
+
         def calculate_fibonacci(n):
             '''Calculate the nth Fibonacci number.'''
             if n <= 1:
                 return n
             return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)
-        
+
         def factorial(n):
             '''Calculate factorial of n.'''
             if n <= 1:
                 return 1
             return n * factorial(n-1)
-        
+
         def is_prime(n):
             '''Check if a number is prime.'''
             if n < 2:
@@ -95,14 +95,14 @@ class TestIntelligenceInteractiveCLI:
                 """
         '''Data processing utilities.'''
         from utils import factorial
-        
+
         class DataProcessor:
             '''A class for processing numerical data.'''
-            
+
             def __init__(self):
                 '''Initialize the data processor.'''
                 self.processed_count = 0
-            
+
             def process_data(self, data):
                 '''Process a list of numerical data.'''
                 result = []
@@ -115,12 +115,12 @@ class TestIntelligenceInteractiveCLI:
                     result.append(processed_item)
                     self.processed_count += 1
                 return result
-            
+
             def get_statistics(self, data):
                 '''Get basic statistics for the data.'''
                 if not data:
                     return {}
-                
+
                 return {
                     "count": len(data),
                     "sum": sum(data),
@@ -145,21 +145,21 @@ class TestIntelligenceInteractiveCLI:
         import sys
         sys.path.append('..')
         from utils import calculate_fibonacci, factorial, is_prime
-        
+
         class TestUtils(unittest.TestCase):
             '''Test cases for utility functions.'''
-            
+
             def test_fibonacci(self):
                 '''Test Fibonacci calculation.'''
                 self.assertEqual(calculate_fibonacci(0), 0)
                 self.assertEqual(calculate_fibonacci(1), 1)
                 self.assertEqual(calculate_fibonacci(5), 5)
-            
+
             def test_factorial(self):
                 '''Test factorial calculation.'''
                 self.assertEqual(factorial(0), 1)
                 self.assertEqual(factorial(5), 120)
-            
+
             def test_is_prime(self):
                 '''Test prime number detection.'''
                 self.assertFalse(is_prime(1))
@@ -308,7 +308,7 @@ class TestIntelligenceInteractiveCLI:
         assert "Found" in processor_result or "No definitions found" in processor_result
 
         # This information could help AI provide more specific assistance
-        messages = [
+        [
             Message(role=Role.USER, content="Where is the DataProcessor class defined in my code?")
         ]
 
@@ -436,7 +436,7 @@ class TestIntelligenceInteractiveCLI:
         map_result = self.intel_commands.handle_command(
             "map", [str(self.temp_dir)]
         )  # Ensure mapped
-        find_result = self.intel_commands.handle_command("find", ["DataProcessor"])
+        self.intel_commands.handle_command("find", ["DataProcessor"])
         # Should either find it or report not found, both are valid
 
         # Step 5: Analyze specific files

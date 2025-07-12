@@ -158,7 +158,7 @@ class CompletionSelector:
             else:
                 # Try to find a matching option
                 result_lower = result.lower()
-                for value, description, _ in self.options:
+                for value, _description, _ in self.options:
                     if result_lower == value.lower():
                         return value
 

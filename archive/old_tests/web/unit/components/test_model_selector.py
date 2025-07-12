@@ -232,7 +232,7 @@ class TestModelSelector:
 
         mock_streamlit.selectbox.return_value = "gpt-4"
 
-        result = render_model_selector("openai")
+        render_model_selector("openai")
 
         # Should default to first model
         call_args = mock_streamlit.selectbox.call_args
@@ -313,7 +313,7 @@ class TestModelSelector:
         mock_factory.create.return_value = mock_provider
         mock_provider_factory.return_value = mock_factory
 
-        result = render_model_selector("openai")
+        render_model_selector("openai")
 
         # Check that format_func was provided
         call_args = mock_streamlit.selectbox.call_args
@@ -340,7 +340,7 @@ class TestModelSelector:
         mock_factory.create.return_value = mock_provider
         mock_provider_factory.return_value = mock_factory
 
-        result = render_model_selector("oci_genai")
+        render_model_selector("oci_genai")
 
         # Should use friendly display name
         mock_streamlit.warning.assert_called_once_with("No models available for OCI GenAI")

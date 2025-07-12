@@ -45,7 +45,7 @@ def main():
         st.write("This is the chat page")
 
         # Test basic form elements
-        provider = st.selectbox("Provider", ["Option 1", "Option 2"])
+        st.selectbox("Provider", ["Option 1", "Option 2"])
         st.text_input("Type a message")
 
     elif page == "Sessions":

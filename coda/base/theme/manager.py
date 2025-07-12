@@ -4,7 +4,10 @@ This module provides the main theme management functionality.
 Zero dependencies except for theme models and validation.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 try:
     from .models import ConsoleTheme, PromptTheme, Theme, ThemeNames

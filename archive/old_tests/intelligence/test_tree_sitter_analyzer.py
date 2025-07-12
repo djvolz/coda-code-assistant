@@ -52,17 +52,17 @@ class TestTreeSitterAnalyzer:
         def hello_world():
             '''A simple greeting function.'''
             return "Hello, World!"
-        
+
         class Calculator:
             '''A basic calculator class.'''
-            
+
             def add(self, a, b):
                 '''Add two numbers.'''
                 return a + b
-        
+
         from math import sqrt
         import os
-        
+
         PI = 3.14159
         result = hello_world()
         """
@@ -92,7 +92,7 @@ class TestTreeSitterAnalyzer:
         assert len(variables) >= 2  # PI, result
 
         # Check imports
-        import_names = [i.name for i in analysis.imports]
+        [i.name for i in analysis.imports]
         assert len(analysis.imports) >= 1  # Should detect at least one import
 
     def test_javascript_analysis(self):
@@ -104,12 +104,12 @@ class TestTreeSitterAnalyzer:
         function greet(name) {
             return `Hello, ${name}!`;
         }
-        
+
         class Person {
             constructor(name) {
                 this.name = name;
             }
-            
+
             /**
              * Get the person's greeting
              */
@@ -117,7 +117,7 @@ class TestTreeSitterAnalyzer:
                 return greet(this.name);
             }
         }
-        
+
         const age = 25;
         let person = new Person("Alice");
         var message = person.getGreeting();
@@ -142,32 +142,32 @@ class TestTreeSitterAnalyzer:
         """Test Rust code analysis."""
         rust_code = """
         use std::collections::HashMap;
-        
+
         /// A simple struct to represent a point
         pub struct Point {
             x: f64,
             y: f64,
         }
-        
+
         impl Point {
             /// Create a new point
             pub fn new(x: f64, y: f64) -> Self {
                 Point { x, y }
             }
-            
+
             /// Calculate distance from origin
             pub fn distance_from_origin(&self) -> f64 {
                 (self.x * self.x + self.y * self.y).sqrt()
             }
         }
-        
+
         /// An enumeration of colors
         pub enum Color {
             Red,
             Green,
             Blue,
         }
-        
+
         fn main() {
             let origin = Point::new(0.0, 0.0);
             println!("Hello, world!");
@@ -201,7 +201,7 @@ class TestTreeSitterAnalyzer:
         def documented_function():
             """This is a docstring for the function."""
             pass
-        
+
         class DocumentedClass:
             """
             This is a multi-line docstring
@@ -211,7 +211,7 @@ class TestTreeSitterAnalyzer:
         '''
 
         file_path = self.create_test_file("test_docs.py", python_code)
-        analysis = self.analyzer.analyze_file(file_path)
+        self.analyzer.analyze_file(file_path)
 
         # Test structured analysis which includes documentation
         structured = self.analyzer.get_structured_analysis(file_path)
@@ -286,7 +286,7 @@ class TestTreeSitterAnalyzer:
             """
         def common_function():
             return 42
-        
+
         def another_function():
             pass
         """,
@@ -308,16 +308,16 @@ class TestTreeSitterAnalyzer:
         class MyClass:
             def method1(self):
                 pass
-            
+
             def method2(self):
                 pass
-        
+
         def function1():
             pass
-        
+
         def function2():
             pass
-        
+
         variable1 = 10
         variable2 = "hello"
         """,
@@ -368,14 +368,14 @@ class TestTreeSitterAnalyzer:
         python_code = """
         '''Module docstring.'''
         import os
-        
+
         class Calculator:
             '''A calculator class.'''
-            
+
             def add(self, a, b):
                 '''Add two numbers.'''
                 return a + b
-        
+
         def main():
             calc = Calculator()
             result = calc.add(1, 2)

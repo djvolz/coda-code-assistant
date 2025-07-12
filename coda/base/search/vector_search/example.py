@@ -57,13 +57,13 @@ async def chunking_example():
     # Sample text content
     text_content = """
     This is a sample document that demonstrates text chunking.
-    
+
     The text chunker can split long documents into smaller, manageable pieces
     while preserving semantic boundaries where possible.
-    
+
     This is useful for search applications where you want to index smaller
     chunks rather than entire documents.
-    
+
     Each chunk maintains metadata about its position in the original document.
     """
 
@@ -97,16 +97,16 @@ def fibonacci(n):
 
 class Calculator:
     """A simple calculator class."""
-    
+
     def __init__(self):
         self.history = []
-    
+
     def add(self, a, b):
         """Add two numbers."""
         result = a + b
         self.history.append(f"{a} + {b} = {result}")
         return result
-    
+
     def multiply(self, a, b):
         """Multiply two numbers."""
         result = a * b

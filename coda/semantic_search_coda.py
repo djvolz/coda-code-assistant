@@ -10,6 +10,9 @@ import logging
 from typing import Any
 
 from .base.constants import get_cache_dir
+from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
+from .base.search.vector_search.embeddings.factory import create_embedding_provider
+from .base.search.vector_search.manager import SemanticSearchManager
 from .services.config import get_config_service
 
 
@@ -34,10 +37,6 @@ def get_config() -> CodaConfig:
     config_service = get_config_service()
     return CodaConfig(config_service.to_dict())
 
-
-from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
-from .base.search.vector_search.embeddings.factory import create_embedding_provider
-from .base.search.vector_search.manager import SemanticSearchManager
 
 logger = logging.getLogger(__name__)
 

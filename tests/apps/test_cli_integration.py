@@ -36,9 +36,9 @@ def test_session_commands_moved_to_cli():
 
     # Should NOT be in base layer
     try:
-        from coda.base.session.commands import SessionCommands as BaseCommands
+        from coda.base.session.commands import SessionCommands as BaseCommands  # noqa: F401
 
-        assert False, "SessionCommands should not be in base layer"
+        raise AssertionError("SessionCommands should not be in base layer")
     except ImportError:
         pass  # This is expected
 
@@ -104,7 +104,7 @@ def test_cli_entry_point():
         # but that requires the package to be installed
 
     except ImportError as e:
-        assert False, f"Failed to import CLI entry point: {e}"
+        raise AssertionError(f"Failed to import CLI entry point: {e}") from e
 
 
 def test_cli_theme_integration():

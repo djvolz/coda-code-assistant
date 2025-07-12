@@ -184,7 +184,7 @@ class TestTreeSitterQueryAnalyzer:
         code = """
         def test_function():
             pass
-        
+
         class TestClass:
             pass
         """
@@ -302,7 +302,7 @@ class TestTreeSitterQueryAnalyzer:
             """
         def shared_function():
             pass
-        
+
         def unique_function():
             pass
         """,
@@ -313,7 +313,7 @@ class TestTreeSitterQueryAnalyzer:
             """
         def shared_function():
             return 42
-        
+
         class SharedClass:
             pass
         """,
@@ -358,19 +358,19 @@ class TestTreeSitterQueryAnalyzer:
         """Test structured analysis output format."""
         code = """
         '''Module docstring'''
-        
+
         import os
-        
+
         class MyClass:
             '''Class docstring'''
-            
+
             def method1(self):
                 '''Method docstring'''
                 pass
-        
+
         def function1():
             pass
-        
+
         MY_CONSTANT = 42
         my_variable = "test"
         """
@@ -539,7 +539,7 @@ trait MyTrait {}
         def documented_func():
             """This is a docstring."""
             pass
-        
+
         def undocumented_func():
             pass
         '''
@@ -581,7 +581,7 @@ trait MyTrait {}
             '''Unicode function name'''
             emoji = "🐍"
             return emoji
-        
+
         class ÜnicödeClass:
             pass
         """

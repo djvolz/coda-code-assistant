@@ -217,16 +217,16 @@ def demonstrate_standalone_usage() -> None:
     print(
         """
     from search import RepoMap, TreeSitterAnalyzer, DependencyGraph
-    
+
     # Analyze a repository
     repo = RepoMap("/path/to/repo")
     repo.scan_repository()
     print(repo.get_summary())
-    
+
     # Analyze code files
     analyzer = TreeSitterAnalyzer()
     result = analyzer.analyze_file("myfile.py")
-    
+
     # Build dependency graph
     graph = DependencyGraph(analyzer)
     analyses = analyzer.analyze_directory("/path/to/src")

@@ -276,12 +276,12 @@ class ErrorHandler:
 # Context managers for error handling
 
 
-class error_context:
+class ErrorContext:
     """
     Context manager for consistent error handling.
 
     Usage:
-        with error_context("tool_execution", tool_name="my_tool"):
+        with ErrorContext("tool_execution", tool_name="my_tool"):
             # code that might raise exceptions
     """
 

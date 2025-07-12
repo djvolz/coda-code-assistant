@@ -95,7 +95,7 @@ class CodeAnalyzer:
             # Make path relative to repo
             try:
                 rel_path = Path(file_path).relative_to(self.repo_path)
-            except:
+            except ValueError:
                 rel_path = file_path
 
             context_parts.append(
@@ -159,7 +159,7 @@ Keep your analysis concise and actionable."""
             try:
                 found = await self.search.search(query, limit=3)
                 results.extend(found)
-            except:
+            except Exception:
                 continue
 
         if not results:
@@ -174,7 +174,7 @@ Keep your analysis concise and actionable."""
         # Make path relative
         try:
             rel_path = Path(file_path).relative_to(self.repo_path)
-        except:
+        except ValueError:
             rel_path = file_path
 
         print(f"\nFound '{function_name}' in {rel_path}\n")
@@ -187,7 +187,7 @@ Keep your analysis concise and actionable."""
 
 Include:
 1. Purpose and functionality
-2. Parameters and return values  
+2. Parameters and return values
 3. Example usage
 4. Any side effects or dependencies
 5. Potential edge cases or error conditions
@@ -234,7 +234,7 @@ Be thorough but clear."""
             # Make path relative
             try:
                 rel_path = Path(file_path).relative_to(self.repo_path)
-            except:
+            except ValueError:
                 rel_path = file_path
 
             print(f"{i}. {rel_path}:{line_num} (similarity: {score:.2f})")

@@ -171,7 +171,7 @@ class RepoMap:
         Returns:
             True if the path should be ignored
         """
-        path_str = str(path)
+        str(path)
         name = path.name
 
         # Check if it's a hidden file (starts with .)

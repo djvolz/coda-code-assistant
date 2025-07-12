@@ -119,7 +119,7 @@ def test_config_basic_functionality():
         },
     )
 
-    assert config.get_bool("debug") == False
+    assert not config.get_bool("debug")
     assert config.get_string("server.host") == "localhost"
     assert config.get_int("server.port") == 8080
 

@@ -92,7 +92,7 @@ def render_provider_settings():
         with st.expander("LiteLLM Configuration", expanded=True):
             st.info("LiteLLM uses environment variables for API keys")
 
-            custom_models = st.text_area(
+            st.text_area(
                 "Custom Model Mappings (JSON)",
                 value="{}",
                 help="Custom model name mappings",
@@ -181,17 +181,17 @@ def render_appearance_settings():
     st.subheader("Appearance Settings")
 
     st.markdown("### Theme")
-    theme = st.selectbox(
+    st.selectbox(
         "Color Theme",
         ["Default", "Dark", "Light", "Colorful"],
         help="Select the UI color theme",
     )
 
     st.markdown("### Layout")
-    wide_mode = st.checkbox("Use wide layout by default", value=True)
+    st.checkbox("Use wide layout by default", value=True)
 
     st.markdown("### Code Highlighting")
-    code_theme = st.selectbox(
+    st.selectbox(
         "Code Editor Theme",
         ["monokai", "github", "tomorrow", "twilight", "solarized_dark", "solarized_light"],
         help="Syntax highlighting theme for code blocks",
@@ -206,14 +206,14 @@ def render_advanced_settings():
     st.subheader("Advanced Settings")
 
     st.markdown("### Database")
-    db_path = st.text_input(
+    st.text_input(
         "Session Database Path",
         value=str(Path.home() / ".config" / "coda" / "sessions.db"),
         help="Path to the SQLite database file",
     )
 
     st.markdown("### Logging")
-    log_level = st.selectbox(
+    st.selectbox(
         "Log Level",
         ["DEBUG", "INFO", "WARNING", "ERROR"],
         index=1,
@@ -223,7 +223,7 @@ def render_advanced_settings():
     col1, col2 = st.columns(2)
 
     with col1:
-        max_retries = st.number_input(
+        st.number_input(
             "Max Retries",
             min_value=0,
             max_value=10,
@@ -232,7 +232,7 @@ def render_advanced_settings():
         )
 
     with col2:
-        timeout = st.number_input(
+        st.number_input(
             "Request Timeout (seconds)",
             min_value=10,
             max_value=300,

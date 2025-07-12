@@ -257,12 +257,12 @@ class TestFileManager:
 
     def test_is_text_file(self):
         """Test text file detection."""
-        assert is_text_file("text/plain") == True
-        assert is_text_file("text/html") == True
-        assert is_text_file("application/json") == True
-        assert is_text_file("application/javascript") == True
-        assert is_text_file("image/jpeg") == False
-        assert is_text_file("video/mp4") == False
+        assert is_text_file("text/plain")
+        assert is_text_file("text/html")
+        assert is_text_file("application/json")
+        assert is_text_file("application/javascript")
+        assert not is_text_file("image/jpeg")
+        assert not is_text_file("video/mp4")
 
     def test_get_language_from_filename(self):
         """Test language detection from filename."""

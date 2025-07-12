@@ -16,7 +16,7 @@ def get_imports_from_file(file_path: Path) -> set[str]:
     try:
         with open(file_path) as f:
             tree = ast.parse(f.read())
-    except:
+    except (OSError, SyntaxError):
         return set()
 
     imports = set()

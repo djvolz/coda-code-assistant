@@ -69,7 +69,7 @@ def render_provider_status():
         try:
             provider_config = config.get(provider_type, {})
             if provider_config.get("enabled", False):
-                provider = provider_class(config=provider_config)
+                provider_class(config=provider_config)
 
                 status = "🟢 Online"
                 health = "Healthy"

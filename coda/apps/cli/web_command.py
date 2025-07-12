@@ -23,7 +23,7 @@ console = Console()
 def web(port: int, host: str, browser: bool, debug: bool):
     """Launch the Coda Assistant web interface."""
     try:
-        config = get_config_service()  # Validate config loads successfully
+        get_config_service()  # Validate config loads successfully
     except Exception as e:
         console.print(f"[red]Error loading configuration: {e}[/red]")
         sys.exit(1)

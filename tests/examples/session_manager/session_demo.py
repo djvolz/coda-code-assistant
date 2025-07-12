@@ -71,7 +71,7 @@ class SessionDemo:
                 try:
                     created_dt = datetime.fromisoformat(created)
                     created = created_dt.strftime("%Y-%m-%d %H:%M")
-                except:
+                except ValueError:
                     pass
 
             print(f"  Name: {name}")
