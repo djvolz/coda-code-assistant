@@ -4,10 +4,10 @@ on:
   push:
     branches: [ main, develop, feature/* ]
     paths:
-      - 'coda/agents/**'
-      - 'coda/tools/**'
-      - 'coda/cli/agent_chat.py'
-      - 'coda/cli/tool_chat.py'
+      - 'coda/services/agents/**'
+      - 'coda/services/tools/**'
+      - 'coda/apps/cli/agent_chat.py'
+      - 'coda/apps/cli/tool_chat.py'
       - 'tests/agents/**'
       - 'tests/tools/**'
       - 'tests/cli/*agent*'
@@ -16,10 +16,10 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - 'coda/agents/**'
-      - 'coda/tools/**'
-      - 'coda/cli/agent_chat.py'
-      - 'coda/cli/tool_chat.py'
+      - 'coda/services/agents/**'
+      - 'coda/services/tools/**'
+      - 'coda/apps/cli/agent_chat.py'
+      - 'coda/apps/cli/tool_chat.py'
       - 'tests/agents/**'
       - 'tests/tools/**'
       - 'tests/cli/*agent*'
@@ -50,12 +50,12 @@ jobs:
     - name: Run agent unit tests
       run: |
         rm -f .coverage* coverage.xml
-        uv run python -m pytest tests/agents/ -v --cov=coda/agents --cov-report=xml --cov-report=term-missing
+        uv run python -m pytest tests/agents/ -v --cov=coda/services/agents --cov-report=xml --cov-report=term-missing
     
     - name: Run tool unit tests
       run: |
         # Note: Using --cov-append to combine with agent coverage
-        uv run python -m pytest tests/tools/ -v --cov=coda/tools --cov-append --cov-report=xml --cov-report=term-missing
+        uv run python -m pytest tests/tools/ -v --cov=coda/services/tools --cov-append --cov-report=xml --cov-report=term-missing
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -143,8 +143,8 @@ jobs:
         cat > test_agent_performance.py << 'EOF'
         import asyncio
         import time
-        from coda.agents.agent import Agent
-        from coda.agents.builtin_tools import get_builtin_tools
+        from coda.services.agents.agent import Agent
+        from coda.services.agents.builtin_tools import get_builtin_tools
         from unittest.mock import Mock, AsyncMock
 
         async def benchmark_tool_execution():
@@ -192,7 +192,7 @@ jobs:
         rm -f .coverage* coverage.xml
         # Run all agent-related tests with coverage
         uv run python -m pytest tests/agents/ tests/tools/ tests/cli/*agent* tests/cli/*tool* \
-          -v --cov=coda/agents --cov=coda/tools --cov=coda/cli/agent_chat --cov=coda/cli/tool_chat \
+          -v --cov=coda/services/agents --cov=coda/services/tools --cov=coda/apps/cli/agent_chat --cov=coda/apps/cli/tool_chat \
           --cov-report=html --cov-report=term
     
     - name: Upload coverage HTML report

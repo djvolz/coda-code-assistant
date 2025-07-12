@@ -4,9 +4,9 @@ on:
   push:
     branches: [ main, develop, feature/*observability* ]
     paths:
-      - 'coda/observability/**'
-      - 'coda/cli/**'
-      - 'coda/configuration.py'
+      - 'coda/base/observability/**'
+      - 'coda/apps/cli/**'
+      - 'coda/services/config/app_config.py'
       - 'tests/**/observability/**'
       - 'tests/**/cli/**'
       - 'tests/**/test_configuration.py'
@@ -14,9 +14,9 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - 'coda/observability/**'
-      - 'coda/cli/**'
-      - 'coda/configuration.py'
+      - 'coda/base/observability/**'
+      - 'coda/apps/cli/**'
+      - 'coda/services/config/app_config.py'
       - 'tests/**/observability/**'
       - 'tests/**/cli/**'
       - 'tests/**/test_configuration.py'
@@ -45,7 +45,7 @@ jobs:
     - name: Run observability unit tests
       run: |
         uv run python -m pytest tests/unit/observability/ tests/unit/cli/ tests/unit/test_configuration.py \
-          -v --cov=coda.observability --cov=coda.cli --cov=coda.configuration \
+          -v --cov=coda.base.observability --cov=coda.apps.cli --cov=coda.services.config \
           --cov-report=xml --cov-report=term-missing \
           --cov-fail-under=80
     
@@ -82,7 +82,7 @@ jobs:
       run: |
         uv run python -m pytest tests/integration/observability/ \
           -v -m integration \
-          --cov=coda.observability --cov=coda.cli \
+          --cov=coda.base.observability --cov=coda.apps.cli \
           --cov-report=xml --cov-report=term-missing \
           --cov-fail-under=70
     
@@ -195,7 +195,7 @@ jobs:
         uv run python -m pytest \
           tests/unit/observability/ tests/unit/cli/ tests/unit/test_configuration.py \
           tests/integration/observability/ \
-          -v --cov=coda.observability --cov=coda.cli --cov=coda.configuration \
+          -v --cov=coda.base.observability --cov=coda.apps.cli --cov=coda.services.config \
           --cov-report=html --cov-report=term
     
     - name: Upload coverage HTML report

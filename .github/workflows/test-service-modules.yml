@@ -1,0 +1,57 @@
+name: Service Module Tests
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths:
+      - 'coda/services/**'
+      - 'coda/base/**'  # Service modules depend on base modules
+      - 'tests/services/**'
+      - '.github/workflows/test-service-modules.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'coda/services/**'
+      - 'coda/base/**'
+      - 'tests/services/**'
+
+jobs:
+  test-service-modules:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Run service layer tests
+      run: |
+        uv run python -m pytest tests/services/ -v \
+          --cov=coda.services \
+          --cov-report=xml \
+          --cov-report=term-missing
+    
+    - name: Test service integration
+      run: |
+        # Test that services properly integrate base modules
+        uv run python -m pytest tests/test_service_layer.py -v
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: service-modules
+        name: service-modules-coverage

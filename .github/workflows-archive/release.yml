@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force a release even without conventional commits'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip release]')
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Set up Python
+      run: uv python install 3.11
+    
+    - name: Install dependencies
+      run: uv sync --all-extras
+    
+    - name: Check commit type
+      id: commit_check
+      run: |
+        # Get commits since last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -z "$LAST_TAG" ]; then
+          COMMITS=$(git log --pretty=format:"%s" --no-merges)
+        else
+          COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"%s" --no-merges)
+        fi
+        
+        # Check for conventional commits that warrant a release
+        SHOULD_RELEASE=false
+        RELEASE_TYPE="patch"
+        
+        # Check commit types
+        if echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?: "; then
+          SHOULD_RELEASE=true
+          RELEASE_TYPE="minor"
+        fi
+        
+        if echo "$COMMITS" | grep -qE "^(fix|bugfix)(\(.+\))?: "; then
+          SHOULD_RELEASE=true
+        fi
+        
+        if echo "$COMMITS" | grep -qE "^(perf|refactor)(\(.+\))?: "; then
+          SHOULD_RELEASE=true
+        fi
+        
+        # Breaking changes bump major (if we detect them)
+        if echo "$COMMITS" | grep -qE "BREAKING CHANGE:|!:"; then
+          RELEASE_TYPE="major"
+        fi
+        
+        # Force release if requested
+        if [ "${{ github.event.inputs.force_release }}" = "true" ]; then
+          SHOULD_RELEASE=true
+        fi
+        
+        echo "SHOULD_RELEASE=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
+        echo "RELEASE_TYPE=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+        echo "Release decision: $SHOULD_RELEASE (type: $RELEASE_TYPE)"
+    
+    - name: Update version
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
+      id: version
+      run: |
+        # Get current version
+        OLD_VERSION=$(grep '^__version__ = ' coda/__version__.py | cut -d'"' -f2)
+        echo "Current version: $OLD_VERSION"
+        
+        # Update to new timestamp version
+        uv run python scripts/update_version.py
+        
+        # Get the new version after update
+        NEW_VERSION=$(grep '^__version__ = ' coda/__version__.py | cut -d'"' -f2)
+        
+        echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_OUTPUT
+        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "Updated version from $OLD_VERSION to $NEW_VERSION"
+    
+    - name: Generate changelog
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
+      id: changelog
+      run: |
+        # Get the last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        # Generate changelog
+        if [ -z "$LAST_TAG" ]; then
+          COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+        else
+          COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+        fi
+        
+        # Create changelog file
+        cat > RELEASE_NOTES.md << EOF
+        ## What's Changed
+        
+        $COMMITS
+        
+        **Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...v${{ steps.version.outputs.NEW_VERSION }}
+        EOF
+        
+        echo "Generated changelog"
+    
+    - name: Run tests
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
+      run: |
+        uv run python -m pytest tests/ -v -m "unit or not integration"
+    
+    - name: Build package
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
+      run: |
+        uv build
+    
+    - name: Commit version bump
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add coda/__version__.py
+        git commit -m "chore: release v${{ steps.version.outputs.NEW_VERSION }} [skip ci]" || echo "No changes to commit"
+        git push
+    
+    - name: Create Release
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.NEW_VERSION }}
+        name: v${{ steps.version.outputs.NEW_VERSION }}
+        body_path: RELEASE_NOTES.md
+        draft: false
+        prerelease: false
+        files: |
+          dist/*
+    
+    - name: Upload to PyPI
+      if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        uv pip install twine
+        uv run twine upload dist/* || echo "::warning::PyPI upload failed"

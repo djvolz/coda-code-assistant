@@ -4,13 +4,13 @@ on:
   push:
     branches: [ main, develop, feature/*-web-ui ]
     paths:
-      - 'coda/web/**'
+      - 'coda/apps/web/**'
       - 'tests/web/**'
       - '.github/workflows/test-web-ui.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'coda/web/**'
+      - 'coda/apps/web/**'
       - 'tests/web/**'
   workflow_dispatch:
     inputs:
@@ -51,7 +51,7 @@ jobs:
     
     - name: Run unit tests
       run: |
-        uv run python -m pytest tests/web/unit/ -v --cov=coda.web --cov-report=xml --cov-report=term-missing
+        uv run python -m pytest tests/web/unit/ -v --cov=coda.apps.web --cov-report=xml --cov-report=term-missing
     
     - name: Upload coverage
       uses: codecov/codecov-action@v3
@@ -118,7 +118,7 @@ jobs:
         echo "PORT=$PORT" >> $GITHUB_ENV
         
         # Start server with proper configuration
-        uv run streamlit run coda/web/app.py \
+        uv run streamlit run coda/apps/web/app.py \
           --server.headless true \
           --server.port $PORT \
           --server.enableCORS false \
@@ -201,7 +201,7 @@ jobs:
     - name: Run performance tests
       run: |
         # Start Streamlit server
-        uv run streamlit run coda/web/app.py --server.headless true --server.port 8503 &
+        uv run streamlit run coda/apps/web/app.py --server.headless true --server.port 8503 &
         SERVER_PID=$!
         
         # Wait for server

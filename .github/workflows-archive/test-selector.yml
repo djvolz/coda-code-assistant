@@ -1,0 +1,57 @@
+name: Test Interactive Selector
+
+on:
+  push:
+    paths:
+      - 'coda/apps/cli/completion_selector.py'
+      - 'coda/apps/cli/generic_command_selector.py'
+      - 'coda/apps/cli/interactive*.py'
+      - 'tests/apps/test_*selector*.py'
+      - '.github/workflows/test-selector.yml'
+  pull_request:
+    paths:
+      - 'coda/apps/cli/completion_selector.py'
+      - 'coda/apps/cli/generic_command_selector.py'
+      - 'coda/apps/cli/interactive*.py'
+      - 'tests/apps/test_*selector*.py'
+
+jobs:
+  test-selector:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      
+    - name: Set up Python
+      run: uv python install
+      
+    - name: Install dependencies
+      run: |
+        uv sync --extra dev
+        
+    - name: Run unit tests
+      run: |
+        uv run pytest tests/apps/test_completion_selector.py -v
+        uv run pytest tests/apps/test_generic_command_selector.py -v
+        
+    - name: Run interactive tests (non-CI)
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        # Interactive tests require a TTY, so we skip them in CI
+        # They can be run manually with workflow_dispatch
+        uv run pytest tests/apps/test_interactive_selector.py -v || true
+        
+    - name: Test selector imports
+      run: |
+        uv run python -c "
+from coda.apps.cli.completion_selector import (
+    CompletionSelector, CompletionModelSelector, CompletionThemeSelector
+)
+from coda.apps.cli.generic_command_selector import (
+    GenericCommandSelector, create_command_selector
+)
+print('✓ All selector imports work correctly')
+"
