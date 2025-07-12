@@ -44,6 +44,28 @@ Coda is built with a clean, three-layer architecture:
 
 ## 🚀 Quick Start
 
+### Try without installing
+
+```bash
+# Run directly with uvx (no installation needed!)
+uvx --from coda-code-assistant coda
+```
+
+### Install from PyPI
+
+```bash
+# Install with pip
+pip install coda-code-assistant
+
+# Or install with uv
+uv pip install coda-code-assistant
+
+# Run Coda
+coda
+```
+
+### Install from source
+
 ```bash
 # Clone the repository
 git clone https://github.com/djvolz/coda-code-assistant.git
