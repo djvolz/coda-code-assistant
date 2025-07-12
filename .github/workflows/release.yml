@@ -177,8 +177,6 @@ jobs:
     - name: Upload to PyPI
       if: steps.commit_check.outputs.SHOULD_RELEASE == 'true'
       env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       run: |
-        uv pip install twine
-        uv run twine upload dist/* || echo "::warning::PyPI upload failed"
+        uv publish || echo "::warning::PyPI upload failed"
