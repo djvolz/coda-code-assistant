@@ -9,6 +9,7 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 
 from coda.base.providers.base import BaseProvider, Message, Role, Tool, ToolCall
+from coda.base.theme.models import ConsoleTheme
 
 from .agent_types import (
     PerformedAction,
@@ -38,6 +39,7 @@ class Agent:
         temperature: float = 0.7,
         max_tokens: int = 2000,
         console: Console | None = None,
+        theme: ConsoleTheme | None = None,
         **kwargs,
     ):
         """
@@ -64,6 +66,7 @@ class Agent:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.console = console or Console()
+        self.theme = theme or ConsoleTheme()  # Use default theme if not provided
         self.kwargs = kwargs
 
         # Process tools
@@ -83,7 +86,7 @@ class Agent:
                     function_tools.append(FunctionTool.from_callable(tool))
                 except ValueError:
                     self.console.print(
-                        f"[yellow]Warning: {tool.__name__} is not decorated with @tool, skipping[/yellow]"
+                        f"[{self.theme.warning}]Warning: {tool.__name__} is not decorated with @tool, skipping[/{self.theme.warning}]"
                     )
 
         return function_tools
@@ -191,7 +194,7 @@ class Agent:
                     if loop_detected:
                         # Break out of loop with a directive to provide final answer
                         self.console.print(
-                            "[yellow]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/yellow]"
+                            f"[{self.theme.warning}]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/{self.theme.warning}]"
                         )
 
                         # Force a final response by disabling tool support temporarily
@@ -217,7 +220,7 @@ class Agent:
                             else:
                                 # If still no content, use a fallback
                                 self.console.print(
-                                    "[red]Unable to get final response. Providing fallback.[/red]"
+                                    f"[{self.theme.error}]Unable to get final response. Providing fallback.[/{self.theme.error}]"
                                 )
                                 final_response = type(
                                     "obj",
@@ -230,7 +233,7 @@ class Agent:
                                 break
 
                         except Exception as e:
-                            self.console.print(f"[red]Error getting final response: {e}[/red]")
+                            self.console.print(f"[{self.theme.error}]Error getting final response: {e}[/{self.theme.error}]")
                             final_response = type(
                                 "obj",
                                 (object,),
@@ -299,7 +302,7 @@ class Agent:
                     wrapped_error = ErrorHandler.wrap_error(e, "agent_execution")
 
                 error_msg = wrapped_error.user_message()
-                self.console.print(f"[red]{error_msg}[/red]")
+                self.console.print(f"[{self.theme.error}]{error_msg}[/{self.theme.error}]")
 
                 # Log detailed error for debugging
                 if wrapped_error.severity.value in ["error", "critical"]:
@@ -311,7 +314,7 @@ class Agent:
                 break
 
         if step_count >= max_steps:
-            self.console.print(f"[yellow]Reached maximum steps ({max_steps})[/yellow]")
+            self.console.print(f"[{self.theme.warning}]Reached maximum steps ({max_steps})[/{self.theme.warning}]")
 
         # Return response
         return RunResponse(
@@ -434,7 +437,7 @@ class Agent:
                     if loop_detected:
                         # Break out of loop with a directive to provide final answer
                         self.console.print(
-                            "[yellow]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/yellow]"
+                            f"[{self.theme.warning}]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/{self.theme.warning}]"
                         )
 
                         # Force a final response using streaming
@@ -477,12 +480,12 @@ class Agent:
                             else:
                                 # Fallback
                                 fallback_content = "I have executed the requested tools but encountered an issue providing a final response."
-                                self.console.print(f"[red]{fallback_content}[/red]")
+                                self.console.print(f"[{self.theme.error}]{fallback_content}[/{self.theme.error}]")
                                 return fallback_content, messages
 
                         except Exception as e:
                             error_content = f"I executed the requested tools but encountered an error providing the final response: {e}"
-                            self.console.print(f"[red]{error_content}[/red]")
+                            self.console.print(f"[{self.theme.error}]{error_content}[/{self.theme.error}]")
                             return error_content, messages
 
                     # Display response if any
@@ -548,11 +551,11 @@ class Agent:
 
             except Exception as e:
                 error_msg = f"Error during agent execution: {str(e)}"
-                self.console.print(f"[red]{error_msg}[/red]")
+                self.console.print(f"[{self.theme.error}]{error_msg}[/{self.theme.error}]")
                 return error_msg, messages
 
         if step_count >= max_steps:
-            self.console.print(f"[yellow]Reached maximum steps ({max_steps})[/yellow]")
+            self.console.print(f"[{self.theme.warning}]Reached maximum steps ({max_steps})[/{self.theme.warning}]")
 
         return final_response_content, messages
 
@@ -694,13 +697,13 @@ class Agent:
 
     def _print_tool_execution(self, tool_call: ToolCall):
         """Print tool execution info."""
-        self.console.print(f"\n[cyan]→ Running tool:[/cyan] {tool_call.name}")
+        self.console.print(f"\n[{self.theme.info}]→ Running tool:[/{self.theme.info}] {tool_call.name}")
         if tool_call.arguments:
             args_str = json.dumps(tool_call.arguments, indent=2)
             self.console.print(
                 Panel(
                     Syntax(args_str, "json", theme="monokai"),
-                    title="[cyan]Arguments[/cyan]",
+                    title=f"[{self.theme.info}]Arguments[/{self.theme.info}]",
                     expand=False,
                 )
             )
@@ -708,9 +711,9 @@ class Agent:
     def _print_tool_result(self, action: PerformedAction):
         """Print tool result."""
         if "Error" in action.function_call_output:
-            self.console.print(f"[red]✗ Error:[/red] {action.function_call_output}")
+            self.console.print(f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {action.function_call_output}")
         else:
-            self.console.print("[green]✓ Result:[/green]")
+            self.console.print(f"[{self.theme.success}]✓ Result:[/{self.theme.success}]")
             # Try to format as JSON
             try:
                 result_json = json.loads(action.function_call_output)

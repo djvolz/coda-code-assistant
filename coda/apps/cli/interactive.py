@@ -83,12 +83,12 @@ Your conversations will NOT be saved automatically.
 
 async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
     """Initialize and connect to the provider."""
-    console.print(f"\n[green]Provider:[/green] {provider}")
-    console.print(f"[yellow]Initializing {provider}...[/yellow]")
+    console.print(f"\n[{theme.success}]Provider:[/{theme.success}] {provider}")
+    console.print(f"[{theme.warning}]Initializing {provider}...[/{theme.warning}]")
 
     # Create provider instance
     provider_instance = factory.create(provider)
-    console.print(f"[green]✓ Connected to {provider}[/green]")
+    console.print(f"[{theme.success}]✓ Connected to {provider}[/{theme.success}]")
 
     return provider_instance
 
@@ -98,7 +98,7 @@ async def _get_chat_models(provider_instance, console: Console):
     # List models
     try:
         models = provider_instance.list_models()
-        console.print(f"[green]✓ Found {len(models)} available models[/green]")
+        console.print(f"[{theme.success}]✓ Found {len(models)} available models[/{theme.success}]")
     except Exception:
         # Re-raise the exception to be handled by the caller
         raise
@@ -137,10 +137,10 @@ async def _select_model(unique_models, model: str, console: Console):
         model = await selector.select_interactive()
 
         if not model:
-            console.print("\n[yellow]No model selected. Exiting.[/yellow]")
+            console.print(f"\n[{theme.warning}]No model selected. Exiting.[/{theme.warning}]")
             return None
 
-    console.print(f"[green]Model:[/green] {model}")
+    console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
     console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
     console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
     console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
@@ -159,10 +159,10 @@ async def _handle_chat_interaction(
     try:
         user_input = await cli.get_input()
     except (KeyboardInterrupt, EOFError) as e:
-        console.print(f"[red]Input interrupted: {e}[/red]")
+        console.print(f"[{theme.error}]Input interrupted: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception as e:
-        console.print(f"[red]Unexpected error getting input: {e}[/red]")
+        console.print(f"[{theme.error}]Unexpected error getting input: {e}[/{theme.error}]")
         return True  # Continue loop
 
     # Skip empty input (from Ctrl+C)
@@ -190,10 +190,10 @@ async def _handle_chat_interaction(
 
                 return True
         except (ValueError, AttributeError) as e:
-            console.print(f"[red]Invalid command: {e}[/red]")
+            console.print(f"[{theme.error}]Invalid command: {e}[/{theme.error}]")
             return True
         except Exception as e:
-            console.print(f"[red]Error processing command: {e}[/red]")
+            console.print(f"[{theme.error}]Error processing command: {e}[/{theme.error}]")
             return True
 
     # Check for multiline indicator
@@ -272,7 +272,7 @@ async def _handle_chat_interaction(
         if use_tools and model_supports_tools:
             # Use agent-based chat
             with console.status(
-                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
+                f"[bold {theme.info}]{thinking_msg}...[/bold {theme.info}]", spinner="dots"
             ) as status:
                 agent_handler = AgentChatHandler(provider_instance, cli, console)
 
@@ -324,7 +324,7 @@ async def _handle_chat_interaction(
         else:
             # Use regular streaming (no tools)
             with console.status(
-                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
+                f"[bold {theme.info}]{thinking_msg}...[/bold {theme.info}]", spinner="dots"
             ) as status:
                 stream = provider_instance.chat_stream(
                     messages=chat_messages,
@@ -339,13 +339,13 @@ async def _handle_chat_interaction(
                         # Stop the spinner when we get the first chunk
                         status.stop()
                         # Just print the assistant label
-                        console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                        console.print(f"\n[bold {theme.assistant_message}]Assistant:[/bold {theme.assistant_message}] ", end="")
                         first_chunk = False
 
                     # Check for interrupt
                     if cli.interrupt_event.is_set():
                         interrupted = True
-                        console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                        console.print(f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]")
                         break
 
                     # Stream the response as plain text
@@ -356,7 +356,7 @@ async def _handle_chat_interaction(
             if full_response:
                 console.print()  # Ensure we end on a new line
     except (ConnectionError, TimeoutError) as e:
-        console.print(f"\n\n[red]Network error during streaming: {e}[/red]")
+        console.print(f"\n\n[{theme.error}]Network error during streaming: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception:
         if cli.interrupt_event.is_set():
@@ -416,10 +416,10 @@ async def run_interactive_session(
 
     # Load last session if requested
     if resume:
-        console.print("\n[cyan]Resuming last session...[/cyan]")
+        console.print(f"\n[{theme.info}]Resuming last session...[/{theme.info}]")
         result = cli.session_commands._load_last_session()
         if result:  # Error message
-            console.print(f"[yellow]{result}[/yellow]")
+            console.print(f"[{theme.warning}]{result}[/{theme.warning}]")
         else:
             # Successfully loaded, show a separator
             console.print("\n[dim]─" * 50 + "[/dim]\n")
@@ -485,17 +485,17 @@ async def run_interactive_session(
 
     except ValueError as e:
         if "compartment_id is required" in str(e):
-            console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] OCI compartment ID not configured")
             console.print("\nPlease set it via one of these methods:")
             console.print(
-                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+                f"1. Environment variable: [{theme.info}]export OCI_COMPARTMENT_ID='your-compartment-id'[/{theme.info}]"
             )
-            console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+            console.print(f"2. Coda config file: [{theme.info}]~/.config/coda/config.toml[/{theme.info}]")
         elif "Unknown provider" in str(e):
-            console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] Provider '{provider}' not found")
             console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
         else:
-            console.print(f"\n[red]Error:[/red] {e}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
         if debug:
             import traceback
 
@@ -514,7 +514,7 @@ async def run_interactive_session(
             # Show the formatted error message from the provider
             console.print(f"\n[red]Error:[/red] {error_msg}")
         else:
-            console.print(f"\n[red]Error:[/red] {e}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
         if debug:
             import traceback
 
@@ -549,16 +549,16 @@ def interactive_main(
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
-        "[bold cyan]Coda[/bold cyan] - Code Assistant\n"
+        f"[bold {theme.info}]Coda[/bold {theme.info}] - Code Assistant\n"
         f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
         "[dim]Interactive mode with prompt-toolkit[/dim]"
     )
 
-    console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
+    console.print(Panel(welcome_text, title="Welcome", border_style=theme.panel_border))
 
     if one_shot:
         # Handle one-shot mode (simplified for now)
-        console.print("[yellow]One-shot mode not yet updated for enhanced CLI[/yellow]")
+        console.print(f"[{theme.warning}]One-shot mode not yet updated for enhanced CLI[/{theme.warning}]")
         console.print(f"Would execute: {one_shot}")
     else:
         # Run interactive session

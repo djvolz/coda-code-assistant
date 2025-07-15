@@ -6,6 +6,7 @@ from coda.base.providers.base import BaseProvider, Message
 from coda.services.agents import Agent
 from coda.services.agents.builtin_tools import get_builtin_tools
 from coda.services.agents.tool_adapter import MCPToolAdapter
+from coda.services.config import get_config_service
 
 
 class AgentChatHandler:
@@ -18,6 +19,10 @@ class AgentChatHandler:
         self.console = console
         self.agent = None
         self.use_tools = True
+        
+        # Get theme from config service
+        config_service = get_config_service()
+        self.theme = config_service.theme_manager.get_console_theme()
 
     def should_use_agent(self, model: str) -> bool:
         """Check if we should use agent-based chat."""
@@ -47,10 +52,9 @@ class AgentChatHandler:
             if tool_name not in tool_names:
                 tools.append(tool)
                 tool_names.add(tool_name)
-            else:
-                # Log duplicate tool for debugging
-                if hasattr(self, 'console') and self.console:
-                    self.console.print(f"[dim]Skipping duplicate MCP tool: {tool_name}[/dim]", highlight=False)
+            # else:
+                # Silently skip duplicates - no need to print during normal operation
+                # Users don't need to see this implementation detail
 
         return tools
 
@@ -98,6 +102,7 @@ Each user request should be evaluated independently. Previous tool usage does no
                 temperature=temperature,
                 max_tokens=max_tokens,
                 console=self.console,
+                theme=self.theme,
             )
 
         # Extract user input from last message
@@ -120,7 +125,7 @@ Each user request should be evaluated independently. Previous tool usage does no
 
         except Exception as e:
             error_msg = f"Error during agent chat: {str(e)}"
-            self.console.print(f"[red]{error_msg}[/red]")
+            self.console.print(f"[{self.theme.error}]{error_msg}[/{self.theme.error}]")
             return error_msg, messages
 
     async def stream_chat_fallback(
@@ -144,12 +149,12 @@ Each user request should be evaluated independently. Previous tool usage does no
 
             for chunk in stream:
                 if first_chunk:
-                    self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                    self.console.print(f"\n[bold {self.theme.assistant_message}]Assistant:[/bold {self.theme.assistant_message}] ", end="")
                     first_chunk = False
 
                 # Check for interrupt
                 if hasattr(self.cli, "interrupt_event") and self.cli.interrupt_event.is_set():
-                    self.console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                    self.console.print(f"\n\n[{self.theme.warning}]Response interrupted by user[/{self.theme.warning}]")
                     break
 
                 # Stream the response
@@ -161,7 +166,7 @@ Each user request should be evaluated independently. Previous tool usage does no
                 self.console.print()
 
         except Exception as e:
-            self.console.print(f"\n[red]Error during streaming: {str(e)}[/red]")
+            self.console.print(f"\n[{self.theme.error}]Error during streaming: {str(e)}[/{self.theme.error}]")
 
         return full_response
 
