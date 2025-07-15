@@ -107,7 +107,6 @@ class InteractiveCLI(CommandHandler):
         handler_map = {
             "help": self._cmd_help,
             "model": self._cmd_model,
-            "provider": self._cmd_provider,
             "mode": self._cmd_mode,
             "session": self._cmd_session,
             "export": self._cmd_export,
@@ -412,9 +411,6 @@ class InteractiveCLI(CommandHandler):
             # Use the shared model switching logic
             self.switch_model(args)
 
-    def _cmd_provider(self, args: str):
-        """Switch provider."""
-        self.show_provider_info(args)
 
     async def _cmd_mode(self, args: str):
         """Change developer mode."""

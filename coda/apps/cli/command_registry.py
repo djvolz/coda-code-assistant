@@ -188,23 +188,6 @@ class CommandRegistry:
         CommandDefinition(name="plan", description="Planning mode", type=CommandType.OPTION),
     ]
 
-    # Provider options
-    PROVIDER_OPTIONS = [
-        CommandDefinition(
-            name="oci_genai",
-            description="Oracle Cloud Infrastructure GenAI",
-            type=CommandType.OPTION,
-        ),
-        CommandDefinition(
-            name="ollama", description="Local models via Ollama", type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="openai", description="OpenAI GPT models (coming soon)", type=CommandType.OPTION
-        ),
-        CommandDefinition(
-            name="litellm", description="100+ providers via LiteLLM", type=CommandType.OPTION
-        ),
-    ]
 
     # Tools subcommands
     TOOLS_SUBCOMMANDS = [
@@ -356,13 +339,6 @@ class CommandRegistry:
             aliases=["m"],
             examples=["/model", "/model gpt-4"],
             completion_type="model_name",
-        ),
-        CommandDefinition(
-            name="provider",
-            description="Show provider information",
-            aliases=["p"],
-            subcommands=PROVIDER_OPTIONS,
-            examples=["/provider"],
         ),
         CommandDefinition(
             name="mode",

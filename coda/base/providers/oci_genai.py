@@ -575,7 +575,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
     def _convert_tools_to_generic(self, tools: list[Tool]) -> list:
         """Convert standard tools to OCI generic format (FunctionDefinition)."""
         from oci.generative_ai_inference.models import FunctionDefinition
-        
+
         oci_tools = []
         # Store mapping of function names to original names for tool calls
         self._tool_name_mapping = {}
@@ -697,7 +697,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                                 arguments = json.loads(arguments)
                             except json.JSONDecodeError:
                                 arguments = {"raw": arguments}
-                        
+
                         tool_call = ToolCall(
                             id=getattr(tc, "id", tc.function.name),  # Use ID if available, else name
                             name=original_name,

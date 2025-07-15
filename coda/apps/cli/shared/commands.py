@@ -115,46 +115,6 @@ class CommandHandler(ABC):
 
         return CommandResult.HANDLED
 
-    def show_provider_info(self, args: str) -> CommandResult:
-        """Show provider information."""
-        if not args:
-            self.console.print("\n[bold]Provider Management[/bold]")
-            self.console.print(f"[yellow]Current provider:[/yellow] {self.provider_name}\n")
-
-            self.console.print("[bold]Available providers:[/bold]")
-
-            # Show all known providers with status
-            if self.factory:
-                available = self.factory.list_available()
-                for provider in available:
-                    if provider == self.provider_name:
-                        self.console.print(f"  [green]▶ {provider}[/green]")
-                    else:
-                        self.console.print(f"  [cyan]{provider}[/cyan]")
-            else:
-                # Default list when factory is not available
-                providers = [
-                    ("oci_genai", "Oracle Cloud Infrastructure GenAI"),
-                    ("ollama", "Local models via Ollama"),
-                    ("litellm", "100+ providers via LiteLLM"),
-                ]
-                for provider_id, desc in providers:
-                    if provider_id == self.provider_name:
-                        self.console.print(f"  [green]▶ {provider_id}[/green] - {desc}")
-                    else:
-                        self.console.print(f"  [cyan]{provider_id}[/cyan] - {desc}")
-
-            self.console.print("\n[dim]Note: Provider switching requires restart[/dim]")
-        else:
-            if self.provider_name and args.lower() == self.provider_name.lower():
-                self.console.print(f"[green]Already using {self.provider_name} provider[/green]")
-            else:
-                self.console.print(
-                    "[yellow]Provider switching not supported in current mode. "
-                    "Please restart with --provider option.[/yellow]"
-                )
-
-        return CommandResult.HANDLED
 
     def clear_conversation(self) -> CommandResult:
         """Clear the conversation."""
