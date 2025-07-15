@@ -624,7 +624,24 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
         )
 
         # Make request
-        response = self.inference_client.chat(chat_details)
+        try:
+            response = self.inference_client.chat(chat_details)
+        except Exception as e:
+            # Format OCI error messages better
+            error_msg = str(e)
+            if "Not allowed to call finetune base model" in error_msg:
+                raise ValueError(
+                    f"Model '{model}' is not accessible. This appears to be a fine-tuning base model "
+                    f"that cannot be used directly. Please select a different model."
+                ) from e
+            elif "NotAuthorizedOrNotFound" in error_msg:
+                raise ValueError(
+                    f"Not authorized to use model '{model}'. Please check your OCI permissions and "
+                    f"ensure the model is available in your region."
+                ) from e
+            else:
+                # Re-raise with the original error
+                raise
 
         # Extract response based on provider type
         chat_response = response.data.chat_response
@@ -790,7 +807,24 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
         )
 
         # Make streaming request
-        response_stream = self.inference_client.chat(chat_details)
+        try:
+            response_stream = self.inference_client.chat(chat_details)
+        except Exception as e:
+            # Format OCI error messages better
+            error_msg = str(e)
+            if "Not allowed to call finetune base model" in error_msg:
+                raise ValueError(
+                    f"Model '{model}' is not accessible. This appears to be a fine-tuning base model "
+                    f"that cannot be used directly. Please select a different model."
+                ) from e
+            elif "NotAuthorizedOrNotFound" in error_msg:
+                raise ValueError(
+                    f"Not authorized to use model '{model}'. Please check your OCI permissions and "
+                    f"ensure the model is available in your region."
+                ) from e
+            else:
+                # Re-raise with the original error
+                raise
 
         # Process events
         for event in response_stream.data.events():

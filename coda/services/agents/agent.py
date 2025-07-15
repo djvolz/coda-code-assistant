@@ -550,7 +550,39 @@ class Agent:
                         return "", messages
 
             except Exception as e:
-                error_msg = f"Error during agent execution: {str(e)}"
+                # Format error message better, especially for OCI errors
+                error_str = str(e)
+                if isinstance(e, dict) or (error_str.startswith('{') and error_str.endswith('}')):
+                    # Try to parse as OCI error dict
+                    try:
+                        import ast
+                        error_dict = ast.literal_eval(error_str) if isinstance(error_str, str) else e
+                        
+                        # Extract key information
+                        message = error_dict.get('message', 'Unknown error')
+                        code = error_dict.get('code', 'Unknown')
+                        operation = error_dict.get('operation_name', 'Unknown')
+                        
+                        # Format the error nicely
+                        self.console.print(f"\n[{self.theme.error}]Error: {message}[/{self.theme.error}]")
+                        self.console.print(f"[{self.theme.dim}]Code: {code} | Operation: {operation}[/{self.theme.dim}]")
+                        
+                        # Add troubleshooting tips if available
+                        if 'troubleshooting_tips' in error_dict:
+                            self.console.print(f"\n[{self.theme.info}]Troubleshooting:[/{self.theme.info}]")
+                            tips = error_dict['troubleshooting_tips']
+                            # Clean up the tips text
+                            tips = tips.replace('. Also see', '.\n• Also see')
+                            tips = tips.replace('. If you', '.\n• If you')
+                            self.console.print(f"[{self.theme.dim}]{tips}[/{self.theme.dim}]")
+                        
+                        return f"Error: {message}", messages
+                    except:
+                        # If parsing fails, fall back to original behavior
+                        pass
+                
+                # Default error handling
+                error_msg = f"Error during agent execution: {error_str}"
                 self.console.print(f"[{self.theme.error}]{error_msg}[/{self.theme.error}]")
                 return error_msg, messages
 
