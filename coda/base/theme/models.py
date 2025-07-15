@@ -28,8 +28,8 @@ class ConsoleTheme:
     panel_title: str = "bold cyan"
 
     # Message roles (for chat-like interfaces)
-    user_message: str = "bright_blue"
-    assistant_message: str = "bright_green"
+    user_message: str = "blue"
+    assistant_message: str = "green"
     system_message: str = "yellow"
 
     # Code and syntax

@@ -28,13 +28,29 @@ class AgentChatHandler:
     def get_available_tools(self):
         """Get all available tools for the agent."""
         tools = []
+        tool_names = set()
 
         # Add built-in tools
-        tools.extend(get_builtin_tools())
+        builtin_tools = get_builtin_tools()
+        for tool in builtin_tools:
+            # Built-in tools are decorated functions with _tool_name attribute
+            tool_name = getattr(tool, '_tool_name', tool.__name__ if hasattr(tool, '__name__') else str(tool))
+            if tool_name not in tool_names:
+                tools.append(tool)
+                tool_names.add(tool_name)
 
-        # Add adapted MCP tools
+        # Add adapted MCP tools, skipping duplicates
         mcp_tools = MCPToolAdapter.get_all_tools()
-        tools.extend(mcp_tools)
+        for tool in mcp_tools:
+            # MCP tools should have a name attribute
+            tool_name = tool.name if hasattr(tool, 'name') else str(tool)
+            if tool_name not in tool_names:
+                tools.append(tool)
+                tool_names.add(tool_name)
+            else:
+                # Log duplicate tool for debugging
+                if hasattr(self, 'console') and self.console:
+                    self.console.print(f"[dim]Skipping duplicate MCP tool: {tool_name}[/dim]", highlight=False)
 
         return tools
 

@@ -254,7 +254,7 @@ class SearchResultDisplay:
     def _get_score_color(self, score: float) -> str:
         """Get color based on similarity score."""
         if score >= 0.9:
-            return "bright_green"
+            return "green"
         elif score >= 0.7:
             return "green"
         elif score >= 0.5:
