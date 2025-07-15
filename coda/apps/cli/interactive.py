@@ -259,8 +259,15 @@ async def _handle_chat_interaction(
         temperature = config.get("temperature", 0.7)
         max_tokens = config.get("max_tokens", 2000)
 
-        # Check if we should use tools (only for Cohere models and when enabled)
-        model_supports_tools = cli.current_model.startswith("cohere.")
+        # Check if we should use tools (check actual model capabilities)
+        model_supports_tools = False
+        if hasattr(provider_instance, 'list_models'):
+            model_info = next(
+                (m for m in provider_instance.list_models() if m.id == cli.current_model), 
+                None
+            )
+            if model_info:
+                model_supports_tools = model_info.supports_functions
 
         if use_tools and model_supports_tools:
             # Use agent-based chat
@@ -315,7 +322,7 @@ async def _handle_chat_interaction(
                         },
                     )
         else:
-            # Use regular streaming
+            # Use regular streaming (no tools)
             with console.status(
                 f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
             ) as status:

@@ -170,6 +170,7 @@ class SessionCommands:
                     provider=msg.get("metadata", {}).get("provider"),
                     token_usage=msg.get("metadata", {}).get("token_usage"),
                     cost=msg.get("metadata", {}).get("cost"),
+                    tool_calls=msg.get("tool_calls"),
                 )
 
             self.current_session_id = session.id
@@ -754,15 +755,18 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
         self.console.print(Panel(help_text, title="Export Help", border_style="cyan"))
         return None
 
-    def add_message(self, role: str, content: str, metadata: dict[str, Any] | None = None):
+    def add_message(self, role: str, content: str, metadata: dict[str, Any] | None = None, tool_calls: Any = None):
         """Add a message to the current conversation.
 
         Args:
             role: Message role
             content: Message content
             metadata: Optional metadata
+            tool_calls: Optional tool calls data
         """
         msg = {"role": role, "content": content, "metadata": metadata or {}}
+        if tool_calls is not None:
+            msg["tool_calls"] = tool_calls
         self.current_messages.append(msg)
 
         # Track if we have a user message
@@ -808,6 +812,7 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
                         provider=existing_msg.get("metadata", {}).get("provider"),
                         token_usage=existing_msg.get("metadata", {}).get("token_usage"),
                         cost=existing_msg.get("metadata", {}).get("cost"),
+                        tool_calls=existing_msg.get("tool_calls"),
                     )
 
                 # Notify user about auto-save (subtly)
@@ -828,6 +833,7 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
                 provider=metadata.get("provider") if metadata else None,
                 token_usage=metadata.get("token_usage") if metadata else None,
                 cost=metadata.get("cost") if metadata else None,
+                tool_calls=tool_calls,
             )
 
     def get_context_messages(

@@ -685,7 +685,28 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 tool_calls = []
                 for tc in message.tool_calls:
                     # Extract function details
-                    if hasattr(tc, "function"):
+                    # For generic format, tool calls are FunctionCall objects directly
+                    if hasattr(tc, "name") and hasattr(tc, "arguments"):
+                        # Map name back to original if it was mapped
+                        original_name = getattr(self, "_tool_name_mapping", {}).get(
+                            tc.name, tc.name
+                        )
+                        # Parse arguments if they're a string
+                        arguments = tc.arguments
+                        if isinstance(arguments, str):
+                            try:
+                                arguments = json.loads(arguments)
+                            except json.JSONDecodeError:
+                                arguments = {"raw": arguments}
+
+                        tool_call = ToolCall(
+                            id=getattr(tc, "id", tc.name),  # Use ID if available, else name
+                            name=original_name,
+                            arguments=arguments,
+                        )
+                        tool_calls.append(tool_call)
+                    elif hasattr(tc, "function"):
+                        # For Cohere format (if it ever appears here)
                         # Map name back to original if it was mapped
                         original_name = getattr(self, "_tool_name_mapping", {}).get(
                             tc.function.name, tc.function.name
