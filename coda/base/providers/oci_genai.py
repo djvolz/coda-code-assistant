@@ -232,9 +232,8 @@ class OCIGenAIProvider(BaseProvider):
                         continue
 
                 # Map provider-specific capabilities
-                supports_functions = (
-                    provider == "cohere"
-                )  # Cohere models typically support functions
+                # All OCI GenAI models now support functions/tools
+                supports_functions = True
                 supports_streaming = True  # Most OCI GenAI models support streaming
 
                 # Create model object
@@ -328,7 +327,7 @@ class OCIGenAIProvider(BaseProvider):
                 "id": "meta.llama-3.1-70b-instruct",
                 "name": "Meta Llama 3.1 70B Instruct",
                 "provider": "meta",
-                "supports_functions": False,
+                "supports_functions": True,  # Now supports tools
             },
         ]
 
@@ -521,6 +520,14 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             if top_p is not None:
                 params["top_p"] = top_p
 
+            # Add tools if provided
+            if tools:
+                oci_tools = self._convert_tools_to_generic(tools)
+                params["tools"] = oci_tools
+                # Import ToolChoiceAuto if needed
+                from oci.generative_ai_inference.models import ToolChoiceAuto
+                params["tool_choice"] = ToolChoiceAuto()  # Let model decide when to use tools
+
             return GenericChatRequest(**params)
 
     def _convert_tools_to_cohere(self, tools: list[Tool]) -> list[CohereTool]:
@@ -564,6 +571,28 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             cohere_tools.append(cohere_tool)
 
         return cohere_tools
+
+    def _convert_tools_to_generic(self, tools: list[Tool]) -> list:
+        """Convert standard tools to OCI generic format (FunctionDefinition)."""
+        from oci.generative_ai_inference.models import FunctionDefinition
+        
+        oci_tools = []
+        # Store mapping of function names to original names for tool calls
+        self._tool_name_mapping = {}
+
+        for tool in tools:
+            # The generic format uses standard JSON Schema for parameters
+            # So we can use the parameters directly
+            function_def = FunctionDefinition(
+                name=tool.name,
+                description=tool.description,
+                parameters=tool.parameters
+            )
+            oci_tools.append(function_def)
+            # Store mapping (even though names aren't sanitized for generic format)
+            self._tool_name_mapping[tool.name] = tool.name
+
+        return oci_tools
 
     def chat(
         self,
@@ -640,8 +669,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                         usage["total_tokens"] = usage["prompt_tokens"] + usage["completion_tokens"]
 
         else:
-            # Generic response format (Meta, etc.)
-            tool_calls = None  # Generic format doesn't support tools
+            # Generic response format (Meta, xAI, etc.)
             choices = chat_response.choices
 
             if not choices:
@@ -650,6 +678,36 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             choice = choices[0]
             message = choice.message
 
+            # Check for tool calls in generic format
+            tool_calls = None
+            if hasattr(message, "tool_calls") and message.tool_calls:
+                # Convert OCI tool calls to our format
+                tool_calls = []
+                for tc in message.tool_calls:
+                    # Extract function details
+                    if hasattr(tc, "function"):
+                        # Map name back to original if it was mapped
+                        original_name = getattr(self, "_tool_name_mapping", {}).get(
+                            tc.function.name, tc.function.name
+                        )
+                        # Parse arguments if they're a string
+                        arguments = tc.function.arguments
+                        if isinstance(arguments, str):
+                            try:
+                                arguments = json.loads(arguments)
+                            except json.JSONDecodeError:
+                                arguments = {"raw": arguments}
+                        
+                        tool_call = ToolCall(
+                            id=getattr(tc, "id", tc.function.name),  # Use ID if available, else name
+                            name=original_name,
+                            arguments=arguments,
+                        )
+                        tool_calls.append(tool_call)
+                finish_reason = "tool_calls" if tool_calls else choice.finish_reason
+            else:
+                finish_reason = choice.finish_reason
+
             # Extract content based on type
             if hasattr(message.content, "__iter__") and not isinstance(message.content, str):
                 # Content is a list
@@ -657,8 +715,6 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             else:
                 # Content is a string
                 content = message.content
-
-            finish_reason = choice.finish_reason
 
             # Generic format usage
             usage = (
@@ -675,7 +731,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             content=content,
             model=model,
             finish_reason=finish_reason,
-            tool_calls=tool_calls if provider == "cohere" else None,
+            tool_calls=tool_calls,  # Now supported for all models
             usage=usage,
             metadata={
                 "model_version": getattr(chat_response, "model_version", None),
