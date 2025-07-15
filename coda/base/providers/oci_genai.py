@@ -753,6 +753,64 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             else:
                 # Content is a string
                 content = message.content
+            
+            # Check if Meta model returned tool calls in content (they use special syntax)
+            if not tool_calls and content and "meta" in model.lower():
+                # Parse Meta's tool call syntax: <|python_start|>function_name(args)<|python_end|>
+                import re
+                tool_pattern = r'<\|python_start\|>([^<]+)<\|python_end\|>'
+                matches = re.findall(tool_pattern, content)
+                
+                if matches:
+                    tool_calls = []
+                    for match in matches:
+                        # Parse function call - handle both func() and func(args)
+                        func_match = re.match(r'(\w+)\((.*)\)', match.strip())
+                        if func_match:
+                            func_name = func_match.group(1)
+                            func_args_str = func_match.group(2).strip()
+                            
+                            # Parse arguments
+                            arguments = {}
+                            if func_args_str:
+                                # Try to parse as JSON first (for complex arguments)
+                                try:
+                                    # Handle JSON-like syntax
+                                    if func_args_str.startswith('{') and func_args_str.endswith('}'):
+                                        arguments = json.loads(func_args_str)
+                                    else:
+                                        # Simple parsing for key=value pairs
+                                        arg_pattern = r'(\w+)\s*=\s*([^,]+?)(?:,|$)'
+                                        for arg_match in re.finditer(arg_pattern, func_args_str):
+                                            key = arg_match.group(1)
+                                            value = arg_match.group(2).strip().strip('"\'')
+                                            # Try to convert to appropriate type
+                                            try:
+                                                # Try int
+                                                arguments[key] = int(value)
+                                            except ValueError:
+                                                try:
+                                                    # Try float
+                                                    arguments[key] = float(value)
+                                                except ValueError:
+                                                    # Keep as string
+                                                    arguments[key] = value
+                                except:
+                                    # If all parsing fails, store raw string
+                                    arguments = {"raw": func_args_str}
+                            
+                            tool_call = ToolCall(
+                                id=f"meta_{func_name}_{len(tool_calls)}",
+                                name=func_name,
+                                arguments=arguments,
+                            )
+                            tool_calls.append(tool_call)
+                    
+                    # Set finish reason to tool_calls if we found any
+                    if tool_calls:
+                        finish_reason = "tool_calls"
+                        # Remove the tool call syntax from content
+                        content = re.sub(tool_pattern, '', content).strip()
 
             # Generic format usage
             usage = (
