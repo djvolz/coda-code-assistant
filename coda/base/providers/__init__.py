@@ -37,6 +37,11 @@ try:
 except ImportError:
     OllamaProvider = None  # type: ignore
 
+try:
+    from .claude_code import ClaudeCodeProvider
+except ImportError:
+    ClaudeCodeProvider = None  # type: ignore
+
 # Build __all__ dynamically based on available providers
 __all__ = [
     # Base classes and types
@@ -63,3 +68,5 @@ if OCIGenAIProvider is not None:
     __all__.append("OCIGenAIProvider")
 if OllamaProvider is not None:
     __all__.append("OllamaProvider")
+if ClaudeCodeProvider is not None:
+    __all__.append("ClaudeCodeProvider")

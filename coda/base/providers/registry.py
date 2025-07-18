@@ -136,6 +136,13 @@ try:
 except ImportError:
     pass  # Ollama provider not available
 
+try:
+    from .claude_code import ClaudeCodeProvider
+
+    ProviderRegistry.register(PROVIDERS.CLAUDE_CODE, ClaudeCodeProvider)
+except ImportError:
+    pass  # Claude Code provider not available
+
 
 class ProviderFactory:
     """Factory for creating provider instances with configuration management."""

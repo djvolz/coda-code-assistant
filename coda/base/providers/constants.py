@@ -13,6 +13,7 @@ class PROVIDERS:
     OLLAMA: str = "ollama"
     MOCK: str = "mock"
     OPENAI: str = "openai"
+    CLAUDE_CODE: str = "claude-code"
 
     @property
     def ALL(self) -> list[str]:
@@ -23,6 +24,7 @@ class PROVIDERS:
             self.OLLAMA,
             self.MOCK,
             self.OPENAI,
+            self.CLAUDE_CODE,
         ]
 
 
@@ -58,3 +60,9 @@ PRESERVE_LAST_N_MESSAGES: int = 10
 
 # Environment variable names
 ENV_OCI_COMPARTMENT_ID: str = "OCI_COMPARTMENT_ID"
+ENV_CLAUDE_CODE_COMMAND: str = "CLAUDE_CODE_COMMAND"
+
+# Claude Code models
+# Note: Claude Code provider dynamically detects the model from the CLI
+# The actual model used depends on the user's Claude Code subscription
+CLAUDE_CODE_DEFAULT_MODEL: str = "claude-code-default"

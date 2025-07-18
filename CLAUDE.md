@@ -161,3 +161,30 @@ The project uses automated releases triggered by conventional commits on the mai
 - Use "Create a merge commit" to preserve individual commit messages
 - The release workflow needs to see conventional commits to trigger releases
 - Squashing would lose the commit type information (feat:, fix:, etc.)
+
+## Agent Architecture Research
+
+This project includes comprehensive research on agent execution patterns from major code assistant projects to inform our own agent implementation. Research documents are located in `docs/research/`.
+
+### Projects Being Analyzed
+1. **Aider** (`/Users/danny/Developer/forks/aider-fork/aider-using-claude/`) - Reflection-based agent loops with sophisticated error recovery
+2. **Codex** (`/Users/danny/Developer/forks/codex-fork/codex-oci-using-claude/`) - TypeScript-based agent implementation
+3. **Gemini CLI** (`/Users/danny/Developer/forks/gemini-cli/`) - Node.js agent architecture with tool integration
+4. **Dify** (`/Users/danny/Developer/coda-oci-genai-fix/temp/dify-official-plugins/`) - Plugin-based agent system
+5. **LLM** (`/Users/danny/Developer/coda-oci-genai-fix/temp/llm/`) - Simon Willison's CLI tool with chain-based tool execution
+6. **Goose** (`/Users/danny/Developer/coda-agent-analysis/temp/goose/`) - Rust-based multi-agent system with MCP extension framework
+
+### Research Deliverables
+- `docs/research/agent-architecture-analysis.md` - Detailed analysis of each project's agent patterns
+- `docs/research/agent-comparison-matrix.md` - Side-by-side comparison of agent implementations
+- Focus on: agentic loops, error recovery, tool integration, context management, and performance patterns
+
+### Key Findings
+- **Aider**: Reflection loops superior to simple retries, multiple edit formats for flexibility
+- **Codex**: Agent-loop pattern with pre-execution safety checks and sandboxing
+- **Gemini**: Event-driven streaming with MCP protocol integration and checkpointing  
+- **Dify**: Plugin-based strategies with ReAct reasoning patterns
+- **LLM**: Chain-based tool execution with simple function-as-tools pattern
+- **Goose**: Rust-based performance with subagent coordination, router-based tool selection, and secure MCP extensions
+
+This research will inform architectural decisions for enhancing our existing agent system in `coda/services/agents/`.
