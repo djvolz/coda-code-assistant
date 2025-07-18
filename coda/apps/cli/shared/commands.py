@@ -110,6 +110,13 @@ class CommandHandler(ABC):
         if matching_models:
             self.current_model = matching_models[0].id
             self.console.print(f"[green]Switched to model: {self.current_model}[/green]")
+            
+            # Show tool support notification
+            if hasattr(matching_models[0], "supports_functions"):
+                if matching_models[0].supports_functions:
+                    self.console.print("[cyan]✓ Tool support: Available[/cyan]")
+                else:
+                    self.console.print("[yellow]⚠ Tool support: Not available[/yellow]")
         else:
             self.console.print(f"[red]Model not found: {model_name}[/red]")
 

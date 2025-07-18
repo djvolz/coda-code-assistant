@@ -141,6 +141,35 @@ async def _select_model(unique_models, model: str, console: Console):
             return None
 
     console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
+    
+    # Show tool support notification for selected model
+    selected_model = next((m for m in unique_models if m.id == model), None)
+    if selected_model:
+        if hasattr(selected_model, "supports_functions"):
+            if selected_model.supports_functions:
+                # Check for partial support
+                if hasattr(selected_model, "metadata") and selected_model.metadata.get("tool_support_notes"):
+                    notes = selected_model.metadata["tool_support_notes"]
+                    if "non-streaming only" in notes:
+                        console.print(f"[{theme.warning}]⚠ Tool support: Partial (non-streaming only)[/{theme.warning}]")
+                    else:
+                        console.print(f"[{theme.info}]✓ Tool support: Available[/{theme.info}]")
+                else:
+                    console.print(f"[{theme.info}]✓ Tool support: Available[/{theme.info}]")
+            else:
+                # Check for error details
+                if hasattr(selected_model, "metadata") and selected_model.metadata.get("tool_support_notes"):
+                    notes = selected_model.metadata["tool_support_notes"]
+                    error_notes = [n for n in notes if "error:" in n]
+                    if error_notes:
+                        console.print(f"[{theme.error}]🚫 Tool support: Error - {error_notes[0]}[/{theme.error}]")
+                    else:
+                        console.print(f"[{theme.warning}]⚠ Tool support: Not available[/{theme.warning}]")
+                else:
+                    console.print(f"[{theme.warning}]⚠ Tool support: Not available[/{theme.warning}]")
+        else:
+            console.print(f"[{theme.info}]❓ Tool support: Unknown (untested model)[/{theme.info}]")
+    
     console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
     console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
     console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")

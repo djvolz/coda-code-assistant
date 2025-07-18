@@ -28,7 +28,13 @@ class AgentChatHandler:
         """Check if we should use agent-based chat."""
         # Use agent for models that support function calling
         model_info = next((m for m in self.provider.list_models() if m.id == model), None)
-        return model_info and model_info.supports_functions and self.use_tools
+        supports_tools = model_info and model_info.supports_functions
+        
+        # Only notify if user has explicitly disabled tools
+        if not self.use_tools:
+            self.console.print(f"[{self.theme.info}]ℹ Tool support: Disabled by user[/{self.theme.info}]")
+        
+        return supports_tools and self.use_tools
 
     def get_available_tools(self):
         """Get all available tools for the agent."""
