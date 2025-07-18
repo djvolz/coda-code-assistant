@@ -55,6 +55,7 @@ class OCIGenAIProvider(BaseProvider):
     _cache_timestamp: datetime | None = None
     _cache_duration_hours = 24  # Cache models for 24 hours
     _model_id_map: dict[str, str] = {}  # Maps friendly names to OCI model IDs
+    _tool_tester = None  # Lazy-loaded tool tester
 
     def __init__(
         self,
@@ -96,6 +97,15 @@ class OCIGenAIProvider(BaseProvider):
         # Initialize the Generative AI clients
         self.inference_client = GenerativeAiInferenceClient(self.config)
         self.genai_client = GenerativeAiClient(self.config)
+        
+    def _get_tool_tester(self):
+        """Get or create the tool tester instance."""
+        if self._tool_tester is None:
+            from .oci_tool_tester import OCIToolTester
+            self._tool_tester = OCIToolTester()
+            # Prepopulate with known results to avoid unnecessary testing
+            self._tool_tester.prepopulate_known_results()
+        return self._tool_tester
 
     def _get_from_coda_config(self) -> str | None:
         """Get compartment ID from Coda config file."""
@@ -232,9 +242,28 @@ class OCIGenAIProvider(BaseProvider):
                         continue
 
                 # Map provider-specific capabilities
-                # All OCI GenAI models now support functions/tools
-                supports_functions = True
-                supports_streaming = True  # Most OCI GenAI models support streaming
+                # Get dynamic tool support info
+                tool_tester = self._get_tool_tester()
+                tool_info = tool_tester.get_tool_support(model_id, provider=self)
+                
+                # Set capabilities based on test results
+                if tool_info.get("tested"):
+                    supports_functions = tool_info.get("tools_work", False)
+                    supports_streaming = True  # Streaming works for chat, just not for tools
+                    tool_support_notes = []
+                    
+                    if tool_info.get("tools_work"):
+                        if not tool_info.get("streaming_tools"):
+                            tool_support_notes.append("non-streaming only")
+                    else:
+                        if tool_info.get("error"):
+                            tool_support_notes.append(f"error: {tool_info['error']}")
+                else:
+                    # For untested models, assume they might support tools
+                    # (based on OCI claims) but mark as untested
+                    supports_functions = True
+                    supports_streaming = True
+                    tool_support_notes = ["untested"]
 
                 # Create model object
                 model = Model(
@@ -255,6 +284,7 @@ class OCIGenAIProvider(BaseProvider):
                             model_summary, "is_long_term_supported", None
                         ),
                         "oci_model_id": model_summary.id,  # Store the actual OCI model ID
+                        "tool_support_notes": tool_support_notes if tool_support_notes else None,
                     },
                 )
 
@@ -608,6 +638,20 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
         """Send chat completion request using OCI SDK."""
         if not self.validate_model(model):
             raise ValueError(f"Model {model} is not supported")
+        
+        # Check if tools are requested but not supported
+        if tools:
+            tool_tester = self._get_tool_tester()
+            tool_info = tool_tester.get_tool_support(model, provider=self)
+            
+            if tool_info.get("tested") and not tool_info.get("tools_work", False):
+                # Model is known to not support tools
+                error_msg = tool_info.get("error", "not supported")
+                raise ValueError(
+                    f"Model '{model}' does not support tool/function calling. "
+                    f"Known issue: {error_msg}. "
+                    f"Please use a model that supports tools or disable tool usage."
+                )
 
         # Create chat request
         chat_request = self._create_chat_request(
@@ -753,64 +797,6 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             else:
                 # Content is a string
                 content = message.content
-            
-            # Check if Meta model returned tool calls in content (they use special syntax)
-            if not tool_calls and content and "meta" in model.lower():
-                # Parse Meta's tool call syntax: <|python_start|>function_name(args)<|python_end|>
-                import re
-                tool_pattern = r'<\|python_start\|>([^<]+)<\|python_end\|>'
-                matches = re.findall(tool_pattern, content)
-                
-                if matches:
-                    tool_calls = []
-                    for match in matches:
-                        # Parse function call - handle both func() and func(args)
-                        func_match = re.match(r'(\w+)\((.*)\)', match.strip())
-                        if func_match:
-                            func_name = func_match.group(1)
-                            func_args_str = func_match.group(2).strip()
-                            
-                            # Parse arguments
-                            arguments = {}
-                            if func_args_str:
-                                # Try to parse as JSON first (for complex arguments)
-                                try:
-                                    # Handle JSON-like syntax
-                                    if func_args_str.startswith('{') and func_args_str.endswith('}'):
-                                        arguments = json.loads(func_args_str)
-                                    else:
-                                        # Simple parsing for key=value pairs
-                                        arg_pattern = r'(\w+)\s*=\s*([^,]+?)(?:,|$)'
-                                        for arg_match in re.finditer(arg_pattern, func_args_str):
-                                            key = arg_match.group(1)
-                                            value = arg_match.group(2).strip().strip('"\'')
-                                            # Try to convert to appropriate type
-                                            try:
-                                                # Try int
-                                                arguments[key] = int(value)
-                                            except ValueError:
-                                                try:
-                                                    # Try float
-                                                    arguments[key] = float(value)
-                                                except ValueError:
-                                                    # Keep as string
-                                                    arguments[key] = value
-                                except:
-                                    # If all parsing fails, store raw string
-                                    arguments = {"raw": func_args_str}
-                            
-                            tool_call = ToolCall(
-                                id=f"meta_{func_name}_{len(tool_calls)}",
-                                name=func_name,
-                                arguments=arguments,
-                            )
-                            tool_calls.append(tool_call)
-                    
-                    # Set finish reason to tool_calls if we found any
-                    if tool_calls:
-                        finish_reason = "tool_calls"
-                        # Remove the tool call syntax from content
-                        content = re.sub(tool_pattern, '', content).strip()
 
             # Generic format usage
             usage = (
@@ -849,6 +835,29 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
         """Stream chat completion response using OCI SDK."""
         if not self.validate_model(model):
             raise ValueError(f"Model {model} is not supported")
+        
+        # Check if tools are requested but not supported
+        if tools:
+            tool_tester = self._get_tool_tester()
+            tool_info = tool_tester.get_tool_support(model, provider=self)
+            
+            if tool_info.get("tested"):
+                if not tool_info.get("tools_work", False):
+                    # Model is known to not support tools at all
+                    error_msg = tool_info.get("error", "not supported")
+                    raise ValueError(
+                        f"Model '{model}' does not support tool/function calling. "
+                        f"Known issue: {error_msg}. "
+                        f"Please use a model that supports tools or disable tool usage."
+                    )
+                elif tool_info.get("tools_work") and not tool_info.get("streaming_tools", False):
+                    # Model supports tools but not in streaming mode
+                    # Log warning but continue - tools just won't be returned
+                    import logging
+                    logging.warning(
+                        f"Model '{model}' supports tools but not in streaming mode. "
+                        f"Tool calls will not be returned in the streaming response."
+                    )
 
         # Create chat request with streaming enabled
         chat_request = self._create_chat_request(
