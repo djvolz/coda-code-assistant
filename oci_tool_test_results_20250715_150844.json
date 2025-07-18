@@ -1,0 +1,201 @@
+{
+  "timestamp": "2025-07-15T15:08:44.159093",
+  "summary": {
+    "total_models": 21,
+    "models_claiming_support": 21,
+    "fully_working": 0,
+    "partially_working": 11,
+    "not_working": 10
+  },
+  "results": [
+    {
+      "model": "cohere.command-latest",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command-plus-latest",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "xai.grok-3-fast",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "xai.grok-3",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "xai.grok-3-mini-fast",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "xai.grok-3-mini",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-4-maverick-17b-128e-instruct-fp8",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-4-scout-17b-16e-instruct",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command-a-03-2025",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-3.3-70b-instruct",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "Model 'meta.llama-3.3-70b-instruct' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "non_streaming_error": "Model 'meta.llama-3.3-70b-instruct' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command-r-08-2024",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "Model 'cohere.command-r-08-2024' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "non_streaming_error": "Model 'cohere.command-r-08-2024' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-3.2-11b-vision-instruct",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "{'target_service': 'generative_ai_inference', 'status': 404, 'code': '404', 'opc-request-id': 'D54C5536C9E048B5A6371A85E3D2D825/DB6D3CFBE33ADE4E6A7F7BCA710CA41C/9AD20813DD9A652A7D4806DE5343554E', 'message': 'Entity with key ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafnmysbag2cremw7ztorm6njrjoxh6t2odloqjkecmbja not found', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:08.460037+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_404__404_404 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "non_streaming_error": "{'target_service': 'generative_ai_inference', 'status': 404, 'code': '404', 'opc-request-id': '2CEFD0A1205648A082E07D12AFE1BDBF/7053045718AD395DE910B3823962F4E8/D838EB4E1837B8EEE01E9F1DC0FDAB53', 'message': 'Entity with key ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafnmysbag2cremw7ztorm6njrjoxh6t2odloqjkecmbja not found', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:08.380502+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_404__404_404 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-3.2-90b-vision-instruct",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command-r-plus-08-2024",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-3.1-70b-instruct",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "Model 'meta.llama-3.1-70b-instruct' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "non_streaming_error": "Model 'meta.llama-3.1-70b-instruct' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-3.1-405b-instruct",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command-r-16k",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "Model 'cohere.command-r-16k' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "non_streaming_error": "Model 'cohere.command-r-16k' is not accessible. This appears to be a fine-tuning base model that cannot be used directly. Please select a different model.",
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command-r-plus",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": true,
+      "streaming_error": null,
+      "non_streaming_error": null,
+      "response_preview": null
+    },
+    {
+      "model": "meta.llama-3-70b-instruct",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "{'target_service': 'generative_ai_inference', 'status': 404, 'code': '404', 'opc-request-id': 'F52C86881AA34F058AEA62E164C718D2/7C1695AA0239AF1748DD442C2D91EE4C/857C86D70742E16580FEB6C9CF0AA70B', 'message': 'Entity with key ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyaycmwwnvu2gaqrffquofgmshlqzcdwpk727n4cykg34oa not found', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:37.833820+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_404__404_404 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "non_streaming_error": "{'target_service': 'generative_ai_inference', 'status': 404, 'code': '404', 'opc-request-id': '64FE2863161D4888BF180C7CDD52C342/5220144CCFEC99EFE686C3AFC966A449/BCE6C916CE7528C2B03879A20148B1A9', 'message': 'Entity with key ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyaycmwwnvu2gaqrffquofgmshlqzcdwpk727n4cykg34oa not found', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:37.755893+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_404__404_404 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "{'target_service': 'generative_ai_inference', 'status': 400, 'code': '400', 'opc-request-id': '43525518C6404A74B7E2B8923FC3E775/AFFF7658880BD3FE4C6F17D8CA4DC74A/A4AF26964D2F067539769A2F6E4A7AFF', 'message': 'model OCID ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceya4bk5foxjdxe6332b6dmkzrdtqdulyodbek7ewzt5gqnq does not support Chat', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:40.987320+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_400__400_400 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "non_streaming_error": "{'target_service': 'generative_ai_inference', 'status': 400, 'code': '400', 'opc-request-id': '21DAFFF9C0DF4CC6963188658369D180/53942EB02709C2083E3283CFADE7F183/A13150E28AB45B13422B525B7C91A37F', 'message': 'model OCID ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceya4bk5foxjdxe6332b6dmkzrdtqdulyodbek7ewzt5gqnq does not support Chat', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:40.910778+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_400__400_400 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "response_preview": null
+    },
+    {
+      "model": "cohere.command-light",
+      "claims_support": true,
+      "streaming_works": false,
+      "non_streaming_works": false,
+      "streaming_error": "{'target_service': 'generative_ai_inference', 'status': 400, 'code': '400', 'opc-request-id': '12D68E4D5295469B8EA07726A61C0E46/7FDAC5F88BFA5DF8A71C53D9C2EC4FA2/4EB074909ECE547DCD913CA8B95F6462', 'message': 'model OCID ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyacw6jlwbfskxv5e4yqd5yupgaxcn6x4q3esrv7punjo5a does not support Chat', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:44.158843+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_400__400_400 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "non_streaming_error": "{'target_service': 'generative_ai_inference', 'status': 400, 'code': '400', 'opc-request-id': '89FA7DCEBD9B459990E23ADEC4C7CBFB/A6C6BE48DEB2F14D24D2595C8EFBF966/512CA5E7179AC90EF9F3CEE1B2352102', 'message': 'model OCID ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyacw6jlwbfskxv5e4yqd5yupgaxcn6x4q3esrv7punjo5a does not support Chat', 'operation_name': 'chat', 'timestamp': '2025-07-15T22:08:44.073932+00:00', 'client_version': 'Oracle-PythonSDK/2.155.1', 'request_endpoint': 'POST https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat', 'logging_tips': 'To get more info on the failing request, refer to https://docs.oracle.com/en-us/iaas/tools/python/latest/logging.html for ways to log the request/response details.', 'troubleshooting_tips': \"See https://docs.oracle.com/iaas/Content/API/References/apierrors.htm#apierrors_400__400_400 for more information about resolving this error. Also see https://docs.oracle.com/iaas/api/#/en/generative-ai-inference/20231130/ChatResult/Chat for details on this operation's requirements. If you are unable to resolve this generative_ai_inference issue, please contact Oracle support and provide them this full error message.\"}",
+      "response_preview": null
+    }
+  ]
+}
