@@ -106,8 +106,6 @@ class OCIGenAIProvider(BaseProvider):
         if self._tool_tester is None:
             from .oci_tool_tester import OCIToolTester
             self._tool_tester = OCIToolTester()
-            # Prepopulate with known results to avoid unnecessary testing
-            self._tool_tester.prepopulate_known_results()
         return self._tool_tester
 
     def _get_from_coda_config(self) -> str | None:
