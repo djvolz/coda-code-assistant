@@ -99,11 +99,16 @@ Each user request should be evaluated independently. Previous tool usage does no
             if status:
                 status.update("[bold cyan]Processing request...[/bold cyan]")
 
+            # Create interrupt check function
+            def check_interrupt():
+                return hasattr(self.cli, "interrupt_event") and self.cli.interrupt_event.is_set()
+            
             response_content, updated_messages = await self.agent.run_async_streaming(
                 input=user_input,
                 messages=messages[:-1] if messages else None,  # Exclude last user message
                 max_steps=5,
                 status=status,  # Pass status to agent
+                interrupt_check=check_interrupt,  # Pass interrupt check function
             )
 
             return response_content, updated_messages

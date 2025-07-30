@@ -261,7 +261,7 @@ class Agent:
 
                     # Handle tool calls
                     performed_actions = await self._handle_tool_calls(
-                        response.tool_calls, on_fulfilled_action, status
+                        response.tool_calls, on_fulfilled_action, status, interrupt_check
                     )
 
                     # Add tool results to messages
@@ -330,6 +330,7 @@ class Agent:
         max_steps: int = 10,
         on_fulfilled_action: Callable[[RequiredAction, PerformedAction], None] | None = None,
         status=None,  # Optional status indicator
+        interrupt_check: Callable[[], bool] | None = None,  # Optional interrupt check
         **kwargs,
     ) -> tuple[str, list[Message]]:
         """
@@ -377,6 +378,13 @@ class Agent:
         first_chunk = True
 
         while step_count < max_steps:
+            # Check for interrupt
+            if interrupt_check and interrupt_check():
+                if status:
+                    status.stop()
+                self.console.print("\n[yellow]Response interrupted by user[/yellow]")
+                return "Response interrupted.", messages
+            
             try:
                 # Make request to provider
                 if supports_tools:
@@ -405,6 +413,13 @@ class Agent:
                     # Stream the response
                     response_content = ""
                     for chunk in stream:
+                        # Check for interrupt
+                        if interrupt_check and interrupt_check():
+                            if status:
+                                status.stop()
+                            self.console.print("\n[yellow]Response interrupted by user[/yellow]")
+                            return "Response interrupted.", messages
+                        
                         if first_chunk:
                             # Stop status before printing response
                             if status:
@@ -456,6 +471,13 @@ class Agent:
                             # Stream the final response
                             response_content = ""
                             for chunk in stream:
+                                # Check for interrupt
+                                if interrupt_check and interrupt_check():
+                                    if status:
+                                        status.stop()
+                                    self.console.print("\n[yellow]Response interrupted by user[/yellow]")
+                                    return "Response interrupted.", messages
+                                
                                 if first_chunk:
                                     # Stop status before printing response
                                     if status:
@@ -505,7 +527,7 @@ class Agent:
 
                     # Handle tool calls
                     performed_actions = await self._handle_tool_calls(
-                        response.tool_calls, on_fulfilled_action, status
+                        response.tool_calls, on_fulfilled_action, status, interrupt_check
                     )
 
                     # Add tool results to messages
@@ -612,7 +634,7 @@ class Agent:
             return asyncio.run(self.run_async(input, **kwargs))
 
     async def _handle_tool_calls(
-        self, tool_calls: list[ToolCall], on_fulfilled_action: Callable | None = None, status=None
+        self, tool_calls: list[ToolCall], on_fulfilled_action: Callable | None = None, status=None, interrupt_check: Callable[[], bool] | None = None
     ) -> list[PerformedAction]:
         """Handle tool calls from the AI."""
         performed_actions = []
@@ -624,6 +646,13 @@ class Agent:
             self.console.print("\n[dim]Executing tools...[/dim]")
 
         for tool_call in tool_calls:
+            # Check for interrupt before each tool execution
+            if interrupt_check and interrupt_check():
+                if status:
+                    status.stop()
+                self.console.print("\n[yellow]Tool execution interrupted by user[/yellow]")
+                break
+                
             # Create required action
             required_action = RequiredAction.from_tool_call(tool_call)
 
