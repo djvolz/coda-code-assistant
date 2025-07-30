@@ -56,10 +56,10 @@ class RenderDiagramTool(BaseTool):
         try:
             # Detect diagram type
             diagram_type = self.renderer.detect_diagram_type(code)
-            
+
             # Render the diagram
             html_content = self.renderer.render_diagram_auto(code)
-            
+
             if not html_content:
                 return ToolResult(
                     success=False,
@@ -78,7 +78,7 @@ class RenderDiagramTool(BaseTool):
                 "diagram_type": diagram_type if diagram_type else "auto-detected",
                 "saved_to": str(path) if output_path else None,
             }
-            
+
             if return_html and not output_path:
                 # Only return HTML if no output path specified
                 result["html"] = html_content

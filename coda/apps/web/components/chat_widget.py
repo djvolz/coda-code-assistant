@@ -17,6 +17,7 @@ from coda.base.providers.registry import ProviderFactory
 
 try:
     from diagram_renderer import DiagramRenderer
+
     DIAGRAM_RENDERER_AVAILABLE = True
 except ImportError:
     DIAGRAM_RENDERER_AVAILABLE = False
@@ -71,11 +72,11 @@ def detect_diagram_code(content: str) -> list[tuple[str, str]]:
     """Detect diagram code blocks in content."""
     diagram_languages = ["mermaid", "plantuml", "dot", "graphviz", "uml"]
     diagrams = []
-    
+
     # Find all code blocks
     pattern = r"```(\w*)\n(.*?)\n```"
     matches = re.findall(pattern, content, re.DOTALL)
-    
+
     for lang, code in matches:
         if lang.lower() in diagram_languages:
             diagrams.append((lang, code))
@@ -84,7 +85,7 @@ def detect_diagram_code(content: str) -> list[tuple[str, str]]:
             renderer = DiagramRenderer()
             if renderer.detect_diagram_type(code):
                 diagrams.append(("auto", code))
-    
+
     return diagrams
 
 
@@ -92,26 +93,26 @@ def render_diagram(diagram_code: str, diagram_type: str = "auto") -> bool:
     """Render a diagram using diagram-renderer."""
     if not DIAGRAM_RENDERER_AVAILABLE:
         return False
-    
+
     try:
         renderer = DiagramRenderer()
-        
+
         # Render the diagram
         if diagram_type != "auto":
             # Wrap with proper markdown fence if type is known
             formatted_code = f"```{diagram_type}\n{diagram_code}\n```"
         else:
             formatted_code = diagram_code
-            
+
         html_content = renderer.render_diagram_auto(formatted_code)
-        
+
         if html_content:
             # Use Streamlit components to render the HTML
             components.html(html_content, height=600, scrolling=True)
             return True
     except Exception as e:
         st.error(f"Failed to render diagram: {str(e)}")
-    
+
     return False
 
 
@@ -120,17 +121,17 @@ def render_message_with_code(content: str):
     # Handle empty content
     if not content:
         return
-        
+
     # First check if we have diagram renderer available and content has code blocks
     if DIAGRAM_RENDERER_AVAILABLE and "```" in content:
         # Detect diagrams
         diagrams = detect_diagram_code(content)
-        
+
         # If we have diagrams, render them separately
         if diagrams:
             # Split content by code blocks to render text and diagrams separately
-            parts = re.split(r'(```\w*\n.*?\n```)', content, flags=re.DOTALL)
-            
+            parts = re.split(r"(```\w*\n.*?\n```)", content, flags=re.DOTALL)
+
             for part in parts:
                 if part.startswith("```"):
                     # Check if this is a diagram
@@ -144,7 +145,7 @@ def render_message_with_code(content: str):
                                     st.code(diagram_code, language=diagram_type)
                             is_diagram = True
                             break
-                    
+
                     if not is_diagram:
                         # Regular code block
                         lines = part[3:].split("\n", 1)
@@ -156,7 +157,7 @@ def render_message_with_code(content: str):
                     if part.strip():
                         st.markdown(part)
             return
-    
+
     # Handle content without code blocks or when diagram renderer is not available
     if "```" in content:
         # Original implementation for code blocks without diagram support
