@@ -4,12 +4,12 @@ import asyncio
 
 from rich.console import Console
 
-from coda.cli.search_display import (
+from coda.apps.cli.search_display import (
     IndexingProgress,
     SearchResultDisplay,
     create_search_stats_display,
 )
-from coda.semantic_search import SearchResult
+from coda.base.search.vector_search.vector_stores.base import SearchResult
 
 
 async def main():
