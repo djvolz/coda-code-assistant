@@ -209,12 +209,16 @@ class OCIToolTester:
             "cohere.command-r-plus": {"tools_work": True, "streaming_tools": False, "tested": True},
             "cohere.command-r-plus-08-2024": {"tools_work": True, "streaming_tools": False, "tested": True},
             "cohere.command-a-03-2025": {"tools_work": True, "streaming_tools": False, "tested": True},
-            "xai.grok-3": {"tools_work": True, "streaming_tools": False, "tested": True},
-            "xai.grok-3-fast": {"tools_work": True, "streaming_tools": False, "tested": True},
+            # xAI models don't support tools via OCI GenAI API
+            "xai.grok-3": {"tools_work": False, "streaming_tools": False, "error": "tools not supported", "tested": True},
+            "xai.grok-3-fast": {"tools_work": False, "streaming_tools": False, "error": "tools not supported", "tested": True},
+            # Meta models support tools (non-streaming only)
             "meta.llama-4-maverick-17b-128e-instruct-fp8": {"tools_work": True, "streaming_tools": False, "tested": True},
             "meta.llama-4-scout-17b-16e-instruct": {"tools_work": True, "streaming_tools": False, "tested": True},
+            "meta.llama-4-3-90b-128e-instruct-bf16": {"tools_work": True, "streaming_tools": False, "tested": True},
             "meta.llama-3.2-90b-vision-instruct": {"tools_work": True, "streaming_tools": False, "tested": True},
             "meta.llama-3.1-405b-instruct": {"tools_work": True, "streaming_tools": False, "tested": True},
+            "meta.llama-3.1-8b-instruct": {"tools_work": True, "streaming_tools": False, "tested": True},
             
             # Models that don't work with tools at all
             "xai.grok-3-mini": {"tools_work": False, "streaming_tools": False, "tested": True},

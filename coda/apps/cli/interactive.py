@@ -287,8 +287,11 @@ async def _handle_chat_interaction(
         temperature = config.get("temperature", 0.7)
         max_tokens = config.get("max_tokens", 2000)
 
-        # Check if we should use tools (only for Cohere models and when enabled)
-        model_supports_tools = cli.current_model.startswith("cohere.")
+        # Check if we should use tools (for Cohere and Meta models when enabled)
+        model_supports_tools = (
+            cli.current_model.startswith("cohere.") or 
+            cli.current_model.startswith("meta.")
+        )
 
         if use_tools and model_supports_tools:
             # Use agent-based chat
@@ -327,20 +330,24 @@ async def _handle_chat_interaction(
                     if hasattr(msg, "tool_calls") and msg.tool_calls:
                         tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
 
+                    metadata = {
+                        "mode": cli.current_mode.value,
+                        "provider": (
+                            provider_instance.name
+                            if hasattr(provider_instance, "name")
+                            else "unknown"
+                        ),
+                        "model": cli.current_model,
+                        "tool_call_id": getattr(msg, "tool_call_id", None),
+                    }
+                    # Add tool_calls to metadata if present
+                    if tool_calls_data:
+                        metadata["tool_calls"] = tool_calls_data
+                    
                     cli.session_commands.add_message(
                         role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
                         content=msg.content,
-                        tool_calls=tool_calls_data,
-                        metadata={
-                            "mode": cli.current_mode.value,
-                            "provider": (
-                                provider_instance.name
-                                if hasattr(provider_instance, "name")
-                                else "unknown"
-                            ),
-                            "model": cli.current_model,
-                            "tool_call_id": getattr(msg, "tool_call_id", None),
-                        },
+                        metadata=metadata,
                     )
         else:
             # Use regular streaming
