@@ -150,7 +150,13 @@ def render_message_with_code(content: str):
                         # Regular code block
                         lines = part[3:].split("\n", 1)
                         language = lines[0].strip() if lines[0].strip() else "python"
-                        code = lines[1][:-3] if len(lines) > 1 and lines[1].endswith("```") else lines[1] if len(lines) > 1 else part[3:-3]
+                        code = (
+                            lines[1][:-3]
+                            if len(lines) > 1 and lines[1].endswith("```")
+                            else lines[1]
+                            if len(lines) > 1
+                            else part[3:-3]
+                        )
                         st.code(code, language=language)
                 else:
                     # Regular markdown text
