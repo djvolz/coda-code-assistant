@@ -7,6 +7,7 @@ from typing import Any
 from rich.console import Console
 
 from coda.base.providers import ProviderFactory
+from coda.base.theme import ThemeManager
 
 from .modes import DeveloperMode, get_mode_description
 
@@ -31,6 +32,8 @@ class CommandHandler(ABC):
         self.provider_name = None
         self.provider_instance = None
         self.factory = None
+        self.theme_manager = ThemeManager()
+        self.console_theme = self.theme_manager.get_console_theme()
 
     def set_provider_info(
         self,
@@ -114,9 +117,9 @@ class CommandHandler(ABC):
             # Show tool support notification
             if hasattr(matching_models[0], "supports_functions"):
                 if matching_models[0].supports_functions:
-                    self.console.print("[cyan]✓ Tool support: Available[/cyan]")
+                    self.console.print(f"[{self.console_theme.info}]✓ Tool support: Available[/{self.console_theme.info}]")
                 else:
-                    self.console.print("[yellow]⚠ Tool support: Not available[/yellow]")
+                    self.console.print(f"[{self.console_theme.warning}]⚠ Tool support: Not available[/{self.console_theme.warning}]")
         else:
             self.console.print(f"[red]Model not found: {model_name}[/red]")
 
