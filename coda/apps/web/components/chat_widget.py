@@ -1,12 +1,25 @@
 """Chat interface widget component."""
 
 import asyncio
+import re
+import sys
 from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
+import streamlit.components.v1 as components
+
+# Add diagram_renderer to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "base" / "diagram_renderer"))
 
 from coda.apps.web.utils.state import get_state_value, set_state_value
 from coda.base.providers.registry import ProviderFactory
+
+try:
+    from diagram_renderer import DiagramRenderer
+    DIAGRAM_RENDERER_AVAILABLE = True
+except ImportError:
+    DIAGRAM_RENDERER_AVAILABLE = False
 
 
 def render_chat_interface(provider: str, model: str):
@@ -18,10 +31,8 @@ def render_chat_interface(provider: str, model: str):
     with chat_container:
         for message in messages:
             with st.chat_message(message["role"]):
-                if "```" in message["content"]:
-                    render_message_with_code(message["content"])
-                else:
-                    st.markdown(message["content"])
+                # Always use render_message_with_code to handle both diagrams and regular code
+                render_message_with_code(message["content"])
 
     if prompt := st.chat_input("Type your message here..."):
         # Check for uploaded files and include in context
@@ -45,10 +56,8 @@ def render_chat_interface(provider: str, model: str):
             with st.spinner("Thinking..."):
                 response = get_ai_response(provider, model, messages)
                 if response:
-                    if "```" in response:
-                        render_message_with_code(response)
-                    else:
-                        st.markdown(response)
+                    # Always use render_message_with_code to handle both diagrams and regular code
+                    render_message_with_code(response)
 
                     messages.append({"role": "assistant", "content": response})
                     st.session_state.messages = messages
@@ -58,20 +67,114 @@ def render_chat_interface(provider: str, model: str):
                     st.error("Failed to get response from AI")
 
 
-def render_message_with_code(content: str):
-    """Render a message that contains code blocks."""
-    parts = content.split("```")
+def detect_diagram_code(content: str) -> list[tuple[str, str]]:
+    """Detect diagram code blocks in content."""
+    diagram_languages = ["mermaid", "plantuml", "dot", "graphviz", "uml"]
+    diagrams = []
+    
+    # Find all code blocks
+    pattern = r"```(\w*)\n(.*?)\n```"
+    matches = re.findall(pattern, content, re.DOTALL)
+    
+    for lang, code in matches:
+        if lang.lower() in diagram_languages:
+            diagrams.append((lang, code))
+        elif not lang and DIAGRAM_RENDERER_AVAILABLE:
+            # Try to detect diagram type for unlabeled code blocks
+            renderer = DiagramRenderer()
+            if renderer.detect_diagram_type(code):
+                diagrams.append(("auto", code))
+    
+    return diagrams
 
-    for i, part in enumerate(parts):
-        if i % 2 == 0:
-            if part.strip():
-                st.markdown(part)
+
+def render_diagram(diagram_code: str, diagram_type: str = "auto") -> bool:
+    """Render a diagram using diagram-renderer."""
+    if not DIAGRAM_RENDERER_AVAILABLE:
+        return False
+    
+    try:
+        renderer = DiagramRenderer()
+        
+        # Render the diagram
+        if diagram_type != "auto":
+            # Wrap with proper markdown fence if type is known
+            formatted_code = f"```{diagram_type}\n{diagram_code}\n```"
         else:
-            lines = part.split("\n", 1)
-            language = lines[0].strip() if lines[0].strip() else "python"
-            code = lines[1] if len(lines) > 1 else part
+            formatted_code = diagram_code
+            
+        html_content = renderer.render_diagram_auto(formatted_code)
+        
+        if html_content:
+            # Use Streamlit components to render the HTML
+            components.html(html_content, height=600, scrolling=True)
+            return True
+    except Exception as e:
+        st.error(f"Failed to render diagram: {str(e)}")
+    
+    return False
 
-            st.code(code, language=language)
+
+def render_message_with_code(content: str):
+    """Render a message that contains code blocks and diagrams."""
+    # Handle empty content
+    if not content:
+        return
+        
+    # First check if we have diagram renderer available and content has code blocks
+    if DIAGRAM_RENDERER_AVAILABLE and "```" in content:
+        # Detect diagrams
+        diagrams = detect_diagram_code(content)
+        
+        # If we have diagrams, render them separately
+        if diagrams:
+            # Split content by code blocks to render text and diagrams separately
+            parts = re.split(r'(```\w*\n.*?\n```)', content, flags=re.DOTALL)
+            
+            for part in parts:
+                if part.startswith("```"):
+                    # Check if this is a diagram
+                    is_diagram = False
+                    for diagram_type, diagram_code in diagrams:
+                        if diagram_code in part:
+                            # Render the diagram
+                            with st.expander("📊 View Diagram", expanded=True):
+                                if not render_diagram(diagram_code, diagram_type):
+                                    # Fallback to code block
+                                    st.code(diagram_code, language=diagram_type)
+                            is_diagram = True
+                            break
+                    
+                    if not is_diagram:
+                        # Regular code block
+                        lines = part[3:].split("\n", 1)
+                        language = lines[0].strip() if lines[0].strip() else "python"
+                        code = lines[1].rstrip("```") if len(lines) > 1 else part[3:-3]
+                        st.code(code, language=language)
+                else:
+                    # Regular markdown text
+                    if part.strip():
+                        st.markdown(part)
+            return
+    
+    # Handle content without code blocks or when diagram renderer is not available
+    if "```" in content:
+        # Original implementation for code blocks without diagram support
+        parts = content.split("```")
+
+        for i, part in enumerate(parts):
+            if i % 2 == 0:
+                if part.strip():
+                    st.markdown(part)
+            else:
+                lines = part.split("\n", 1)
+                language = lines[0].strip() if lines[0].strip() else "python"
+                code = lines[1] if len(lines) > 1 else part
+
+                st.code(code, language=language)
+    else:
+        # Just markdown content
+        st.markdown(content)
 
 
 def get_ai_response(provider: str, model: str, messages: list[dict[str, str]]) -> str | None:

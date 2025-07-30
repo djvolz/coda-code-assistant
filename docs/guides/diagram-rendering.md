@@ -21,6 +21,20 @@ git submodule update --init --recursive
 
 ## Usage
 
+### In the Web UI
+
+The Streamlit web interface automatically detects and renders diagrams in chat conversations:
+
+1. Start the web UI: `uv run streamlit run coda/apps/web/app.py`
+2. Navigate to the Chat page
+3. When the AI generates diagram code blocks (Mermaid, PlantUML, or Graphviz), they will be automatically rendered as interactive diagrams
+4. Diagrams appear in expandable sections with full zoom/pan capabilities
+
+Example prompts to try:
+- "Create a flowchart showing the login process"
+- "Draw a class diagram for a user authentication system"
+- "Generate a sequence diagram for an API request"
+
 ### As a Tool
 
 The `render_diagram` tool is available in the tool registry:
@@ -95,7 +109,16 @@ The tool generates self-contained HTML files that include:
 The integration consists of:
 1. **Git Submodule**: `coda/base/diagram_renderer/` - The diagram-renderer library
 2. **Tool Integration**: `coda/services/tools/diagram_tools.py` - MCP tool wrapper
-3. **Automatic Registration**: The tool is automatically registered when the module loads
+3. **Web UI Integration**: `coda/apps/web/components/chat_widget.py` - Automatic diagram detection and rendering
+4. **Automatic Registration**: The tool is automatically registered when the module loads
+
+### Web UI Implementation
+
+The web interface enhances the chat experience by:
+- Automatically detecting diagram code blocks (mermaid, plantuml, dot, graphviz, uml)
+- Rendering diagrams inline using Streamlit components
+- Providing fallback to code blocks if rendering fails
+- Supporting all diagram types that diagram-renderer supports
 
 ## Examples
 
