@@ -2,10 +2,11 @@
 Coda Tools - Comprehensive tool system for AI assistant interactions.
 
 This package provides a collection of tools for file operations, shell commands,
-web interactions, and Git operations, all built on the Model Context Protocol (MCP).
+web interactions, Git operations, and diagram rendering, all built on the Model Context Protocol (MCP).
 """
 
 # Import all tool modules to register them
+from . import diagram_tools as _diagram_tools  # noqa: F401
 from . import file_tools as _file_tools  # noqa: F401
 from . import git_tools as _git_tools  # noqa: F401
 from . import intelligence_tools as _intelligence_tools  # noqa: F401
