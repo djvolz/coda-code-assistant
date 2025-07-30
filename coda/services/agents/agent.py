@@ -507,8 +507,8 @@ class Agent:
                             self.console.print(f"[red]{error_content}[/red]")
                             return error_content, messages
 
-                    # Display response if any
-                    if response.content:
+                    # Display response if any (but not if it's just tool call JSON)
+                    if response.content and not (response.tool_calls and response.content.strip().startswith('{')):
                         self._print_response(response.content)
                     # Add assistant message with tool calls
                     messages.append(

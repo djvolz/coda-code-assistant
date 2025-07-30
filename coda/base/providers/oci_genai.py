@@ -770,6 +770,56 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 if tool_calls:
                     finish_reason = "tool_calls"
             
+            # Check if Meta model returned tool calls as JSON in content
+            elif not tool_calls and content and "meta" in model.lower() and content.strip().startswith('{'):
+                try:
+                    # Meta models may return tool calls as JSON objects in content
+                    # Handle both single tool call and multiple (separated by newlines)
+                    tool_calls = []
+                    lines = content.strip().split('\n')
+                    parsed_content = []
+                    
+                    for line in lines:
+                        line = line.strip()
+                        if line.startswith('{'):
+                            try:
+                                tool_json = json.loads(line)
+                                if tool_json.get("type") == "function" and "name" in tool_json:
+                                    # Extract parameters - handle nested structure
+                                    params = tool_json.get("parameters", {})
+                                    # If parameters have nested values, extract them
+                                    if isinstance(params, dict):
+                                        # Look for actual parameter values
+                                        extracted_params = {}
+                                        for key, val in params.items():
+                                            if isinstance(val, dict) and "value" in val:
+                                                extracted_params[key] = val["value"]
+                                            else:
+                                                extracted_params[key] = val
+                                        params = extracted_params
+                                    
+                                    tool_calls.append(ToolCall(
+                                        id=f"meta_{tool_json['name']}_{len(tool_calls)}",
+                                        name=tool_json["name"],
+                                        arguments=params
+                                    ))
+                                else:
+                                    # Not a tool call, keep as content
+                                    parsed_content.append(line)
+                            except json.JSONDecodeError:
+                                # Not valid JSON, keep as content
+                                parsed_content.append(line)
+                        elif line and not line.endswith('assistant'):
+                            # Keep non-JSON content (but skip trailing "assistant" markers)
+                            parsed_content.append(line)
+                    
+                    if tool_calls:
+                        finish_reason = "tool_calls"
+                        # Only keep non-tool-call content
+                        content = '\n'.join(parsed_content).strip()
+                except Exception:
+                    pass  # If anything fails, continue to legacy check
+            
             # Legacy: Check if Meta model returned tool calls in content (they use special syntax)
             elif not tool_calls and content and "meta" in model.lower():
                 # Parse Meta's tool call syntax: <|python_start|>function_name(args)<|python_end|>
