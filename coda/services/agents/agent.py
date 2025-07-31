@@ -514,7 +514,9 @@ class Agent:
                         is_tool_json = (response.tool_calls and 
                                       (content_stripped.startswith('{') or 
                                        '<|python_start|>' in content_stripped or
-                                       '<|eom|>' in content_stripped))
+                                       '<|eom|>' in content_stripped or
+                                       '<|end_of_text|>' in content_stripped or
+                                       '<|begin_of_text|>' in content_stripped))
                         if not is_tool_json:
                             self._print_response(response.content)
                     # Add assistant message with tool calls

@@ -387,6 +387,42 @@ class TestOCIProviderToolSupport:
         assert result.tool_calls[1].name == "list_directory"
         assert result.tool_calls[1].arguments == {"path": "/path/to/directory", "show_hidden": "False"}
     
+    def test_meta_model_marker_cleanup(self, oci_provider):
+        """Test that Meta model markers are cleaned up from regular responses."""
+        # Mock validate_model to return True
+        oci_provider.validate_model = MagicMock(return_value=True)
+        
+        # Configure tool tester to indicate support
+        oci_provider._tool_tester.get_tool_support.return_value = {
+            "tested": True,
+            "tools_work": True,
+            "streaming_tools": False
+        }
+        
+        # Mock the actual chat request for Meta model with markers in content
+        mock_response = MagicMock()
+        mock_choice = MagicMock()
+        mock_choice.message.content = '''<|begin_of_text|>The current time is 2025-07-30 17:52:19.<|eom|><|end_of_text|>'''
+        mock_choice.message.tool_calls = None
+        mock_choice.finish_reason = "stop"
+        mock_response.choices = [mock_choice]
+        
+        oci_provider.inference_client.chat.return_value.data.chat_response = mock_response
+        
+        messages = [Message(role=Role.USER, content="What time is it?")]
+        
+        result = oci_provider.chat(
+            messages=messages,
+            model="meta.llama-3.3-70b-instruct",
+            tools=None
+        )
+        
+        # Content should be cleaned of Meta markers
+        assert result.content == "The current time is 2025-07-30 17:52:19."
+        assert "<|begin_of_text|>" not in result.content
+        assert "<|eom|>" not in result.content  
+        assert "<|end_of_text|>" not in result.content
+    
     def test_model_metadata_tool_support(self, oci_provider):
         """Test that model metadata includes tool support information."""
         # Simply test that the provider has properly initialized models

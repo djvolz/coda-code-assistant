@@ -754,6 +754,20 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 # Content is a string
                 content = message.content if message.content else ""
             
+            # Clean up Meta-specific markers from content for better display
+            if "meta" in model.lower() and content:
+                import re
+                # Remove Meta-specific markers that shouldn't be displayed to users
+                content = re.sub(r'<\|eom\|>', '', content)
+                content = re.sub(r'<\|end_of_text\|>', '', content)
+                content = re.sub(r'<\|begin_of_text\|>', '', content)
+                content = re.sub(r'<\|header_end\|>', '', content)
+                content = re.sub(r'assistant<\|header_end\|>', '', content)
+                content = re.sub(r'<\|eom\|>assistant<\|header_end\|>', '', content)
+                # Clean up multiple newlines and whitespace
+                content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content)
+                content = content.strip()
+            
             # Check for tool calls in the response (Meta models support this)
             tool_calls = None
             finish_reason = choice.finish_reason  # Initialize finish_reason early
@@ -811,7 +825,8 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                                 parsed_content.append(line)
                         elif line:
                             # Skip Meta-specific markers and empty content
-                            if not any(marker in line for marker in ['<|eom|>', '<|header_end|>', 'assistant<|header_end|>']):
+                            meta_markers = ['<|eom|>', '<|end_of_text|>', '<|begin_of_text|>', '<|header_end|>', 'assistant<|header_end|>']
+                            if not any(marker in line for marker in meta_markers):
                                 # Keep non-JSON content (but skip trailing markers)
                                 if not (line.strip() == 'assistant' or line.strip().endswith('assistant')):
                                     parsed_content.append(line)
@@ -906,8 +921,12 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                         # Also remove any Meta-specific markers
                         content = re.sub(r'<\|eom\|>assistant<\|header_end\|>', '', content).strip()
                         content = re.sub(r'<\|eom\|>', '', content).strip()
+                        content = re.sub(r'<\|end_of_text\|>', '', content).strip()
+                        content = re.sub(r'<\|begin_of_text\|>', '', content).strip()
                         content = re.sub(r'<\|header_end\|>', '', content).strip()
                         content = re.sub(r'assistant<\|header_end\|>', '', content).strip()
+                        # Clean up multiple newlines and whitespace
+                        content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content).strip()
 
             # Generic format usage
             usage = (
