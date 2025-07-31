@@ -147,11 +147,7 @@ async def _select_model(unique_models, model: str, console: Console):
     if selected_model and hasattr(selected_model, "metadata") and selected_model.metadata:
         capabilities = selected_model.metadata.get("capabilities", [])
         # Check for base models (models that might not support chat)
-        is_base_model = (
-            "FINE_TUNE" in capabilities
-            or model.endswith("-16k")  # Cohere base models often end with -16k
-            or "base" in model.lower()
-        )
+        is_base_model = "FINE_TUNE" in capabilities
 
         if is_base_model:
             console.print(
@@ -279,12 +275,7 @@ async def _handle_chat_interaction(
         temperature = config.get("temperature", 0.7)
         max_tokens = config.get("max_tokens", 2000)
 
-        # Check if we should use tools (for Cohere and Meta models when enabled)
-        model_supports_tools = cli.current_model.startswith(
-            "cohere."
-        ) or cli.current_model.startswith("meta.")
-
-        if use_tools and model_supports_tools:
+        if use_tools:
             # Use agent-based chat
             with console.status(
                 f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
@@ -388,7 +379,7 @@ async def _handle_chat_interaction(
         cli.stop_interrupt_listener()
 
     # Add assistant message to history (even if interrupted) - only for non-tool path
-    if (full_response or interrupted) and not (use_tools and model_supports_tools):
+    if (full_response or interrupted) and not use_tools:
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
 
         # Track assistant message in session manager
@@ -599,11 +590,7 @@ async def run_one_shot(
             capabilities = selected_model.metadata.get("capabilities", [])
             # Check for base models (models that might not support chat)
             # Known base model patterns
-            is_base_model = (
-                "FINE_TUNE" in capabilities
-                or model.endswith("-16k")  # Cohere base models often end with -16k
-                or "base" in model.lower()
-            )
+            is_base_model = "FINE_TUNE" in capabilities
 
             if is_base_model:
                 console.print(
@@ -628,11 +615,8 @@ async def run_one_shot(
         # Get response
         console.print(f"\n[bold cyan]User:[/bold cyan] {prompt}")
 
-        # Check if we should use tools
-        model_supports_tools = model.startswith("cohere.") or model.startswith("meta.")
-
         # Use appropriate handler based on tool support
-        if model_supports_tools and developer_mode != DeveloperMode.GENERAL:
+        if developer_mode != DeveloperMode.GENERAL:
             # Use agent for tool-enabled models in non-general modes
             from .agent_chat import AgentChatHandler
 

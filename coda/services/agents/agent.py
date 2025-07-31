@@ -509,44 +509,9 @@ class Agent:
                             self.console.print(f"[red]{error_content}[/red]")
                             return error_content, messages
 
-                    # Display response if any (but not if it's just tool call JSON)
-                    if response.content:
-                        # Skip display if content is only tool call JSON or Meta-specific markers
-                        content_stripped = response.content.strip()
-
-                        # Check if content looks like tool call JSON (with or without tool_calls present)
-                        looks_like_tool_json = (
-                            content_stripped.startswith("[{")  # Array of tool calls
-                            or (
-                                content_stripped.startswith("{")
-                                and any(
-                                    key in content_stripped
-                                    for key in ['"type": "function"', '"name":', '"parameters":']
-                                )
-                            )
-                            or "<|python_start|>" in content_stripped
-                            or "<|python_end|>" in content_stripped
-                        )
-
-                        # Check for Meta-specific markers that indicate raw output
-                        has_meta_markers = any(
-                            marker in content_stripped
-                            for marker in [
-                                "<|eom|>",
-                                "<|end_of_text|>",
-                                "<|begin_of_text|>",
-                                "<|header_start|>",
-                                "<|header_end|>",
-                            ]
-                        )
-
-                        is_tool_json = (
-                            response.tool_calls and (looks_like_tool_json or has_meta_markers)
-                        ) or (
-                            looks_like_tool_json and len(content_stripped) < 500
-                        )  # Skip short JSON-like content
-                        if not is_tool_json:
-                            self._print_response(response.content)
+                    # Display response if any
+                    if response.content and response.content.strip():
+                        self._print_response(response.content)
                     # Add assistant message with tool calls
                     messages.append(
                         Message(

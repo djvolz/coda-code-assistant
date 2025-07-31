@@ -407,28 +407,6 @@ class InteractiveCLI(CommandHandler):
                 self.current_model = new_model
                 self.console.print(f"\n[green]Switched to model: {new_model}[/green]")
 
-                # Find the selected model object to check capabilities
-                selected_model = next((m for m in self.available_models if m.id == new_model), None)
-                if (
-                    selected_model
-                    and hasattr(selected_model, "metadata")
-                    and selected_model.metadata
-                ):
-                    capabilities = selected_model.metadata.get("capabilities", [])
-                    # Check for base models (models that might not support chat)
-                    is_base_model = (
-                        "FINE_TUNE" in capabilities
-                        or new_model.endswith("-16k")  # Cohere base models often end with -16k
-                        or "base" in new_model.lower()
-                    )
-
-                    if is_base_model:
-                        self.console.print(
-                            f"[{self.console_theme.warning}]⚠️  Warning: This model may be a base model that doesn't support chat.[/{self.console_theme.warning}]"
-                        )
-                        self.console.print(
-                            f"[{self.console_theme.warning}]   If you encounter errors, try a different model.[/{self.console_theme.warning}]"
-                        )
             else:
                 self.console.print(f"\n[yellow]Current model: {self.current_model}[/yellow]")
         else:

@@ -34,27 +34,12 @@ class OptionCompleter(Completer):
                 # Format display with metadata if available
                 display = f"{value:<15} {description}"
                 if metadata:
-                    # Prioritize tool support information if available
+                    # Add metadata
                     meta_items = []
-                    if "tools" in metadata:
-                        tools_status = metadata["tools"]
-                        # Use emoji indicators for better visibility
-                        if tools_status == "Yes":
-                            meta_items.append("🔧 Tools")
-                        elif tools_status == "Partial":
-                            meta_items.append("⚠️  Partial Tools")
-                        elif tools_status == "Error":
-                            meta_items.append("🚫 Tool Error")
-                        elif tools_status == "No":
-                            meta_items.append("❌ No Tools")
-                        else:
-                            meta_items.append("❓ Untested")
-                    
-                    # Add other metadata
                     for k, v in metadata.items():
-                        if k != "tools":  # Skip tools since we already handled it
+                        if k != "tools":  # Skip tools metadata
                             meta_items.append(f"{k}: {v}")
-                    
+
                     if meta_items:
                         meta_str = " ".join(f"[{item}]" for item in meta_items)
                         display += f" {meta_str}"
@@ -208,32 +193,7 @@ class CompletionModelSelector(CompletionSelector):
             metadata = {
                 "provider": model.provider,
             }
-            
-            # Add tool support status as the first metadata item
-            if hasattr(model, "supports_functions"):
-                if model.supports_functions:
-                    # Check for tool support notes
-                    if hasattr(model, "metadata") and model.metadata.get("tool_support_notes"):
-                        notes = model.metadata["tool_support_notes"]
-                        if "non-streaming only" in notes:
-                            metadata["tools"] = "Partial"
-                        else:
-                            metadata["tools"] = "Yes"
-                    else:
-                        metadata["tools"] = "Yes"
-                else:
-                    # Check for error details
-                    if hasattr(model, "metadata") and model.metadata.get("tool_support_notes"):
-                        notes = model.metadata["tool_support_notes"]
-                        if any("error:" in note for note in notes):
-                            metadata["tools"] = "Error"
-                        else:
-                            metadata["tools"] = "No"
-                    else:
-                        metadata["tools"] = "No"
-            else:
-                metadata["tools"] = "Unknown"
-            
+
             if hasattr(model, "metadata") and model.metadata:
                 if "context_window" in model.metadata:
                     metadata["context"] = f"{model.metadata['context_window']:,}"
@@ -248,7 +208,7 @@ class CompletionModelSelector(CompletionSelector):
             title="Select Model",
             options=options,
             console=console,
-            instruction_text="Select a model (🔧 = tools work, ⚠️ = partial support, 🚫 = known errors, ❌ = no tools, ❓ = untested)",
+            instruction_text="Select a model",
         )
 
 

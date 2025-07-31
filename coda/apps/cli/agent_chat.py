@@ -24,11 +24,7 @@ class AgentChatHandler:
         # Use agent for models that support function calling
         model_info = next((m for m in self.provider.list_models() if m.id == model), None)
         supports_tools = model_info and model_info.supports_functions
-        
-        # Only notify if user has explicitly disabled tools
-        if not self.use_tools:
-            self.console.print(f"[{self.theme.info}]ℹ Tool support: Disabled by user[/{self.theme.info}]")
-        
+
         return supports_tools and self.use_tools
 
     def get_available_tools(self):
@@ -102,7 +98,7 @@ Each user request should be evaluated independently. Previous tool usage does no
             # Create interrupt check function
             def check_interrupt():
                 return hasattr(self.cli, "interrupt_event") and self.cli.interrupt_event.is_set()
-            
+
             response_content, updated_messages = await self.agent.run_async_streaming(
                 input=user_input,
                 messages=messages[:-1] if messages else None,  # Exclude last user message

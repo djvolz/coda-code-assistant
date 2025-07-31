@@ -211,9 +211,9 @@ class ObservabilityManager:
             status["observability"]["components"]["health"] = self.health_monitor.get_status()
 
         if self.error_tracker:
-            status["observability"]["components"]["error_tracking"] = (
-                self.error_tracker.get_status()
-            )
+            status["observability"]["components"][
+                "error_tracking"
+            ] = self.error_tracker.get_status()
 
         if self.profiler:
             status["observability"]["components"]["profiling"] = self.profiler.get_status()

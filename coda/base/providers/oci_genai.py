@@ -58,7 +58,6 @@ class OCIGenAIProvider(BaseProvider):
     _cache_timestamp: datetime | None = None
     _cache_duration_hours = 24  # Cache models for 24 hours
     _model_id_map: dict[str, str] = {}  # Maps friendly names to OCI model IDs
-    _tool_tester = None  # Lazy-loaded tool tester
 
     def __init__(
         self,
@@ -100,13 +99,6 @@ class OCIGenAIProvider(BaseProvider):
         # Initialize the Generative AI clients
         self.inference_client = GenerativeAiInferenceClient(self.config)
         self.genai_client = GenerativeAiClient(self.config)
-        
-    def _get_tool_tester(self):
-        """Get or create the tool tester instance."""
-        if self._tool_tester is None:
-            from .oci_tool_tester import OCIToolTester
-            self._tool_tester = OCIToolTester()
-        return self._tool_tester
 
     def _get_from_coda_config(self) -> str | None:
         """Get compartment ID from Coda config file."""
@@ -225,50 +217,26 @@ class OCIGenAIProvider(BaseProvider):
                     model_id = f"{vendor}.{display_name}" if display_name else model_summary.id
                     provider = vendor
 
-                # Handle duplicates - prefer models with CHAT capability over TEXT_GENERATION only
+                # Handle duplicates - prefer models without FINE_TUNE capability
                 if model_id in seen_model_ids:
                     existing_model = seen_model_ids[model_id]
                     existing_caps = existing_model.metadata.get("capabilities", [])
 
-                    # Skip if the existing model already has CHAT capability
-                    if "CHAT" in existing_caps:
+                    # If existing model doesn't have FINE_TUNE, keep it
+                    if "FINE_TUNE" not in existing_caps:
                         continue
 
-                    # If new model has CHAT but existing doesn't, we'll replace it
-                    if "CHAT" in capabilities and "CHAT" not in existing_caps:
+                    # If new model doesn't have FINE_TUNE but existing does, replace
+                    if "FINE_TUNE" not in capabilities and "FINE_TUNE" in existing_caps:
                         # Remove the old model from discovered_models
                         discovered_models = [m for m in discovered_models if m.id != model_id]
                     else:
                         # Otherwise skip this duplicate
                         continue
 
-                # Get dynamic tool support info
-                tool_tester = self._get_tool_tester()
-                tool_info = tool_tester.get_tool_support(model_id, provider=self)
-                
-                # Set capabilities based on test results
-                if tool_info.get("tested"):
-                    supports_functions = tool_info.get("tools_work", False)
-                    supports_streaming = True  # Streaming works for chat, just not for tools
-                    tool_support_notes = []
-                    
-                    if tool_info.get("tools_work"):
-                        if not tool_info.get("streaming_tools"):
-                            tool_support_notes.append("non-streaming only")
-                    else:
-                        if tool_info.get("error"):
-                            tool_support_notes.append(f"error: {tool_info['error']}")
-                else:
-                    # For untested models, be conservative and assume no tool support
-                    # Only Cohere models have proven tool support in OCI GenAI
-                    if provider.lower() == "cohere":
-                        supports_functions = True
-                        supports_streaming = True
-                        tool_support_notes = ["untested"]
-                    else:
-                        supports_functions = False
-                        supports_streaming = True
-                        tool_support_notes = ["untested"]
+                # Let all models attempt to use tools - the API will return errors if not supported
+                supports_functions = True
+                supports_streaming = True
 
                 # Create model object
                 model = Model(
@@ -289,7 +257,6 @@ class OCIGenAIProvider(BaseProvider):
                             model_summary, "is_long_term_supported", None
                         ),
                         "oci_model_id": model_summary.id,  # Store the actual OCI model ID
-                        "tool_support_notes": tool_support_notes if tool_support_notes else None,
                     },
                 )
 
@@ -537,23 +504,33 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                     oci_msg = UserMessage(role="USER", content=content)
                 elif msg.role == Role.ASSISTANT:
                     # Check if assistant message has tool calls
-                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
                         # Convert tool calls to Meta format
                         meta_tool_calls = []
                         for tc in msg.tool_calls:
-                            meta_tool_calls.append(FunctionCall(
-                                id=tc.id,
-                                name=tc.name,
-                                arguments=json.dumps(tc.arguments) if isinstance(tc.arguments, dict) else tc.arguments
-                            ))
-                        oci_msg = AssistantMessage(role="ASSISTANT", content=content, tool_calls=meta_tool_calls)
+                            meta_tool_calls.append(
+                                FunctionCall(
+                                    id=tc.id,
+                                    name=tc.name,
+                                    arguments=(
+                                        json.dumps(tc.arguments)
+                                        if isinstance(tc.arguments, dict)
+                                        else tc.arguments
+                                    ),
+                                )
+                            )
+                        oci_msg = AssistantMessage(
+                            role="ASSISTANT", content=content, tool_calls=meta_tool_calls
+                        )
                     else:
                         oci_msg = AssistantMessage(role="ASSISTANT", content=content)
                 elif msg.role == Role.TOOL:
                     # Handle tool messages
                     tool_content = [TextContent(type="TEXT", text=msg.content)]
-                    if hasattr(msg, 'tool_call_id') and msg.tool_call_id:
-                        oci_msg = ToolMessage(role="TOOL", content=tool_content, tool_call_id=msg.tool_call_id)
+                    if hasattr(msg, "tool_call_id") and msg.tool_call_id:
+                        oci_msg = ToolMessage(
+                            role="TOOL", content=tool_content, tool_call_id=msg.tool_call_id
+                        )
                     else:
                         oci_msg = ToolMessage(role="TOOL", content=tool_content)
                 else:
@@ -573,7 +550,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 params["max_tokens"] = max_tokens
             if top_p is not None:
                 params["top_p"] = top_p
-            
+
             # Add tools for Meta models if provided
             if tools and provider == "meta":
                 params["tools"] = self._convert_tools_to_meta(tools)
@@ -621,31 +598,25 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             cohere_tools.append(cohere_tool)
 
         return cohere_tools
-    
+
     def _convert_tools_to_meta(self, tools: list[Tool]) -> list[FunctionDefinition]:
         """Convert standard tools to Meta format."""
         meta_tools = []
-        
+
         for tool in tools:
             # Convert to Meta's FunctionDefinition format
-            params = {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-            
+            params = {"type": "object", "properties": {}, "required": []}
+
             if "properties" in tool.parameters:
                 params["properties"] = tool.parameters["properties"]
             if "required" in tool.parameters:
                 params["required"] = tool.parameters["required"]
-                
+
             meta_tool = FunctionDefinition(
-                name=tool.name,
-                description=tool.description,
-                parameters=params
+                name=tool.name, description=tool.description, parameters=params
             )
             meta_tools.append(meta_tool)
-            
+
         return meta_tools
 
     def chat(
@@ -662,20 +633,6 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
         """Send chat completion request using OCI SDK."""
         if not self.validate_model(model):
             raise ValueError(f"Model {model} is not supported")
-        
-        # Check if tools are requested but not supported
-        if tools:
-            tool_tester = self._get_tool_tester()
-            tool_info = tool_tester.get_tool_support(model, provider=self)
-            
-            if tool_info.get("tested") and not tool_info.get("tools_work", False):
-                # Model is known to not support tools
-                error_msg = tool_info.get("error", "not supported")
-                raise ValueError(
-                    f"Model '{model}' does not support tool/function calling. "
-                    f"Known issue: {error_msg}. "
-                    f"Please use a model that supports tools or disable tool usage."
-                )
 
         # Create chat request
         chat_request = self._create_chat_request(
@@ -749,184 +706,32 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             # Extract content based on type
             if hasattr(message.content, "__iter__") and not isinstance(message.content, str):
                 # Content is a list
-                content = message.content[0].text if message.content and len(message.content) > 0 else ""
+                content = (
+                    message.content[0].text if message.content and len(message.content) > 0 else ""
+                )
             else:
                 # Content is a string
                 content = message.content if message.content else ""
-            
-            # Clean up Meta-specific markers from content for better display
-            if "meta" in model.lower() and content:
-                import re
-                # Remove Meta-specific markers that shouldn't be displayed to users
-                content = re.sub(r'<\|eom\|>', '', content)
-                content = re.sub(r'<\|end_of_text\|>', '', content)
-                content = re.sub(r'<\|begin_of_text\|>', '', content)
-                content = re.sub(r'<\|header_end\|>', '', content)
-                content = re.sub(r'assistant<\|header_end\|>', '', content)
-                content = re.sub(r'<\|eom\|>assistant<\|header_end\|>', '', content)
-                # Clean up multiple newlines and whitespace
-                content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content)
-                content = content.strip()
-            
+
             # Check for tool calls in the response (Meta models support this)
             tool_calls = None
             finish_reason = choice.finish_reason  # Initialize finish_reason early
-            
-            if hasattr(message, 'tool_calls') and message.tool_calls:
+
+            if hasattr(message, "tool_calls") and message.tool_calls:
                 tool_calls = []
                 for tc in message.tool_calls:
                     tool_call = ToolCall(
                         id=tc.id,
                         name=tc.name,
-                        arguments=json.loads(tc.arguments) if isinstance(tc.arguments, str) else tc.arguments,
+                        arguments=(
+                            json.loads(tc.arguments)
+                            if isinstance(tc.arguments, str)
+                            else tc.arguments
+                        ),
                     )
                     tool_calls.append(tool_call)
                 if tool_calls:
                     finish_reason = "tool_calls"
-            
-            # Check if Meta model returned tool calls as JSON in content
-            elif not tool_calls and content and "meta" in model.lower() and content.strip().startswith('{'):
-                try:
-                    # Meta models may return tool calls as JSON objects in content
-                    # Handle both single tool call and multiple (separated by newlines)
-                    tool_calls = []
-                    lines = content.strip().split('\n')
-                    parsed_content = []
-                    
-                    for line in lines:
-                        line = line.strip()
-                        if line.startswith('{'):
-                            try:
-                                tool_json = json.loads(line)
-                                if tool_json.get("type") == "function" and "name" in tool_json:
-                                    # Extract parameters - handle nested structure
-                                    params = tool_json.get("parameters", {})
-                                    # If parameters have nested values, extract them
-                                    if isinstance(params, dict):
-                                        # Look for actual parameter values
-                                        extracted_params = {}
-                                        for key, val in params.items():
-                                            if isinstance(val, dict) and "value" in val:
-                                                extracted_params[key] = val["value"]
-                                            else:
-                                                extracted_params[key] = val
-                                        params = extracted_params
-                                    
-                                    tool_calls.append(ToolCall(
-                                        id=f"meta_{tool_json['name']}_{len(tool_calls)}",
-                                        name=tool_json["name"],
-                                        arguments=params
-                                    ))
-                                else:
-                                    # Not a tool call, keep as content
-                                    parsed_content.append(line)
-                            except json.JSONDecodeError:
-                                # Not valid JSON, keep as content
-                                parsed_content.append(line)
-                        elif line:
-                            # Skip Meta-specific markers and empty content
-                            meta_markers = ['<|eom|>', '<|end_of_text|>', '<|begin_of_text|>', '<|header_end|>', 'assistant<|header_end|>']
-                            if not any(marker in line for marker in meta_markers):
-                                # Keep non-JSON content (but skip trailing markers)
-                                if not (line.strip() == 'assistant' or line.strip().endswith('assistant')):
-                                    parsed_content.append(line)
-                    
-                    if tool_calls:
-                        # Meta models don't support parallel tool calls
-                        # Only return the first tool call to avoid API error
-                        if len(tool_calls) > 1:
-                            import logging
-                            logging.warning(
-                                f"Meta model returned {len(tool_calls)} tool calls but only first will be executed "
-                                f"(Meta models don't support parallel tool calls)"
-                            )
-                            tool_calls = tool_calls[:1]  # Keep only the first tool call
-                        
-                        finish_reason = "tool_calls"
-                        # Only keep non-tool-call content
-                        content = '\n'.join(parsed_content).strip()
-                        # Clear content if it only contained tool calls
-                        if not content or all(line.strip() in ['', 'assistant'] for line in parsed_content):
-                            content = ""
-                except Exception:
-                    pass  # If anything fails, continue to legacy check
-            
-            # Legacy: Check if Meta model returned tool calls in content (they use special syntax)
-            elif not tool_calls and content and "meta" in model.lower():
-                # Parse Meta's tool call syntax: <|python_start|>function_name(args)<|python_end|>
-                import re
-                tool_pattern = r'<\|python_start\|>([^<]+)<\|python_end\|>'
-                matches = re.findall(tool_pattern, content)
-                
-                if matches:
-                    tool_calls = []
-                    for match in matches:
-                        # Parse function call - handle both func() and func(args)
-                        func_match = re.match(r'(\w+)\((.*)\)', match.strip())
-                        if func_match:
-                            func_name = func_match.group(1)
-                            func_args_str = func_match.group(2).strip()
-                            
-                            # Parse arguments
-                            arguments = {}
-                            if func_args_str:
-                                # Try to parse as JSON first (for complex arguments)
-                                try:
-                                    # Handle JSON-like syntax
-                                    if func_args_str.startswith('{') and func_args_str.endswith('}'):
-                                        arguments = json.loads(func_args_str)
-                                    else:
-                                        # Simple parsing for key=value pairs
-                                        arg_pattern = r'(\w+)\s*=\s*([^,]+?)(?:,|$)'
-                                        for arg_match in re.finditer(arg_pattern, func_args_str):
-                                            key = arg_match.group(1)
-                                            value = arg_match.group(2).strip().strip('"\'')
-                                            # Try to convert to appropriate type
-                                            try:
-                                                # Try int
-                                                arguments[key] = int(value)
-                                            except ValueError:
-                                                try:
-                                                    # Try float
-                                                    arguments[key] = float(value)
-                                                except ValueError:
-                                                    # Keep as string
-                                                    arguments[key] = value
-                                except:
-                                    # If all parsing fails, store raw string
-                                    arguments = {"raw": func_args_str}
-                            
-                            tool_call = ToolCall(
-                                id=f"meta_{func_name}_{len(tool_calls)}",
-                                name=func_name,
-                                arguments=arguments,
-                            )
-                            tool_calls.append(tool_call)
-                    
-                    # Set finish reason to tool_calls if we found any
-                    if tool_calls:
-                        # Meta models don't support parallel tool calls
-                        # Only return the first tool call to avoid API error
-                        if len(tool_calls) > 1:
-                            import logging
-                            logging.warning(
-                                f"Meta model returned {len(tool_calls)} tool calls but only first will be executed "
-                                f"(Meta models don't support parallel tool calls)"
-                            )
-                            tool_calls = tool_calls[:1]  # Keep only the first tool call
-                        
-                        finish_reason = "tool_calls"
-                        # Remove the tool call syntax from content
-                        content = re.sub(tool_pattern, '', content).strip()
-                        # Also remove any Meta-specific markers
-                        content = re.sub(r'<\|eom\|>assistant<\|header_end\|>', '', content).strip()
-                        content = re.sub(r'<\|eom\|>', '', content).strip()
-                        content = re.sub(r'<\|end_of_text\|>', '', content).strip()
-                        content = re.sub(r'<\|begin_of_text\|>', '', content).strip()
-                        content = re.sub(r'<\|header_end\|>', '', content).strip()
-                        content = re.sub(r'assistant<\|header_end\|>', '', content).strip()
-                        # Clean up multiple newlines and whitespace
-                        content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content).strip()
 
             # Generic format usage
             usage = (
@@ -965,29 +770,6 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
         """Stream chat completion response using OCI SDK."""
         if not self.validate_model(model):
             raise ValueError(f"Model {model} is not supported")
-        
-        # Check if tools are requested but not supported
-        if tools:
-            tool_tester = self._get_tool_tester()
-            tool_info = tool_tester.get_tool_support(model, provider=self)
-            
-            if tool_info.get("tested"):
-                if not tool_info.get("tools_work", False):
-                    # Model is known to not support tools at all
-                    error_msg = tool_info.get("error", "not supported")
-                    raise ValueError(
-                        f"Model '{model}' does not support tool/function calling. "
-                        f"Known issue: {error_msg}. "
-                        f"Please use a model that supports tools or disable tool usage."
-                    )
-                elif tool_info.get("tools_work") and not tool_info.get("streaming_tools", False):
-                    # Model supports tools but not in streaming mode
-                    # Log warning but continue - tools just won't be returned
-                    import logging
-                    logging.warning(
-                        f"Model '{model}' supports tools but not in streaming mode. "
-                        f"Tool calls will not be returned in the streaming response."
-                    )
 
         # Create chat request with streaming enabled
         chat_request = self._create_chat_request(
