@@ -113,7 +113,7 @@ class CommandHandler(ABC):
         if matching_models:
             selected_model = matching_models[0]
             self.current_model = selected_model.id
-            self.console.print(f"[green]Switched to model: {self.current_model}[/green]")
+            self.console.print(f"[{self.console_theme.success}]Switched to model: {self.current_model}[/{self.console_theme.success}]")
 
             # Warn if model might be a base model
             if hasattr(selected_model, "metadata") and selected_model.metadata:
@@ -133,7 +133,7 @@ class CommandHandler(ABC):
                         f"[{self.console_theme.warning}]   If you encounter errors, try a different model.[/{self.console_theme.warning}]"
                     )
         else:
-            self.console.print(f"[red]Model not found: {model_name}[/red]")
+            self.console.print(f"[{self.console_theme.error}]Model not found: {model_name}[/{self.console_theme.error}]")
 
         return CommandResult.HANDLED
 
