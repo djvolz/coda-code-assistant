@@ -141,34 +141,26 @@ async def _select_model(unique_models, model: str, console: Console):
             return None
 
     console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
-    
-    # Show tool support notification for selected model
+
+    # Warn if selected model might be a base model
     selected_model = next((m for m in unique_models if m.id == model), None)
-    if selected_model:
-        if hasattr(selected_model, "supports_functions"):
-            if selected_model.supports_functions:
-                # Check for partial support
-                if hasattr(selected_model, "metadata") and selected_model.metadata.get("tool_support_notes"):
-                    notes = selected_model.metadata["tool_support_notes"]
-                    if "non-streaming only" in notes:
-                        console.print(f"[{theme.warning}]⚠ Tool support: Partial (non-streaming only)[/{theme.warning}]")
-                    else:
-                        console.print(f"[{theme.info}]✓ Tool support: Available[/{theme.info}]")
-                else:
-                    console.print(f"[{theme.info}]✓ Tool support: Available[/{theme.info}]")
-            else:
-                # Check for error details
-                if hasattr(selected_model, "metadata") and selected_model.metadata.get("tool_support_notes"):
-                    notes = selected_model.metadata["tool_support_notes"]
-                    error_notes = [n for n in notes if "error:" in n]
-                    if error_notes:
-                        console.print(f"[{theme.error}]🚫 Tool support: Error - {error_notes[0]}[/{theme.error}]")
-                    else:
-                        console.print(f"[{theme.warning}]⚠ Tool support: Not available[/{theme.warning}]")
-                else:
-                    console.print(f"[{theme.warning}]⚠ Tool support: Not available[/{theme.warning}]")
-        else:
-            console.print(f"[{theme.info}]❓ Tool support: Unknown (untested model)[/{theme.info}]")
+    if selected_model and hasattr(selected_model, "metadata") and selected_model.metadata:
+        capabilities = selected_model.metadata.get("capabilities", [])
+        # Check for base models (models that might not support chat)
+        is_base_model = (
+            "FINE_TUNE" in capabilities
+            or model.endswith("-16k")  # Cohere base models often end with -16k
+            or "base" in model.lower()
+        )
+
+        if is_base_model:
+            console.print(
+                f"[{theme.warning}]⚠️  Warning: This model may be a base model that doesn't support chat.[/{theme.warning}]"
+            )
+            console.print(
+                f"[{theme.warning}]   If you encounter errors, try a different model.[/{theme.warning}]"
+            )
+
     console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
     console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
     console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
@@ -288,10 +280,9 @@ async def _handle_chat_interaction(
         max_tokens = config.get("max_tokens", 2000)
 
         # Check if we should use tools (for Cohere and Meta models when enabled)
-        model_supports_tools = (
-            cli.current_model.startswith("cohere.") or 
-            cli.current_model.startswith("meta.")
-        )
+        model_supports_tools = cli.current_model.startswith(
+            "cohere."
+        ) or cli.current_model.startswith("meta.")
 
         if use_tools and model_supports_tools:
             # Use agent-based chat
@@ -343,7 +334,7 @@ async def _handle_chat_interaction(
                     # Add tool_calls to metadata if present
                     if tool_calls_data:
                         metadata["tool_calls"] = tool_calls_data
-                    
+
                     cli.session_commands.add_message(
                         role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
                         content=msg.content,
@@ -557,6 +548,152 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
     return get_system_prompt(mode)
 
 
+async def run_one_shot(
+    provider: str, model: str, prompt: str, mode: str, debug: bool, no_save: bool
+):
+    """Run a single prompt and exit."""
+    from coda.base.providers import Message, ProviderFactory, Role
+    from coda.services.config import get_config_service
+
+    config = get_config_service()
+
+    # Apply debug override
+    if debug:
+        config.set("debug", True)
+
+    # Use default provider if not specified
+    if not provider:
+        provider = config.default_provider
+
+    # Create provider using factory
+    factory = ProviderFactory(config.to_dict())
+
+    try:
+        # Initialize provider
+        provider_instance = await _initialize_provider(factory, provider, console)
+
+        # Get available models
+        unique_models = await _get_chat_models(provider_instance, console)
+
+        # If model not specified, use the first available model
+        if not model:
+            if unique_models:
+                model = unique_models[0].id
+                console.print(f"[dim]No model specified, using: {model}[/dim]")
+            else:
+                console.print("[red]No models available[/red]")
+                return
+
+        # Validate model exists
+        if not any(m.id == model for m in unique_models):
+            console.print(f"[red]Model not found: {model}[/red]")
+            console.print(f"Available models: {', '.join(m.id for m in unique_models[:5])}")
+            return
+
+        # Show model info
+        console.print(f"\n[green]Model:[/green] {model}")
+
+        # Check for FINE_TUNE warning
+        selected_model = next((m for m in unique_models if m.id == model), None)
+        if selected_model and hasattr(selected_model, "metadata") and selected_model.metadata:
+            capabilities = selected_model.metadata.get("capabilities", [])
+            # Check for base models (models that might not support chat)
+            # Known base model patterns
+            is_base_model = (
+                "FINE_TUNE" in capabilities
+                or model.endswith("-16k")  # Cohere base models often end with -16k
+                or "base" in model.lower()
+            )
+
+            if is_base_model:
+                console.print(
+                    f"[{theme.warning}]⚠️  Warning: This model may be a base model that doesn't support chat.[/{theme.warning}]"
+                )
+                console.print(
+                    f"[{theme.warning}]   If you encounter errors, try a different model.[/{theme.warning}]"
+                )
+
+        # Convert mode string to enum
+        developer_mode = DeveloperMode(mode.lower())
+
+        # Get system prompt for mode
+        system_prompt = _get_system_prompt_for_mode(developer_mode)
+
+        # Create messages
+        messages = []
+        if system_prompt:
+            messages.append(Message(role=Role.SYSTEM, content=system_prompt))
+        messages.append(Message(role=Role.USER, content=prompt))
+
+        # Get response
+        console.print(f"\n[bold cyan]User:[/bold cyan] {prompt}")
+
+        # Check if we should use tools
+        model_supports_tools = model.startswith("cohere.") or model.startswith("meta.")
+
+        # Use appropriate handler based on tool support
+        if model_supports_tools and developer_mode != DeveloperMode.GENERAL:
+            # Use agent for tool-enabled models in non-general modes
+            from .agent_chat import AgentChatHandler
+
+            agent_handler = AgentChatHandler(provider_instance, None, console)
+            response_content, _ = await agent_handler.chat_with_agent(
+                [Message(role=Role.USER, content=prompt)],
+                model,
+                temperature=config.get("temperature", 0.7),
+                max_tokens=config.get("max_tokens", 2000),
+                system_prompt=system_prompt,
+            )
+        else:
+            # Use simple chat without tools
+            response = provider_instance.chat(
+                messages=messages,
+                model=model,
+                temperature=config.get("temperature", 0.7),
+                max_tokens=config.get("max_tokens", 2000),
+            )
+            response_content = response.content
+
+        # Display response
+        console.print(f"\n[bold cyan]Assistant:[/bold cyan] {response_content}")
+
+        # Save to session if auto-save is enabled
+        if not no_save:
+            from .session_commands import SessionCommands
+
+            session_commands = SessionCommands()
+            session_commands.auto_save_enabled = not no_save
+
+            # Add messages to session
+            session_commands.add_message(
+                role="user",
+                content=prompt,
+                metadata={
+                    "mode": developer_mode.value,
+                    "provider": provider,
+                    "model": model,
+                    "one_shot": True,
+                },
+            )
+            session_commands.add_message(
+                role="assistant",
+                content=response_content,
+                metadata={
+                    "mode": developer_mode.value,
+                    "provider": provider,
+                    "model": model,
+                    "one_shot": True,
+                },
+            )
+
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {e}")
+        if debug:
+            import traceback
+
+            traceback.print_exc()
+
+
 @click.command()
 @click.option("--provider", "-p", default="oci_genai", help="LLM provider to use")
 @click.option("--model", "-m", help="Model to use")
@@ -585,9 +722,8 @@ def interactive_main(
     console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
 
     if one_shot:
-        # Handle one-shot mode (simplified for now)
-        console.print("[yellow]One-shot mode not yet updated for enhanced CLI[/yellow]")
-        console.print(f"Would execute: {one_shot}")
+        # Handle one-shot mode
+        asyncio.run(run_one_shot(provider, model, one_shot, mode, debug, no_save))
     else:
         # Run interactive session
         asyncio.run(run_interactive_session(provider, model, debug, no_save, resume))

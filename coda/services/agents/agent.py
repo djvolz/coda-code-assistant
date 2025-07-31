@@ -261,7 +261,7 @@ class Agent:
 
                     # Handle tool calls
                     performed_actions = await self._handle_tool_calls(
-                        response.tool_calls, on_fulfilled_action, status, interrupt_check
+                        response.tool_calls, on_fulfilled_action, status
                     )
 
                     # Add tool results to messages
@@ -384,7 +384,7 @@ class Agent:
                     status.stop()
                 self.console.print("\n[yellow]Response interrupted by user[/yellow]")
                 return "Response interrupted.", messages
-            
+
             try:
                 # Make request to provider
                 if supports_tools:
@@ -419,7 +419,7 @@ class Agent:
                                 status.stop()
                             self.console.print("\n[yellow]Response interrupted by user[/yellow]")
                             return "Response interrupted.", messages
-                        
+
                         if first_chunk:
                             # Stop status before printing response
                             if status:
@@ -475,9 +475,11 @@ class Agent:
                                 if interrupt_check and interrupt_check():
                                     if status:
                                         status.stop()
-                                    self.console.print("\n[yellow]Response interrupted by user[/yellow]")
+                                    self.console.print(
+                                        "\n[yellow]Response interrupted by user[/yellow]"
+                                    )
                                     return "Response interrupted.", messages
-                                
+
                                 if first_chunk:
                                     # Stop status before printing response
                                     if status:
@@ -511,12 +513,38 @@ class Agent:
                     if response.content:
                         # Skip display if content is only tool call JSON or Meta-specific markers
                         content_stripped = response.content.strip()
-                        is_tool_json = (response.tool_calls and 
-                                      (content_stripped.startswith('{') or 
-                                       '<|python_start|>' in content_stripped or
-                                       '<|eom|>' in content_stripped or
-                                       '<|end_of_text|>' in content_stripped or
-                                       '<|begin_of_text|>' in content_stripped))
+
+                        # Check if content looks like tool call JSON (with or without tool_calls present)
+                        looks_like_tool_json = (
+                            content_stripped.startswith("[{")  # Array of tool calls
+                            or (
+                                content_stripped.startswith("{")
+                                and any(
+                                    key in content_stripped
+                                    for key in ['"type": "function"', '"name":', '"parameters":']
+                                )
+                            )
+                            or "<|python_start|>" in content_stripped
+                            or "<|python_end|>" in content_stripped
+                        )
+
+                        # Check for Meta-specific markers that indicate raw output
+                        has_meta_markers = any(
+                            marker in content_stripped
+                            for marker in [
+                                "<|eom|>",
+                                "<|end_of_text|>",
+                                "<|begin_of_text|>",
+                                "<|header_start|>",
+                                "<|header_end|>",
+                            ]
+                        )
+
+                        is_tool_json = (
+                            response.tool_calls and (looks_like_tool_json or has_meta_markers)
+                        ) or (
+                            looks_like_tool_json and len(content_stripped) < 500
+                        )  # Skip short JSON-like content
                         if not is_tool_json:
                             self._print_response(response.content)
                     # Add assistant message with tool calls
@@ -578,8 +606,41 @@ class Agent:
                         return "", messages
 
             except Exception as e:
-                error_msg = f"Error during agent execution: {str(e)}"
-                self.console.print(f"[red]{error_msg}[/red]")
+                # Check if this is an OCI ServiceError
+                error_type = type(e).__name__
+                if error_type == "ServiceError" and hasattr(e, "message") and hasattr(e, "status"):
+                    # Format OCI error nicely
+                    self.console.print(
+                        Panel(
+                            f"[bold]OCI API Error ({e.status})[/bold]\n\n{e.message}",
+                            title="Error",
+                            border_style="red",
+                            padding=(1, 2),
+                        )
+                    )
+
+                    # Add helpful context for common errors
+                    if "finetune base model" in str(e.message).lower():
+                        self.console.print(
+                            "\n💡 [dim]This model is a base model that doesn't support chat/tools. Try a different model.[/dim]"
+                        )
+                    elif (
+                        "not supported" in str(e.message).lower()
+                        and "tool" in str(e.message).lower()
+                    ):
+                        self.console.print(
+                            "\n💡 [dim]This model doesn't support tool/function calling. Try without tools or use a different model.[/dim]"
+                        )
+
+                    # Return a clean error message
+                    error_msg = f"OCI API Error ({e.status}): {e.message}"
+                else:
+                    # Generic error handling
+                    error_msg = f"Error during agent execution: {str(e)}"
+                    self.console.print(
+                        Panel(error_msg, title="Error", border_style="red", padding=(1, 2))
+                    )
+
                 return error_msg, messages
 
         if step_count >= max_steps:
@@ -643,7 +704,11 @@ class Agent:
             return asyncio.run(self.run_async(input, **kwargs))
 
     async def _handle_tool_calls(
-        self, tool_calls: list[ToolCall], on_fulfilled_action: Callable | None = None, status=None, interrupt_check: Callable[[], bool] | None = None
+        self,
+        tool_calls: list[ToolCall],
+        on_fulfilled_action: Callable | None = None,
+        status=None,
+        interrupt_check: Callable[[], bool] | None = None,
     ) -> list[PerformedAction]:
         """Handle tool calls from the AI."""
         performed_actions = []
@@ -661,7 +726,7 @@ class Agent:
                     status.stop()
                 self.console.print("\n[yellow]Tool execution interrupted by user[/yellow]")
                 break
-                
+
             # Create required action
             required_action = RequiredAction.from_tool_call(tool_call)
 

@@ -111,15 +111,27 @@ class CommandHandler(ABC):
         # Try to switch to the specified model
         matching_models = [m for m in self.available_models if model_name.lower() in m.id.lower()]
         if matching_models:
-            self.current_model = matching_models[0].id
+            selected_model = matching_models[0]
+            self.current_model = selected_model.id
             self.console.print(f"[green]Switched to model: {self.current_model}[/green]")
-            
-            # Show tool support notification
-            if hasattr(matching_models[0], "supports_functions"):
-                if matching_models[0].supports_functions:
-                    self.console.print(f"[{self.console_theme.info}]✓ Tool support: Available[/{self.console_theme.info}]")
-                else:
-                    self.console.print(f"[{self.console_theme.warning}]⚠ Tool support: Not available[/{self.console_theme.warning}]")
+
+            # Warn if model might be a base model
+            if hasattr(selected_model, "metadata") and selected_model.metadata:
+                capabilities = selected_model.metadata.get("capabilities", [])
+                # Check for base models (models that might not support chat)
+                is_base_model = (
+                    "FINE_TUNE" in capabilities
+                    or model_name.endswith("-16k")  # Cohere base models often end with -16k
+                    or "base" in model_name.lower()
+                )
+
+                if is_base_model:
+                    self.console.print(
+                        f"[{self.console_theme.warning}]⚠️  Warning: This model may be a base model that doesn't support chat.[/{self.console_theme.warning}]"
+                    )
+                    self.console.print(
+                        f"[{self.console_theme.warning}]   If you encounter errors, try a different model.[/{self.console_theme.warning}]"
+                    )
         else:
             self.console.print(f"[red]Model not found: {model_name}[/red]")
 
