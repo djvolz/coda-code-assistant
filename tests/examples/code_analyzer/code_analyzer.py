@@ -41,6 +41,7 @@ class CodeAnalyzer:
         # Initialize search manager
         # SemanticSearchManager requires an embedding provider
         from coda.base.search.vector_search.embeddings.mock import MockEmbeddingProvider
+
         embedding_provider = MockEmbeddingProvider(dimension=768)
         self.search = SemanticSearchManager(embedding_provider=embedding_provider)
         self._indexed = False

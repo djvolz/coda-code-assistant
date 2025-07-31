@@ -45,9 +45,9 @@ def test_agents_service_dependencies():
 
         for imp in imports:
             for forbidden in forbidden_patterns:
-                assert not imp.startswith(forbidden), (
-                    f"Service file {py_file} imports from apps layer: {imp}"
-                )
+                assert not imp.startswith(
+                    forbidden
+                ), f"Service file {py_file} imports from apps layer: {imp}"
 
 
 def test_tools_service_dependencies():
@@ -64,9 +64,9 @@ def test_tools_service_dependencies():
 
         for imp in imports:
             for forbidden in forbidden_patterns:
-                assert not imp.startswith(forbidden), (
-                    f"Service file {py_file} imports from apps layer: {imp}"
-                )
+                assert not imp.startswith(
+                    forbidden
+                ), f"Service file {py_file} imports from apps layer: {imp}"
 
 
 def test_config_service_integration():
