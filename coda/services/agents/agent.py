@@ -508,8 +508,15 @@ class Agent:
                             return error_content, messages
 
                     # Display response if any (but not if it's just tool call JSON)
-                    if response.content and not (response.tool_calls and response.content.strip().startswith('{')):
-                        self._print_response(response.content)
+                    if response.content:
+                        # Skip display if content is only tool call JSON or Meta-specific markers
+                        content_stripped = response.content.strip()
+                        is_tool_json = (response.tool_calls and 
+                                      (content_stripped.startswith('{') or 
+                                       '<|python_start|>' in content_stripped or
+                                       '<|eom|>' in content_stripped))
+                        if not is_tool_json:
+                            self._print_response(response.content)
                     # Add assistant message with tool calls
                     messages.append(
                         Message(

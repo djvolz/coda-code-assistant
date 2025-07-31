@@ -809,14 +809,30 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                             except json.JSONDecodeError:
                                 # Not valid JSON, keep as content
                                 parsed_content.append(line)
-                        elif line and not line.endswith('assistant'):
-                            # Keep non-JSON content (but skip trailing "assistant" markers)
-                            parsed_content.append(line)
+                        elif line:
+                            # Skip Meta-specific markers and empty content
+                            if not any(marker in line for marker in ['<|eom|>', '<|header_end|>', 'assistant<|header_end|>']):
+                                # Keep non-JSON content (but skip trailing markers)
+                                if not (line.strip() == 'assistant' or line.strip().endswith('assistant')):
+                                    parsed_content.append(line)
                     
                     if tool_calls:
+                        # Meta models don't support parallel tool calls
+                        # Only return the first tool call to avoid API error
+                        if len(tool_calls) > 1:
+                            import logging
+                            logging.warning(
+                                f"Meta model returned {len(tool_calls)} tool calls but only first will be executed "
+                                f"(Meta models don't support parallel tool calls)"
+                            )
+                            tool_calls = tool_calls[:1]  # Keep only the first tool call
+                        
                         finish_reason = "tool_calls"
                         # Only keep non-tool-call content
                         content = '\n'.join(parsed_content).strip()
+                        # Clear content if it only contained tool calls
+                        if not content or all(line.strip() in ['', 'assistant'] for line in parsed_content):
+                            content = ""
                 except Exception:
                     pass  # If anything fails, continue to legacy check
             
@@ -874,9 +890,24 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                     
                     # Set finish reason to tool_calls if we found any
                     if tool_calls:
+                        # Meta models don't support parallel tool calls
+                        # Only return the first tool call to avoid API error
+                        if len(tool_calls) > 1:
+                            import logging
+                            logging.warning(
+                                f"Meta model returned {len(tool_calls)} tool calls but only first will be executed "
+                                f"(Meta models don't support parallel tool calls)"
+                            )
+                            tool_calls = tool_calls[:1]  # Keep only the first tool call
+                        
                         finish_reason = "tool_calls"
                         # Remove the tool call syntax from content
                         content = re.sub(tool_pattern, '', content).strip()
+                        # Also remove any Meta-specific markers
+                        content = re.sub(r'<\|eom\|>assistant<\|header_end\|>', '', content).strip()
+                        content = re.sub(r'<\|eom\|>', '', content).strip()
+                        content = re.sub(r'<\|header_end\|>', '', content).strip()
+                        content = re.sub(r'assistant<\|header_end\|>', '', content).strip()
 
             # Generic format usage
             usage = (
