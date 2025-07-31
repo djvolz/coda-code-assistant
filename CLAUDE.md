@@ -79,6 +79,7 @@ make docker-run
    - `session/`: Conversation persistence
    - `search/`: Tree-sitter based semantic code search
    - `observability/`: Logging, metrics, and tracing
+   - `theme/`: Theme management for terminal colors and styles
 
 ### Key Design Patterns
 - **Registry Pattern**: Used for providers, agents, and tools
@@ -122,6 +123,22 @@ coda --version
 - The mock provider is essential for testing - use it for predictable test scenarios
 - Tree-sitter grammars are automatically downloaded as needed for code search
 - When adding new features or documentation, also create corresponding wiki-style documentation in `docs/wiki-staging/`
+
+## Theme Usage Guidelines
+
+- **NEVER use colors directly**: All colors must go through the theme module
+- **Import theme components**: Use `from coda.base.theme import ThemeManager, ConsoleTheme`
+- **Get colors from theme**: Access colors via theme objects, not hardcoded hex values
+- **Examples of what NOT to do**:
+  - ❌ `color="#1f77b4"` 
+  - ❌ `style="fg:red bg:white"`
+  - ❌ Direct RGB values like `rgb(255, 0, 0)`
+- **Examples of correct usage**:
+  - ✅ `theme.console.success` for success messages
+  - ✅ `theme.console.error` for error messages
+  - ✅ `theme.prompt.completion` for completion styling
+- **Custom themes**: Use `ThemeManager.create_custom_theme()` for brand-specific colors
+- **Theme persistence**: Themes are automatically loaded from user config
 
 ## Release Process
 
