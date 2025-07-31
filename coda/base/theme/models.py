@@ -93,6 +93,12 @@ class PromptTheme:
     model_provider: str = "#888888"
     model_info: str = "#888888 italic"
 
+    # Status colors (for completions, etc.)
+    success: str = "#00aa00"
+    error: str = "#ff0000"
+    warning: str = "#ffaa00"
+    info: str = "#00aaff"
+
     def to_dict(self) -> dict[str, str]:
         """Convert theme to dictionary format for prompt-toolkit."""
 
@@ -139,6 +145,10 @@ class PromptTheme:
             "provider": convert_style(self.model_provider),
             "info": convert_style(self.model_info),
             "title": convert_style(self.model_title),
+            # Status colors
+            "success": convert_style(self.success),
+            "error": convert_style(self.error),
+            "warning": convert_style(self.warning),
         }
 
 

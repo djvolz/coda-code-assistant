@@ -104,7 +104,7 @@ class SlashCommandCompleter(BaseCompleter):
         from coda.services.config import get_config_service
 
         config_service = get_config_service()
-        theme = config_service.theme_manager.get_console_theme()
+        prompt_theme = config_service.theme_manager.current_theme.prompt
 
         for cmd_name, cmd in sorted(self.commands.items()):
             yield Completion(
@@ -112,7 +112,7 @@ class SlashCommandCompleter(BaseCompleter):
                 start_position=0,
                 display=f"/{cmd_name}",
                 display_meta=cmd.help_text,
-                style=theme.info + " bold",
+                style=prompt_theme.info + " bold",
             )
 
     def _complete_subcommands(self, cmd_part: str, parts: list[str]):
@@ -123,7 +123,7 @@ class SlashCommandCompleter(BaseCompleter):
         from .command_registry import CommandRegistry
 
         config_service = get_config_service()
-        theme = config_service.theme_manager.get_console_theme()
+        prompt_theme = config_service.theme_manager.current_theme.prompt
 
         cmd_def = CommandRegistry.get_command(cmd_part)
         if cmd_def and cmd_def.subcommands:
@@ -137,7 +137,7 @@ class SlashCommandCompleter(BaseCompleter):
                         start_position=-len(subcommand_part),
                         display=sub.name,
                         display_meta=sub.description,
-                        style=theme.success if score >= 0.9 else theme.warning,
+                        style=prompt_theme.success if score >= 0.9 else prompt_theme.warning,
                     )
 
     def _complete_command_names(self, cmd_part: str, text: str):
@@ -145,7 +145,7 @@ class SlashCommandCompleter(BaseCompleter):
         from coda.services.config import get_config_service
 
         config_service = get_config_service()
-        theme = config_service.theme_manager.get_console_theme()
+        prompt_theme = config_service.theme_manager.current_theme.prompt
 
         completions = []
 
@@ -161,7 +161,9 @@ class SlashCommandCompleter(BaseCompleter):
                             start_position=-len(text),
                             display=f"/{cmd_name}",
                             display_meta=cmd.help_text,
-                            style=theme.info + " bold" if score >= 0.9 else theme.info,
+                            style=(
+                                prompt_theme.info + " bold" if score >= 0.9 else prompt_theme.info
+                            ),
                         ),
                     )
                 )
@@ -215,27 +217,17 @@ class DynamicValueCompleter(BaseCompleter):
 
     def _complete_main_command_value(self, text: str, parts: list[str], main_cmd):
         """Complete values for main command."""
-        from coda.services.config import get_config_service
-
-        config_service = get_config_service()
-        theme = config_service.theme_manager.get_console_theme()
-
         if text.endswith(" ") and len(parts) == 1:
             # Command with no value yet - just typed space
             value_part = ""
-            yield from self._complete_value(main_cmd.completion_type, value_part, theme)
+            yield from self._complete_value(main_cmd.completion_type, value_part)
         elif text.startswith(f"/{main_cmd.name} ") and len(parts) == 2:
             # Already typing the value
             value_part = parts[1]
-            yield from self._complete_value(main_cmd.completion_type, value_part, theme)
+            yield from self._complete_value(main_cmd.completion_type, value_part)
 
     def _complete_subcommand_value(self, text: str, parts: list[str], main_cmd):
         """Complete values for subcommands."""
-        from coda.services.config import get_config_service
-
-        config_service = get_config_service()
-        theme = config_service.theme_manager.get_console_theme()
-
         subcommand_name = parts[1]
         # Find the subcommand (including aliases)
         subcommand = None
@@ -249,14 +241,20 @@ class DynamicValueCompleter(BaseCompleter):
             if len(parts) == 2 and text.endswith(" "):
                 # Just typed space after subcommand
                 value_part = ""
-                yield from self._complete_value(subcommand.completion_type, value_part, theme)
+                yield from self._complete_value(subcommand.completion_type, value_part)
             elif len(parts) == 3:
                 # Already typing the value
                 value_part = parts[2]
-                yield from self._complete_value(subcommand.completion_type, value_part, theme)
+                yield from self._complete_value(subcommand.completion_type, value_part)
 
-    def _complete_value(self, completion_type: str, value_part: str, theme):
+    def _complete_value(self, completion_type: str, value_part: str):
         """Complete a value based on its type."""
+        # Get prompt theme for styling
+        from coda.services.config import get_config_service
+
+        config_service = get_config_service()
+        prompt_theme = config_service.theme_manager.current_theme.prompt
+
         if completion_type == "model_name" and self.get_provider:
             provider = self.get_provider()
             if provider:
@@ -273,9 +271,9 @@ class DynamicValueCompleter(BaseCompleter):
                                 display=model_id,
                                 display_meta="AI Model",
                                 style=(
-                                    theme.assistant_message + " bold"
+                                    prompt_theme.success + " bold"
                                     if score >= 0.9
-                                    else theme.assistant_message
+                                    else prompt_theme.success
                                 ),
                             )
                 except Exception:
@@ -297,7 +295,11 @@ class DynamicValueCompleter(BaseCompleter):
                             start_position=-len(value_part),
                             display=name,
                             display_meta=meta,
-                            style=theme.warning + " bold" if score >= 0.9 else theme.warning,
+                            style=(
+                                prompt_theme.warning + " bold"
+                                if score >= 0.9
+                                else prompt_theme.warning
+                            ),
                         )
             except Exception:
                 pass
@@ -312,7 +314,11 @@ class DynamicValueCompleter(BaseCompleter):
                         start_position=-len(value_part),
                         display=theme_name,
                         display_meta="Theme",
-                        style=theme.user_message + " bold" if score >= 0.9 else theme.user_message,
+                        style=(
+                            prompt_theme.model_info + " bold"
+                            if score >= 0.9
+                            else prompt_theme.model_info
+                        ),
                     )
 
 

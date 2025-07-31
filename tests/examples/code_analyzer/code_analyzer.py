@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from coda.base.config import Config
 from coda.base.providers import ProviderFactory
-from coda.base.search import SearchManager
+from coda.base.search import SemanticSearchManager
 
 
 class CodeAnalyzer:
@@ -39,7 +39,11 @@ class CodeAnalyzer:
         self.model_id = self.provider.list_models()[0].id
 
         # Initialize search manager
-        self.search = SearchManager(self.config.to_dict())
+        # SemanticSearchManager requires an embedding provider
+        from coda.base.search.vector_search.embeddings.mock import MockEmbeddingProvider
+
+        embedding_provider = MockEmbeddingProvider(dimension=768)
+        self.search = SemanticSearchManager(embedding_provider=embedding_provider)
         self._indexed = False
 
         print("Code Analyzer initialized")
@@ -57,7 +61,7 @@ class CodeAnalyzer:
         print("This may take a while for large repositories...")
 
         try:
-            file_count = await self.search.index_directory(str(self.repo_path))
+            file_count = await self.search.index_code_files(str(self.repo_path))
             self._indexed = True
             print(f"Indexing complete! Indexed {file_count} files.\n")
         except Exception as e:
