@@ -34,7 +34,7 @@ class TestInteractiveSelector:
 
             # Looking at the buffer, the selector starts on "explain" by default
             # Let's navigate from there
-            
+
             # Press down arrow to go to "review"
             child.send("\x1b[B")  # ESC[B is down arrow
             time.sleep(0.2)
@@ -94,7 +94,7 @@ class TestInteractiveSelector:
 
             # Press Enter to select
             child.send("\r")
-            
+
             # Wait a bit for selection to process
             time.sleep(0.5)
 
@@ -119,10 +119,10 @@ class TestInteractiveSelector:
             # Test that we can at least send a command
             # The export command might not work properly in test environment
             child.send("/help\r")
-            
+
             # Wait for help output
             time.sleep(0.5)
-            
+
             # Should return to prompt
             child.expect("❯", timeout=5)
 

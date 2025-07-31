@@ -6,7 +6,7 @@ This ensures our examples remain functional as the codebase evolves.
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -171,6 +171,7 @@ class TestCodeAnalyzer:
         # Mock async index_code_files
         async def mock_index(path):
             return 42
+
         mock_search.return_value.index_code_files = mock_index
 
         # Create analyzer and index
