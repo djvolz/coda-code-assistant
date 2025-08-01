@@ -9,7 +9,6 @@ help:
 	@echo "make test-all      - Run all tests including integration"
 	@echo "make test-unit     - Run only unit tests"
 	@echo "make test-integration - Run integration tests (needs credentials)"
-	@echo "make test-functional - Run functional tests (TUI, CLI workflows)"
 	@echo "make test-llm      - Run LLM tests with Ollama"
 	@echo "make test-cov      - Run tests with coverage report"
 	@echo "make test-fast     - Run fast smoke tests"
@@ -61,9 +60,6 @@ test-unit:
 test-integration:
 	RUN_INTEGRATION_TESTS=1 uv run pytest tests/ -v -m integration
 
-# Run functional tests (TUI and CLI end-to-end tests)
-test-functional:
-	uv run pytest tests/functional/ -v -m functional
 
 # Run LLM tests with Ollama (requires Ollama service)
 test-llm:

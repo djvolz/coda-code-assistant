@@ -4,7 +4,6 @@ import click
 
 from coda.__version__ import __version__
 
-from .tui_command import tui as tui_command
 from .web_command import web as web_command
 
 
@@ -43,7 +42,6 @@ def chat(provider, model, debug, one_shot, mode, no_save, resume):
 
 
 cli.add_command(web_command, name="web")
-cli.add_command(tui_command, name="tui")
 
 
 if __name__ == "__main__":
