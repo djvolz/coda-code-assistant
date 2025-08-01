@@ -282,7 +282,9 @@ class Agent:
                     step_count += 1
                     # Continue loop to get final response
                     if status:
-                        status.update(f"[{self.console_theme.bold} {self.console_theme.info}]Processing response...[/{self.console_theme.bold} {self.console_theme.info}]")
+                        status.update(
+                            f"[{self.console_theme.bold} {self.console_theme.info}]Processing response...[/{self.console_theme.bold} {self.console_theme.info}]"
+                        )
                 else:
                     # No tool calls, we're done
                     if response.content:
@@ -411,7 +413,9 @@ class Agent:
                 else:
                     # Use streaming for final response when no tools
                     if status:
-                        status.update(f"[{self.console_theme.bold} {self.console_theme.info}]Generating response...[/{self.console_theme.bold} {self.console_theme.info}]")
+                        status.update(
+                            f"[{self.console_theme.bold} {self.console_theme.info}]Generating response...[/{self.console_theme.bold} {self.console_theme.info}]"
+                        )
 
                     stream = self.provider.chat_stream(
                         messages=messages,
@@ -437,7 +441,10 @@ class Agent:
                             # Stop status before printing response
                             if status:
                                 status.stop()
-                            self.console.print(f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ", end="")
+                            self.console.print(
+                                f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                                end="",
+                            )
                             first_chunk = False
 
                         self.console.print(chunk.content, end="")
@@ -471,7 +478,9 @@ class Agent:
                         # Get final response with streaming
                         try:
                             if status:
-                                status.update(f"[{self.console_theme.bold} {self.console_theme.info}]Getting final response...[/{self.console_theme.bold} {self.console_theme.info}]")
+                                status.update(
+                                    f"[{self.console_theme.bold} {self.console_theme.info}]Getting final response...[/{self.console_theme.bold} {self.console_theme.info}]"
+                                )
 
                             stream = self.provider.chat_stream(
                                 messages=messages + [Message(role=Role.USER, content=final_prompt)],
@@ -498,7 +507,8 @@ class Agent:
                                     if status:
                                         status.stop()
                                     self.console.print(
-                                        f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ", end=""
+                                        f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                                        end="",
                                     )
                                     first_chunk = False
 
@@ -562,7 +572,9 @@ class Agent:
                     step_count += 1
                     # Continue loop to get final response
                     if status:
-                        status.update(f"[{self.console_theme.bold} {self.console_theme.info}]Processing response...[/{self.console_theme.bold} {self.console_theme.info}]")
+                        status.update(
+                            f"[{self.console_theme.bold} {self.console_theme.info}]Processing response...[/{self.console_theme.bold} {self.console_theme.info}]"
+                        )
                 else:
                     # No tool calls, we have the final response
                     if response.content:
@@ -571,7 +583,10 @@ class Agent:
                             status.stop()
                         # We already have the full response from the non-streaming call
                         # For better UX, we should stream it character by character
-                        self.console.print(f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ", end="")
+                        self.console.print(
+                            f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                            end="",
+                        )
 
                         # Simulate streaming by printing character by character
                         import time
@@ -699,7 +714,9 @@ class Agent:
 
         # Update status if provided, otherwise print message
         if status:
-            status.update(f"[{self.console_theme.bold} {self.console_theme.info}]Executing tools...[/{self.console_theme.bold} {self.console_theme.info}]")
+            status.update(
+                f"[{self.console_theme.bold} {self.console_theme.info}]Executing tools...[/{self.console_theme.bold} {self.console_theme.info}]"
+            )
         else:
             self.console.print(
                 f"\n[{self.console_theme.dim}]Executing tools...[/{self.console_theme.dim}]"
@@ -781,7 +798,9 @@ class Agent:
 
     def _print_response(self, content: str):
         """Print AI response."""
-        self.console.print(f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] {content}")
+        self.console.print(
+            f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] {content}"
+        )
 
     def _print_tool_execution(self, tool_call: ToolCall):
         """Print tool execution info."""
