@@ -9,7 +9,7 @@ from coda.apps.cli.search_display import (
     SearchResultDisplay,
     create_search_stats_display,
 )
-from coda.semantic_search import SearchResult
+from coda.base.search import SearchResult
 
 
 async def main():

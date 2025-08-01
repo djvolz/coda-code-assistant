@@ -10,7 +10,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
-from ..semantic_search import SearchResult
+from coda.base.search import SearchResult
 
 
 class SearchHighlighter(RegexHighlighter):
