@@ -9,14 +9,8 @@ MAX_MODELS_DISPLAY: int = 20
 MAX_MODELS_BASIC_DISPLAY: int = 10
 CONSOLE_WIDTH_DEFAULT: int = 80
 
-# Prompt toolkit styles
-PROMPT_STYLE_SELECTED: str = "bg:#00aa00 #ffffff bold"
-PROMPT_STYLE_SEARCH: str = "bg:#444444 #ffffff"
-PROMPT_STYLE_TITLE: str = "#00aa00 bold"
-
-# Panel styles
-PANEL_BORDER_STYLE: str = "cyan"
-PANEL_TITLE_STYLE: str = "bold"
+# Note: All color styling has been moved to the theme system
+# See coda.base.theme for color configuration
 
 # Status messages
 COMING_SOON: str = "(Coming soon)"

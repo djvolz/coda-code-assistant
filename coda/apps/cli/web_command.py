@@ -5,14 +5,14 @@ import sys
 from pathlib import Path
 
 import click
-from rich.console import Console
 from rich.panel import Panel
 
 from coda.services.config import get_config_service
 
-from .constants import PANEL_BORDER_STYLE
-
-console = Console()
+# Get themed console
+config_service = get_config_service()
+console = config_service.theme_manager.get_console()
+theme = config_service.theme_manager.get_console_theme()
 
 
 @click.command()
@@ -25,15 +25,15 @@ def web(port: int, host: str, browser: bool, debug: bool):
     try:
         get_config_service()  # Validate config loads successfully
     except Exception as e:
-        console.print(f"[red]Error loading configuration: {e}[/red]")
+        console.print(f"[{theme.error}]Error loading configuration: {e}[/{theme.error}]")
         sys.exit(1)
 
     console.print(
         Panel(
-            f"[green]Starting Coda Web UI on http://{host}:{port}[/green]\n"
-            f"[dim]Press Ctrl+C to stop the server[/dim]",
+            f"[{theme.success}]Starting Coda Web UI on http://{host}:{port}[/{theme.success}]\n"
+            f"[{theme.dim}]Press Ctrl+C to stop the server[/{theme.dim}]",
             title="Web UI",
-            border_style=PANEL_BORDER_STYLE,
+            border_style=theme.panel_border,
         )
     )
 
@@ -60,9 +60,9 @@ def web(port: int, host: str, browser: bool, debug: bool):
     try:
         subprocess.run(cmd, check=True)
     except KeyboardInterrupt:
-        console.print("\n[yellow]Web UI stopped by user[/yellow]")
+        console.print(f"\n[{theme.warning}]Web UI stopped by user[/{theme.warning}]")
     except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error running web UI: {e}[/red]")
+        console.print(f"[{theme.error}]Error running web UI: {e}[/{theme.error}]")
         sys.exit(1)
 
 

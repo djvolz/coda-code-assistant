@@ -152,19 +152,23 @@ class InteractiveCLI(CommandHandler):
         combined_styles.update(theme_style)
 
         # Add custom additions
+        # Get theme colors for consistent styling
+        prompt_theme = theme_manager.current_theme.prompt
+        console_theme = theme_manager.current_theme.console
+
         combined_styles.update(
             {
                 # Additional prompt-specific styles
-                "prompt.mode": "#888888",
+                "prompt.mode": prompt_theme.continuation,
                 # Completion menu enhancements
-                "completion-menu": "bg:#2c2c2c fg:#ffffff",
-                "completion-menu.completion": "bg:#2c2c2c fg:#ffffff",
-                "completion-menu.completion.current": "bg:#005588 fg:#ffffff bold",
-                "completion-menu.meta.completion": "bg:#2c2c2c fg:#888888",
-                "completion-menu.meta.completion.current": "bg:#005588 fg:#aaaaaa",
+                "completion-menu": prompt_theme.completion,
+                "completion-menu.completion": prompt_theme.completion,
+                "completion-menu.completion.current": prompt_theme.completion_selected,
+                "completion-menu.meta.completion": prompt_theme.completion_meta,
+                "completion-menu.meta.completion.current": prompt_theme.completion_selected,
                 # Scrollbar
-                "scrollbar.background": "bg:#2c2c2c",
-                "scrollbar.button": "bg:#888888",
+                "scrollbar.background": prompt_theme.toolbar,
+                "scrollbar.button": prompt_theme.continuation,  # Use a muted color from prompt theme
             }
         )
 
@@ -214,41 +218,47 @@ class InteractiveCLI(CommandHandler):
 
     def _get_mode_panel_config(self) -> dict:
         """Get mode-specific panel configuration with title and styling."""
+        # Get theme for consistent color choices
+        from coda.services.config import get_config_service
+
+        config = get_config_service()
+        theme = config.theme_manager.get_console_theme()
+
         mode_configs = {
             DeveloperMode.GENERAL: {
                 "title": "💬 General Chat",
-                "border_style": "white",
-                "title_style": "bold white",
+                "border_style": theme.panel_border,
+                "title_style": theme.panel_title,
             },
             DeveloperMode.CODE: {
                 "title": "⚡ Code Mode",
-                "border_style": "green",
-                "title_style": "bold green",
+                "border_style": theme.success,
+                "title_style": theme.success + " bold",
             },
             DeveloperMode.DEBUG: {
                 "title": "🔍 Debug Mode",
-                "border_style": "yellow",
-                "title_style": "bold yellow",
+                "border_style": theme.warning,
+                "title_style": theme.warning + " bold",
             },
             DeveloperMode.EXPLAIN: {
                 "title": "📚 Explain Mode",
-                "border_style": "blue",
-                "title_style": "bold blue",
+                "border_style": theme.info,
+                "title_style": theme.info + " bold",
             },
             DeveloperMode.REVIEW: {
                 "title": "🔎 Review Mode",
-                "border_style": "magenta",
-                "title_style": "bold magenta",
+                "border_style": theme.assistant_message,
+                "title_style": theme.assistant_message + " bold",
             },
             DeveloperMode.REFACTOR: {
                 "title": "🔄 Refactor Mode",
-                "border_style": "cyan",
-                "title_style": "bold cyan",
+                "border_style": theme.panel_border,
+                "title_style": theme.panel_title,
             },
             DeveloperMode.PLAN: {
                 "title": "📋 Plan Mode",
-                "border_style": "red",
-                "title_style": "bold red",
+                "border_style": theme.error,
+                "title_style": theme.error + " bold",
             },
         }
         return mode_configs.get(self.current_mode, mode_configs[DeveloperMode.GENERAL])
@@ -640,9 +650,17 @@ class InteractiveCLI(CommandHandler):
         if not subcommand:
             from rich.table import Table
 
-            table = Table(title="[bold cyan]Semantic Search Commands[/bold cyan]", box=None)
-            table.add_column("Command", style="white", no_wrap=True)
-            table.add_column("Description", style="dim")
+            from coda.services.config import get_config_service
+
+            config = get_config_service()
+            theme = config.theme_manager.get_console_theme()
+
+            table = Table(
+                title=f"[{theme.table_header}]Semantic Search Commands[/{theme.table_header}]",
+                box=None,
+            )
+            table.add_column("Command", style=theme.command, no_wrap=True)
+            table.add_column("Description", style=theme.dim)
 
             table.add_row(
                 "/search semantic <query>", "Search indexed content using semantic similarity"

@@ -681,12 +681,12 @@ def interactive_main(
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
-        "[bold cyan]Coda[/bold cyan] - Code Assistant\n"
-        f"[dim]Multi-provider AI coding companion v{__version__}[/dim]\n"
-        "[dim]Interactive mode with prompt-toolkit[/dim]"
+        f"[{theme.panel_title}]Coda[/{theme.panel_title}] - Code Assistant\n"
+        f"[{theme.dim}]Multi-provider AI coding companion v{__version__}[/{theme.dim}]\n"
+        f"[{theme.dim}]Interactive mode with prompt-toolkit[/{theme.dim}]"
     )
 
-    console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
+    console.print(Panel(welcome_text, title="Welcome", border_style=theme.panel_border))
 
     if one_shot:
         # Handle one-shot mode

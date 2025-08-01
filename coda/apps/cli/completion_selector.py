@@ -112,7 +112,7 @@ class CompletionSelector:
             + " "
             + prompt_styles.get("completion.current", ""),
             # Additional styles
-            "scrollbar.background": prompt_styles.get("toolbar", "bg:#444444"),
+            "scrollbar.background": prompt_styles.get("toolbar", self.prompt_theme.toolbar),
             "scrollbar.button": f"fg:{self.prompt_theme.info}",
         }
 
