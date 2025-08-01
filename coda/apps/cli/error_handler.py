@@ -16,7 +16,9 @@ class CLIErrorHandler:
     def __init__(self, console: Console, debug: bool = False):
         self.console = console
         self.debug = debug
-        theme_manager = ThemeManager()
+        from coda.services.config import get_config_service
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
         self.theme = theme_manager.get_console_theme()
 
     def handle_provider_error(self, error: Exception, provider_name: str, factory=None):

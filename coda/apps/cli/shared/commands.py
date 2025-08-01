@@ -32,7 +32,9 @@ class CommandHandler(ABC):
         self.provider_name = None
         self.provider_instance = None
         self.factory = None
-        self.theme_manager = ThemeManager()
+        from coda.services.config import get_config_service
+        config_service = get_config_service()
+        self.theme_manager = config_service.theme_manager
         self.console_theme = self.theme_manager.get_console_theme()
 
     def set_provider_info(

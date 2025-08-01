@@ -50,10 +50,11 @@ class InteractiveCLI(CommandHandler):
         if console:
             super().__init__(console)
         else:
-            # TODO: Update to use new theme manager
-            from rich.console import Console
+            # Get themed console from config service
+            from coda.services.config import get_config_service
 
-            super().__init__(Console())
+            config_service = get_config_service()
+            super().__init__(config_service.theme_manager.get_console())
         self.session = None
         self.config = None  # Will be set by interactive.py
         self.provider = None  # Will be set by interactive.py
@@ -140,9 +141,10 @@ class InteractiveCLI(CommandHandler):
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
         # Get theme-based style and extend it with additional styles
-        from coda.base.theme import ThemeManager
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
         theme_style = theme_manager.current_theme.prompt.to_dict()
 
         # Get the base style dictionary and add custom styles
@@ -477,8 +479,15 @@ class InteractiveCLI(CommandHandler):
         self.console = config_service.theme_manager.get_console()
         self.style = self._create_style()
 
+        # Reinitialize the prompt session with new theme
         if hasattr(self, "session") and self.session:
-            self.session.style = self.style
+            # Save current history file path
+            history_file = self.session.history.filename if hasattr(self.session.history, 'filename') else None
+            
+            # Reinitialize session with new style
+            self._init_session()
+            
+            # The new session will have the updated style
 
         self.console.print(f"[green]✓[/] Theme changed to '[cyan]{theme_name}[/]'")
         if self.config:
@@ -486,9 +495,11 @@ class InteractiveCLI(CommandHandler):
 
     def _list_available_themes(self) -> None:
         """List all available themes with current selection indicator."""
-        from coda.base.theme import THEMES, ThemeManager
+        from coda.base.theme import THEMES
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
         self.console.print("\n[bold]Available themes:[/]")
         for theme_name, theme in THEMES.items():
             status = (
@@ -498,9 +509,10 @@ class InteractiveCLI(CommandHandler):
 
     def _show_current_theme(self) -> None:
         """Display the current theme and its description."""
-        from coda.base.theme import ThemeManager
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
         self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
         self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
 
@@ -540,9 +552,10 @@ class InteractiveCLI(CommandHandler):
 
     async def _cmd_theme(self, args: str):
         """Change UI theme."""
-        from coda.base.theme import ThemeManager
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
 
         if not args:
             # Show interactive theme selector
