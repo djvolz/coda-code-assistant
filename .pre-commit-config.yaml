@@ -7,14 +7,16 @@ repos:
     hooks:
       - id: black
         language_version: python3
+        exclude: "*/diagram_renderer/*"
 
   # Ruff - Fast Python linter
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.0
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [--fix, --exclude, "*/diagram_renderer/*"]
       - id: ruff-format
+        exclude: "*/diagram_renderer/*"
 
   # Pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
