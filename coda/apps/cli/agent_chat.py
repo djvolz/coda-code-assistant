@@ -3,6 +3,7 @@
 from rich.console import Console
 
 from coda.base.providers.base import BaseProvider, Message
+from coda.base.theme import ThemeManager
 from coda.services.agents import Agent
 from coda.services.agents.builtin_tools import get_builtin_tools
 from coda.services.agents.tool_adapter import MCPToolAdapter
@@ -18,6 +19,8 @@ class AgentChatHandler:
         self.console = console
         self.agent = None
         self.use_tools = True
+        self.theme_manager = ThemeManager()
+        self.console_theme = self.theme_manager.get_console_theme()
 
     def should_use_agent(self, model: str) -> bool:
         """Check if we should use agent-based chat."""
@@ -93,7 +96,9 @@ Each user request should be evaluated independently. Previous tool usage does no
         try:
             # Update status if provided
             if status:
-                status.update("[bold cyan]Processing request...[/bold cyan]")
+                status.update(
+                    f"[{self.console_theme.bold} {self.console_theme.info}]Processing request...[/{self.console_theme.bold} {self.console_theme.info}]"
+                )
 
             # Create interrupt check function
             def check_interrupt():
@@ -111,7 +116,9 @@ Each user request should be evaluated independently. Previous tool usage does no
 
         except Exception as e:
             error_msg = f"Error during agent chat: {str(e)}"
-            self.console.print(f"[red]{error_msg}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]{error_msg}[/{self.console_theme.error}]"
+            )
             return error_msg, messages
 
     async def stream_chat_fallback(
@@ -135,12 +142,17 @@ Each user request should be evaluated independently. Previous tool usage does no
 
             for chunk in stream:
                 if first_chunk:
-                    self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                    self.console.print(
+                        f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]Assistant:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                        end="",
+                    )
                     first_chunk = False
 
                 # Check for interrupt
                 if hasattr(self.cli, "interrupt_event") and self.cli.interrupt_event.is_set():
-                    self.console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                    self.console.print(
+                        f"\n\n[{self.console_theme.warning}]Response interrupted by user[/{self.console_theme.warning}]"
+                    )
                     break
 
                 # Stream the response
@@ -152,7 +164,9 @@ Each user request should be evaluated independently. Previous tool usage does no
                 self.console.print()
 
         except Exception as e:
-            self.console.print(f"\n[red]Error during streaming: {str(e)}[/red]")
+            self.console.print(
+                f"\n[{self.console_theme.error}]Error during streaming: {str(e)}[/{self.console_theme.error}]"
+            )
 
         return full_response
 
