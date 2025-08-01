@@ -67,8 +67,8 @@ coda
 ### Install from source
 
 ```bash
-# Clone the repository
-git clone https://github.com/djvolz/coda-code-assistant.git
+# Clone the repository with submodules
+git clone --recursive https://github.com/djvolz/coda-code-assistant.git
 cd coda-code-assistant
 
 # Install with uv (recommended)
@@ -105,6 +105,7 @@ print(response["content"])
 - [Integration Guide](docs/integration-guide.md) - How to use modules together
 - [Module Documentation](coda/base/) - Individual module READMEs
 - [Example Applications](tests/examples/) - Working examples
+- [Diagram Rendering Guide](docs/guides/diagram-rendering.md) - How to create diagrams
 
 ### Wiki Documentation
 For comprehensive documentation, visit our **[Wiki](https://github.com/djvolz/coda-code-assistant/wiki)**:
@@ -124,6 +125,7 @@ For comprehensive documentation, visit our **[Wiki](https://github.com/djvolz/co
 - 💾 **Session Management**: Save, resume, and branch conversations
 - 🎨 **Beautiful Interface**: Rich terminal UI with syntax highlighting
 - 🔧 **Tool Integration**: File operations, web search, and more via MCP
+- 📊 **Diagram Rendering**: Create flowcharts, UML diagrams, and graphs with [diagram-renderer](https://github.com/djvolz/diagram-renderer)
 - 🧪 **Well-Tested**: Comprehensive test suite ensures reliability
 
 ## 🛠️ Example Applications

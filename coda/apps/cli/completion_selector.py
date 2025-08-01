@@ -103,7 +103,7 @@ class CompletionSelector:
             # Use theme's completion styles
             "completion-menu.completion": prompt_styles.get("completion", ""),
             "completion-menu.completion.current": prompt_styles.get(
-                "completion.current", f"bg:{self.console_theme.success} fg:black"
+                "completion.current", f"bg:{self.prompt_theme.success} fg:black"
             ),
             "completion-menu.meta.completion": prompt_styles.get("completion.meta", "italic"),
             "completion-menu.meta.completion.current": prompt_styles.get(
@@ -113,7 +113,7 @@ class CompletionSelector:
             + prompt_styles.get("completion.current", ""),
             # Additional styles
             "scrollbar.background": prompt_styles.get("toolbar", "bg:#444444"),
-            "scrollbar.button": f"fg:{self.console_theme.info}",
+            "scrollbar.button": f"fg:{self.prompt_theme.info}",
         }
 
         style = Style.from_dict(style_dict)
