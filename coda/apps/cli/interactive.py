@@ -142,21 +142,6 @@ async def _select_model(unique_models, model: str, console: Console):
 
     console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
 
-    # Warn if selected model might be a base model
-    selected_model = next((m for m in unique_models if m.id == model), None)
-    if selected_model and hasattr(selected_model, "metadata") and selected_model.metadata:
-        capabilities = selected_model.metadata.get("capabilities", [])
-        # Check for base models (models that might not support chat)
-        is_base_model = "FINE_TUNE" in capabilities
-
-        if is_base_model:
-            console.print(
-                f"[{theme.warning}]⚠️  Warning: This model may be a base model that doesn't support chat.[/{theme.warning}]"
-            )
-            console.print(
-                f"[{theme.warning}]   If you encounter errors, try a different model.[/{theme.warning}]"
-            )
-
     console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
     console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
     console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
@@ -583,22 +568,6 @@ async def run_one_shot(
 
         # Show model info
         console.print(f"\n[green]Model:[/green] {model}")
-
-        # Check for FINE_TUNE warning
-        selected_model = next((m for m in unique_models if m.id == model), None)
-        if selected_model and hasattr(selected_model, "metadata") and selected_model.metadata:
-            capabilities = selected_model.metadata.get("capabilities", [])
-            # Check for base models (models that might not support chat)
-            # Known base model patterns
-            is_base_model = "FINE_TUNE" in capabilities
-
-            if is_base_model:
-                console.print(
-                    f"[{theme.warning}]⚠️  Warning: This model may be a base model that doesn't support chat.[/{theme.warning}]"
-                )
-                console.print(
-                    f"[{theme.warning}]   If you encounter errors, try a different model.[/{theme.warning}]"
-                )
 
         # Convert mode string to enum
         developer_mode = DeveloperMode(mode.lower())

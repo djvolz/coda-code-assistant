@@ -120,24 +120,6 @@ class CommandHandler(ABC):
             self.console.print(
                 f"[{self.console_theme.success}]Switched to model: {self.current_model}[/{self.console_theme.success}]"
             )
-
-            # Warn if model might be a base model
-            if hasattr(selected_model, "metadata") and selected_model.metadata:
-                capabilities = selected_model.metadata.get("capabilities", [])
-                # Check for base models (models that might not support chat)
-                is_base_model = (
-                    "FINE_TUNE" in capabilities
-                    or model_name.endswith("-16k")  # Cohere base models often end with -16k
-                    or "base" in model_name.lower()
-                )
-
-                if is_base_model:
-                    self.console.print(
-                        f"[{self.console_theme.warning}]⚠️  Warning: This model may be a base model that doesn't support chat.[/{self.console_theme.warning}]"
-                    )
-                    self.console.print(
-                        f"[{self.console_theme.warning}]   If you encounter errors, try a different model.[/{self.console_theme.warning}]"
-                    )
         else:
             self.console.print(
                 f"[{self.console_theme.error}]Model not found: {model_name}[/{self.console_theme.error}]"

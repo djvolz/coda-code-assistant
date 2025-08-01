@@ -748,7 +748,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             content=content,
             model=model,
             finish_reason=finish_reason,
-            tool_calls=tool_calls,  # Now both Cohere and Meta support tools
+            tool_calls=tool_calls,
             usage=usage,
             metadata={
                 "model_version": getattr(chat_response, "model_version", None),
