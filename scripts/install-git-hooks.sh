@@ -30,22 +30,22 @@ cat > "$HOOKS_DIR/pre-commit" << 'EOF'
 #!/bin/bash
 #
 # Git pre-commit hook for Coda
-# Runs code quality checks before allowing commits
+# Runs the same quality checks as CI/CD pipeline
 #
 # This hook runs:
-# - Code formatting (black, ruff --fix)
-# - Linting (ruff check)
-# - Fast smoke tests
+# - Code formatting with ruff format
+# - Full linting with ruff check
+# - Matches the quality-checks.yml workflow
 #
 # To bypass this hook temporarily, use: git commit --no-verify
 #
 
 set -e  # Exit on any error
 
-echo "🔍 Running pre-commit checks..."
+echo "🔍 Running pre-commit checks (matching CI/CD quality checks)..."
 echo
 
-# Change to repository root to ensure make commands work
+# Change to repository root to ensure commands work
 cd "$(git rev-parse --show-toplevel)"
 
 # Check if we're in a Git repository
@@ -61,38 +61,61 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
-# Check if Makefile exists
-if [[ ! -f "Makefile" ]]; then
-    echo "❌ Error: Makefile not found in repository root"
-    exit 1
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(py|pyi)$' || true)
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "✅ No Python files to check"
+    exit 0
 fi
 
-# Run the pre-commit checks using the project's Makefile
-echo "📝 Formatting code..."
-if ! make format; then
+echo "📝 Checking staged Python files..."
+echo
+
+# Format code with ruff format (matching CI)
+echo "🎨 Formatting code with ruff..."
+if ! uv run ruff format $STAGED_FILES; then
     echo "❌ Code formatting failed"
-    echo "   Please fix formatting issues and try again"
+    echo "   Please review and stage the formatting changes"
     exit 1
 fi
 
+# Check if formatting changed any files
+if ! git diff --quiet $STAGED_FILES; then
+    echo "⚠️  Formatting changes were made. Please review and stage them:"
+    git diff --name-only $STAGED_FILES
+    echo
+    echo "Run 'git add -u' to stage the formatting changes"
+    exit 1
+fi
+
+echo "✅ Code formatting passed"
 echo
-echo "🔍 Running linters..."
-if ! make lint; then
+
+# Run full linting check (matching CI)
+echo "🔍 Running linting checks with ruff..."
+if ! uv run ruff check $STAGED_FILES --exclude archive; then
     echo "❌ Linting failed"
-    echo "   Please fix linting issues and try again"
+    echo "   Please fix the issues above and try again"
+    echo "   Tip: Some issues can be auto-fixed with 'uv run ruff check --fix'"
     exit 1
 fi
 
+echo "✅ Linting passed"
 echo
-echo "🧪 Running fast tests..."
-if ! make test-fast; then
-    echo "❌ Fast tests failed"
-    echo "   Please fix test failures and try again"
+
+# Optional: Run black for additional formatting (if you want extra strictness)
+echo "🖤 Running black formatter..."
+if ! uv run black --check $STAGED_FILES 2>/dev/null; then
+    echo "⚠️  Black would make changes. Running black..."
+    uv run black $STAGED_FILES
+    echo "   Please review and stage the black formatting changes"
     exit 1
 fi
 
 echo
 echo "✅ All pre-commit checks passed!"
+echo "   Code is properly formatted and linted"
 echo "   Ready to commit"
 echo
 
@@ -106,10 +129,13 @@ echo "✅ Pre-commit hook installed successfully!"
 echo
 echo "The hook will now run automatically before each commit."
 echo "It will:"
-echo "  - Format your code automatically"
-echo "  - Run linting checks"
-echo "  - Run fast smoke tests"
+echo "  - Format code with ruff format"
+echo "  - Run full linting checks with ruff check"
+echo "  - Run black formatting check"
+echo "  - Match the same checks as CI/CD pipeline"
+echo
+echo "Note: The hook only checks staged Python files for efficiency"
 echo
 echo "To bypass the hook temporarily: git commit --no-verify"
-echo "To test the hook manually: make pre-commit"
+echo "To run checks manually: uv run ruff check . --exclude archive"
 echo
