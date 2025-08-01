@@ -195,7 +195,7 @@ async def _setup_provider_and_models(
                 return None, None, None
 
             # Show model info
-            console.print(f"\n[green]Model:[/green] {model}")
+            console.print(f"\n[{theme.success}]Model:[/{theme.success}] {model}")
         else:
             # For interactive, use the existing selection process
             model = await _select_model(unique_models, model, console)
@@ -424,7 +424,7 @@ async def _handle_chat_interaction(
                         # Stop the spinner when we get the first chunk
                         status.stop()
                         # Just print the assistant label
-                        console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                        console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end="")
                         first_chunk = False
 
                     # Check for interrupt
@@ -600,7 +600,7 @@ async def run_one_shot(
         messages.append(Message(role=Role.USER, content=prompt))
 
         # Get response
-        console.print(f"\n[bold cyan]User:[/bold cyan] {prompt}")
+        console.print(f"\n[{theme.user_message} bold]You:[/{theme.user_message} bold] {prompt}")
 
         # Use appropriate handler based on tool support
         if developer_mode != DeveloperMode.GENERAL:
@@ -626,7 +626,7 @@ async def run_one_shot(
             response_content = response.content
 
         # Display response
-        console.print(f"\n[bold cyan]Assistant:[/bold cyan] {response_content}")
+        console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] {response_content}")
 
         # Save to session if auto-save is enabled
         if not no_save:

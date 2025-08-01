@@ -21,6 +21,9 @@ class ToolChatHandler:
         self.console = console
         self.executor = ToolExecutor()
         self.tools_enabled = True
+        from coda.services.config import get_config_service
+        config_service = get_config_service()
+        self.theme = config_service.theme_manager.get_console_theme()
 
     def should_use_tools(self, model: str) -> bool:
         """Check if the current model supports tools."""
@@ -77,7 +80,7 @@ class ToolChatHandler:
 
         except Exception as e:
             error_msg = f"Error during tool-enabled chat: {str(e)}"
-            self.console.print(f"[red]{error_msg}[/red]")
+            self.console.print(f"[{self.theme.error}]{error_msg}[/{self.theme.error}]")
             return error_msg, messages
 
     async def _handle_tool_calls(
@@ -102,17 +105,18 @@ class ToolChatHandler:
         )
 
         # Execute each tool call
-        self.console.print("\n[dim]Executing tools...[/dim]")
+        self.console.print(f"\n[{self.theme.dim}]Executing tools...[/{self.theme.dim}]")
 
         for tool_call in response.tool_calls:
             # Show tool execution
-            self.console.print(f"\n[cyan]→ Running tool:[/cyan] {tool_call.name}")
+            self.console.print(f"\n[{self.theme.info}]→ Running tool:[/{self.theme.info}] {tool_call.name}")
             if tool_call.arguments:
                 args_str = json.dumps(tool_call.arguments, indent=2)
                 self.console.print(
                     Panel(
-                        Syntax(args_str, "json", theme="monokai"),
-                        title="[cyan]Arguments[/cyan]",
+                        Syntax(args_str, "json", theme=self.theme.code_theme),
+                        title=f"[{self.theme.info}]Arguments[/{self.theme.info}]",
+                        border_style=self.theme.info,
                         expand=False,
                     )
                 )
@@ -122,21 +126,22 @@ class ToolChatHandler:
 
             # Show result
             if result.is_error:
-                self.console.print(f"[red]✗ Error:[/red] {result.content}")
+                self.console.print(f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {result.content}")
             else:
-                self.console.print("[green]✓ Result:[/green]")
+                self.console.print(f"[{self.theme.success}]✓ Result:[/{self.theme.success}]")
                 # Try to format as JSON if possible
                 try:
                     result_json = json.loads(result.content)
                     self.console.print(
                         Panel(
-                            Syntax(json.dumps(result_json, indent=2), "json", theme="monokai"),
+                            Syntax(json.dumps(result_json, indent=2), "json", theme=self.theme.code_theme),
+                            border_style=self.theme.success,
                             expand=False,
                         )
                     )
                 except (json.JSONDecodeError, TypeError):
                     # Not JSON, print as text
-                    self.console.print(Panel(result.content, expand=False))
+                    self.console.print(Panel(result.content, border_style=self.theme.info, expand=False))
 
             # Add tool result to messages
             messages.append(
@@ -144,7 +149,7 @@ class ToolChatHandler:
             )
 
         # Make another request to get the final response
-        self.console.print("\n[dim]Getting final response...[/dim]")
+        self.console.print(f"\n[{self.theme.dim}]Getting final response...[/{self.theme.dim}]")
 
         try:
             final_response = await asyncio.to_thread(
@@ -157,7 +162,7 @@ class ToolChatHandler:
             )
 
             # Print and return the final response
-            self.console.print("\n[bold cyan]Assistant:[/bold cyan]")
+            self.console.print(f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold]")
             self._print_response(final_response.content)
 
             messages.append(Message(role=Role.ASSISTANT, content=final_response.content))
@@ -165,7 +170,7 @@ class ToolChatHandler:
 
         except Exception as e:
             error_msg = f"Error getting final response: {str(e)}"
-            self.console.print(f"[red]{error_msg}[/red]")
+            self.console.print(f"[{self.theme.error}]{error_msg}[/{self.theme.error}]")
             return error_msg, messages
 
     async def _stream_chat(
@@ -189,12 +194,12 @@ class ToolChatHandler:
 
             for chunk in stream:
                 if first_chunk:
-                    self.console.print("\n[bold cyan]Assistant:[/bold cyan] ", end="")
+                    self.console.print(f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] ", end="")
                     first_chunk = False
 
                 # Check for interrupt
                 if self.cli.interrupt_event.is_set():
-                    self.console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                    self.console.print(f"\n\n[{self.theme.warning}]Response interrupted by user[/{self.theme.warning}]")
                     break
 
                 # Stream the response
@@ -206,10 +211,10 @@ class ToolChatHandler:
                 self.console.print()
 
         except Exception as e:
-            self.console.print(f"\n[red]Error during streaming: {str(e)}[/red]")
+            self.console.print(f"\n[{self.theme.error}]Error during streaming: {str(e)}[/{self.theme.error}]")
 
         return full_response
 
     def _print_response(self, content: str):
         """Print AI response with formatting."""
-        self.console.print(f"\n[bold cyan]Assistant:[/bold cyan] {content}")
+        self.console.print(f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] {content}")

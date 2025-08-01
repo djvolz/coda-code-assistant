@@ -13,7 +13,7 @@ DEFAULT_MODE: str = "general"
 DEFAULT_TEMPERATURE: float = 0.7
 DEFAULT_CONTEXT_LENGTH: int = 4096
 DEFAULT_MAX_HISTORY: int = 1000
-DEFAULT_THEME: str = "default"
+DEFAULT_THEME: str = "dark"
 DEFAULT_EXPORT_LIMIT: int = 50
 
 # Directory names

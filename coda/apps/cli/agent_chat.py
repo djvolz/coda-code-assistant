@@ -3,7 +3,6 @@
 from rich.console import Console
 
 from coda.base.providers.base import BaseProvider, Message
-from coda.base.theme import ThemeManager
 from coda.services.agents import Agent
 from coda.services.agents.builtin_tools import get_builtin_tools
 from coda.services.agents.tool_adapter import MCPToolAdapter
@@ -145,7 +144,7 @@ Each user request should be evaluated independently. Previous tool usage does no
             for chunk in stream:
                 if first_chunk:
                     self.console.print(
-                        f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]Assistant:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                        f"\n[{self.console_theme.bold} {self.console_theme.info}]Assistant:[/{self.console_theme.bold} {self.console_theme.info}] ",
                         end="",
                     )
                     first_chunk = False

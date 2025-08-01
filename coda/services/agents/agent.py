@@ -442,7 +442,7 @@ class Agent:
                             if status:
                                 status.stop()
                             self.console.print(
-                                f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                                f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] ",
                                 end="",
                             )
                             first_chunk = False
@@ -507,7 +507,7 @@ class Agent:
                                     if status:
                                         status.stop()
                                     self.console.print(
-                                        f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                                        f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] ",
                                         end="",
                                     )
                                     first_chunk = False
@@ -584,7 +584,7 @@ class Agent:
                         # We already have the full response from the non-streaming call
                         # For better UX, we should stream it character by character
                         self.console.print(
-                            f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                            f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] ",
                             end="",
                         )
 
@@ -799,7 +799,7 @@ class Agent:
     def _print_response(self, content: str):
         """Print AI response."""
         self.console.print(
-            f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]{self.name}:[/{self.console_theme.bold} {self.console_theme.assistant_message}] {content}"
+            f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] {content}"
         )
 
     def _print_tool_execution(self, tool_call: ToolCall):
