@@ -55,12 +55,13 @@ class InteractiveCLI(CommandHandler):
 
             config_service = get_config_service()
             super().__init__(config_service.theme_manager.get_console())
-        
+
         # Get theme for styling
         from coda.services.config import get_config_service
+
         config_service = get_config_service()
         self.theme = config_service.theme_manager.get_console_theme()
-        
+
         self.session = None
         self.config = None  # Will be set by interactive.py
         self.provider = None  # Will be set by interactive.py
@@ -314,7 +315,7 @@ class InteractiveCLI(CommandHandler):
         # Map Rich color names to prompt-toolkit compatible colors
         color_map = {
             "bright_cyan": "ansicyan",
-            "bright_green": "ansigreen", 
+            "bright_green": "ansigreen",
             "bright_yellow": "ansiyellow",
             "bright_blue": "ansiblue",
             "bright_red": "ansired",
@@ -324,7 +325,7 @@ class InteractiveCLI(CommandHandler):
             "red": "ansired",
             "cyan": "ansicyan",
         }
-        
+
         # Get theme color for current mode
         theme_color = {
             DeveloperMode.GENERAL: self.theme.info,
@@ -335,12 +336,12 @@ class InteractiveCLI(CommandHandler):
             DeveloperMode.REFACTOR: self.theme.panel_border,
             DeveloperMode.PLAN: self.theme.error,
         }.get(self.current_mode, self.theme.info)
-        
+
         # Convert Rich color to prompt-toolkit color
         mode_color = color_map.get(theme_color, "ansiwhite")
 
         # Use prompt theme styling for the arrow
-        return HTML(f'<{mode_color}>❯</{mode_color}> ')
+        return HTML(f"<{mode_color}>❯</{mode_color}> ")
 
     async def get_input(self, multiline: bool = False) -> str:
         """Get input from user with rich features."""
@@ -445,10 +446,14 @@ class InteractiveCLI(CommandHandler):
             new_model = await selector.select_interactive()
             if new_model:
                 self.current_model = new_model
-                self.console.print(f"\n[{self.theme.success}]Switched to model: {new_model}[/{self.theme.success}]")
+                self.console.print(
+                    f"\n[{self.theme.success}]Switched to model: {new_model}[/{self.theme.success}]"
+                )
 
             else:
-                self.console.print(f"\n[{self.theme.warning}]Current model: {self.current_model}[/{self.theme.warning}]")
+                self.console.print(
+                    f"\n[{self.theme.warning}]Current model: {self.current_model}[/{self.theme.warning}]"
+                )
         else:
             # Use the shared model switching logic
             self.switch_model(args)
@@ -696,7 +701,7 @@ class InteractiveCLI(CommandHandler):
             table = Table(
                 title=f"[{theme.table_header}]Semantic Search Commands[/{theme.table_header}]",
                 box=None,
-                row_styles=[theme.table_row_odd, theme.table_row_even]
+                row_styles=[theme.table_row_odd, theme.table_row_even],
             )
             table.add_column("Command", style=theme.command, no_wrap=True)
             table.add_column("Description", style=theme.dim)

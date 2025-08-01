@@ -5,8 +5,6 @@ import traceback
 
 from rich.console import Console
 
-from coda.base.theme import ThemeManager
-
 from .constants import COMPARTMENT_ID_MISSING, HELP_COMPARTMENT_ID
 
 
@@ -17,6 +15,7 @@ class CLIErrorHandler:
         self.console = console
         self.debug = debug
         from coda.services.config import get_config_service
+
         config_service = get_config_service()
         theme_manager = config_service.theme_manager
         self.theme = theme_manager.get_console_theme()

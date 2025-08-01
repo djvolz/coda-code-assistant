@@ -22,6 +22,7 @@ class ToolChatHandler:
         self.executor = ToolExecutor()
         self.tools_enabled = True
         from coda.services.config import get_config_service
+
         config_service = get_config_service()
         self.theme = config_service.theme_manager.get_console_theme()
 
@@ -109,7 +110,9 @@ class ToolChatHandler:
 
         for tool_call in response.tool_calls:
             # Show tool execution
-            self.console.print(f"\n[{self.theme.info}]→ Running tool:[/{self.theme.info}] {tool_call.name}")
+            self.console.print(
+                f"\n[{self.theme.info}]→ Running tool:[/{self.theme.info}] {tool_call.name}"
+            )
             if tool_call.arguments:
                 args_str = json.dumps(tool_call.arguments, indent=2)
                 self.console.print(
@@ -126,7 +129,9 @@ class ToolChatHandler:
 
             # Show result
             if result.is_error:
-                self.console.print(f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {result.content}")
+                self.console.print(
+                    f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {result.content}"
+                )
             else:
                 self.console.print(f"[{self.theme.success}]✓ Result:[/{self.theme.success}]")
                 # Try to format as JSON if possible
@@ -134,14 +139,20 @@ class ToolChatHandler:
                     result_json = json.loads(result.content)
                     self.console.print(
                         Panel(
-                            Syntax(json.dumps(result_json, indent=2), "json", theme=self.theme.code_theme),
+                            Syntax(
+                                json.dumps(result_json, indent=2),
+                                "json",
+                                theme=self.theme.code_theme,
+                            ),
                             border_style=self.theme.success,
                             expand=False,
                         )
                     )
                 except (json.JSONDecodeError, TypeError):
                     # Not JSON, print as text
-                    self.console.print(Panel(result.content, border_style=self.theme.info, expand=False))
+                    self.console.print(
+                        Panel(result.content, border_style=self.theme.info, expand=False)
+                    )
 
             # Add tool result to messages
             messages.append(
@@ -194,12 +205,16 @@ class ToolChatHandler:
 
             for chunk in stream:
                 if first_chunk:
-                    self.console.print(f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] ", end="")
+                    self.console.print(
+                        f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] ", end=""
+                    )
                     first_chunk = False
 
                 # Check for interrupt
                 if self.cli.interrupt_event.is_set():
-                    self.console.print(f"\n\n[{self.theme.warning}]Response interrupted by user[/{self.theme.warning}]")
+                    self.console.print(
+                        f"\n\n[{self.theme.warning}]Response interrupted by user[/{self.theme.warning}]"
+                    )
                     break
 
                 # Stream the response
@@ -211,10 +226,14 @@ class ToolChatHandler:
                 self.console.print()
 
         except Exception as e:
-            self.console.print(f"\n[{self.theme.error}]Error during streaming: {str(e)}[/{self.theme.error}]")
+            self.console.print(
+                f"\n[{self.theme.error}]Error during streaming: {str(e)}[/{self.theme.error}]"
+            )
 
         return full_response
 
     def _print_response(self, content: str):
         """Print AI response with formatting."""
-        self.console.print(f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] {content}")
+        self.console.print(
+            f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] {content}"
+        )

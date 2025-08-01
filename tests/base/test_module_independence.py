@@ -74,9 +74,9 @@ def test_config_module_independence():
     allowed_prefixes = ["coda.base."]
 
     for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"config: Unexpected import '{imp}'"
-        )
+        assert any(
+            imp.startswith(prefix) for prefix in allowed_prefixes
+        ), f"config: Unexpected import '{imp}'"
 
 
 def test_theme_module_independence():
@@ -92,9 +92,9 @@ def test_theme_module_independence():
     allowed_prefixes = ["coda.base."]
 
     for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"theme: Unexpected import '{imp}'"
-        )
+        assert any(
+            imp.startswith(prefix) for prefix in allowed_prefixes
+        ), f"theme: Unexpected import '{imp}'"
 
 
 def test_providers_module_independence():
@@ -110,9 +110,9 @@ def test_providers_module_independence():
     allowed_prefixes = ["coda.base."]
 
     for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"providers: Unexpected import '{imp}'"
-        )
+        assert any(
+            imp.startswith(prefix) for prefix in allowed_prefixes
+        ), f"providers: Unexpected import '{imp}'"
 
 
 def test_search_module_independence():
@@ -128,9 +128,9 @@ def test_search_module_independence():
     allowed_prefixes = ["coda.base."]
 
     for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"search: Unexpected import '{imp}'"
-        )
+        assert any(
+            imp.startswith(prefix) for prefix in allowed_prefixes
+        ), f"search: Unexpected import '{imp}'"
 
 
 def test_session_module_independence():
@@ -146,9 +146,9 @@ def test_session_module_independence():
     allowed_prefixes = ["coda.base."]
 
     for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"session: Unexpected import '{imp}'"
-        )
+        assert any(
+            imp.startswith(prefix) for prefix in allowed_prefixes
+        ), f"session: Unexpected import '{imp}'"
 
 
 def test_observability_module_independence():
@@ -164,9 +164,9 @@ def test_observability_module_independence():
     allowed_prefixes = ["coda.base."]
 
     for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"observability: Unexpected import '{imp}'"
-        )
+        assert any(
+            imp.startswith(prefix) for prefix in allowed_prefixes
+        ), f"observability: Unexpected import '{imp}'"
 
 
 def test_diagram_renderer_module_independence():
@@ -187,9 +187,9 @@ def test_diagram_renderer_module_independence():
     allowed_prefixes = ["coda.base."]
 
     for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"diagram_renderer: Unexpected import '{imp}'"
-        )
+        assert any(
+            imp.startswith(prefix) for prefix in allowed_prefixes
+        ), f"diagram_renderer: Unexpected import '{imp}'"
 
 
 def test_all_base_modules_found():

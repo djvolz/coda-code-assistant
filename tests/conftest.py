@@ -16,3 +16,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "independence: Tests that verify module independence")
     config.addinivalue_line("markers", "integration: Integration tests that span multiple modules")
     config.addinivalue_line("markers", "slow: Tests that take a long time to run")
+    config.addinivalue_line(
+        "markers", "functional: Functional tests that test end-to-end workflows"
+    )
+    config.addinivalue_line("markers", "unit: Unit tests that test individual components")

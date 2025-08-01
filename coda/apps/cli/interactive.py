@@ -424,7 +424,9 @@ async def _handle_chat_interaction(
                         # Stop the spinner when we get the first chunk
                         status.stop()
                         # Just print the assistant label
-                        console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end="")
+                        console.print(
+                            f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end=""
+                        )
                         first_chunk = False
 
                     # Check for interrupt

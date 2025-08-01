@@ -15,14 +15,16 @@ from coda.services.config import get_config_service
 class OptionCompleter(Completer):
     """Custom completer for option selection."""
 
-    def __init__(self, options: list[tuple[str, str, dict[str, Any] | None]]):
+    def __init__(self, options: list[tuple[str, str, dict[str, Any] | None]], prompt_theme=None):
         """
         Initialize with options.
 
         Args:
             options: List of (value, description, metadata) tuples
+            prompt_theme: Theme for coloring
         """
         self.options = options
+        self.prompt_theme = prompt_theme
 
     def get_completions(self, document, complete_event):
         """Get completions based on current input."""
@@ -32,6 +34,7 @@ class OptionCompleter(Completer):
             # Match if search text is in value or description
             if not word or word in value.lower() or word in description.lower():
                 # Format display with metadata if available
+                # For HTML display, we need to use HTML-safe color formatting
                 display = f"{value:<15} {description}"
                 if metadata:
                     # Add metadata
@@ -90,7 +93,7 @@ class CompletionSelector:
     def create_prompt_session(self) -> PromptSession:
         """Create a configured prompt session."""
         # Create completer with fuzzy matching
-        base_completer = OptionCompleter(self.options)
+        base_completer = OptionCompleter(self.options, self.prompt_theme)
         completer = FuzzyCompleter(base_completer, enable_fuzzy=True)
 
         # Get the prompt theme style dictionary

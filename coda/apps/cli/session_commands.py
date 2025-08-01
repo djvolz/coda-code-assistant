@@ -48,6 +48,7 @@ class SessionCommands:
         config = get_config_service()
         self.console = config.theme_manager.get_console()
         self.theme = config.theme_manager.get_console_theme()
+        self.prompt_theme = config.theme_manager.get_prompt_theme()
         self.current_session_id: str | None = None
         self.current_messages: list[dict[str, Any]] = []
         self.auto_save_enabled: bool = True  # Auto-save by default
@@ -223,7 +224,7 @@ class SessionCommands:
         # Display session info
         self.console.print(f"\n[green]Loaded session:[/green] {session.name}")
         self.console.print(
-            f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}"
+            f"[{self.theme.dim}]Provider:[/{self.theme.dim}] {session.provider} | [{self.theme.dim}]Model:[/{self.theme.dim}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]"
         )
         self.console.print(
             f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
@@ -246,7 +247,10 @@ class SessionCommands:
 
         # Create table
         table = Table(
-            title="Saved Sessions", show_header=True, header_style=self.theme.table_header
+            title="Saved Sessions",
+            show_header=True,
+            header_style=self.theme.table_header,
+            row_styles=[self.theme.table_row_odd, self.theme.table_row_even],
         )
         table.add_column("ID", style=self.theme.dim, width=12)
         table.add_column("Name", style="bold")
@@ -342,7 +346,7 @@ class SessionCommands:
             f"[bold]Name:[/bold] {session.name}",
             f"[bold]ID:[/bold] {session.id}",
             f"[bold]Provider:[/bold] {session.provider}",
-            f"[bold]Model:[/bold] {session.model}",
+            f"[{self.theme.bold}]Model:[/{self.theme.bold}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]",
             f"[bold]Mode:[/bold] {session.mode}",
             f"[bold]Status:[/bold] {session.status}",
             f"[bold]Created:[/bold] {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
@@ -454,7 +458,7 @@ class SessionCommands:
         # Display session info
         self.console.print(f"\n[green]Loaded last session:[/green] {session.name}")
         self.console.print(
-            f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}"
+            f"[{self.theme.dim}]Provider:[/{self.theme.dim}] {session.provider} | [{self.theme.dim}]Model:[/{self.theme.dim}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]"
         )
         self.console.print(
             f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
@@ -623,7 +627,10 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
         # Detailed history table
         if len(tool_history) <= 20:  # Show all if reasonable number
             table = Table(
-                title="Tool Call History", show_header=True, header_style=self.theme.table_header
+                title="Tool Call History",
+                show_header=True,
+                header_style=self.theme.table_header,
+                row_styles=[self.theme.table_row_odd, self.theme.table_row_even],
             )
             table.add_column("Seq", style=self.theme.dim, width=4)
             table.add_column("Type", style="bold", width=8)

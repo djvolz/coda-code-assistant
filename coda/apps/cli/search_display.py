@@ -163,7 +163,7 @@ class SearchResultDisplay:
                 syntax = Syntax(
                     result.text[:max_preview_length],
                     lang,
-                    theme="monokai",
+                    theme=self.theme.code_theme,
                     line_numbers=True,
                     word_wrap=True,
                 )
@@ -399,6 +399,7 @@ def create_search_stats_display(stats: dict, console: Console) -> None:
         title=f"[{theme.table_header}]Semantic Search Index Statistics[/{theme.table_header}]",
         show_header=True,
         header_style=theme.table_header,
+        row_styles=[theme.table_row_odd, theme.table_row_even],
     )
 
     table.add_column("Metric", style=theme.info, no_wrap=True)

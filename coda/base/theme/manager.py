@@ -41,9 +41,7 @@ class ThemeManager:
             if self.current_theme_name in self._custom_themes:
                 self._current_theme = self._custom_themes[self.current_theme_name]
             else:
-                self._current_theme = THEMES.get(
-                    self.current_theme_name, THEMES[ThemeNames.DARK]
-                )
+                self._current_theme = THEMES.get(self.current_theme_name, THEMES[ThemeNames.DARK])
         return self._current_theme
 
     def set_theme(self, theme_name: str) -> None:
