@@ -19,6 +19,7 @@ class AgentChatHandler:
         self.agent = None
         self.use_tools = True
         from coda.services.config import get_config_service
+
         config_service = get_config_service()
         self.theme_manager = config_service.theme_manager
         self.console_theme = self.theme_manager.get_console_theme()
@@ -98,7 +99,7 @@ Each user request should be evaluated independently. Previous tool usage does no
             # Update status if provided
             if status:
                 status.update(
-                    f"[{self.console_theme.bold} {self.console_theme.info}]Processing request...[/{self.console_theme.bold} {self.console_theme.info}]"
+                    f"[{self.console_theme.bold} {self.console_theme.info}]Thinking...[/{self.console_theme.bold} {self.console_theme.info}]"
                 )
 
             # Create interrupt check function

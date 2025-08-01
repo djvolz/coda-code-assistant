@@ -283,7 +283,7 @@ class Agent:
                     # Continue loop to get final response
                     if status:
                         status.update(
-                            f"[{self.console_theme.bold} {self.console_theme.info}]Processing response...[/{self.console_theme.bold} {self.console_theme.info}]"
+                            f"[{self.console_theme.bold} {self.console_theme.info}]Thinking...[/{self.console_theme.bold} {self.console_theme.info}]"
                         )
                 else:
                     # No tool calls, we're done
@@ -573,7 +573,7 @@ class Agent:
                     # Continue loop to get final response
                     if status:
                         status.update(
-                            f"[{self.console_theme.bold} {self.console_theme.info}]Processing response...[/{self.console_theme.bold} {self.console_theme.info}]"
+                            f"[{self.console_theme.bold} {self.console_theme.info}]Thinking...[/{self.console_theme.bold} {self.console_theme.info}]"
                         )
                 else:
                     # No tool calls, we have the final response
