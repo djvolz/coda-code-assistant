@@ -7,6 +7,7 @@ from typing import Any
 from rich.console import Console
 
 from coda.base.providers import ProviderFactory
+from coda.base.theme import ThemeManager
 
 from .modes import DeveloperMode, get_mode_description
 
@@ -31,6 +32,8 @@ class CommandHandler(ABC):
         self.provider_name = None
         self.provider_instance = None
         self.factory = None
+        self.theme_manager = ThemeManager()
+        self.console_theme = self.theme_manager.get_console_theme()
 
     def set_provider_info(
         self,
@@ -63,7 +66,7 @@ class CommandHandler(ABC):
             for mode in DeveloperMode:
                 if mode == self.current_mode:
                     self.console.print(
-                        f"  [green]▶ {mode.value}[/green] - {get_mode_description(mode)}"
+                        f"  [{self.console_theme.success}]▶ {mode.value}[/{self.console_theme.success}] - {get_mode_description(mode)}"
                     )
                 else:
                     self.console.print(
@@ -75,11 +78,15 @@ class CommandHandler(ABC):
 
         try:
             self.current_mode = DeveloperMode(mode_str.lower())
-            self.console.print(f"[green]Switched to {self.current_mode.value} mode[/green]")
+            self.console.print(
+                f"[{self.console_theme.success}]Switched to {self.current_mode.value} mode[/{self.console_theme.success}]"
+            )
             self.console.print(f"[dim]{get_mode_description(self.current_mode)}[/dim]")
             return CommandResult.HANDLED
         except ValueError:
-            self.console.print(f"[red]Invalid mode: {mode_str}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Invalid mode: {mode_str}[/{self.console_theme.error}]"
+            )
             valid_modes = ", ".join(m.value for m in DeveloperMode)
             self.console.print(f"Valid modes: {valid_modes}")
             return CommandResult.HANDLED
@@ -108,10 +115,15 @@ class CommandHandler(ABC):
         # Try to switch to the specified model
         matching_models = [m for m in self.available_models if model_name.lower() in m.id.lower()]
         if matching_models:
-            self.current_model = matching_models[0].id
-            self.console.print(f"[green]Switched to model: {self.current_model}[/green]")
+            selected_model = matching_models[0]
+            self.current_model = selected_model.id
+            self.console.print(
+                f"[{self.console_theme.success}]Switched to model: {self.current_model}[/{self.console_theme.success}]"
+            )
         else:
-            self.console.print(f"[red]Model not found: {model_name}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Model not found: {model_name}[/{self.console_theme.error}]"
+            )
 
         return CommandResult.HANDLED
 
@@ -128,7 +140,9 @@ class CommandHandler(ABC):
                 available = self.factory.list_available()
                 for provider in available:
                     if provider == self.provider_name:
-                        self.console.print(f"  [green]▶ {provider}[/green]")
+                        self.console.print(
+                            f"  [{self.console_theme.success}]▶ {provider}[/{self.console_theme.success}]"
+                        )
                     else:
                         self.console.print(f"  [cyan]{provider}[/cyan]")
             else:
@@ -140,14 +154,18 @@ class CommandHandler(ABC):
                 ]
                 for provider_id, desc in providers:
                     if provider_id == self.provider_name:
-                        self.console.print(f"  [green]▶ {provider_id}[/green] - {desc}")
+                        self.console.print(
+                            f"  [{self.console_theme.success}]▶ {provider_id}[/{self.console_theme.success}] - {desc}"
+                        )
                     else:
                         self.console.print(f"  [cyan]{provider_id}[/cyan] - {desc}")
 
             self.console.print("\n[dim]Note: Provider switching requires restart[/dim]")
         else:
             if self.provider_name and args.lower() == self.provider_name.lower():
-                self.console.print(f"[green]Already using {self.provider_name} provider[/green]")
+                self.console.print(
+                    f"[{self.console_theme.success}]Already using {self.provider_name} provider[/{self.console_theme.success}]"
+                )
             else:
                 self.console.print(
                     "[yellow]Provider switching not supported in current mode. "
@@ -175,7 +193,9 @@ class CommandHandler(ABC):
                 list_tools_by_category,
             )
         except ImportError:
-            self.console.print("[red]Tools system not available. Please check installation.[/red]")
+            self.console.print(
+                "[{self.console_theme.error}]Tools system not available. Please check installation.[/{self.console_theme.error}]"
+            )
             return CommandResult.HANDLED
 
         if not args:
@@ -198,7 +218,9 @@ class CommandHandler(ABC):
         elif subcommand == "help":
             self._show_tools_help()
         else:
-            self.console.print(f"[red]Unknown tools subcommand: {subcommand}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Unknown tools subcommand: {subcommand}[/{self.console_theme.error}]"
+            )
             self.console.print("Usage: /tools [list|info|categories|stats|help]")
 
         return CommandResult.HANDLED
@@ -236,7 +258,9 @@ class CommandHandler(ABC):
             tools = get_available_tools(category)
             if not tools:
                 available_categories = get_tool_categories()
-                self.console.print(f"[red]Category '{category}' not found.[/red]")
+                self.console.print(
+                    f"[{self.console_theme.error}]Category '{category}' not found.[/{self.console_theme.error}]"
+                )
                 self.console.print(f"Available categories: {', '.join(available_categories)}")
                 return
 
@@ -265,7 +289,9 @@ class CommandHandler(ABC):
     def _show_tool_info(self, tool_name: str):
         """Show detailed information about a specific tool."""
         if not tool_name:
-            self.console.print("[red]Please specify a tool name.[/red]")
+            self.console.print(
+                "[{self.console_theme.error}]Please specify a tool name.[/{self.console_theme.error}]"
+            )
             self.console.print("Usage: /tools info <tool_name>")
             return
 
@@ -273,7 +299,9 @@ class CommandHandler(ABC):
 
         tool_info = get_tool_info(tool_name)
         if not tool_info:
-            self.console.print(f"[red]Tool '{tool_name}' not found.[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Tool '{tool_name}' not found.[/{self.console_theme.error}]"
+            )
             return
 
         self.console.print(f"\n[bold]Tool: {tool_info['name']}[/bold]")

@@ -50,7 +50,7 @@ def main(
         from rich.panel import Panel
         from rich.text import Text
 
-        from .interactive import run_interactive_session
+        from .interactive import run_interactive_session, run_one_shot
 
         # Show welcome banner
         welcome_text = Text.from_markup(
@@ -63,8 +63,7 @@ def main(
 
         if one_shot:
             # Handle one-shot mode
-            console.print("[yellow]One-shot mode not yet updated for enhanced CLI[/yellow]")
-            console.print(f"Would execute: {one_shot}")
+            asyncio.run(run_one_shot(provider, model, one_shot, mode, debug, no_save))
         else:
             # Run interactive session
             asyncio.run(run_interactive_session(provider, model, debug, no_save, resume))

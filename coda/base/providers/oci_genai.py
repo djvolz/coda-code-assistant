@@ -20,10 +20,13 @@ from oci.generative_ai_inference.models import (
     CohereSystemMessage,
     CohereTool,
     CohereUserMessage,
+    FunctionCall,
+    FunctionDefinition,
     GenericChatRequest,
     OnDemandServingMode,
     SystemMessage,
     TextContent,
+    ToolMessage,
     UserMessage,
 )
 
@@ -214,28 +217,26 @@ class OCIGenAIProvider(BaseProvider):
                     model_id = f"{vendor}.{display_name}" if display_name else model_summary.id
                     provider = vendor
 
-                # Handle duplicates - prefer models with CHAT capability over TEXT_GENERATION only
+                # Handle duplicates - prefer models without FINE_TUNE capability
                 if model_id in seen_model_ids:
                     existing_model = seen_model_ids[model_id]
                     existing_caps = existing_model.metadata.get("capabilities", [])
 
-                    # Skip if the existing model already has CHAT capability
-                    if "CHAT" in existing_caps:
+                    # If existing model doesn't have FINE_TUNE, keep it
+                    if "FINE_TUNE" not in existing_caps:
                         continue
 
-                    # If new model has CHAT but existing doesn't, we'll replace it
-                    if "CHAT" in capabilities and "CHAT" not in existing_caps:
+                    # If new model doesn't have FINE_TUNE but existing does, replace
+                    if "FINE_TUNE" not in capabilities and "FINE_TUNE" in existing_caps:
                         # Remove the old model from discovered_models
                         discovered_models = [m for m in discovered_models if m.id != model_id]
                     else:
                         # Otherwise skip this duplicate
                         continue
 
-                # Map provider-specific capabilities
-                supports_functions = (
-                    provider == "cohere"
-                )  # Cohere models typically support functions
-                supports_streaming = True  # Most OCI GenAI models support streaming
+                # Let all models attempt to use tools - the API will return errors if not supported
+                supports_functions = True
+                supports_streaming = True
 
                 # Create model object
                 model = Model(
@@ -502,7 +503,36 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 elif msg.role == Role.USER:
                     oci_msg = UserMessage(role="USER", content=content)
                 elif msg.role == Role.ASSISTANT:
-                    oci_msg = AssistantMessage(role="ASSISTANT", content=content)
+                    # Check if assistant message has tool calls
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                        # Convert tool calls to Meta format
+                        meta_tool_calls = []
+                        for tc in msg.tool_calls:
+                            meta_tool_calls.append(
+                                FunctionCall(
+                                    id=tc.id,
+                                    name=tc.name,
+                                    arguments=(
+                                        json.dumps(tc.arguments)
+                                        if isinstance(tc.arguments, dict)
+                                        else tc.arguments
+                                    ),
+                                )
+                            )
+                        oci_msg = AssistantMessage(
+                            role="ASSISTANT", content=content, tool_calls=meta_tool_calls
+                        )
+                    else:
+                        oci_msg = AssistantMessage(role="ASSISTANT", content=content)
+                elif msg.role == Role.TOOL:
+                    # Handle tool messages
+                    tool_content = [TextContent(type="TEXT", text=msg.content)]
+                    if hasattr(msg, "tool_call_id") and msg.tool_call_id:
+                        oci_msg = ToolMessage(
+                            role="TOOL", content=tool_content, tool_call_id=msg.tool_call_id
+                        )
+                    else:
+                        oci_msg = ToolMessage(role="TOOL", content=tool_content)
                 else:
                     # Default to user message
                     oci_msg = UserMessage(role="USER", content=content)
@@ -520,6 +550,10 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 params["max_tokens"] = max_tokens
             if top_p is not None:
                 params["top_p"] = top_p
+
+            # Add tools for Meta models if provided
+            if tools and provider == "meta":
+                params["tools"] = self._convert_tools_to_meta(tools)
 
             return GenericChatRequest(**params)
 
@@ -564,6 +598,26 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             cohere_tools.append(cohere_tool)
 
         return cohere_tools
+
+    def _convert_tools_to_meta(self, tools: list[Tool]) -> list[FunctionDefinition]:
+        """Convert standard tools to Meta format."""
+        meta_tools = []
+
+        for tool in tools:
+            # Convert to Meta's FunctionDefinition format
+            params = {"type": "object", "properties": {}, "required": []}
+
+            if "properties" in tool.parameters:
+                params["properties"] = tool.parameters["properties"]
+            if "required" in tool.parameters:
+                params["required"] = tool.parameters["required"]
+
+            meta_tool = FunctionDefinition(
+                name=tool.name, description=tool.description, parameters=params
+            )
+            meta_tools.append(meta_tool)
+
+        return meta_tools
 
     def chat(
         self,
@@ -641,7 +695,6 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
 
         else:
             # Generic response format (Meta, etc.)
-            tool_calls = None  # Generic format doesn't support tools
             choices = chat_response.choices
 
             if not choices:
@@ -653,12 +706,32 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             # Extract content based on type
             if hasattr(message.content, "__iter__") and not isinstance(message.content, str):
                 # Content is a list
-                content = message.content[0].text if message.content else ""
+                content = (
+                    message.content[0].text if message.content and len(message.content) > 0 else ""
+                )
             else:
                 # Content is a string
-                content = message.content
+                content = message.content if message.content else ""
 
-            finish_reason = choice.finish_reason
+            # Check for tool calls in the response (Meta models support this)
+            tool_calls = None
+            finish_reason = choice.finish_reason  # Initialize finish_reason early
+
+            if hasattr(message, "tool_calls") and message.tool_calls:
+                tool_calls = []
+                for tc in message.tool_calls:
+                    tool_call = ToolCall(
+                        id=tc.id,
+                        name=tc.name,
+                        arguments=(
+                            json.loads(tc.arguments)
+                            if isinstance(tc.arguments, str)
+                            else tc.arguments
+                        ),
+                    )
+                    tool_calls.append(tool_call)
+                if tool_calls:
+                    finish_reason = "tool_calls"
 
             # Generic format usage
             usage = (
@@ -675,7 +748,7 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             content=content,
             model=model,
             finish_reason=finish_reason,
-            tool_calls=tool_calls if provider == "cohere" else None,
+            tool_calls=tool_calls,
             usage=usage,
             metadata={
                 "model_version": getattr(chat_response, "model_version", None),

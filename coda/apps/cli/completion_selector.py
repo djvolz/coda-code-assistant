@@ -34,8 +34,15 @@ class OptionCompleter(Completer):
                 # Format display with metadata if available
                 display = f"{value:<15} {description}"
                 if metadata:
-                    meta_str = " ".join(f"[{k}: {v}]" for k, v in metadata.items())
-                    display += f" {meta_str}"
+                    # Add metadata
+                    meta_items = []
+                    for k, v in metadata.items():
+                        if k != "tools":  # Skip tools metadata
+                            meta_items.append(f"{k}: {v}")
+
+                    if meta_items:
+                        meta_str = " ".join(f"[{item}]" for item in meta_items)
+                        display += f" {meta_str}"
 
                 yield Completion(
                     value,
@@ -186,6 +193,7 @@ class CompletionModelSelector(CompletionSelector):
             metadata = {
                 "provider": model.provider,
             }
+
             if hasattr(model, "metadata") and model.metadata:
                 if "context_window" in model.metadata:
                     metadata["context"] = f"{model.metadata['context_window']:,}"
@@ -200,7 +208,7 @@ class CompletionModelSelector(CompletionSelector):
             title="Select Model",
             options=options,
             console=console,
-            instruction_text="Select a model (type to filter, arrow keys to navigate)",
+            instruction_text="Select a model",
         )
 
 

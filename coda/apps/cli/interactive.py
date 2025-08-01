@@ -140,13 +140,104 @@ async def _select_model(unique_models, model: str, console: Console):
             console.print("\n[yellow]No model selected. Exiting.[/yellow]")
             return None
 
-    console.print(f"[green]Model:[/green] {model}")
+    console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
+
     console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
     console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
     console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
     console.print("[dim]Press Ctrl+R to search command history[/dim]\n")
 
     return model
+
+
+async def _setup_provider_and_models(
+    provider: str, model: str, debug: bool, console: Console, for_one_shot: bool = False
+):
+    """Common setup for provider and model selection."""
+    from coda.base.providers import ProviderFactory
+    from coda.services.config import get_config_service
+
+    config = get_config_service()
+
+    # Apply debug override
+    if debug:
+        config.set("debug", True)
+
+    # Use default provider if not specified
+    if not provider:
+        provider = config.default_provider
+
+    # Create provider using factory
+    factory = ProviderFactory(config.to_dict())
+
+    try:
+        # Initialize provider
+        provider_instance = await _initialize_provider(factory, provider, console)
+
+        # Get available models
+        unique_models = await _get_chat_models(provider_instance, console)
+
+        # Handle model selection differently for one-shot vs interactive
+        if for_one_shot:
+            # For one-shot, auto-select first model if none specified
+            if not model:
+                if unique_models:
+                    model = unique_models[0].id
+                    console.print(f"[dim]No model specified, using: {model}[/dim]")
+                else:
+                    console.print("[red]No models available[/red]")
+                    return None, None, None
+
+            # Validate model exists
+            if not any(m.id == model for m in unique_models):
+                console.print(f"[red]Model not found: {model}[/red]")
+                console.print(f"Available models: {', '.join(m.id for m in unique_models[:5])}")
+                return None, None, None
+
+            # Show model info
+            console.print(f"\n[green]Model:[/green] {model}")
+        else:
+            # For interactive, use the existing selection process
+            model = await _select_model(unique_models, model, console)
+            if not model:
+                return None, None, None
+
+        return provider_instance, unique_models, model
+
+    except ValueError as e:
+        _handle_provider_error(e, provider, debug, factory)
+    except Exception as e:
+        _handle_provider_error(e, provider, debug)
+
+
+def _handle_provider_error(e: Exception, provider: str, debug: bool, factory=None):
+    """Common error handler for provider setup errors."""
+    import sys
+    import traceback
+
+    if "compartment_id is required" in str(e):
+        console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+        console.print("\nPlease set it via one of these methods:")
+        console.print(
+            "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+        )
+        console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+    elif "Unknown provider" in str(e):
+        console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
+        if factory:
+            console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
+    else:
+        error_msg = str(e)
+        if "OCI GenAI authorization failed" in error_msg:
+            # Show the formatted error message from the provider
+            console.print(f"\n[red]Error:[/red] {error_msg}")
+        else:
+            console.print(f"\n[red]Error:[/red] {e}")
+
+    if debug:
+        traceback.print_exc()
+
+    sys.exit(1)
 
 
 async def _handle_chat_interaction(
@@ -259,10 +350,7 @@ async def _handle_chat_interaction(
         temperature = config.get("temperature", 0.7)
         max_tokens = config.get("max_tokens", 2000)
 
-        # Check if we should use tools (only for Cohere models and when enabled)
-        model_supports_tools = cli.current_model.startswith("cohere.")
-
-        if use_tools and model_supports_tools:
+        if use_tools:
             # Use agent-based chat
             with console.status(
                 f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
@@ -299,20 +387,24 @@ async def _handle_chat_interaction(
                     if hasattr(msg, "tool_calls") and msg.tool_calls:
                         tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
 
+                    metadata = {
+                        "mode": cli.current_mode.value,
+                        "provider": (
+                            provider_instance.name
+                            if hasattr(provider_instance, "name")
+                            else "unknown"
+                        ),
+                        "model": cli.current_model,
+                        "tool_call_id": getattr(msg, "tool_call_id", None),
+                    }
+                    # Add tool_calls to metadata if present
+                    if tool_calls_data:
+                        metadata["tool_calls"] = tool_calls_data
+
                     cli.session_commands.add_message(
                         role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
                         content=msg.content,
-                        tool_calls=tool_calls_data,
-                        metadata={
-                            "mode": cli.current_mode.value,
-                            "provider": (
-                                provider_instance.name
-                                if hasattr(provider_instance, "name")
-                                else "unknown"
-                            ),
-                            "model": cli.current_model,
-                            "tool_call_id": getattr(msg, "tool_call_id", None),
-                        },
+                        metadata=metadata,
                     )
         else:
             # Use regular streaming
@@ -362,7 +454,7 @@ async def _handle_chat_interaction(
         cli.stop_interrupt_listener()
 
     # Add assistant message to history (even if interrupted) - only for non-tool path
-    if (full_response or interrupted) and not (use_tools and model_supports_tools):
+    if (full_response or interrupted) and not use_tools:
         messages.append(Message(role=Role.ASSISTANT, content=full_response))
 
         # Track assistant message in session manager
@@ -391,7 +483,6 @@ async def run_interactive_session(
     cli = InteractiveCLI(console)
 
     # Load configuration
-    from coda.base.providers import ProviderFactory
     from coda.services.config import get_config_service
 
     config = get_config_service()
@@ -417,34 +508,19 @@ async def run_interactive_session(
             # Successfully loaded, show a separator
             console.print("\n[dim]─" * 50 + "[/dim]\n")
 
-    # Apply debug override
-    if debug:
-        config.set("debug", True)
+    # Setup provider and models using common function
+    provider_instance, unique_models, model = await _setup_provider_and_models(
+        provider, model, debug, console, for_one_shot=False
+    )
+    if not provider_instance:
+        return
 
-    # Use default provider if not specified
-    if not provider:
-        provider = config.default_provider
-
-    # Create provider using factory
-    factory = ProviderFactory(config.to_dict())
+    # Set model info in CLI for /model command
+    cli.current_model = model
+    cli.available_models = unique_models
+    cli.provider = provider_instance
 
     try:
-        # Initialize provider
-        provider_instance = await _initialize_provider(factory, provider, console)
-
-        # Get available models
-        unique_models = await _get_chat_models(provider_instance, console)
-
-        # Select model
-        model = await _select_model(unique_models, model, console)
-        if not model:
-            return
-
-        # Set model info in CLI for /model command
-        cli.current_model = model
-        cli.available_models = unique_models
-        cli.provider = provider_instance
-
         # Interactive chat loop
         # Initialize messages - use loaded messages if available
         if (
@@ -476,24 +552,6 @@ async def run_interactive_session(
             if not continue_chat:
                 break
 
-    except ValueError as e:
-        if "compartment_id is required" in str(e):
-            console.print("\n[red]Error:[/red] OCI compartment ID not configured")
-            console.print("\nPlease set it via one of these methods:")
-            console.print(
-                "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
-            )
-            console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
-        elif "Unknown provider" in str(e):
-            console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
-            console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
-        else:
-            console.print(f"\n[red]Error:[/red] {e}")
-        if debug:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
     except SystemExit:
         # Clean exit from /exit command
         pass
@@ -502,17 +560,7 @@ async def run_interactive_session(
         console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
         sys.exit(0)
     except Exception as e:
-        error_msg = str(e)
-        if "OCI GenAI authorization failed" in error_msg:
-            # Show the formatted error message from the provider
-            console.print(f"\n[red]Error:[/red] {error_msg}")
-        else:
-            console.print(f"\n[red]Error:[/red] {e}")
-        if debug:
-            import traceback
-
-            traceback.print_exc()
-        sys.exit(1)
+        _handle_provider_error(e, provider, debug)
 
 
 def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
@@ -520,6 +568,97 @@ def _get_system_prompt_for_mode(mode: DeveloperMode) -> str:
     from coda.apps.cli.shared import get_system_prompt
 
     return get_system_prompt(mode)
+
+
+async def run_one_shot(
+    provider: str, model: str, prompt: str, mode: str, debug: bool, no_save: bool
+):
+    """Run a single prompt and exit."""
+    from coda.base.providers import Message, Role
+    from coda.services.config import get_config_service
+
+    config = get_config_service()
+
+    # Setup provider and models using common function
+    provider_instance, unique_models, model = await _setup_provider_and_models(
+        provider, model, debug, console, for_one_shot=True
+    )
+    if not provider_instance:
+        return
+
+    try:
+        # Convert mode string to enum
+        developer_mode = DeveloperMode(mode.lower())
+
+        # Get system prompt for mode
+        system_prompt = _get_system_prompt_for_mode(developer_mode)
+
+        # Create messages
+        messages = []
+        if system_prompt:
+            messages.append(Message(role=Role.SYSTEM, content=system_prompt))
+        messages.append(Message(role=Role.USER, content=prompt))
+
+        # Get response
+        console.print(f"\n[bold cyan]User:[/bold cyan] {prompt}")
+
+        # Use appropriate handler based on tool support
+        if developer_mode != DeveloperMode.GENERAL:
+            # Use agent for tool-enabled models in non-general modes
+            from .agent_chat import AgentChatHandler
+
+            agent_handler = AgentChatHandler(provider_instance, None, console)
+            response_content, _ = await agent_handler.chat_with_agent(
+                [Message(role=Role.USER, content=prompt)],
+                model,
+                temperature=config.get("temperature", 0.7),
+                max_tokens=config.get("max_tokens", 2000),
+                system_prompt=system_prompt,
+            )
+        else:
+            # Use simple chat without tools
+            response = provider_instance.chat(
+                messages=messages,
+                model=model,
+                temperature=config.get("temperature", 0.7),
+                max_tokens=config.get("max_tokens", 2000),
+            )
+            response_content = response.content
+
+        # Display response
+        console.print(f"\n[bold cyan]Assistant:[/bold cyan] {response_content}")
+
+        # Save to session if auto-save is enabled
+        if not no_save:
+            from .session_commands import SessionCommands
+
+            session_commands = SessionCommands()
+            session_commands.auto_save_enabled = not no_save
+
+            # Add messages to session
+            session_commands.add_message(
+                role="user",
+                content=prompt,
+                metadata={
+                    "mode": developer_mode.value,
+                    "provider": provider,
+                    "model": model,
+                    "one_shot": True,
+                },
+            )
+            session_commands.add_message(
+                role="assistant",
+                content=response_content,
+                metadata={
+                    "mode": developer_mode.value,
+                    "provider": provider,
+                    "model": model,
+                    "one_shot": True,
+                },
+            )
+
+    except Exception as e:
+        _handle_provider_error(e, provider, debug)
 
 
 @click.command()
@@ -550,9 +689,8 @@ def interactive_main(
     console.print(Panel(welcome_text, title="Welcome", border_style="cyan"))
 
     if one_shot:
-        # Handle one-shot mode (simplified for now)
-        console.print("[yellow]One-shot mode not yet updated for enhanced CLI[/yellow]")
-        console.print(f"Would execute: {one_shot}")
+        # Handle one-shot mode
+        asyncio.run(run_one_shot(provider, model, one_shot, mode, debug, no_save))
     else:
         # Run interactive session
         asyncio.run(run_interactive_session(provider, model, debug, no_save, resume))

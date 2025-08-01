@@ -406,6 +406,7 @@ class InteractiveCLI(CommandHandler):
             if new_model:
                 self.current_model = new_model
                 self.console.print(f"\n[green]Switched to model: {new_model}[/green]")
+
             else:
                 self.console.print(f"\n[yellow]Current model: {self.current_model}[/yellow]")
         else:
