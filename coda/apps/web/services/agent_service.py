@@ -59,7 +59,12 @@ class WebAgentService:
 - Writing documentation and explanations
 - General programming assistance
 
-You have access to various tools to help accomplish tasks. Use them when appropriate to provide comprehensive assistance.""",
+You have access to various tools to help accomplish tasks. When you use a tool and get results, always incorporate those results into your final response to the user. For example:
+- If you call get_datetime and get a timestamp, tell the user what time it is
+- If you call list_files and get file names, show the user the files
+- If you call read_file and get content, include relevant parts in your response
+
+Be direct and helpful by using the tool results to fully answer the user's question.""",
                 tools=tools,
                 name="Coda Assistant",
                 temperature=temperature,
@@ -96,10 +101,22 @@ You have access to various tools to help accomplish tasks. Use them when appropr
                     role = Role.USER if msg["role"] == "user" else Role.ASSISTANT
                     agent_messages.append(Message(role=role, content=msg["content"]))
 
+            # Debug: Log what we're sending to the agent
+            if hasattr(st, "_debug_mode"):  # Only in debug mode
+                st.write("**Debug - Sending to agent:**")
+                st.write(f"Input: {user_input}")
+                st.write(f"Message history length: {len(agent_messages)}")
+
             # Get response from agent using run_async_streaming
             response_content, updated_messages = await agent.run_async_streaming(
                 input=user_input, messages=agent_messages if agent_messages else None, max_steps=5
             )
+
+            # Debug: Show final response info
+            if hasattr(st, "_debug_mode"):  # Only in debug mode
+                st.write("**Debug - Agent response:**")
+                st.write(f"Response content: {response_content}")
+                st.write(f"Final message count: {len(updated_messages)}")
 
             return response_content
 

@@ -89,13 +89,17 @@ class StreamlitAgentEventHandler(AgentEventHandler):
             if self.current_status:
                 self.current_status.update(label="✅ Complete", state="complete")
 
-            # Render complete response with any collected chunks
-            if self.message_container:
-                full_response = (
-                    "".join(self.response_chunks) if self.response_chunks else event.message
-                )
-                with self.message_container:
-                    self._render_response(full_response)
+            # Only render if we actually have a response
+            if event.message and event.message.strip():
+                # Render complete response with any collected chunks
+                if self.message_container:
+                    full_response = (
+                        "".join(self.response_chunks) if self.response_chunks else event.message
+                    )
+                    with self.message_container:
+                        self._render_response(full_response)
+            # Clear chunks for next response
+            self.response_chunks = []
 
         elif event.type == AgentEventType.FINAL_ANSWER_NEEDED:
             if self.status_container:
