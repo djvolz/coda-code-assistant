@@ -4,14 +4,12 @@ import asyncio
 import json
 from collections.abc import Callable
 
-from rich.console import Console
-from rich.panel import Panel
-from rich.syntax import Syntax
-
 from coda.base.providers.base import BaseProvider, Message, Role, Tool, ToolCall
-from coda.base.theme import ThemeManager
 
 from .agent_types import (
+    AgentEvent,
+    AgentEventHandler,
+    AgentEventType,
     PerformedAction,
     PerformedActionType,
     RequiredAction,
@@ -38,7 +36,7 @@ class Agent:
         description: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 2000,
-        console: Console | None = None,
+        event_handler: AgentEventHandler | None = None,
         **kwargs,
     ):
         """
@@ -53,7 +51,7 @@ class Agent:
             description: Optional agent description
             temperature: Sampling temperature
             max_tokens: Max tokens per response
-            console: Rich console for output
+            event_handler: Optional handler for agent events
             **kwargs: Additional provider-specific parameters
         """
         self.provider = provider
@@ -64,10 +62,8 @@ class Agent:
         self.description = description
         self.temperature = temperature
         self.max_tokens = max_tokens
-        self.console = console or Console()
+        self.event_handler = event_handler
         self.kwargs = kwargs
-        self.theme_manager = ThemeManager()
-        self.console_theme = self.theme_manager.get_console_theme()
 
         # Process tools
         self._function_tools: list[FunctionTool] = self._process_tools()
@@ -85,8 +81,8 @@ class Agent:
                 try:
                     function_tools.append(FunctionTool.from_callable(tool))
                 except ValueError:
-                    self.console.print(
-                        f"[{self.console_theme.warning}]Warning: {tool.__name__} is not decorated with @tool, skipping[/{self.console_theme.warning}]"
+                    self._emit_warning(
+                        f"Warning: {tool.__name__} is not decorated with @tool, skipping"
                     )
 
         return function_tools
@@ -193,8 +189,8 @@ class Agent:
 
                     if loop_detected:
                         # Break out of loop with a directive to provide final answer
-                        self.console.print(
-                            f"[{self.console_theme.warning}]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/{self.console_theme.warning}]"
+                        self._emit_warning(
+                            "⚠️  Loop detected: Same tool called multiple times. Forcing final answer..."
                         )
 
                         # Force a final response by disabling tool support temporarily
@@ -214,13 +210,13 @@ class Agent:
                             )
 
                             if final_response_obj.content:
-                                self._print_response(final_response_obj.content)
+                                self._emit_response_complete(final_response_obj.content)
                                 final_response = final_response_obj
                                 break
                             else:
                                 # If still no content, use a fallback
-                                self.console.print(
-                                    f"[{self.console_theme.error}]Unable to get final response. Providing fallback.[/{self.console_theme.error}]"
+                                self._emit_warning(
+                                    "Unable to get final response. Providing fallback."
                                 )
                                 final_response = type(
                                     "obj",
@@ -233,9 +229,7 @@ class Agent:
                                 break
 
                         except Exception as e:
-                            self.console.print(
-                                f"[{self.console_theme.error}]Error getting final response: {e}[/{self.console_theme.error}]"
-                            )
+                            self._emit_warning(f"Error getting final response: {e}")
                             final_response = type(
                                 "obj",
                                 (object,),
@@ -248,7 +242,7 @@ class Agent:
 
                     # Display response if any
                     if response.content:
-                        self._print_response(response.content)
+                        self._emit_response_complete(response.content)
                     # Add assistant message with tool calls
                     messages.append(
                         Message(
@@ -282,13 +276,11 @@ class Agent:
                     step_count += 1
                     # Continue loop to get final response
                     if status:
-                        status.update(
-                            f"[{self.console_theme.bold} {self.console_theme.info}]Thinking...[/{self.console_theme.bold} {self.console_theme.info}]"
-                        )
+                        status.update("Thinking...")
                 else:
                     # No tool calls, we're done
                     if response.content:
-                        self._print_response(response.content)
+                        self._emit_response_complete(response.content)
                         messages.append(Message(role=Role.ASSISTANT, content=response.content))
                     final_response = response
                     break
@@ -306,9 +298,7 @@ class Agent:
                     wrapped_error = ErrorHandler.wrap_error(e, "agent_execution")
 
                 error_msg = wrapped_error.user_message()
-                self.console.print(
-                    f"[{self.console_theme.error}]{error_msg}[/{self.console_theme.error}]"
-                )
+                self._emit_warning(error_msg)
 
                 # Log detailed error for debugging
                 if wrapped_error.severity.value in ["error", "critical"]:
@@ -320,9 +310,7 @@ class Agent:
                 break
 
         if step_count >= max_steps:
-            self.console.print(
-                f"[{self.console_theme.warning}]Reached maximum steps ({max_steps})[/{self.console_theme.warning}]"
-            )
+            self._emit_warning(f"Reached maximum steps ({max_steps})")
 
         # Return response
         return RunResponse(
@@ -393,9 +381,7 @@ class Agent:
             if interrupt_check and interrupt_check():
                 if status:
                     status.stop()
-                self.console.print(
-                    f"\n[{self.console_theme.warning}]Response interrupted by user[/{self.console_theme.warning}]"
-                )
+                self._emit_warning("Response interrupted by user")
                 return "Response interrupted.", messages
 
             try:
@@ -413,9 +399,7 @@ class Agent:
                 else:
                     # Use streaming for final response when no tools
                     if status:
-                        status.update(
-                            f"[{self.console_theme.bold} {self.console_theme.info}]Generating response...[/{self.console_theme.bold} {self.console_theme.info}]"
-                        )
+                        status.update("Generating response...")
 
                     stream = self.provider.chat_stream(
                         messages=messages,
@@ -432,26 +416,21 @@ class Agent:
                         if interrupt_check and interrupt_check():
                             if status:
                                 status.stop()
-                            self.console.print(
-                                f"\n[{self.console_theme.warning}]Response interrupted by user[/{self.console_theme.warning}]"
-                            )
+                            self._emit_warning("Response interrupted by user")
                             return "Response interrupted.", messages
 
                         if first_chunk:
                             # Stop status before printing response
                             if status:
                                 status.stop()
-                            self.console.print(
-                                f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] ",
-                                end="",
-                            )
+                            # Agent name prefix handled by event system
                             first_chunk = False
 
-                        self.console.print(chunk.content, end="")
+                        self._emit_response_chunk(chunk.content)
                         response_content += chunk.content
 
                     if response_content:
-                        self.console.print()  # Add newline after streaming
+                        # Streaming complete - handled by event system
                         messages.append(Message(role=Role.ASSISTANT, content=response_content))
 
                     return response_content, messages
@@ -468,8 +447,8 @@ class Agent:
 
                     if loop_detected:
                         # Break out of loop with a directive to provide final answer
-                        self.console.print(
-                            f"[{self.console_theme.warning}]⚠️  Loop detected: Same tool called multiple times. Forcing final answer...[/{self.console_theme.warning}]"
+                        self._emit_warning(
+                            "⚠️  Loop detected: Same tool called multiple times. Forcing final answer..."
                         )
 
                         # Force a final response using streaming
@@ -478,9 +457,7 @@ class Agent:
                         # Get final response with streaming
                         try:
                             if status:
-                                status.update(
-                                    f"[{self.console_theme.bold} {self.console_theme.info}]Getting final response...[/{self.console_theme.bold} {self.console_theme.info}]"
-                                )
+                                status.update("Getting final response...")
 
                             stream = self.provider.chat_stream(
                                 messages=messages + [Message(role=Role.USER, content=final_prompt)],
@@ -497,26 +474,21 @@ class Agent:
                                 if interrupt_check and interrupt_check():
                                     if status:
                                         status.stop()
-                                    self.console.print(
-                                        f"\n[{self.console_theme.warning}]Response interrupted by user[/{self.console_theme.warning}]"
-                                    )
+                                    self._emit_warning("Response interrupted by user")
                                     return "Response interrupted.", messages
 
                                 if first_chunk:
                                     # Stop status before printing response
                                     if status:
                                         status.stop()
-                                    self.console.print(
-                                        f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] ",
-                                        end="",
-                                    )
+                                    # Agent name prefix handled by event system
                                     first_chunk = False
 
-                                self.console.print(chunk.content, end="")
+                                self._emit_response_chunk(chunk.content)
                                 response_content += chunk.content
 
                             if response_content:
-                                self.console.print()  # Add newline after streaming
+                                # Streaming complete - handled by event system
                                 messages.append(
                                     Message(role=Role.ASSISTANT, content=response_content)
                                 )
@@ -524,21 +496,17 @@ class Agent:
                             else:
                                 # Fallback
                                 fallback_content = "I have executed the requested tools but encountered an issue providing a final response."
-                                self.console.print(
-                                    f"[{self.console_theme.error}]{fallback_content}[/{self.console_theme.error}]"
-                                )
+                                self._emit_warning(fallback_content)
                                 return fallback_content, messages
 
                         except Exception as e:
                             error_content = f"I executed the requested tools but encountered an error providing the final response: {e}"
-                            self.console.print(
-                                f"[{self.console_theme.error}]{error_content}[/{self.console_theme.error}]"
-                            )
+                            self._emit_warning(error_content)
                             return error_content, messages
 
                     # Display response if any
                     if response.content and response.content.strip():
-                        self._print_response(response.content)
+                        self._emit_response_complete(response.content)
                     # Add assistant message with tool calls
                     messages.append(
                         Message(
@@ -572,9 +540,7 @@ class Agent:
                     step_count += 1
                     # Continue loop to get final response
                     if status:
-                        status.update(
-                            f"[{self.console_theme.bold} {self.console_theme.info}]Thinking...[/{self.console_theme.bold} {self.console_theme.info}]"
-                        )
+                        status.update("Thinking...")
                 else:
                     # No tool calls, we have the final response
                     if response.content:
@@ -583,19 +549,16 @@ class Agent:
                             status.stop()
                         # We already have the full response from the non-streaming call
                         # For better UX, we should stream it character by character
-                        self.console.print(
-                            f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] ",
-                            end="",
-                        )
+                        # Agent name prefix handled by event system
 
                         # Simulate streaming by printing character by character
                         import time
 
                         for char in response.content:
-                            self.console.print(char, end="")
+                            self._emit_response_chunk(char)
                             time.sleep(0.001)  # Small delay for streaming effect
 
-                        self.console.print()  # Add newline after response
+                        # Streaming complete - handled by event system
                         messages.append(Message(role=Role.ASSISTANT, content=response.content))
                         return response.content, messages
                     else:
@@ -607,26 +570,19 @@ class Agent:
                 error_type = type(e).__name__
                 if error_type == "ServiceError" and hasattr(e, "message") and hasattr(e, "status"):
                     # Format OCI error nicely
-                    self.console.print(
-                        Panel(
-                            f"[{self.console_theme.bold}]OCI API Error ({e.status})[/{self.console_theme.bold}]\n\n{e.message}",
-                            title="Error",
-                            border_style="red",
-                            padding=(1, 2),
-                        )
-                    )
+                    self._emit_warning(f"OCI API Error ({e.status}): {e.message}")
 
                     # Add helpful context for common errors
                     if "finetune base model" in str(e.message).lower():
-                        self.console.print(
-                            f"\n💡 [{self.console_theme.dim}]This model is a base model that doesn't support chat/tools. Try a different model.[/{self.console_theme.dim}]"
+                        self._emit_warning(
+                            "💡 This model is a base model that doesn't support chat/tools. Try a different model."
                         )
                     elif (
                         "not supported" in str(e.message).lower()
                         and "tool" in str(e.message).lower()
                     ):
-                        self.console.print(
-                            f"\n💡 [{self.console_theme.dim}]This model doesn't support tool/function calling. Try without tools or use a different model.[/{self.console_theme.dim}]"
+                        self._emit_warning(
+                            "💡 This model doesn't support tool/function calling. Try without tools or use a different model."
                         )
 
                     # Return a clean error message
@@ -634,16 +590,12 @@ class Agent:
                 else:
                     # Generic error handling
                     error_msg = f"Error during agent execution: {str(e)}"
-                    self.console.print(
-                        Panel(error_msg, title="Error", border_style="red", padding=(1, 2))
-                    )
+                    self._emit_warning(error_msg)
 
                 return error_msg, messages
 
         if step_count >= max_steps:
-            self.console.print(
-                f"[{self.console_theme.warning}]Reached maximum steps ({max_steps})[/{self.console_theme.warning}]"
-            )
+            self._emit_warning(f"Reached maximum steps ({max_steps})")
 
         return final_response_content, messages
 
@@ -714,29 +666,23 @@ class Agent:
 
         # Update status if provided, otherwise print message
         if status:
-            status.update(
-                f"[{self.console_theme.bold} {self.console_theme.info}]Executing tools...[/{self.console_theme.bold} {self.console_theme.info}]"
-            )
+            status.update("Executing tools...")
         else:
-            self.console.print(
-                f"\n[{self.console_theme.dim}]Executing tools...[/{self.console_theme.dim}]"
-            )
+            self._emit_status_update("Executing tools...")
 
         for tool_call in tool_calls:
             # Check for interrupt before each tool execution
             if interrupt_check and interrupt_check():
                 if status:
                     status.stop()
-                self.console.print(
-                    f"\n[{self.console_theme.warning}]Tool execution interrupted by user[/{self.console_theme.warning}]"
-                )
+                self._emit_warning("Tool execution interrupted by user")
                 break
 
             # Create required action
             required_action = RequiredAction.from_tool_call(tool_call)
 
             # Show execution
-            self._print_tool_execution(tool_call)
+            self._emit_tool_execution_start(tool_call)
 
             # Execute tool
             performed_action = await self._execute_tool_call(tool_call, required_action.action_id)
@@ -745,7 +691,7 @@ class Agent:
                 performed_actions.append(performed_action)
 
                 # Show result
-                self._print_tool_result(performed_action)
+                self._emit_tool_execution_end(performed_action)
 
                 # Callback if provided
                 if on_fulfilled_action:
@@ -796,48 +742,63 @@ class Agent:
                 function_call_output=f"Error: {tool_error.user_message()}",
             )
 
-    def _print_response(self, content: str):
-        """Print AI response."""
-        self.console.print(
-            f"\n[{self.console_theme.bold} {self.console_theme.info}]{self.name}:[/{self.console_theme.bold} {self.console_theme.info}] {content}"
-        )
+    def _emit_response_complete(self, content: str):
+        """Emit response complete event."""
+        if self.event_handler:
+            self.event_handler.handle_event(
+                AgentEvent(AgentEventType.RESPONSE_COMPLETE, content, {"agent_name": self.name})
+            )
 
-    def _print_tool_execution(self, tool_call: ToolCall):
-        """Print tool execution info."""
-        self.console.print(
-            f"\n[{self.console_theme.info}]→ Running tool:[/{self.console_theme.info}] {tool_call.name}"
-        )
-        if tool_call.arguments:
-            args_str = json.dumps(tool_call.arguments, indent=2)
-            self.console.print(
-                Panel(
-                    Syntax(args_str, "json", theme="monokai"),
-                    title=f"[{self.console_theme.info}]Arguments[/{self.console_theme.info}]",
-                    expand=False,
+    def _emit_thinking(self, message: str = "Thinking..."):
+        """Emit thinking event."""
+        if self.event_handler:
+            self.event_handler.handle_event(AgentEvent(AgentEventType.THINKING, message))
+
+    def _emit_warning(self, message: str):
+        """Emit warning event."""
+        if self.event_handler:
+            self.event_handler.handle_event(AgentEvent(AgentEventType.WARNING, message))
+
+    def _emit_status_update(self, message: str, data: dict = None):
+        """Emit status update event."""
+        if self.event_handler:
+            self.event_handler.handle_event(AgentEvent(AgentEventType.STATUS_UPDATE, message, data))
+
+    def _emit_response_chunk(self, chunk: str):
+        """Emit response chunk event."""
+        if self.event_handler:
+            self.event_handler.handle_event(
+                AgentEvent(AgentEventType.RESPONSE_CHUNK, chunk, {"end": ""})
+            )
+
+    def _emit_tool_execution_start(self, tool_call: ToolCall):
+        """Emit tool execution start event."""
+        if self.event_handler:
+            self.event_handler.handle_event(
+                AgentEvent(
+                    AgentEventType.TOOL_EXECUTION_START,
+                    f"Running tool: {tool_call.name}",
+                    {"tool_name": tool_call.name, "arguments": tool_call.arguments},
                 )
             )
 
-    def _print_tool_result(self, action: PerformedAction):
-        """Print tool result."""
-        if "Error" in action.function_call_output:
-            self.console.print(
-                f"[{self.console_theme.error}]✗ Error:[/{self.console_theme.error}] {action.function_call_output}"
-            )
-        else:
-            self.console.print(
-                f"[{self.console_theme.success}]✓ Result:[/{self.console_theme.success}]"
-            )
-            # Try to format as JSON
-            try:
-                result_json = json.loads(action.function_call_output)
-                self.console.print(
-                    Panel(
-                        Syntax(json.dumps(result_json, indent=2), "json", theme="monokai"),
-                        expand=False,
-                    )
+    def _emit_tool_execution_end(self, action: PerformedAction):
+        """Emit tool execution end event."""
+        if self.event_handler:
+            is_error = "Error" in action.function_call_output
+            event_type = AgentEventType.ERROR if is_error else AgentEventType.TOOL_EXECUTION_END
+
+            self.event_handler.handle_event(
+                AgentEvent(
+                    event_type,
+                    "Tool execution error" if is_error else "Tool execution completed",
+                    {
+                        "action_id": action.action_id,
+                        "output": action.function_call_output,
+                        "is_error": is_error,
+                    },
                 )
-            except Exception:
-                self.console.print(Panel(action.function_call_output, expand=False))
+            )
 
     def as_tool(
         self, tool_name: str | None = None, tool_description: str | None = None
