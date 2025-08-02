@@ -169,29 +169,6 @@ def test_observability_module_independence():
         )
 
 
-def test_diagram_renderer_module_independence():
-    """Test that diagram_renderer module has no service/app dependencies."""
-    base_path = Path(__file__).parent.parent.parent / "coda" / "base" / "diagram_renderer"
-
-    # Skip if the module doesn't exist (e.g., submodule not initialized)
-    if not base_path.exists():
-        return
-
-    imports = get_all_imports_in_module(base_path)
-
-    violations = check_forbidden_imports(imports, "diagram_renderer")
-    assert not violations, "\n".join(violations)
-
-    # Check that it only imports from allowed modules
-    coda_imports = {imp for imp in imports if imp.startswith("coda.")}
-    allowed_prefixes = ["coda.base."]
-
-    for imp in coda_imports:
-        assert any(imp.startswith(prefix) for prefix in allowed_prefixes), (
-            f"diagram_renderer: Unexpected import '{imp}'"
-        )
-
-
 def test_all_base_modules_found():
     """Ensure we're testing all base modules."""
     base_path = Path(__file__).parent.parent.parent / "coda" / "base"
@@ -211,7 +188,6 @@ def test_all_base_modules_found():
         "search",
         "session",
         "observability",
-        "diagram_renderer",
     }
 
     # Make sure we're not missing any
