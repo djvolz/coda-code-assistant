@@ -7,6 +7,8 @@ from datetime import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 
+from coda.apps.web.agent_event_handler import StreamlitAgentEventHandler
+from coda.apps.web.services.agent_service import get_agent_service
 from coda.apps.web.utils.state import get_state_value, set_state_value
 from coda.base.providers.registry import ProviderFactory
 
@@ -49,18 +51,54 @@ def render_chat_interface(provider: str, model: str):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                response = get_ai_response(provider, model, messages)
-                if response:
-                    # Always use render_message_with_code to handle both diagrams and regular code
-                    render_message_with_code(response)
+            # Create containers for agent events
+            status_container = st.container()
+            message_container = st.container()
 
-                    messages.append({"role": "assistant", "content": response})
-                    st.session_state.messages = messages
+            # Create event handler
+            event_handler = StreamlitAgentEventHandler(
+                status_container=status_container, message_container=message_container
+            )
 
-                    save_to_session(provider, model, messages)
-                else:
-                    st.error("Failed to get response from AI")
+            # Get agent service and response
+            agent_service = get_agent_service()
+
+            # Check if agent mode is enabled (default to True for new feature)
+            use_agent = st.session_state.get("use_agent", True)
+
+            if use_agent:
+                # Run async agent response
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+                try:
+                    response = loop.run_until_complete(
+                        agent_service.get_agent_response(provider, model, messages, event_handler)
+                    )
+
+                    if response:
+                        messages.append({"role": "assistant", "content": response})
+                        st.session_state.messages = messages
+                        save_to_session(provider, model, messages)
+                    else:
+                        st.error("Failed to get response from agent")
+
+                finally:
+                    loop.close()
+            else:
+                # Fallback to direct provider response
+                with st.spinner("Thinking..."):
+                    response = get_ai_response_fallback(provider, model, messages)
+                    if response:
+                        # Always use render_message_with_code to handle both diagrams and regular code
+                        render_message_with_code(response)
+
+                        messages.append({"role": "assistant", "content": response})
+                        st.session_state.messages = messages
+
+                        save_to_session(provider, model, messages)
+                    else:
+                        st.error("Failed to get response from AI")
 
 
 def detect_diagram_code(content: str) -> list[tuple[str, str]]:
@@ -179,8 +217,10 @@ def render_message_with_code(content: str):
         st.markdown(content)
 
 
-def get_ai_response(provider: str, model: str, messages: list[dict[str, str]]) -> str | None:
-    """Get response from the AI provider."""
+def get_ai_response_fallback(
+    provider: str, model: str, messages: list[dict[str, str]]
+) -> str | None:
+    """Fallback direct provider response (renamed from get_ai_response)."""
     loop = None
     try:
         config = get_state_value("config")
