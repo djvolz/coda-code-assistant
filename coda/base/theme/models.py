@@ -177,14 +177,5 @@ class Theme:
 class ThemeNames:
     """Standard theme name constants."""
 
-    DEFAULT = "default"
     DARK = "dark"
     LIGHT = "light"
-    MINIMAL = "minimal"
-    VIBRANT = "vibrant"
-    MONOKAI_DARK = "monokai_dark"
-    MONOKAI_LIGHT = "monokai_light"
-    DRACULA_DARK = "dracula_dark"
-    DRACULA_LIGHT = "dracula_light"
-    GRUVBOX_DARK = "gruvbox_dark"
-    GRUVBOX_LIGHT = "gruvbox_light"

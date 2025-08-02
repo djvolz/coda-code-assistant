@@ -8,6 +8,7 @@ on:
       - '*.md'
       - 'LICENSE'
       - 'archive/**'
+      - '**/diagram_renderer/**'
   pull_request:
     branches: [ main ]
     paths-ignore:
@@ -15,6 +16,7 @@ on:
       - '*.md'
       - 'LICENSE'
       - 'archive/**'
+      - '**/diagram_renderer/**'
 
 permissions:
   contents: read
@@ -36,8 +38,8 @@ jobs:
     
     - name: Run lint checks
       run: |
-        uv run ruff check . --exclude archive
+        uv run ruff check . --exclude archive --exclude "*/diagram_renderer/*"
     
     - name: Check code formatting
       run: |
-        uv run ruff format --check . --exclude archive
+        uv run ruff format --check . --exclude archive --exclude "*/diagram_renderer/*"

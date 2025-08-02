@@ -29,7 +29,7 @@ class ThemeManager:
         Args:
             theme_name: Name of theme to use. Defaults to 'default'.
         """
-        self.current_theme_name = theme_name or ThemeNames.DEFAULT
+        self.current_theme_name = theme_name or ThemeNames.DARK
         self._current_theme: Theme | None = None
         self._custom_themes: dict[str, Theme] = {}
 
@@ -41,9 +41,7 @@ class ThemeManager:
             if self.current_theme_name in self._custom_themes:
                 self._current_theme = self._custom_themes[self.current_theme_name]
             else:
-                self._current_theme = THEMES.get(
-                    self.current_theme_name, THEMES[ThemeNames.DEFAULT]
-                )
+                self._current_theme = THEMES.get(self.current_theme_name, THEMES[ThemeNames.DARK])
         return self._current_theme
 
     def set_theme(self, theme_name: str) -> None:
@@ -152,7 +150,7 @@ class ThemeManager:
 
     @staticmethod
     def create_custom_theme(
-        name: str, description: str, base_theme: str = ThemeNames.DEFAULT, **overrides: Any
+        name: str, description: str, base_theme: str = ThemeNames.DARK, **overrides: Any
     ) -> Theme:
         """Create a custom theme based on an existing theme.
 
@@ -175,7 +173,7 @@ class ThemeManager:
             ...     panel_border="#0066cc"
             ... )
         """
-        base = THEMES.get(base_theme, THEMES[ThemeNames.DEFAULT])
+        base = THEMES.get(base_theme, THEMES[ThemeNames.DARK])
 
         # Create new theme with base values
         new_theme = Theme(

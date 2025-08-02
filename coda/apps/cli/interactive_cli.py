@@ -50,10 +50,18 @@ class InteractiveCLI(CommandHandler):
         if console:
             super().__init__(console)
         else:
-            # TODO: Update to use new theme manager
-            from rich.console import Console
+            # Get themed console from config service
+            from coda.services.config import get_config_service
 
-            super().__init__(Console())
+            config_service = get_config_service()
+            super().__init__(config_service.theme_manager.get_console())
+
+        # Get theme for styling
+        from coda.services.config import get_config_service
+
+        config_service = get_config_service()
+        self.theme = config_service.theme_manager.get_console_theme()
+
         self.session = None
         self.config = None  # Will be set by interactive.py
         self.provider = None  # Will be set by interactive.py
@@ -140,9 +148,10 @@ class InteractiveCLI(CommandHandler):
     def _create_style(self) -> Style:
         """Create custom style for the prompt."""
         # Get theme-based style and extend it with additional styles
-        from coda.base.theme import ThemeManager
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
         theme_style = theme_manager.current_theme.prompt.to_dict()
 
         # Get the base style dictionary and add custom styles
@@ -152,19 +161,27 @@ class InteractiveCLI(CommandHandler):
         combined_styles.update(theme_style)
 
         # Add custom additions
+        # Get theme colors for consistent styling
+        prompt_theme = theme_manager.current_theme.prompt
+
         combined_styles.update(
             {
+                # Input field styling - THIS MAKES THEMES DISTINCTIVE!
+                "": prompt_theme.input_field,  # Default style for input area
                 # Additional prompt-specific styles
-                "prompt.mode": "#888888",
+                "prompt.mode": prompt_theme.continuation,
                 # Completion menu enhancements
-                "completion-menu": "bg:#2c2c2c fg:#ffffff",
-                "completion-menu.completion": "bg:#2c2c2c fg:#ffffff",
-                "completion-menu.completion.current": "bg:#005588 fg:#ffffff bold",
-                "completion-menu.meta.completion": "bg:#2c2c2c fg:#888888",
-                "completion-menu.meta.completion.current": "bg:#005588 fg:#aaaaaa",
+                "completion-menu": prompt_theme.completion,
+                "completion-menu.completion": prompt_theme.completion,
+                "completion-menu.completion.current": prompt_theme.completion_selected,
+                "completion-menu.meta.completion": prompt_theme.completion_meta,
+                "completion-menu.meta.completion.current": prompt_theme.completion_selected,
                 # Scrollbar
-                "scrollbar.background": "bg:#2c2c2c",
-                "scrollbar.button": "bg:#888888",
+                "scrollbar.background": prompt_theme.toolbar,
+                "scrollbar.button": prompt_theme.continuation,  # Use a muted color from prompt theme
+                # Search styling
+                "search": prompt_theme.search,
+                "search.current": prompt_theme.search_match,
             }
         )
 
@@ -214,41 +231,47 @@ class InteractiveCLI(CommandHandler):
 
     def _get_mode_panel_config(self) -> dict:
         """Get mode-specific panel configuration with title and styling."""
+        # Get theme for consistent color choices
+        from coda.services.config import get_config_service
+
+        config = get_config_service()
+        theme = config.theme_manager.get_console_theme()
+
         mode_configs = {
             DeveloperMode.GENERAL: {
                 "title": "💬 General Chat",
-                "border_style": "white",
-                "title_style": "bold white",
+                "border_style": theme.panel_border,
+                "title_style": theme.panel_title,
             },
             DeveloperMode.CODE: {
                 "title": "⚡ Code Mode",
-                "border_style": "green",
-                "title_style": "bold green",
+                "border_style": theme.success,
+                "title_style": theme.success + " bold",
             },
             DeveloperMode.DEBUG: {
                 "title": "🔍 Debug Mode",
-                "border_style": "yellow",
-                "title_style": "bold yellow",
+                "border_style": theme.warning,
+                "title_style": theme.warning + " bold",
             },
             DeveloperMode.EXPLAIN: {
                 "title": "📚 Explain Mode",
-                "border_style": "blue",
-                "title_style": "bold blue",
+                "border_style": theme.info,
+                "title_style": theme.info + " bold",
             },
             DeveloperMode.REVIEW: {
                 "title": "🔎 Review Mode",
-                "border_style": "magenta",
-                "title_style": "bold magenta",
+                "border_style": theme.assistant_message,
+                "title_style": theme.assistant_message + " bold",
             },
             DeveloperMode.REFACTOR: {
                 "title": "🔄 Refactor Mode",
-                "border_style": "cyan",
-                "title_style": "bold cyan",
+                "border_style": theme.panel_border,
+                "title_style": theme.panel_title,
             },
             DeveloperMode.PLAN: {
                 "title": "📋 Plan Mode",
-                "border_style": "red",
-                "title_style": "bold red",
+                "border_style": theme.error,
+                "title_style": theme.error + " bold",
             },
         }
         return mode_configs.get(self.current_mode, mode_configs[DeveloperMode.GENERAL])
@@ -289,18 +312,36 @@ class InteractiveCLI(CommandHandler):
 
     def _get_prompt(self) -> HTML:
         """Generate the prompt with mode indicator."""
-        mode_color = {
-            DeveloperMode.GENERAL: "white",
-            DeveloperMode.CODE: "green",
-            DeveloperMode.DEBUG: "yellow",
-            DeveloperMode.EXPLAIN: "blue",
-            DeveloperMode.REVIEW: "magenta",
-            DeveloperMode.REFACTOR: "cyan",
-            DeveloperMode.PLAN: "red",
-        }.get(self.current_mode, "white")
+        # Map Rich color names to prompt-toolkit compatible colors
+        color_map = {
+            "bright_cyan": "ansicyan",
+            "bright_green": "ansigreen",
+            "bright_yellow": "ansiyellow",
+            "bright_blue": "ansiblue",
+            "bright_red": "ansired",
+            "blue": "ansiblue",
+            "green": "ansigreen",
+            "yellow": "ansiyellow",
+            "red": "ansired",
+            "cyan": "ansicyan",
+        }
 
-        # Simple colored prompt arrow
-        return HTML(f"<ansi{mode_color}>❯</ansi{mode_color}> ")
+        # Get theme color for current mode
+        theme_color = {
+            DeveloperMode.GENERAL: self.theme.info,
+            DeveloperMode.CODE: self.theme.success,
+            DeveloperMode.DEBUG: self.theme.warning,
+            DeveloperMode.EXPLAIN: self.theme.info,
+            DeveloperMode.REVIEW: self.theme.assistant_message,
+            DeveloperMode.REFACTOR: self.theme.panel_border,
+            DeveloperMode.PLAN: self.theme.error,
+        }.get(self.current_mode, self.theme.info)
+
+        # Convert Rich color to prompt-toolkit color
+        mode_color = color_map.get(theme_color, "ansiwhite")
+
+        # Use prompt theme styling for the arrow
+        return HTML(f"<{mode_color}>❯</{mode_color}> ")
 
     async def get_input(self, multiline: bool = False) -> str:
         """Get input from user with rich features."""
@@ -405,10 +446,14 @@ class InteractiveCLI(CommandHandler):
             new_model = await selector.select_interactive()
             if new_model:
                 self.current_model = new_model
-                self.console.print(f"\n[green]Switched to model: {new_model}[/green]")
+                self.console.print(
+                    f"\n[{self.theme.success}]Switched to model: {new_model}[/{self.theme.success}]"
+                )
 
             else:
-                self.console.print(f"\n[yellow]Current model: {self.current_model}[/yellow]")
+                self.console.print(
+                    f"\n[{self.theme.warning}]Current model: {self.current_model}[/{self.theme.warning}]"
+                )
         else:
             # Use the shared model switching logic
             self.switch_model(args)
@@ -467,8 +512,12 @@ class InteractiveCLI(CommandHandler):
         self.console = config_service.theme_manager.get_console()
         self.style = self._create_style()
 
+        # Reinitialize the prompt session with new theme
         if hasattr(self, "session") and self.session:
-            self.session.style = self.style
+            # Reinitialize session with new style
+            self._init_session()
+
+            # The new session will have the updated style
 
         self.console.print(f"[green]✓[/] Theme changed to '[cyan]{theme_name}[/]'")
         if self.config:
@@ -476,9 +525,11 @@ class InteractiveCLI(CommandHandler):
 
     def _list_available_themes(self) -> None:
         """List all available themes with current selection indicator."""
-        from coda.base.theme import THEMES, ThemeManager
+        from coda.base.theme import THEMES
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
         self.console.print("\n[bold]Available themes:[/]")
         for theme_name, theme in THEMES.items():
             status = (
@@ -488,9 +539,10 @@ class InteractiveCLI(CommandHandler):
 
     def _show_current_theme(self) -> None:
         """Display the current theme and its description."""
-        from coda.base.theme import ThemeManager
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
         self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
         self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
 
@@ -530,9 +582,10 @@ class InteractiveCLI(CommandHandler):
 
     async def _cmd_theme(self, args: str):
         """Change UI theme."""
-        from coda.base.theme import ThemeManager
+        from coda.services.config import get_config_service
 
-        theme_manager = ThemeManager()
+        config_service = get_config_service()
+        theme_manager = config_service.theme_manager
 
         if not args:
             # Show interactive theme selector
@@ -564,9 +617,9 @@ class InteractiveCLI(CommandHandler):
 
         elif args == "reset":
             # Reset to default theme
-            from coda.base.theme.constants import THEME_DEFAULT
+            from coda.base.theme.constants import THEME_DARK
 
-            args = THEME_DEFAULT
+            args = THEME_DARK
 
         # Set the theme
         try:
@@ -640,9 +693,18 @@ class InteractiveCLI(CommandHandler):
         if not subcommand:
             from rich.table import Table
 
-            table = Table(title="[bold cyan]Semantic Search Commands[/bold cyan]", box=None)
-            table.add_column("Command", style="white", no_wrap=True)
-            table.add_column("Description", style="dim")
+            from coda.services.config import get_config_service
+
+            config = get_config_service()
+            theme = config.theme_manager.get_console_theme()
+
+            table = Table(
+                title=f"[{theme.table_header}]Semantic Search Commands[/{theme.table_header}]",
+                box=None,
+                row_styles=[theme.table_row_odd, theme.table_row_even],
+            )
+            table.add_column("Command", style=theme.command, no_wrap=True)
+            table.add_column("Description", style=theme.dim)
 
             table.add_row(
                 "/search semantic <query>", "Search indexed content using semantic similarity"

@@ -3,7 +3,6 @@
 from rich.console import Console
 
 from coda.base.providers.base import BaseProvider, Message
-from coda.base.theme import ThemeManager
 from coda.services.agents import Agent
 from coda.services.agents.builtin_tools import get_builtin_tools
 from coda.services.agents.tool_adapter import MCPToolAdapter
@@ -19,7 +18,10 @@ class AgentChatHandler:
         self.console = console
         self.agent = None
         self.use_tools = True
-        self.theme_manager = ThemeManager()
+        from coda.services.config import get_config_service
+
+        config_service = get_config_service()
+        self.theme_manager = config_service.theme_manager
         self.console_theme = self.theme_manager.get_console_theme()
 
     def should_use_agent(self, model: str) -> bool:
@@ -97,7 +99,7 @@ Each user request should be evaluated independently. Previous tool usage does no
             # Update status if provided
             if status:
                 status.update(
-                    f"[{self.console_theme.bold} {self.console_theme.info}]Processing request...[/{self.console_theme.bold} {self.console_theme.info}]"
+                    f"[{self.console_theme.bold} {self.console_theme.info}]Thinking...[/{self.console_theme.bold} {self.console_theme.info}]"
                 )
 
             # Create interrupt check function
@@ -143,7 +145,7 @@ Each user request should be evaluated independently. Previous tool usage does no
             for chunk in stream:
                 if first_chunk:
                     self.console.print(
-                        f"\n[{self.console_theme.bold} {self.console_theme.assistant_message}]Assistant:[/{self.console_theme.bold} {self.console_theme.assistant_message}] ",
+                        f"\n[{self.console_theme.bold} {self.console_theme.info}]Assistant:[/{self.console_theme.bold} {self.console_theme.info}] ",
                         end="",
                     )
                     first_chunk = False

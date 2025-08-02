@@ -33,6 +33,11 @@ class SearchResultDisplay:
 
     def __init__(self, console: Console):
         self.console = console
+        # Get theme for consistent styling
+        from coda.services.config import get_config_service
+
+        config = get_config_service()
+        self.theme = config.theme_manager.get_console_theme()
 
     def display_results(
         self,
@@ -48,7 +53,7 @@ class SearchResultDisplay:
                     "[yellow]No results found[/yellow]\n\n"
                     "[dim]Try different search terms or index more content[/dim]",
                     title="[bold red]Search Results[/bold red]",
-                    border_style="red",
+                    border_style=self.theme.error,
                 )
             )
             return
@@ -63,7 +68,7 @@ class SearchResultDisplay:
             Panel(
                 f"[bold cyan]Found {len(results)} results for:[/bold cyan] [white]{query}[/white]",
                 expand=False,
-                border_style="cyan",
+                border_style=self.theme.panel_border,
             )
         )
         self.console.print()
@@ -120,7 +125,7 @@ class SearchResultDisplay:
         # Apply highlighting
         highlighted_content = Text(content)
         for term in highlighter.query_terms:
-            highlighted_content.highlight_words(term, style="bold yellow")
+            highlighted_content.highlight_words(term, style=self.theme.warning + " bold")
 
         # Check if content looks like code
         is_code = self._detect_code(result.text, result.metadata)
@@ -158,12 +163,16 @@ class SearchResultDisplay:
                 syntax = Syntax(
                     result.text[:max_preview_length],
                     lang,
-                    theme="monokai",
+                    theme=self.theme.code_theme,
                     line_numbers=True,
                     word_wrap=True,
                 )
                 code_panel = Panel(
-                    syntax, title=header, title_align="left", border_style="green", padding=(0, 1)
+                    syntax,
+                    title=header,
+                    title_align="left",
+                    border_style=self.theme.success,
+                    padding=(0, 1),
                 )
                 self.console.print(code_panel)
 
@@ -178,7 +187,7 @@ class SearchResultDisplay:
             highlighted_content,
             title=header,
             title_align="left",
-            border_style="blue",
+            border_style=self.theme.info,
             padding=(0, 1),
         )
         self.console.print(content_panel)
@@ -296,8 +305,8 @@ class SearchResultDisplay:
         if not formatted_items:
             return
 
-        table = Table(show_header=False, box=None, padding=(0, 2), style="dim")
-        table.add_column("Key", style="cyan")
+        table = Table(show_header=False, box=None, padding=(0, 2), style=self.theme.dim)
+        table.add_column("Key", style=self.theme.info)
         table.add_column("Value")
 
         for key, value in formatted_items:
@@ -379,15 +388,22 @@ class IndexingProgressContext:
 
 def create_search_stats_display(stats: dict, console: Console) -> None:
     """Display search index statistics with rich formatting."""
+    # Get theme for consistent styling
+    from coda.services.config import get_config_service
+
+    config = get_config_service()
+    theme = config.theme_manager.get_console_theme()
+
     # Create stats table
     table = Table(
-        title="[bold cyan]Semantic Search Index Statistics[/bold cyan]",
+        title=f"[{theme.table_header}]Semantic Search Index Statistics[/{theme.table_header}]",
         show_header=True,
-        header_style="bold magenta",
+        header_style=theme.table_header,
+        row_styles=[theme.table_row_odd, theme.table_row_even],
     )
 
-    table.add_column("Metric", style="cyan", no_wrap=True)
-    table.add_column("Value", style="white")
+    table.add_column("Metric", style=theme.info, no_wrap=True)
+    table.add_column("Value", style=theme.assistant_message)
 
     # Add rows
     table.add_row("Vector Count", f"{stats.get('vector_count', 0):,}")

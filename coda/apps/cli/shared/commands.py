@@ -7,7 +7,6 @@ from typing import Any
 from rich.console import Console
 
 from coda.base.providers import ProviderFactory
-from coda.base.theme import ThemeManager
 
 from .modes import DeveloperMode, get_mode_description
 
@@ -32,7 +31,10 @@ class CommandHandler(ABC):
         self.provider_name = None
         self.provider_instance = None
         self.factory = None
-        self.theme_manager = ThemeManager()
+        from coda.services.config import get_config_service
+
+        config_service = get_config_service()
+        self.theme_manager = config_service.theme_manager
         self.console_theme = self.theme_manager.get_console_theme()
 
     def set_provider_info(
@@ -94,17 +96,25 @@ class CommandHandler(ABC):
     def switch_model(self, model_name: str) -> CommandResult:
         """Switch to a different model."""
         if not self.available_models:
-            self.console.print("[yellow]No models available.[/yellow]")
+            self.console.print(
+                f"[{self.console_theme.warning}]No models available.[/{self.console_theme.warning}]"
+            )
             return CommandResult.HANDLED
 
         if not model_name:
             # Show current model and available models
-            self.console.print(f"\n[yellow]Current model:[/yellow] {self.current_model}")
-            self.console.print("\n[bold]Available models:[/bold]")
+            self.console.print(
+                f"\n[{self.console_theme.warning}]Current model:[/{self.console_theme.warning}] {self.current_model}"
+            )
+            self.console.print(
+                f"\n[{self.console_theme.bold}]Available models:[/{self.console_theme.bold}]"
+            )
 
             # Show top 10 models
             for i, model in enumerate(self.available_models[:10]):
-                self.console.print(f"  {i + 1}. [cyan]{model.id}[/cyan]")
+                self.console.print(
+                    f"  {i + 1}. [{self.console_theme.info}]{model.id}[/{self.console_theme.info}]"
+                )
 
             if len(self.available_models) > 10:
                 self.console.print(f"  [dim]... and {len(self.available_models) - 10} more[/dim]")

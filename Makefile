@@ -1,4 +1,4 @@
-.PHONY: help test test-unit test-integration test-all test-cov test-fast lint format clean install-dev pre-commit version
+.PHONY: help test test-unit test-integration test-functional test-all test-cov test-fast lint format clean install-dev pre-commit version
 .PHONY: docker-build docker-run docker-dev docker-dev-up docker-dev-down docker-test docker-clean docker-push
 
 # Default target
@@ -59,6 +59,7 @@ test-unit:
 # Run only integration tests (requires credentials)
 test-integration:
 	RUN_INTEGRATION_TESTS=1 uv run pytest tests/ -v -m integration
+
 
 # Run LLM tests with Ollama (requires Ollama service)
 test-llm:

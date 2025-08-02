@@ -47,6 +47,8 @@ class SessionCommands:
 
         config = get_config_service()
         self.console = config.theme_manager.get_console()
+        self.theme = config.theme_manager.get_console_theme()
+        self.prompt_theme = config.theme_manager.get_prompt_theme()
         self.current_session_id: str | None = None
         self.current_messages: list[dict[str, Any]] = []
         self.auto_save_enabled: bool = True  # Auto-save by default
@@ -111,7 +113,9 @@ class SessionCommands:
 
 [dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r, tools→t[/dim]
 """
-        self.console.print(Panel(help_text, title="Session Help", border_style="cyan"))
+        self.console.print(
+            Panel(help_text, title="Session Help", border_style=self.theme.panel_border)
+        )
         return None
 
     def _save_session(self, args: list[str]) -> str:
@@ -220,7 +224,7 @@ class SessionCommands:
         # Display session info
         self.console.print(f"\n[green]Loaded session:[/green] {session.name}")
         self.console.print(
-            f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}"
+            f"[{self.theme.dim}]Provider:[/{self.theme.dim}] {session.provider} | [{self.theme.dim}]Model:[/{self.theme.dim}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]"
         )
         self.console.print(
             f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
@@ -242,12 +246,17 @@ class SessionCommands:
             return "No saved sessions found."
 
         # Create table
-        table = Table(title="Saved Sessions", show_header=True, header_style="bold cyan")
-        table.add_column("ID", style="dim", width=12)
+        table = Table(
+            title="Saved Sessions",
+            show_header=True,
+            header_style=self.theme.table_header,
+            row_styles=[self.theme.table_row_odd, self.theme.table_row_even],
+        )
+        table.add_column("ID", style=self.theme.dim, width=12)
         table.add_column("Name", style="bold")
-        table.add_column("Provider/Model", style="cyan")
+        table.add_column("Provider/Model", style=self.theme.info)
         table.add_column("Messages", justify="right")
-        table.add_column("Last Active", style="green")
+        table.add_column("Last Active", style=self.theme.success)
 
         for session in sessions:
             table.add_row(
@@ -337,7 +346,7 @@ class SessionCommands:
             f"[bold]Name:[/bold] {session.name}",
             f"[bold]ID:[/bold] {session.id}",
             f"[bold]Provider:[/bold] {session.provider}",
-            f"[bold]Model:[/bold] {session.model}",
+            f"[{self.theme.bold}]Model:[/{self.theme.bold}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]",
             f"[bold]Mode:[/bold] {session.mode}",
             f"[bold]Status:[/bold] {session.status}",
             f"[bold]Created:[/bold] {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
@@ -364,7 +373,11 @@ class SessionCommands:
         # Base modules should not use themed output - just return plain text
 
         self.console.print(
-            Panel("\n".join(info_lines), title="Session Information", border_style="cyan")
+            Panel(
+                "\n".join(info_lines),
+                title="Session Information",
+                border_style=self.theme.panel_border,
+            )
         )
         return None
 
@@ -445,7 +458,7 @@ class SessionCommands:
         # Display session info
         self.console.print(f"\n[green]Loaded last session:[/green] {session.name}")
         self.console.print(
-            f"[dim]Provider:[/dim] {session.provider} | [dim]Model:[/dim] {session.model}"
+            f"[{self.theme.dim}]Provider:[/{self.theme.dim}] {session.provider} | [{self.theme.dim}]Model:[/{self.theme.dim}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]"
         )
         self.console.print(
             f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
@@ -607,15 +620,22 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
         for tool, count in sorted(summary["tool_counts"].items(), key=lambda x: x[1], reverse=True):
             summary_text += f"\n  • {tool}: {count} call{'s' if count > 1 else ''}"
 
-        self.console.print(Panel(summary_text, title="Tool Usage", border_style="cyan"))
+        self.console.print(
+            Panel(summary_text, title="Tool Usage", border_style=self.theme.panel_border)
+        )
 
         # Detailed history table
         if len(tool_history) <= 20:  # Show all if reasonable number
-            table = Table(title="Tool Call History", show_header=True, header_style="bold cyan")
-            table.add_column("Seq", style="dim", width=4)
+            table = Table(
+                title="Tool Call History",
+                show_header=True,
+                header_style=self.theme.table_header,
+                row_styles=[self.theme.table_row_odd, self.theme.table_row_even],
+            )
+            table.add_column("Seq", style=self.theme.dim, width=4)
             table.add_column("Type", style="bold", width=8)
-            table.add_column("Tool/Result", style="cyan")
-            table.add_column("Time", style="green")
+            table.add_column("Tool/Result", style=self.theme.info)
+            table.add_column("Time", style=self.theme.success)
 
             for entry in tool_history:
                 if entry["type"] == "call":
@@ -751,7 +771,9 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
 """
         # Base modules should not use themed output - just return plain text
 
-        self.console.print(Panel(help_text, title="Export Help", border_style="cyan"))
+        self.console.print(
+            Panel(help_text, title="Export Help", border_style=self.theme.panel_border)
+        )
         return None
 
     def add_message(self, role: str, content: str, metadata: dict[str, Any] | None = None):
