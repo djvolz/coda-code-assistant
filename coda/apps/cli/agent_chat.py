@@ -7,6 +7,8 @@ from coda.services.agents import Agent
 from coda.services.agents.builtin_tools import get_builtin_tools
 from coda.services.agents.tool_adapter import MCPToolAdapter
 
+from .agent_event_handler import CLIAgentEventHandler
+
 
 class AgentChatHandler:
     """Handles AI chat using the agent system."""
@@ -64,6 +66,9 @@ class AgentChatHandler:
         if self.agent is None or self.agent.model != model:
             tools = self.get_available_tools() if self.should_use_agent(model) else []
 
+            # Create event handler
+            event_handler = CLIAgentEventHandler(self.console, self.theme_manager)
+
             self.agent = Agent(
                 provider=self.provider,
                 model=model,
@@ -88,7 +93,7 @@ Each user request should be evaluated independently. Previous tool usage does no
                 name="Coda Assistant",
                 temperature=temperature,
                 max_tokens=max_tokens,
-                console=self.console,
+                event_handler=event_handler,
             )
 
         # Extract user input from last message
