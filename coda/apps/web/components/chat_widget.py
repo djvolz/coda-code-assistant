@@ -2,15 +2,10 @@
 
 import asyncio
 import re
-import sys
 from datetime import datetime
-from pathlib import Path
 
 import streamlit as st
 import streamlit.components.v1 as components
-
-# Add diagram_renderer to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "base" / "diagram_renderer"))
 
 from coda.apps.web.utils.state import get_state_value, set_state_value
 from coda.base.providers.registry import ProviderFactory

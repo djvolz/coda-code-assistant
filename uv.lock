@@ -524,6 +524,7 @@ dependencies = [
     { name = "aiosqlite" },
     { name = "click" },
     { name = "cryptography" },
+    { name = "diagram-renderer" },
     { name = "faiss-cpu" },
     { name = "grep-ast" },
     { name = "httpx" },
@@ -590,6 +591,7 @@ requires-dist = [
     { name = "chromadb", marker = "extra == 'embeddings'", specifier = ">=0.4.0" },
     { name = "click", specifier = ">=8.0.0" },
     { name = "cryptography", specifier = ">=3.4.7" },
+    { name = "diagram-renderer", specifier = ">=0.1.0" },
     { name = "faiss-cpu", specifier = ">=1.7.4" },
     { name = "grep-ast", specifier = ">=0.9.0" },
     { name = "httpx", specifier = ">=0.25.0" },
@@ -764,6 +766,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/5f/38/6bf177ca6bce4fe14704ab3e93627c5b0ca05242261a2e43ef3168472540/cryptography-45.0.5-pp311-pypy311_pp73-manylinux_2_34_aarch64.whl", hash = "sha256:12e55281d993a793b0e883066f590c1ae1e802e3acb67f8b442e721e475e6463", size = 4151627, upload-time = "2025-07-02T13:06:13.097Z" },
     { url = "https://files.pythonhosted.org/packages/38/6a/69fc67e5266bff68a91bcb81dff8fb0aba4d79a78521a08812048913e16f/cryptography-45.0.5-pp311-pypy311_pp73-manylinux_2_34_x86_64.whl", hash = "sha256:5aa1e32983d4443e310f726ee4b071ab7569f58eedfdd65e9675484a4eb67bd1", size = 4385593, upload-time = "2025-07-02T13:06:15.689Z" },
     { url = "https://files.pythonhosted.org/packages/f6/34/31a1604c9a9ade0fdab61eb48570e09a796f4d9836121266447b0eaf7feb/cryptography-45.0.5-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:e357286c1b76403dd384d938f93c46b2b058ed4dfcdce64a770f0537ed3feb6f", size = 3331106, upload-time = "2025-07-02T13:06:18.058Z" },
+]
+
+[[package]]
+name = "diagram-renderer"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/5f/98779309fa3d7235346923216ec519e551a8124a722f98e9ce03c5798091/diagram_renderer-0.1.0.tar.gz", hash = "sha256:69ce8d03e1b0ab3ab56ee76627bdf45705f666c102eda60c8e5ea6a6c5cbabaf", size = 1435449, upload-time = "2025-07-01T04:05:11.734Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bc/4c/1cdb8012dbb33bd8fb5b8e04c225216dac3c9b84ddda77415a0eb756f8ad/diagram_renderer-0.1.0-py3-none-any.whl", hash = "sha256:64b8a5f8dbf2c5f67e99178bf6b9b3c2a1a9cb8bde6e35f5f718c95f7f6b6940", size = 1449630, upload-time = "2025-07-01T04:05:07.235Z" },
 ]
 
 [[package]]
