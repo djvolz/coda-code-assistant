@@ -430,7 +430,8 @@ class Agent:
                         response_content += chunk.content
 
                     if response_content:
-                        # Streaming complete - handled by event system
+                        # Streaming complete - add newline and handle by event system
+                        self._emit_newline()
                         messages.append(Message(role=Role.ASSISTANT, content=response_content))
 
                     return response_content, messages
@@ -488,7 +489,8 @@ class Agent:
                                 response_content += chunk.content
 
                             if response_content:
-                                # Streaming complete - handled by event system
+                                # Streaming complete - add newline and handle by event system
+                                self._emit_newline()
                                 messages.append(
                                     Message(role=Role.ASSISTANT, content=response_content)
                                 )
@@ -558,7 +560,8 @@ class Agent:
                             self._emit_response_chunk(char)
                             time.sleep(0.001)  # Small delay for streaming effect
 
-                        # Streaming complete - handled by event system
+                        # Streaming complete - add newline and handle by event system
+                        self._emit_newline()
                         messages.append(Message(role=Role.ASSISTANT, content=response.content))
                         return response.content, messages
                     else:
@@ -769,6 +772,13 @@ class Agent:
         if self.event_handler:
             self.event_handler.handle_event(
                 AgentEvent(AgentEventType.RESPONSE_CHUNK, chunk, {"end": ""})
+            )
+
+    def _emit_newline(self):
+        """Emit a newline after streaming completes."""
+        if self.event_handler:
+            self.event_handler.handle_event(
+                AgentEvent(AgentEventType.RESPONSE_CHUNK, "\n", {"end": ""})
             )
 
     def _emit_tool_execution_start(self, tool_call: ToolCall):
