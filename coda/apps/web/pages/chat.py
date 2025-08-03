@@ -8,6 +8,7 @@ from coda.apps.web.components.file_manager import (
     render_file_upload_widget,
 )
 from coda.apps.web.components.model_selector import render_model_selector
+from coda.apps.web.components.tool_settings import render_agent_settings
 from coda.apps.web.utils.state import clear_chat_state, get_state_value, set_state_value
 from coda.base.providers.registry import get_provider_registry
 
@@ -61,37 +62,61 @@ def render_provider_selector() -> str | None:
 
 
 def render():
-    """Render the chat page."""
-    st.title("💬 Chat Interface")
+    """Render the chat page with agent support."""
+    st.title("🤖 AI Agent Chat")
 
-    col1, col2, col3 = st.columns([2, 2, 1])
+    # Add tabs for different modes
+    tab1, tab2 = st.tabs(["💬 Chat", "⚙️ Agent Settings"])
 
-    with col1:
-        provider = render_provider_selector()
+    with tab2:
+        render_agent_settings()
 
-    with col2:
-        model = render_model_selector(provider)
-
-    with col3:
-        if st.button("🗑️ Clear Chat", use_container_width=True):
-            clear_chat_state()
-            st.rerun()
-
-    st.markdown("---")
-
-    if provider and model:
-        col1, col2 = st.columns([3, 1])
+    with tab1:
+        col1, col2, col3 = st.columns([2, 2, 1])
 
         with col1:
-            render_chat_interface(provider, model)
+            provider = render_provider_selector()
 
         with col2:
-            with st.expander("📎 Files", expanded=False):
-                uploaded_files = render_file_upload_widget()
-                if uploaded_files:
-                    st.session_state.uploaded_files = uploaded_files
+            model = render_model_selector(provider)
 
-            with st.expander("💾 Download", expanded=False):
-                render_file_download_section()
-    else:
-        st.info("👆 Select a provider and model to start chatting")
+        with col3:
+            if st.button("🗑️ Clear Chat", use_container_width=True):
+                clear_chat_state()
+                st.rerun()
+
+        st.markdown("---")
+
+        if provider and model:
+            col1, col2 = st.columns([3, 1])
+
+            with col1:
+                render_chat_interface(provider, model)
+
+            with col2:
+                with st.expander("📎 Files", expanded=False):
+                    uploaded_files = render_file_upload_widget()
+                    if uploaded_files:
+                        st.session_state.uploaded_files = uploaded_files
+
+                with st.expander("💾 Download", expanded=False):
+                    render_file_download_section()
+
+                with st.expander("📊 Agent Status", expanded=False):
+                    # Show agent information
+                    use_agent = st.session_state.get("use_agent", True)
+                    if use_agent:
+                        st.write("**Provider:**", provider)
+                        st.write("**Model:**", model)
+                        tools_count = len(st.session_state.get("enabled_tools", []))
+                        st.write("**Tools Enabled:**", tools_count)
+                        temperature = st.session_state.get("agent_temperature", 0.7)
+                        st.write("**Temperature:**", temperature)
+                        max_tokens = st.session_state.get("agent_max_tokens", 2000)
+                        st.write("**Max Tokens:**", max_tokens)
+                    else:
+                        st.write("**Mode:** Direct Provider")
+                        st.write("**Provider:**", provider)
+                        st.write("**Model:**", model)
+        else:
+            st.info("👆 Select a provider and model to start chatting with AI agent")
