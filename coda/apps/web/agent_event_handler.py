@@ -1,6 +1,5 @@
 """Streamlit event handler for agent events."""
 
-import json
 from typing import Any
 
 import streamlit as st
@@ -18,93 +17,54 @@ class StreamlitAgentEventHandler(AgentEventHandler):
     ):
         self.status_container = status_container
         self.message_container = message_container
-        self.current_status = None
         self.response_chunks = []
+        self.current_status = None
+        self.current_tool_name = None
 
     def handle_event(self, event: AgentEvent) -> None:
         """Handle agent event with appropriate Streamlit rendering."""
+        try:
+            if event.type == AgentEventType.THINKING:
+                if self.status_container:
+                    with self.status_container:
+                        st.info("🤔 Thinking...")
 
-        if event.type == AgentEventType.THINKING:
-            if self.status_container:
-                with self.status_container:
-                    self.current_status = st.status("🤔 Thinking...")
+            elif event.type == AgentEventType.TOOL_EXECUTION_START:
+                if self.status_container:
+                    with self.status_container:
+                        tool_name = event.message.replace("Running tool: ", "")
+                        st.info(f"🔧 Executing {tool_name}...")
 
-        elif event.type == AgentEventType.TOOL_EXECUTION_START:
-            if self.status_container:
-                with self.status_container:
-                    self.current_status = st.status(f"🔧 {event.message}")
-                    if event.data and "arguments" in event.data:
-                        if self.current_status:
-                            with self.current_status:
-                                st.json(event.data["arguments"])
-
-        elif event.type == AgentEventType.TOOL_EXECUTION_END:
-            if self.current_status:
-                try:
-                    with self.current_status:
-                        st.success("✅ Tool completed")
+            elif event.type == AgentEventType.TOOL_EXECUTION_END:
+                if self.status_container:
+                    with self.status_container:
+                        tool_name = (
+                            event.message.replace("Running tool: ", "") if event.message else "tool"
+                        )
+                        st.success(f"✅ {tool_name} completed")
                         if event.data and "output" in event.data:
                             output = event.data["output"]
-                            try:
-                                # Try to parse as JSON for better formatting
-                                result_json = json.loads(output)
-                                st.json(result_json)
-                            except Exception:
-                                st.text(output)
-                except Exception:
-                    # If status update fails, try to show output in message container
-                    if self.message_container:
-                        with self.message_container:
-                            st.success("✅ Tool completed")
-                            if event.data and "output" in event.data:
-                                st.text(str(event.data["output"]))
+                            # Simple output display
+                            st.text(f"Result: {output}")
 
-        elif event.type == AgentEventType.ERROR:
-            if self.current_status:
-                with self.current_status:
-                    st.error(f"❌ {event.message}")
-            elif self.message_container:
-                with self.message_container:
-                    st.error(event.message)
+            elif event.type == AgentEventType.ERROR:
+                if self.status_container:
+                    with self.status_container:
+                        st.error(f"❌ Error: {event.message}")
 
-        elif event.type == AgentEventType.WARNING:
-            if self.current_status:
-                with self.current_status:
-                    st.warning(event.message)
-            elif self.message_container:
-                with self.message_container:
-                    st.warning(event.message)
+            elif event.type == AgentEventType.RESPONSE_CHUNK:
+                # Just collect chunks
+                self.response_chunks.append(event.message)
 
-        elif event.type == AgentEventType.STATUS_UPDATE:
-            if self.status_container:
-                with self.status_container:
-                    self.current_status = st.status(event.message)
+            elif event.type == AgentEventType.RESPONSE_COMPLETE:
+                # Just clear chunks
+                self.response_chunks = []
 
-        elif event.type == AgentEventType.RESPONSE_CHUNK:
-            # Collect chunks for streaming display
-            self.response_chunks.append(event.message)
+        except Exception as e:
+            print(f"Event handler error: {str(e)}")
+            import traceback
 
-        elif event.type == AgentEventType.RESPONSE_COMPLETE:
-            # Close any active status
-            if self.current_status:
-                self.current_status.update(label="✅ Complete", state="complete")
-
-            # Only render if we actually have a response
-            if event.message and event.message.strip():
-                # Render complete response with any collected chunks
-                if self.message_container:
-                    full_response = (
-                        "".join(self.response_chunks) if self.response_chunks else event.message
-                    )
-                    with self.message_container:
-                        self._render_response(full_response)
-            # Clear chunks for next response
-            self.response_chunks = []
-
-        elif event.type == AgentEventType.FINAL_ANSWER_NEEDED:
-            if self.status_container:
-                with self.status_container:
-                    st.warning(f"⚠️ {event.message}")
+            print(traceback.format_exc())
 
     def _render_response(self, content: str):
         """Render response content with diagram support."""

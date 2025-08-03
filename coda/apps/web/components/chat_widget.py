@@ -83,6 +83,14 @@ def render_chat_interface(provider: str, model: str):
                     else:
                         st.error("Failed to get response from agent")
 
+                except Exception as e:
+                    st.error(f"Agent service error: {str(e)}")
+                    st.write("**Error details:**")
+                    st.write(f"Error type: {type(e).__name__}")
+                    import traceback
+
+                    st.code(traceback.format_exc())
+
                 finally:
                     loop.close()
             else:

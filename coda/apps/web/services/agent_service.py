@@ -60,9 +60,11 @@ class WebAgentService:
 - General programming assistance
 
 You have access to various tools to help accomplish tasks. When you use a tool and get results, always incorporate those results into your final response to the user. For example:
-- If you call get_datetime and get a timestamp, tell the user what time it is
+- If you call get_datetime and get a timestamp, tell the user what time it is in a readable format
 - If you call list_files and get file names, show the user the files
 - If you call read_file and get content, include relevant parts in your response
+
+Important: Use tool results directly without trying to parse them as JSON unless they are actually JSON data. Simple strings like timestamps or file paths should be used as-is.
 
 Be direct and helpful by using the tool results to fully answer the user's question.""",
                 tools=tools,
@@ -108,17 +110,35 @@ Be direct and helpful by using the tool results to fully answer the user's quest
                 st.write(f"Message history length: {len(agent_messages)}")
 
             # Get response from agent using run_async_streaming
-            response_content, updated_messages = await agent.run_async_streaming(
-                input=user_input, messages=agent_messages if agent_messages else None, max_steps=5
-            )
+            try:
+                response_content, updated_messages = await agent.run_async_streaming(
+                    input=user_input,
+                    messages=agent_messages if agent_messages else None,
+                    max_steps=5,
+                )
 
-            # Debug: Show final response info
-            if hasattr(st, "_debug_mode"):  # Only in debug mode
-                st.write("**Debug - Agent response:**")
-                st.write(f"Response content: {response_content}")
-                st.write(f"Final message count: {len(updated_messages)}")
+                # Debug: Show final response info
+                if hasattr(st, "_debug_mode"):  # Only in debug mode
+                    st.write("**Debug - Agent response:**")
+                    st.write(f"Response content: {response_content}")
+                    st.write(f"Final message count: {len(updated_messages)}")
 
-            return response_content
+                # Ensure the final response is displayed immediately
+                if response_content and event_handler.message_container:
+                    with event_handler.message_container:
+                        event_handler._render_response(response_content)
+
+                return response_content
+
+            except Exception as agent_error:
+                st.error(f"Agent execution error: {str(agent_error)}")
+                st.write("**Error details:**")
+                st.write(f"Error type: {type(agent_error).__name__}")
+                st.write(f"Error message: {str(agent_error)}")
+                import traceback
+
+                st.code(traceback.format_exc())
+                return None
 
         except Exception as e:
             st.error(f"Agent error: {str(e)}")
