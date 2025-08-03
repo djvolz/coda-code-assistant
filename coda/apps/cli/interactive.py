@@ -683,9 +683,16 @@ def interactive_main(
     """Run Coda in interactive mode with rich CLI features"""
 
     welcome_text = Text.from_markup(
-        f"[{theme.panel_title}]Coda[/{theme.panel_title}] - Code Assistant\n"
-        f"[{theme.dim}]Multi-provider AI coding companion v{__version__}[/{theme.dim}]\n"
-        f"[{theme.dim}]Interactive mode with prompt-toolkit[/{theme.dim}]"
+        f"[{theme.panel_title}]"
+        " ██████╗ ██████╗ ██████╗  █████╗ \n"
+        "██╔════╝██╔═══██╗██╔══██╗██╔══██╗\n"
+        "██║     ██║   ██║██║  ██║███████║\n"
+        "██║     ██║   ██║██║  ██║██╔══██║\n"
+        "╚██████╗╚██████╔╝██████╔╝██║  ██║\n"
+        " ╚═════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝"
+        f"[/{theme.panel_title}]\n"
+        f"[{theme.info}]✨ Your AI-powered coding companion[/{theme.info}]\n"
+        f"[{theme.dim}]v{__version__} • Ready to assist with your development workflow[/{theme.dim}]"
     )
 
     console.print(Panel(welcome_text, title="Welcome", border_style=theme.panel_border))
