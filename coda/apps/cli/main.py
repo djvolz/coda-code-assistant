@@ -48,16 +48,12 @@ def main(
         import asyncio
 
         from rich.panel import Panel
-        from rich.text import Text
 
+        from .banner import create_welcome_banner
         from .interactive import run_interactive_session, run_one_shot
 
         # Show welcome banner
-        welcome_text = Text.from_markup(
-            f"[{theme.panel_title}]Coda[/{theme.panel_title}] - Code Assistant\n"
-            f"[{theme.dim}]Multi-provider AI coding companion v{__version__}[/{theme.dim}]\n"
-            f"[{theme.dim}]Interactive mode with prompt-toolkit[/{theme.dim}]"
-        )
+        welcome_text = create_welcome_banner(theme)
 
         console.print(Panel(welcome_text, title="Welcome", border_style=theme.panel_border))
 
