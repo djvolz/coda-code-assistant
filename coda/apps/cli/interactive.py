@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.text import Text
 
 if TYPE_CHECKING:
     from ..providers import ProviderFactory
@@ -681,19 +680,9 @@ def interactive_main(
     provider: str, model: str, debug: bool, one_shot: str, mode: str, no_save: bool, resume: bool
 ):
     """Run Coda in interactive mode with rich CLI features"""
+    from .banner import create_welcome_banner
 
-    welcome_text = Text.from_markup(
-        f"[{theme.panel_title}]"
-        " ██████╗ ██████╗ ██████╗  █████╗ \n"
-        "██╔════╝██╔═══██╗██╔══██╗██╔══██╗\n"
-        "██║     ██║   ██║██║  ██║███████║\n"
-        "██║     ██║   ██║██║  ██║██╔══██║\n"
-        "╚██████╗╚██████╔╝██████╔╝██║  ██║\n"
-        " ╚═════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝"
-        f"[/{theme.panel_title}]\n"
-        f"[{theme.info}]✨ Your AI-powered coding companion[/{theme.info}]\n"
-        f"[{theme.dim}]v{__version__} • Ready to assist with your development workflow[/{theme.dim}]"
-    )
+    welcome_text = create_welcome_banner(theme)
 
     console.print(Panel(welcome_text, title="Welcome", border_style=theme.panel_border))
 
