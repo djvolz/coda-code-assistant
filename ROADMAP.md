@@ -1252,27 +1252,23 @@ None currently - all bugs have been resolved!
 
 ## Next Steps
 
-**Current Status**: Phases 1, 2, 3, 4, 5, and Agent Integration are complete. Phase 4.6 (Code Quality Refactoring) pending.
+**Current Status**: Phases 1, 2, 3, 4, 4.6, 5, and Agent Integration are complete. Phase 6 is currently in progress.
 
-1. **Pending - Phase 4.6**: Code Quality Refactoring
-   - Create `coda/constants.py` for centralized configuration
-   - Create theme/styling configuration system
-   - Remove duplicate code and unnecessary wrappers
-   - Consolidate interactive CLI modules
-   
-2. **Next - Phase 6**: Advanced Features (Target: July 15)
+1. **Current - Phase 6**: Advanced Features (Target: August 15, 2025)
    - Multi-modal support (image understanding)
    - Code screenshot analysis
    - Document support (PDF, Word, PowerPoint, Excel)
    - Enhanced response rendering with live markdown
    
+2. **Next - Phase 7**: Web UI with Streamlit
+   
 3. **Future Phases**:
-   - Phase 7: Web UI with Streamlit
    - Phase 8: Vector Embedding & Semantic Search
    - Phase 9: Codebase Intelligence
    - Phase 10: Help Mode Integration
    - Phase 11: Observability & Performance
    - Phase 12: DevOps & Automation
+   - Phase 13: Plugin System Architecture
 
 ## Notes
 
