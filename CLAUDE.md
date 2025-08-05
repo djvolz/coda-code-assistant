@@ -177,6 +177,9 @@ uv run coda --help
 
 ### Recommended Verification
 ```bash
+# Test full functionality with mock provider (best approach)
+echo "hi" | uv run coda chat --provider mock --model mock-model
+
 # Verify CLI starts properly (will show welcome screen)
 uv run coda
 # Press Ctrl+C to exit after seeing the welcome screen

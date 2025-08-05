@@ -205,27 +205,50 @@ try:
     # Initialize MCP manager with the tool registry
     mcp_manager = init_mcp_manager(tool_registry)
 
-    # Start discovery of MCP servers in the background
+    # Try to discover and start MCP servers synchronously during import
+    # This avoids the threading/event loop issues
     import asyncio
-    import threading
 
-    def _discover_mcp_servers_async():
-        """Discover MCP servers in a background thread."""
+    def _sync_discover_mcp_servers():
+        """Synchronously discover MCP servers during import."""
         try:
+            # Check if we're already in an async context
+            try:
+                asyncio.get_running_loop()
+                # We're in an async context, skip discovery for now
+                # Tools will be discovered on-demand later
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.debug("Skipping MCP discovery during import - async context detected")
+                return
+            except RuntimeError:
+                # No running loop, safe to create one
+                pass
+
+            # Create a new event loop for this discovery
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+
+            # Run the discovery
             loop.run_until_complete(discover_mcp_servers())
+
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info("MCP servers discovered and started during import")
+
         except Exception as e:
             import logging
 
             logger = logging.getLogger(__name__)
-            logger.debug(f"MCP server discovery failed: {e}")
+            logger.debug(f"MCP server discovery failed during import: {e}")
         finally:
-            loop.close()
+            # Don't close the loop - keep it for MCP connections
+            pass
 
-    # Start MCP discovery in background thread
-    discovery_thread = threading.Thread(target=_discover_mcp_servers_async, daemon=True)
-    discovery_thread.start()
+    # Run discovery synchronously during import
+    _sync_discover_mcp_servers()
 
 except ImportError:
     # MCP system not available
