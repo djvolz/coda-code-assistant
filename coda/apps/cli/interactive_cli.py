@@ -129,6 +129,7 @@ class InteractiveCLI(CommandHandler):
         # Add handlers for commands not yet implemented
         placeholder_handlers = {
             "tools": self._cmd_tools,
+            "mcp": self._cmd_mcp,
             "search": self._cmd_search,
         }
         handler_map.update(placeholder_handlers)
@@ -657,6 +658,12 @@ class InteractiveCLI(CommandHandler):
         """Manage MCP tools."""
         # Use the shared command handler
         result = self.handle_tools_command(args)
+        return result
+
+    def _cmd_mcp(self, args: str):
+        """Manage MCP servers."""
+        # Use the shared command handler
+        result = self.handle_mcp_command(args)
         return result
 
     def _cmd_map(self, args: str):

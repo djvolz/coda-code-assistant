@@ -372,33 +372,175 @@ class CommandHandler(ABC):
             for tool_name in stats["dangerous_tool_names"]:
                 self.console.print(f"  [yellow]{tool_name}[/yellow] ⚠️")
 
-    def _show_tools_help(self):
-        """Show detailed tools help."""
-        self.console.print("\n[bold]🔧 Coda Tools System Help[/bold]")
+    def handle_mcp_command(self, args: str) -> CommandResult:
+        """Handle MCP server management commands."""
 
-        self.console.print("\n[bold]What are tools?[/bold]")
-        self.console.print("Tools are functions that AI can call to perform specific tasks like:")
-        self.console.print("  • File operations (read, write, edit)")
-        self.console.print("  • Shell command execution")
-        self.console.print("  • Web searches and content fetching")
-        self.console.print("  • Git operations")
+        if not args:
+            # Show main MCP overview
+            self._show_mcp_overview()
+            return CommandResult.HANDLED
 
-        self.console.print("\n[bold]How to use tools:[/bold]")
-        self.console.print("1. Tools are automatically available to the AI")
-        self.console.print("2. Simply ask the AI to perform tasks that require tools")
-        self.console.print("3. The AI will call appropriate tools automatically")
-        self.console.print("4. You can see tool results in the conversation")
+        parts = args.split(maxsplit=1)
+        subcommand = parts[0].lower()
+        subargs = parts[1] if len(parts) > 1 else ""
 
-        self.console.print("\n[bold]Safety features:[/bold]")
-        self.console.print("• Dangerous tools (⚠️) require explicit approval")
-        self.console.print("• Shell commands are filtered for security")
-        self.console.print("• File operations use safe paths")
-        self.console.print("• All tool calls are logged")
+        if subcommand == "list" or subcommand == "ls":
+            self._show_mcp_servers()
+        elif subcommand == "status":
+            self._show_mcp_status(subargs)
+        elif subcommand == "start":
+            self._start_mcp_server(subargs)
+        elif subcommand == "stop":
+            self._stop_mcp_server(subargs)
+        elif subcommand == "restart":
+            self._restart_mcp_server(subargs)
+        elif subcommand == "config":
+            self._show_mcp_config(subargs)
+        else:
+            self.console.print(
+                f"[{self.console_theme.error}]Unknown MCP subcommand: {subcommand}[/{self.console_theme.error}]"
+            )
+            self.console.print("Usage: /mcp [list|status|start|stop|restart|config]")
 
-        self.console.print("\n[bold]Available commands:[/bold]")
-        self.console.print("  [cyan]/tools[/cyan]                 - Show tools overview")
-        self.console.print("  [cyan]/tools list[/cyan]             - List all tools")
-        self.console.print("  [cyan]/tools list <category>[/cyan]  - List tools in category")
-        self.console.print("  [cyan]/tools info <tool>[/cyan]      - Show tool details")
-        self.console.print("  [cyan]/tools categories[/cyan]       - List categories")
-        self.console.print("  [cyan]/tools stats[/cyan]            - Show statistics")
+        return CommandResult.HANDLED
+
+    def _show_mcp_overview(self):
+        """Show MCP system overview."""
+        from coda.services.tools.mcp_config import load_mcp_config
+
+        self.console.print("🔧 [bold]MCP Server Management[/bold]")
+        self.console.print()
+
+        try:
+            config = load_mcp_config()
+            if not config.servers:
+                self.console.print("[yellow]No MCP servers configured[/yellow]")
+                self.console.print("\n[dim]Add servers to mcp.json to get started[/dim]")
+                return
+
+            self.console.print(f"📊 Found [bold]{len(config.servers)}[/bold] configured server(s):")
+            for name, server in config.servers.items():
+                status = "✅ enabled" if server.enabled else "❌ disabled"
+                if server.command:
+                    self.console.print(
+                        f"  • [bold]{name}[/bold]: {server.command} {' '.join(server.args)} ({status})"
+                    )
+                elif server.url:
+                    self.console.print(f"  • [bold]{name}[/bold]: {server.url} ({status})")
+
+        except Exception as e:
+            self.console.print(f"[red]Error loading MCP configuration: {e}[/red]")
+
+        self.console.print("\n[dim]Use '/mcp list' to see detailed server status[/dim]")
+
+    def _show_mcp_servers(self):
+        """Show list of MCP servers."""
+        from coda.services.tools.mcp_config import load_mcp_config
+
+        try:
+            config = load_mcp_config()
+            if not config.servers:
+                self.console.print("[yellow]No MCP servers configured[/yellow]")
+                return
+
+            self.console.print("📋 [bold]MCP Servers[/bold]")
+            self.console.print()
+
+            for name, server in config.servers.items():
+                status_icon = "✅" if server.enabled else "❌"
+                self.console.print(f"{status_icon} [bold]{name}[/bold]")
+                if server.command:
+                    self.console.print(f"   Command: {server.command} {' '.join(server.args)}")
+                elif server.url:
+                    self.console.print(f"   URL: {server.url}")
+                self.console.print(f"   Enabled: {server.enabled}")
+                if server.env:
+                    self.console.print(f"   Environment: {server.env}")
+                self.console.print()
+
+        except Exception as e:
+            self.console.print(f"[red]Error: {e}[/red]")
+
+    def _show_mcp_status(self, server_name: str):
+        """Show status of specific MCP server."""
+        from coda.services.tools.mcp_config import load_mcp_config
+
+        try:
+            config = load_mcp_config()
+
+            if server_name:
+                if server_name not in config.servers:
+                    self.console.print(f"[red]Server '{server_name}' not found[/red]")
+                    return
+                servers = {server_name: config.servers[server_name]}
+            else:
+                servers = config.servers
+
+            if not servers:
+                self.console.print("[yellow]No servers to show status for[/yellow]")
+                return
+
+            for name, server in servers.items():
+                status = "🟢 Running" if server.enabled else "🔴 Stopped"
+                self.console.print(f"[bold]{name}[/bold]: {status}")
+
+        except Exception as e:
+            self.console.print(f"[red]Error: {e}[/red]")
+
+    def _start_mcp_server(self, server_name: str):
+        """Start an MCP server."""
+        if not server_name:
+            self.console.print("[red]Please specify a server name[/red]")
+            return
+
+        self.console.print(
+            f"[yellow]Starting MCP server '{server_name}' is not yet implemented[/yellow]"
+        )
+
+    def _stop_mcp_server(self, server_name: str):
+        """Stop an MCP server."""
+        if not server_name:
+            self.console.print("[red]Please specify a server name[/red]")
+            return
+
+        self.console.print(
+            f"[yellow]Stopping MCP server '{server_name}' is not yet implemented[/yellow]"
+        )
+
+    def _restart_mcp_server(self, server_name: str):
+        """Restart an MCP server."""
+        if not server_name:
+            self.console.print("[red]Please specify a server name[/red]")
+            return
+
+        self.console.print(
+            f"[yellow]Restarting MCP server '{server_name}' is not yet implemented[/yellow]"
+        )
+
+    def _show_mcp_config(self, config_path: str):
+        """Show MCP configuration."""
+        from pathlib import Path
+
+        try:
+            # Determine which config file to show
+            config_files = [Path.cwd() / "mcp.json", Path.home() / ".config" / "coda" / "mcp.json"]
+
+            config_file = None
+            for cf in config_files:
+                if cf.exists():
+                    config_file = cf
+                    break
+
+            if not config_file:
+                self.console.print("[yellow]No mcp.json file found[/yellow]")
+                return
+
+            self.console.print(f"📄 [bold]MCP Configuration[/bold] ({config_file})")
+            self.console.print()
+
+            with open(config_file) as f:
+                content = f.read()
+                self.console.print(f"[dim]{content}[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]Error reading config: {e}[/red]")

@@ -11,8 +11,8 @@ from typing import Any
 
 from .base import BaseTool, ToolParameter, ToolRegistry, ToolResult, ToolSchema
 from .mcp_config import MCPServerConfig, load_mcp_config
+from .mcp_sdk_client import MCPClient as SDKMCPClient
 from .mcp_server import MCPClient
-from .mcp_stdio_client import StdioMCPClient
 
 logger = logging.getLogger(__name__)
 
@@ -101,20 +101,20 @@ class MCPServerProcess:
 
     def __init__(self, config: MCPServerConfig):
         self.config = config
-        self.client: MCPClient | StdioMCPClient | None = None
+        self.client: MCPClient | SDKMCPClient | None = None
         self.is_subprocess = not bool(config.url)
 
     async def start(self) -> bool:
         """Start the MCP server (subprocess or connect to remote)."""
         try:
             if self.is_subprocess:
-                # Create and start stdio client for subprocess
-                self.client = StdioMCPClient(
+                # Create and start SDK-based client for subprocess
+                self.client = SDKMCPClient(
                     command=self.config.command, args=self.config.args, env=self.config.env
                 )
                 return await self.client.start()
             else:
-                # Connect to remote server
+                # Connect to remote server (keep existing implementation)
                 self.client = MCPClient(self.config.url, self.config.auth_token)
                 await self.client.connect()
                 return True
@@ -138,7 +138,7 @@ class MCPServerProcess:
     async def stop(self):
         """Stop the MCP server."""
         if self.client:
-            if isinstance(self.client, StdioMCPClient):
+            if isinstance(self.client, SDKMCPClient):
                 await self.client.stop()
             else:
                 await self.client.disconnect()
@@ -179,7 +179,9 @@ class MCPManager:
             if tools:
                 await self._register_server_tools(config.name, server_process, tools)
             else:
-                logger.warning(f"MCP server '{config.name}' has no tools")
+                logger.info(
+                    f"MCP server '{config.name}' provided no additional tools (using built-in tools)"
+                )
 
             return True
 

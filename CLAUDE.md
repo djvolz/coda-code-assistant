@@ -114,6 +114,64 @@ coda --version
 - Logs in: `~/.local/share/coda/logs/`
 - All paths follow XDG Base Directory specification
 
+## MCP Server Configuration
+
+Coda supports Model Context Protocol (MCP) servers for extending functionality with external tools. 
+
+### Configuration Files
+MCP servers are configured via `mcp.json` files. Coda searches for configuration in this order:
+1. Current working directory (`./mcp.json`)
+2. Project directory (if specified)  
+3. User config directory (`~/.config/coda/mcp.json`)
+
+### Example Configuration
+```json
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "mcp-serena", "mcp-serena"],
+      "env": {},
+      "enabled": true
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"],
+      "enabled": true
+    },
+    "remote-server": {
+      "url": "http://localhost:8080/mcp",
+      "auth_token": "your-token-here",
+      "enabled": true
+    }
+  }
+}
+```
+
+### Server Types
+- **Subprocess servers**: Use `command` and `args` to launch local MCP servers
+- **Remote servers**: Use `url` to connect to HTTP/WebSocket MCP servers  
+- **Authentication**: Optional `auth_token` for remote servers
+- **Environment**: Custom environment variables via `env` object
+
+### Adding Serena MCP
+To add the Serena MCP server (https://github.com/oraios/serena):
+
+1. Install Serena: `uvx install mcp-serena`
+2. Add to `mcp.json`:
+```json
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx", 
+      "args": ["--from", "mcp-serena", "mcp-serena"],
+      "enabled": true
+    }
+  }
+}
+```
+3. Restart Coda to load the new server
+
 ## Important Notes
 
 - Always use the `uv` package manager (not pip directly)

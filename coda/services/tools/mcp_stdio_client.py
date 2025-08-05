@@ -64,7 +64,7 @@ class StdioMCPClient:
             init_response = await self._send_request(
                 "initialize",
                 {
-                    "protocolVersion": "2024-11-05",  # Use the current MCP version
+                    "protocolVersion": "2024-10-07",  # Use the current MCP version
                     "capabilities": {},
                     "clientInfo": {"name": "Coda MCP Client", "version": "1.0.0"},
                 },
@@ -74,6 +74,9 @@ class StdioMCPClient:
                 logger.error(f"Failed to initialize MCP server: {init_response['error']}")
                 await self.stop()
                 return False
+
+            # Send initialized notification (required by MCP spec)
+            await self._send_notification("initialized")
 
             logger.info(f"MCP server initialized: {init_response.get('result', {})}")
             return True
@@ -108,6 +111,9 @@ class StdioMCPClient:
                         # This might be a notification or error
                         logger.debug(f"Received notification: {response}")
 
+                    # Also log full responses for debugging
+                    logger.debug(f"Received MCP response: {response}")
+
                 except json.JSONDecodeError:
                     logger.warning(f"Invalid JSON from MCP server: {line}")
 
@@ -127,7 +133,8 @@ class StdioMCPClient:
         # Create request
         request_id = self._next_id()
         request = {"jsonrpc": "2.0", "id": request_id, "method": method}
-        if params is not None:
+        # Only add params if they are not None and not empty
+        if params is not None and params:
             request["params"] = params
 
         # Create future for response
@@ -137,6 +144,7 @@ class StdioMCPClient:
         try:
             # Send request
             request_line = json.dumps(request) + "\n"
+            logger.debug(f"Sending MCP request: {request_line.strip()}")
             self.process.stdin.write(request_line.encode())
             await self.process.stdin.drain()
 
@@ -153,8 +161,28 @@ class StdioMCPClient:
             logger.error(f"Error sending request {method}: {e}")
             return {"error": {"code": -32603, "message": str(e)}}
 
+    async def _send_notification(self, method: str, params: dict[str, Any] | None = None):
+        """Send a notification to the MCP server (no response expected)."""
+        if not self.process or not self.process.stdin:
+            raise RuntimeError("MCP server not running")
+
+        # Create notification (no ID for notifications)
+        notification = {"jsonrpc": "2.0", "method": method}
+        if params is not None and params:
+            notification["params"] = params
+
+        try:
+            # Send notification
+            notification_line = json.dumps(notification) + "\n"
+            logger.debug(f"Sending MCP notification: {notification_line.strip()}")
+            self.process.stdin.write(notification_line.encode())
+            await self.process.stdin.drain()
+        except Exception as e:
+            logger.error(f"Error sending notification {method}: {e}")
+
     async def list_tools(self) -> list[dict[str, Any]]:
         """List tools available on the MCP server."""
+        # According to MCP spec, tools/list should not include params if no cursor is needed
         response = await self._send_request("tools/list")
 
         if "result" in response and "tools" in response["result"]:
@@ -162,7 +190,9 @@ class StdioMCPClient:
             logger.info(f"Found {len(self.tools)} tools on MCP server")
             return self.tools
         elif "error" in response:
-            logger.error(f"Error listing tools: {response['error']}")
+            logger.warning(
+                f"MCP server tools unavailable: {response['error'].get('message', 'Unknown error')}"
+            )
             return []
         else:
             logger.error(f"Unexpected response: {response}")
