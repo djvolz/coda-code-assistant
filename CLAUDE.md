@@ -154,23 +154,6 @@ MCP servers are configured via `mcp.json` files. Coda searches for configuration
 - **Authentication**: Optional `auth_token` for remote servers
 - **Environment**: Custom environment variables via `env` object
 
-### Adding Serena MCP
-To add the Serena MCP server (https://github.com/oraios/serena):
-
-1. Install Serena: `uvx install mcp-serena`
-2. Add to `mcp.json`:
-```json
-{
-  "mcpServers": {
-    "serena": {
-      "command": "uvx", 
-      "args": ["--from", "mcp-serena", "mcp-serena"],
-      "enabled": true
-    }
-  }
-}
-```
-3. Restart Coda to load the new server
 
 ## Important Notes
 
@@ -181,6 +164,34 @@ To add the Serena MCP server (https://github.com/oraios/serena):
 - The mock provider is essential for testing - use it for predictable test scenarios
 - Tree-sitter grammars are automatically downloaded as needed for code search
 - When adding new features or documentation, also create corresponding wiki-style documentation in `docs/wiki-staging/`
+
+## Change Verification
+
+**CRITICAL**: All code changes must be verified before considering the work complete.
+
+### Minimum Verification
+```bash
+# Always verify changes work by running the CLI help
+uv run coda --help
+```
+
+### Recommended Verification
+```bash
+# Verify CLI starts properly (will show welcome screen)
+uv run coda
+# Press Ctrl+C to exit after seeing the welcome screen
+
+# Test help functionality
+uv run coda --help
+```
+
+### Additional Verification Steps
+- Run relevant tests: `make test` or specific test suites
+- Check code quality: `make quality` (format + lint + typecheck)
+- For new features, test the specific functionality implemented
+- For bug fixes, verify the issue is resolved
+
+**Never mark work as complete without running at least `uv run coda` to ensure the application starts correctly.**
 
 ## Theme Usage Guidelines
 

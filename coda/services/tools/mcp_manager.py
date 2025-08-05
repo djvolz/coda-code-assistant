@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from .base import BaseTool, ToolParameter, ToolRegistry, ToolResult, ToolSchema
+from .clients.remote_client import RemoteMCPClient
+from .clients.subprocess_client import SubprocessMCPClient
 from .mcp_config import MCPServerConfig, load_mcp_config
-from .mcp_sdk_client import MCPClient as SDKMCPClient
-from .mcp_server import MCPClient
+from .mcp_utils import extract_tool_content, format_mcp_error
 
 logger = logging.getLogger(__name__)
 
@@ -73,76 +74,67 @@ class ExternalMCPTool(BaseTool):
                     server=self.server_name,
                 )
 
-            # Extract content from MCP response
-            content = result.get("content", [])
-            if content and isinstance(content, list) and len(content) > 0:
-                text_content = content[0].get("text", "")
-                return ToolResult(
-                    success=True,
-                    result=text_content,
-                    metadata=result.get("metadata", {}),
-                    tool=self._schema.name,
-                    server=self.server_name,
-                )
-
+            # Extract content using utility function
+            text_content = extract_tool_content(result)
             return ToolResult(
-                success=True, result=str(result), tool=self._schema.name, server=self.server_name
+                success=True,
+                result=text_content,
+                metadata=result.get("metadata", {}),
+                tool=self._schema.name,
+                server=self.server_name,
             )
 
         except Exception as e:
-            logger.error(f"Error executing external tool {self._schema.name}: {e}")
+            error_msg = format_mcp_error(e, f"executing external tool {self._schema.name}")
+            logger.error(error_msg)
             return ToolResult(
                 success=False, error=str(e), tool=self._schema.name, server=self.server_name
             )
 
 
 class MCPServerProcess:
-    """Manages an MCP server (either subprocess or remote)."""
+    """Manages an MCP server using Strategy pattern for different client types."""
 
     def __init__(self, config: MCPServerConfig):
         self.config = config
-        self.client: MCPClient | SDKMCPClient | None = None
-        self.is_subprocess = not bool(config.url)
+        self.client = self._create_client()
+
+    def _create_client(self):
+        """Create appropriate client based on configuration."""
+        if self.config.url:
+            # Remote server
+            return RemoteMCPClient(self.config.url, self.config.auth_token)
+        else:
+            # Subprocess server
+            return SubprocessMCPClient(
+                command=self.config.command, args=self.config.args, env=self.config.env
+            )
 
     async def start(self) -> bool:
-        """Start the MCP server (subprocess or connect to remote)."""
+        """Start the MCP server."""
         try:
-            if self.is_subprocess:
-                # Create and start SDK-based client for subprocess
-                self.client = SDKMCPClient(
-                    command=self.config.command, args=self.config.args, env=self.config.env
-                )
-                return await self.client.start()
-            else:
-                # Connect to remote server (keep existing implementation)
-                self.client = MCPClient(self.config.url, self.config.auth_token)
-                await self.client.connect()
-                return True
-
+            return await self.client.start()
         except Exception as e:
-            logger.error(f"Failed to start MCP server '{self.config.name}': {e}")
+            error_msg = format_mcp_error(e, f"starting MCP server '{self.config.name}'")
+            logger.error(error_msg)
             return False
 
     async def list_tools(self) -> list[dict[str, Any]]:
         """List tools from the server."""
-        if self.client:
-            return await self.client.list_tools()
-        return []
+        return await self.client.list_tools()
 
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """Call a tool on the server."""
-        if self.client:
-            return await self.client.call_tool(tool_name, arguments)
-        return {"error": "Server not connected"}
+        return await self.client.call_tool(tool_name, arguments)
 
     async def stop(self):
         """Stop the MCP server."""
-        if self.client:
-            if isinstance(self.client, SDKMCPClient):
-                await self.client.stop()
-            else:
-                await self.client.disconnect()
-            self.client = None
+        await self.client.stop()
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if the server is connected."""
+        return self.client.is_connected
 
 
 class MCPManager:

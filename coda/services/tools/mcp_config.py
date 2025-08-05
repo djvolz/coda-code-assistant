@@ -27,26 +27,49 @@ class MCPServerConfig:
 
     @classmethod
     def from_dict(cls, name: str, data: dict[str, Any]) -> "MCPServerConfig":
-        """Create config from dictionary data."""
+        """Create config from dictionary data with validation."""
         import os
+
+        if not isinstance(data, dict):
+            raise ValueError(f"Server '{name}' configuration must be a dictionary")
+
+        # Validate that we have either command or url
+        command = data.get("command")
+        url = data.get("url")
+
+        if not command and not url:
+            raise ValueError(f"Server '{name}' must specify either 'command' or 'url'")
+
+        if command and url:
+            logger.warning(
+                f"Server '{name}' has both command and url, using command for subprocess"
+            )
 
         # Process args to expand template variables
         args = data.get("args", [])
+        if not isinstance(args, list):
+            raise ValueError(f"Server '{name}' args must be a list")
+
         expanded_args = []
         for arg in args:
             if isinstance(arg, str):
                 # Expand {cwd} to current working directory
                 arg = arg.replace("{cwd}", os.getcwd())
-            expanded_args.append(arg)
+            expanded_args.append(str(arg))  # Ensure all args are strings
+
+        # Validate env is a dict
+        env = data.get("env", {})
+        if not isinstance(env, dict):
+            raise ValueError(f"Server '{name}' env must be a dictionary")
 
         return cls(
             name=name,
-            command=data.get("command"),
+            command=command,
             args=expanded_args,
-            env=data.get("env", {}),
-            url=data.get("url"),
+            env=env,
+            url=url,
             auth_token=data.get("auth_token"),
-            enabled=data.get("enabled", True),
+            enabled=bool(data.get("enabled", True)),
         )
 
 

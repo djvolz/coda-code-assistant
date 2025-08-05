@@ -284,46 +284,33 @@ class CommandRegistry:
         ),
     ]
 
-    # MCP subcommands
-    MCP_SUBCOMMANDS = [
-        CommandDefinition(
-            name="list",
-            description="List configured MCP servers",
-            type=CommandType.SUBCOMMAND,
-            examples=["/mcp list", "/mcp ls"],
-            aliases=["ls"],
-        ),
-        CommandDefinition(
-            name="status",
-            description="Show status of MCP servers",
-            type=CommandType.SUBCOMMAND,
-            examples=["/mcp status", "/mcp status serena"],
-        ),
-        CommandDefinition(
-            name="start",
-            description="Start an MCP server",
-            type=CommandType.SUBCOMMAND,
-            examples=["/mcp start serena", "/mcp start all"],
-        ),
-        CommandDefinition(
-            name="stop",
-            description="Stop an MCP server",
-            type=CommandType.SUBCOMMAND,
-            examples=["/mcp stop serena", "/mcp stop all"],
-        ),
-        CommandDefinition(
-            name="restart",
-            description="Restart an MCP server",
-            type=CommandType.SUBCOMMAND,
-            examples=["/mcp restart serena", "/mcp restart all"],
-        ),
-        CommandDefinition(
-            name="config",
-            description="Show MCP configuration",
-            type=CommandType.SUBCOMMAND,
-            examples=["/mcp config", "/mcp config serena"],
-        ),
-    ]
+    # MCP subcommands - loaded from modular commands
+    @staticmethod
+    def _get_mcp_subcommands():
+        """Get MCP subcommands from modular definition."""
+        try:
+            from .commands.mcp_commands import get_mcp_commands
+
+            return get_mcp_commands()
+        except ImportError:
+            # Fallback to inline definitions if module not available
+            return [
+                CommandDefinition(
+                    name="list",
+                    description="List configured MCP servers",
+                    type=CommandType.SUBCOMMAND,
+                    examples=["/mcp list", "/mcp ls"],
+                    aliases=["ls"],
+                ),
+                CommandDefinition(
+                    name="status",
+                    description="Show status of MCP servers",
+                    type=CommandType.SUBCOMMAND,
+                    examples=["/mcp status", "/mcp status serena"],
+                ),
+            ]
+
+    MCP_SUBCOMMANDS = _get_mcp_subcommands()
 
     # Observability subcommands
     OBSERVABILITY_SUBCOMMANDS = [

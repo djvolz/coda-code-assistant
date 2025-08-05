@@ -5,13 +5,36 @@ This package provides a collection of tools for file operations, shell commands,
 web interactions, Git operations, and diagram rendering, all built on the Model Context Protocol (MCP).
 """
 
-# Import all tool modules to register them
-from . import diagram_tools as _diagram_tools  # noqa: F401
-from . import file_tools as _file_tools  # noqa: F401
-from . import git_tools as _git_tools  # noqa: F401
-from . import intelligence_tools as _intelligence_tools  # noqa: F401
-from . import shell_tools as _shell_tools  # noqa: F401
-from . import web_tools as _web_tools  # noqa: F401
+# Import all tool modules to register them (handle missing dependencies gracefully)
+try:
+    from . import diagram_tools as _diagram_tools  # noqa: F401
+except ImportError:
+    pass  # diagram_renderer dependency not available
+
+try:
+    from . import file_tools as _file_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import git_tools as _git_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import intelligence_tools as _intelligence_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import shell_tools as _shell_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import web_tools as _web_tools  # noqa: F401
+except ImportError:
+    pass
 from .base import (
     BaseTool,
     ToolParameter,
