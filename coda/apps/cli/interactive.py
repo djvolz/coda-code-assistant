@@ -367,6 +367,28 @@ async def _handle_chat_interaction(
                 # Get system prompt from mode
                 system_prompt_for_agent = _get_system_prompt_for_mode(cli.current_mode)
 
+                # Create a wrapper to make Live compatible with status interface
+                class LiveStatusWrapper:
+                    def __init__(self, live_obj, start_time):
+                        self.live = live_obj
+                        self.start_time = start_time
+
+                    def update(self, text):
+                        # Keep the timer format but allow status updates
+                        elapsed = time.time() - self.start_time
+                        self.live.update(
+                            Spinner(
+                                "dots",
+                                text=f"[bold cyan]{thinking_msg}... {elapsed:.1f}s[/bold cyan]",
+                            )
+                        )
+
+                    def stop(self):
+                        # Stop the live display
+                        self.live.stop()
+
+                status_wrapper = LiveStatusWrapper(live, start_time)
+
                 # Create a task to update the timer
                 async def update_timer():
                     while True:
@@ -389,7 +411,7 @@ async def _handle_chat_interaction(
                         temperature,
                         max_tokens,
                         system_prompt_for_agent,
-                        status=live,  # Pass live display to agent handler
+                        status=status_wrapper,  # Pass wrapper that maintains timer
                     )
                 finally:
                     # Cancel timer task
