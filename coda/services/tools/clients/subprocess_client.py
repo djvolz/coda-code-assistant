@@ -37,11 +37,13 @@ class SubprocessMCPClient(BaseMCPClient):
             return []
         return await self._sdk_client.list_tools()
 
-    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Call a tool on the subprocess server."""
+    async def call_tool(
+        self, tool_name: str, arguments: dict[str, Any], timeout: float = 30.0
+    ) -> dict[str, Any]:
+        """Call a tool on the subprocess server with timeout."""
         if not self._sdk_client:
             return {"error": "Client not initialized"}
-        return await self._sdk_client.call_tool(tool_name, arguments)
+        return await self._sdk_client.call_tool(tool_name, arguments, timeout=timeout)
 
     async def stop(self):
         """Stop the subprocess server."""

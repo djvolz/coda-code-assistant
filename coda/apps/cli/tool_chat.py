@@ -2,10 +2,14 @@
 
 import asyncio
 import json
+import time
 
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
+from rich.spinner import Spinner
 from rich.syntax import Syntax
+from rich.text import Text
 
 from coda.base.providers.base import Message, Role, Tool
 from coda.services.tools.executor import ToolExecutor
@@ -109,7 +113,9 @@ class ToolChatHandler:
         self.console.print(f"\n[{self.theme.dim}]Executing tools...[/{self.theme.dim}]")
 
         for tool_call in response.tool_calls:
-            # Show tool execution
+            # Show tool execution with timer
+            start_time = time.time()
+
             self.console.print(
                 f"\n[{self.theme.info}]→ Running tool:[/{self.theme.info}] {tool_call.name}"
             )
@@ -124,8 +130,34 @@ class ToolChatHandler:
                     )
                 )
 
-            # Execute the tool
-            result = await self.executor.execute_tool_call(tool_call)
+            # Execute the tool with timer display
+            with Live(
+                Text(""), console=self.console, refresh_per_second=10, transient=True
+            ) as live:
+                # Start async execution
+                async def execute_with_timer(tc=tool_call):
+                    nonlocal result
+                    result = await self.executor.execute_tool_call(tc)
+
+                result = None
+                task = asyncio.create_task(execute_with_timer())
+
+                # Update timer while waiting
+                while not task.done():
+                    elapsed = time.time() - start_time
+                    spinner = Spinner(
+                        "dots",
+                        text=f"[{self.theme.dim}]Executing... {elapsed:.1f}s[/{self.theme.dim}]",
+                    )
+                    live.update(spinner)
+                    await asyncio.sleep(0.1)
+
+                # Get the result
+                await task
+                elapsed = time.time() - start_time
+
+            # Show execution time
+            self.console.print(f"[{self.theme.dim}]Completed in {elapsed:.1f}s[/{self.theme.dim}]")
 
             # Show result
             if result.is_error:

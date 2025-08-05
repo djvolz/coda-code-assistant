@@ -37,11 +37,13 @@ class RemoteMCPClient(BaseMCPClient):
             return []
         return await self._remote_client.list_tools()
 
-    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Call a tool on the remote server."""
+    async def call_tool(
+        self, tool_name: str, arguments: dict[str, Any], timeout: float = 30.0
+    ) -> dict[str, Any]:
+        """Call a tool on the remote server with timeout."""
         if not self._remote_client:
             return {"error": "Client not connected"}
-        return await self._remote_client.call_tool(tool_name, arguments)
+        return await self._remote_client.call_tool(tool_name, arguments, timeout=timeout)
 
     async def stop(self):
         """Disconnect from the remote server."""

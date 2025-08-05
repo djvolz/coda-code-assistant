@@ -5,6 +5,7 @@ This replaces the custom StdioMCPClient with a proper implementation
 using the official MCP SDK for better reliability and maintainability.
 """
 
+import asyncio
 import logging
 import os
 from contextlib import AsyncExitStack
@@ -86,13 +87,24 @@ class MCPClient:
             logger.warning(f"MCP server tools unavailable: {e}")
             return []
 
-    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Call a tool on the MCP server."""
+    async def call_tool(
+        self, tool_name: str, arguments: dict[str, Any], timeout: float = 30.0
+    ) -> dict[str, Any]:
+        """Call a tool on the MCP server with timeout.
+
+        Args:
+            tool_name: Name of the tool to call
+            arguments: Tool arguments
+            timeout: Maximum time to wait for response (default: 30 seconds)
+        """
         if not self.session:
             return {"error": "MCP session not initialized"}
 
         try:
-            result = await self.session.call_tool(tool_name, arguments)
+            # Use asyncio.wait_for to add timeout
+            result = await asyncio.wait_for(
+                self.session.call_tool(tool_name, arguments), timeout=timeout
+            )
 
             # Convert result to our expected format
             response = {"content": []}
@@ -115,6 +127,9 @@ class MCPClient:
 
             return response
 
+        except TimeoutError:
+            logger.error(f"Tool {tool_name} execution timed out after {timeout} seconds")
+            return {"error": f"Tool execution timed out after {timeout} seconds"}
         except Exception as e:
             logger.error(f"Error calling tool {tool_name}: {e}")
             return {"error": str(e)}

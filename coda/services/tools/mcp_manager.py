@@ -6,6 +6,7 @@ and manages their lifecycle (starting, stopping, connecting).
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -61,9 +62,14 @@ class ExternalMCPTool(BaseTool):
         return self._schema
 
     async def execute(self, arguments: dict[str, Any]) -> ToolResult:
-        """Execute the external tool via MCP."""
+        """Execute the external tool via MCP with configurable timeout."""
+        # Get timeout from environment or use default
+        timeout = float(os.environ.get("MCP_TOOL_TIMEOUT", "30.0"))
+
         try:
-            result = await self.server_process.call_tool(self.tool_info["name"], arguments)
+            result = await self.server_process.call_tool(
+                self.tool_info["name"], arguments, timeout=timeout
+            )
 
             # Handle MCP response format
             if "error" in result:
@@ -123,9 +129,11 @@ class MCPServerProcess:
         """List tools from the server."""
         return await self.client.list_tools()
 
-    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Call a tool on the server."""
-        return await self.client.call_tool(tool_name, arguments)
+    async def call_tool(
+        self, tool_name: str, arguments: dict[str, Any], timeout: float = 30.0
+    ) -> dict[str, Any]:
+        """Call a tool on the server with timeout."""
+        return await self.client.call_tool(tool_name, arguments, timeout=timeout)
 
     async def stop(self):
         """Stop the MCP server."""

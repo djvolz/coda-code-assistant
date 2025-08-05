@@ -2,11 +2,14 @@
 
 import asyncio
 import sys
+import time
 from typing import TYPE_CHECKING
 
 import click
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
+from rich.spinner import Spinner
 
 if TYPE_CHECKING:
     from ..providers import ProviderFactory
@@ -350,27 +353,51 @@ async def _handle_chat_interaction(
         max_tokens = config.get("max_tokens", 2000)
 
         if use_tools:
-            # Use agent-based chat
-            with console.status(
-                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
-            ) as status:
+            # Use agent-based chat with timer
+            start_time = time.time()
+
+            with Live(
+                Spinner("dots", text=f"[bold cyan]{thinking_msg}... 0.0s[/bold cyan]"),
+                console=console,
+                refresh_per_second=10,
+                transient=True,
+            ) as live:
                 agent_handler = AgentChatHandler(provider_instance, cli, console)
 
                 # Get system prompt from mode
                 system_prompt_for_agent = _get_system_prompt_for_mode(cli.current_mode)
 
-                # Don't stop status - pass it to agent handler to keep it running
-                # status.stop()  # Removed to keep spinner running
+                # Create a task to update the timer
+                async def update_timer():
+                    while True:
+                        elapsed = time.time() - start_time
+                        live.update(
+                            Spinner(
+                                "dots",
+                                text=f"[bold cyan]{thinking_msg}... {elapsed:.1f}s[/bold cyan]",
+                            )
+                        )
+                        await asyncio.sleep(0.1)
 
-                # Execute with agent (pass status to keep indicator running)
-                full_response, updated_messages = await agent_handler.chat_with_agent(
-                    messages.copy(),  # Pass a copy to avoid modifying original
-                    cli.current_model,
-                    temperature,
-                    max_tokens,
-                    system_prompt_for_agent,
-                    status=status,  # Pass status to agent handler
-                )
+                timer_task = asyncio.create_task(update_timer())
+
+                try:
+                    # Execute with agent
+                    full_response, updated_messages = await agent_handler.chat_with_agent(
+                        messages.copy(),  # Pass a copy to avoid modifying original
+                        cli.current_model,
+                        temperature,
+                        max_tokens,
+                        system_prompt_for_agent,
+                        status=live,  # Pass live display to agent handler
+                    )
+                finally:
+                    # Cancel timer task
+                    timer_task.cancel()
+                    try:
+                        await timer_task
+                    except asyncio.CancelledError:
+                        pass
 
                 # Update messages to match what happened
                 messages.clear()
@@ -406,37 +433,70 @@ async def _handle_chat_interaction(
                         metadata=metadata,
                     )
         else:
-            # Use regular streaming
-            with console.status(
-                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
-            ) as status:
-                stream = provider_instance.chat_stream(
-                    messages=chat_messages,
-                    model=cli.current_model,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
+            # Use regular streaming with timer
+            start_time = time.time()
 
-                # Get first chunk to stop spinner
-                for chunk in stream:
-                    if first_chunk:
-                        # Stop the spinner when we get the first chunk
-                        status.stop()
-                        # Just print the assistant label
-                        console.print(
-                            f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end=""
+            with Live(
+                Spinner("dots", text=f"[bold cyan]{thinking_msg}... 0.0s[/bold cyan]"),
+                console=console,
+                refresh_per_second=10,
+                transient=True,
+            ) as live:
+                # Create timer update task
+                async def update_timer():
+                    while True:
+                        elapsed = time.time() - start_time
+                        live.update(
+                            Spinner(
+                                "dots",
+                                text=f"[bold cyan]{thinking_msg}... {elapsed:.1f}s[/bold cyan]",
+                            )
                         )
-                        first_chunk = False
+                        await asyncio.sleep(0.1)
 
-                    # Check for interrupt
-                    if cli.interrupt_event.is_set():
-                        interrupted = True
-                        console.print("\n\n[yellow]Response interrupted by user[/yellow]")
-                        break
+                timer_task = asyncio.create_task(update_timer())
 
-                    # Stream the response as plain text
-                    console.print(chunk.content, end="")
-                    full_response += chunk.content
+                try:
+                    stream = provider_instance.chat_stream(
+                        messages=chat_messages,
+                        model=cli.current_model,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                    )
+
+                    # Get first chunk to stop spinner
+                    for chunk in stream:
+                        if first_chunk:
+                            # Stop the timer and live display when we get the first chunk
+                            timer_task.cancel()
+                            try:
+                                await timer_task
+                            except asyncio.CancelledError:
+                                pass
+                            live.stop()
+                            # Just print the assistant label
+                            console.print(
+                                f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end=""
+                            )
+                            first_chunk = False
+
+                        # Check for interrupt
+                        if cli.interrupt_event.is_set():
+                            interrupted = True
+                            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                            break
+
+                        # Stream the response as plain text
+                        console.print(chunk.content, end="")
+                        full_response += chunk.content
+                finally:
+                    # Ensure timer is cancelled if we exit early
+                    if not timer_task.done():
+                        timer_task.cancel()
+                        try:
+                            await timer_task
+                        except asyncio.CancelledError:
+                            pass
 
             # Add newline after streaming
             if full_response:
