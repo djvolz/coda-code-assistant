@@ -3,6 +3,16 @@ MCP server manager that discovers and manages external MCP servers from configur
 
 This module integrates with mcp_config to discover servers from mcp.json files
 and manages their lifecycle (starting, stopping, connecting).
+
+CLIENT STRATEGY:
+The system supports multiple MCP client types using the Strategy pattern:
+- SubprocessMCPClient: For local MCP servers using stdio communication
+- RemoteMCPClient: For servers accessible via HTTP/WebSocket
+- Both clients implement BaseMCPClient interface for consistent behavior
+
+Client selection is automatic based on server configuration:
+- If 'url' is specified → RemoteMCPClient (network communication)
+- If 'command' is specified → SubprocessMCPClient (subprocess stdio)
 """
 
 import logging
@@ -106,12 +116,20 @@ class MCPServerProcess:
         self.client = self._create_client()
 
     def _create_client(self):
-        """Create appropriate client based on configuration."""
+        """Create appropriate MCP client based on server configuration.
+
+        Uses the Strategy pattern to select client implementation:
+        - RemoteMCPClient for servers with 'url' (HTTP/WebSocket communication)
+        - SubprocessMCPClient for servers with 'command' (stdio communication)
+
+        Both client types implement the same BaseMCPClient interface,
+        ensuring consistent behavior regardless of connection type.
+        """
         if self.config.url:
-            # Remote server
+            # Remote server - use HTTP/WebSocket client
             return RemoteMCPClient(self.config.url, self.config.auth_token)
         else:
-            # Subprocess server
+            # Local subprocess server - use stdio client
             return SubprocessMCPClient(
                 command=self.config.command, args=self.config.args, env=self.config.env
             )
