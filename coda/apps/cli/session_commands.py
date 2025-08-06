@@ -52,7 +52,7 @@ class SessionCommands:
         self.current_session_id: str | None = None
         self.current_messages: list[dict[str, Any]] = []
         self.auto_save_enabled: bool = True  # Auto-save by default
-        self._has_user_message: bool = False  # Track if we have a user message
+        self._has_user_message: bool = False  # Track if we have a user message  # Suppress output messages  # Track if we have a user message
 
     def handle_session_command(self, args: list[str]) -> str | None:
         """Handle /session command and subcommands.
@@ -833,11 +833,13 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
                     )
 
                 # Notify user about auto-save (subtly)
-                self.console.print(f"[dim]💾 Auto-saved session: {auto_name}[/dim]")
+                if not self.theme.quiet:
+                    self.console.print(f"[dim]💾 Auto-saved session: {auto_name}[/dim]")
 
             except Exception as e:
                 # Don't fail the conversation if auto-save fails
-                self.console.print(f"[dim yellow]⚠️  Auto-save failed: {str(e)}[/dim yellow]")
+                if not self.theme.quiet:
+                    self.console.print(f"[dim yellow]⚠️  Auto-save failed: {str(e)}[/dim yellow]")
 
         # If we have an active session, save to database
         elif self.current_session_id:

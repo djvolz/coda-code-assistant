@@ -306,7 +306,7 @@ class CommandRegistry:
                     name="status",
                     description="Show status of MCP servers",
                     type=CommandType.SUBCOMMAND,
-                    examples=["/mcp status", "/mcp status serena"],
+                    examples=["/mcp status", "/mcp status sequential-thinking"],
                 ),
             ]
 

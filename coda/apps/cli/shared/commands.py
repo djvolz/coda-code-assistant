@@ -205,7 +205,7 @@ class CommandHandler(ABC):
             else:
                 self.console.print(
                     f"[{self.console_theme.warning}]Provider switching not supported in current mode. "
-                    "Please restart with --provider option.[/yellow]"
+                    f"Please restart with --provider option.[/{self.console_theme.warning}]"
                 )
 
         return CommandResult.HANDLED
@@ -648,9 +648,17 @@ class CommandHandler(ABC):
         """Show MCP configuration."""
         from pathlib import Path
 
+        from coda.base.config import ConfigManager
+
         try:
-            # Determine which config file to show
-            config_files = [Path.cwd() / "mcp.json", Path.home() / ".config" / "coda" / "mcp.json"]
+            # Use base config module organization structure
+            config_manager = ConfigManager(app_name="coda")
+
+            # Get MCP config and determine which file was used
+            config_manager.get_mcp_config()
+
+            # Search for the actual config file that exists (same logic as ConfigManager)
+            config_files = [Path.cwd() / "mcp.json", config_manager.get_config_dir() / "mcp.json"]
 
             config_file = None
             for cf in config_files:

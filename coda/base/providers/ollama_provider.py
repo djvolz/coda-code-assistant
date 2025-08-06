@@ -38,6 +38,12 @@ class OllamaProvider(BaseProvider):
         """Provider name."""
         return "ollama"
 
+    def supports_tool_calling(self, model_name: str) -> bool:
+        """Check if the model supports tool calling."""
+        # Ollama has limited tool calling support - only certain models support it
+        compatible_models = ["llama3.1", "llama3.2", "qwen2.5", "mistral", "hermes"]
+        return any(model in model_name.lower() for model in compatible_models)
+
     def _convert_messages(self, messages: list[Message]) -> list[dict]:
         """Convert our Message objects to Ollama format."""
         from .utils import convert_messages_basic
@@ -70,7 +76,7 @@ class OllamaProvider(BaseProvider):
             context_length=context_length,
             max_tokens=4096,  # Ollama models typically support 4k output
             supports_streaming=True,
-            supports_functions=False,  # Ollama doesn't natively support functions
+            supports_functions=self.supports_tool_calling(model_name),
             metadata={
                 "parameter_size": parameter_size,
                 "family": details.get("family", ""),
@@ -94,6 +100,13 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Send chat completion request to Ollama."""
         try:
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
+
             # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
             is_gpt_oss = model.startswith("gpt-oss")
 
@@ -278,6 +291,13 @@ class OllamaProvider(BaseProvider):
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response from Ollama."""
         try:
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
+
             # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
             is_gpt_oss = model.startswith("gpt-oss")
 
@@ -485,6 +505,13 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Async chat completion via Ollama."""
         try:
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
+
             # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
             is_gpt_oss = model.startswith("gpt-oss")
 
@@ -669,6 +696,13 @@ class OllamaProvider(BaseProvider):
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Async stream chat completion via Ollama."""
         try:
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
+
             # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
             is_gpt_oss = model.startswith("gpt-oss")
 

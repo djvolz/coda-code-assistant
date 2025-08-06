@@ -7,7 +7,6 @@ import time
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
-from rich.spinner import Spinner
 from rich.syntax import Syntax
 from rich.text import Text
 
@@ -142,15 +141,18 @@ class ToolChatHandler:
                 result = None
                 task = asyncio.create_task(execute_with_timer())
 
-                # Update timer while waiting
-                while not task.done():
-                    elapsed = time.time() - start_time
-                    spinner = Spinner(
-                        "dots",
-                        text=f"[{self.theme.dim}]Executing... {elapsed:.1f}s[/{self.theme.dim}]",
-                    )
-                    live.update(spinner)
-                    await asyncio.sleep(0.1)
+                # Use centralized timer utility
+                from coda.apps.cli.utils import async_timer_display
+
+                await async_timer_display(
+                    live,
+                    task,
+                    start_time,
+                    "Executing",
+                    theme_dim=self.theme.dim,
+                    use_dim_style=True,
+                    min_display_time=0.0,  # No minimum display time for tool execution
+                )
 
                 # Get the result
                 await task

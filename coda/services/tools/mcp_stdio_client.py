@@ -1,6 +1,11 @@
 """
 MCP client that communicates with servers via stdio (stdin/stdout).
 
+This client complements the MCPSDKClient. The system supports both approaches:
+- StdioMCPClient: For subprocess-based MCP servers using stdio communication
+- MCPSDKClient: For servers supporting the MCP SDK protocol
+- Both are maintained and selected based on server configuration
+
 This is the standard way MCP servers communicate, using JSON-RPC over stdio.
 """
 

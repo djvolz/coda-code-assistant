@@ -88,6 +88,10 @@ class ThemeManager:
 
         console_theme = self.get_console_theme()
 
+        # If quiet mode is enabled, return a console that suppresses output
+        if console_theme.quiet:
+            return self._create_quiet_console()
+
         # Build Rich theme from our console theme colors
         style_dict = {
             "info": console_theme.info,
@@ -103,6 +107,32 @@ class ThemeManager:
 
         rich_theme = RichTheme(style_dict)
         return Console(theme=rich_theme)
+
+    def _create_quiet_console(self) -> "Console":
+        """Create a console that suppresses all output for quiet mode."""
+        import io
+
+        from rich.console import Console
+
+        # Create a console that writes to a null stream
+        return Console(file=io.StringIO(), stderr=False)
+
+    def set_quiet_mode(self, quiet: bool = True) -> None:
+        """Enable or disable quiet mode.
+
+        Args:
+            quiet: Whether to enable quiet mode
+        """
+        # Modify current theme to enable/disable quiet
+        current_console = self.get_console_theme()
+        current_console.quiet = quiet
+
+        # Reset cached theme so changes take effect
+        self._current_theme = None
+
+    def is_quiet(self) -> bool:
+        """Check if quiet mode is enabled."""
+        return self.get_console_theme().quiet
 
     def list_themes(self) -> dict[str, str]:
         """List available themes with descriptions.

@@ -44,6 +44,9 @@ class ConsoleTheme:
     command: str = "cyan"
     command_description: str = ""
 
+    # Output control
+    quiet: bool = False
+
     def to_style_dict(self) -> dict[str, str]:
         """Convert theme to style dictionary for terminal libraries."""
         return {

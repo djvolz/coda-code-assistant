@@ -2,14 +2,11 @@
 
 import asyncio
 import sys
-import time
 from typing import TYPE_CHECKING
 
 import click
 from rich.console import Console
-from rich.live import Live
 from rich.panel import Panel
-from rich.spinner import Spinner
 
 if TYPE_CHECKING:
     from ..providers import ProviderFactory
@@ -90,6 +87,7 @@ async def _initialize_provider(factory: "ProviderFactory", provider: str, consol
 
     # Create provider instance
     provider_instance = factory.create(provider)
+
     console.print(f"[{theme.success}]✓ Connected to {provider}[/{theme.success}]")
 
     return provider_instance
@@ -345,7 +343,6 @@ async def _handle_chat_interaction(
 
     full_response = ""
     interrupted = False
-    first_chunk = True
 
     try:
         # Get generation parameters from config or defaults
@@ -357,184 +354,134 @@ async def _handle_chat_interaction(
         max_tokens = config.get("max_tokens", 2000)
 
         if use_tools:
-            # Use agent-based chat with timer
-            start_time = time.time()
+            # Use agent-based chat with simple animation
+            agent_handler = AgentChatHandler(provider_instance, cli, console)
 
-            with Live(
-                Spinner(
-                    "dots",
-                    text=f"[{theme.info} {theme.bold}]{thinking_msg}... 0.0s[/{theme.info} {theme.bold}]",
-                ),
+            # Get system prompt from mode
+            system_prompt_for_agent = _get_system_prompt_for_mode(cli.current_mode)
+
+            # Create agent execution task
+            async def execute_agent():
+                return await agent_handler.chat_with_agent(
+                    messages.copy(),  # Pass a copy to avoid modifying original
+                    cli.current_model,
+                    temperature,
+                    max_tokens,
+                    system_prompt_for_agent,
+                    status=None,  # No status wrapper needed with simple animation
+                )
+
+            agent_task = asyncio.create_task(execute_agent())
+
+            # Use simple thinking animation
+            from coda.apps.cli.utils import simple_thinking_animation
+
+            await simple_thinking_animation(
+                task=agent_task,
                 console=console,
-                refresh_per_second=10,
-                transient=True,
-            ) as live:
-                agent_handler = AgentChatHandler(provider_instance, cli, console)
+                message=thinking_msg,
+                theme_info=theme.info,
+                theme_bold=theme.bold,
+                min_display_time=0.8,
+            )
 
-                # Get system prompt from mode
-                system_prompt_for_agent = _get_system_prompt_for_mode(cli.current_mode)
+            # Get the agent result
+            full_response, updated_messages = await agent_task
 
-                # Create a wrapper to make Live compatible with status interface
-                class LiveStatusWrapper:
-                    def __init__(self, live_obj, start_time):
-                        self.live = live_obj
-                        self.start_time = start_time
+            # Display the agent response
+            console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] {full_response}")
 
-                    def update(self, text):
-                        # Keep the timer format but allow status updates
-                        elapsed = time.time() - self.start_time
-                        self.live.update(
-                            Spinner(
-                                "dots",
-                                text=f"[{theme.info} {theme.bold}]{thinking_msg}... {elapsed:.1f}s[/{theme.info} {theme.bold}]",
-                            )
-                        )
+            # Update messages to match what happened
+            messages.clear()
+            messages.extend(updated_messages)
 
-                    def stop(self):
-                        # Stop the live display
-                        self.live.stop()
+            # Save all messages from the agent interaction to session
+            from coda.base.session.tool_storage import format_tool_calls_for_storage
 
-                status_wrapper = LiveStatusWrapper(live, start_time)
+            # Find and save new messages (after the user message which was already saved)
+            # Skip the first message (user) since it was already saved above
+            for msg in updated_messages[1:]:
+                tool_calls_data = None
+                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                    tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
 
-                # Create a task to update the timer
-                async def update_timer():
-                    while True:
-                        elapsed = time.time() - start_time
-                        live.update(
-                            Spinner(
-                                "dots",
-                                text=f"[{theme.info} {theme.bold}]{thinking_msg}... {elapsed:.1f}s[/{theme.info} {theme.bold}]",
-                            )
-                        )
-                        await asyncio.sleep(0.1)
+                metadata = {
+                    "mode": cli.current_mode.value,
+                    "provider": (
+                        provider_instance.name if hasattr(provider_instance, "name") else "unknown"
+                    ),
+                    "model": cli.current_model,
+                    "tool_call_id": getattr(msg, "tool_call_id", None),
+                }
+                # Add tool_calls to metadata if present
+                if tool_calls_data:
+                    metadata["tool_calls"] = tool_calls_data
 
-                timer_task = asyncio.create_task(update_timer())
-
-                try:
-                    # Execute with agent
-                    full_response, updated_messages = await agent_handler.chat_with_agent(
-                        messages.copy(),  # Pass a copy to avoid modifying original
-                        cli.current_model,
-                        temperature,
-                        max_tokens,
-                        system_prompt_for_agent,
-                        status=status_wrapper,  # Pass wrapper that maintains timer
-                    )
-                finally:
-                    # Cancel timer task
-                    timer_task.cancel()
-                    try:
-                        await timer_task
-                    except asyncio.CancelledError:
-                        pass
-
-                # Update messages to match what happened
-                messages.clear()
-                messages.extend(updated_messages)
-
-                # Save all messages from the agent interaction to session
-                from coda.base.session.tool_storage import format_tool_calls_for_storage
-
-                # Find and save new messages (after the user message which was already saved)
-                # Skip the first message (user) since it was already saved above
-                for msg in updated_messages[1:]:
-                    tool_calls_data = None
-                    if hasattr(msg, "tool_calls") and msg.tool_calls:
-                        tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
-
-                    metadata = {
-                        "mode": cli.current_mode.value,
-                        "provider": (
-                            provider_instance.name
-                            if hasattr(provider_instance, "name")
-                            else "unknown"
-                        ),
-                        "model": cli.current_model,
-                        "tool_call_id": getattr(msg, "tool_call_id", None),
-                    }
-                    # Add tool_calls to metadata if present
-                    if tool_calls_data:
-                        metadata["tool_calls"] = tool_calls_data
-
-                    cli.session_commands.add_message(
-                        role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
-                        content=msg.content,
-                        metadata=metadata,
-                    )
+                cli.session_commands.add_message(
+                    role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
+                    content=msg.content,
+                    metadata=metadata,
+                )
         else:
-            # Use regular streaming with timer
-            start_time = time.time()
+            # Use regular streaming with simple animation
+            # Create streaming task
+            async def stream_with_first_chunk():
+                # Use async streaming to avoid blocking the event loop
+                stream = provider_instance.achat_stream(
+                    messages=chat_messages,
+                    model=cli.current_model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
 
-            with Live(
-                Spinner(
-                    "dots",
-                    text=f"[{theme.info} {theme.bold}]{thinking_msg}... 0.0s[/{theme.info} {theme.bold}]",
-                ),
+                # Get first chunk
+                first_chunk = None
+                async for chunk in stream:
+                    first_chunk = chunk
+                    break  # Get only the first chunk
+
+                return first_chunk, stream  # Return first chunk and the rest of the stream
+
+            streaming_task = asyncio.create_task(stream_with_first_chunk())
+
+            # Use simple thinking animation
+            from coda.apps.cli.utils import simple_thinking_animation
+
+            await simple_thinking_animation(
+                task=streaming_task,
                 console=console,
-                refresh_per_second=10,
-                transient=True,
-            ) as live:
-                # Create timer update task
-                async def update_timer():
-                    while True:
-                        elapsed = time.time() - start_time
-                        live.update(
-                            Spinner(
-                                "dots",
-                                text=f"[{theme.info} {theme.bold}]{thinking_msg}... {elapsed:.1f}s[/{theme.info} {theme.bold}]",
-                            )
+                message=thinking_msg,
+                theme_info=theme.info,
+                theme_bold=theme.bold,
+                min_display_time=0.8,
+            )
+
+            # Get the first chunk result
+            first_chunk_result, stream = await streaming_task
+            console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end="")
+
+            # Continue processing the stream
+            if first_chunk_result:
+                # Process first chunk
+                console.print(first_chunk_result.content, end="")
+                full_response += first_chunk_result.content
+
+                # Process remaining chunks
+                for chunk in stream:
+                    # Check for interrupt
+                    if cli.interrupt_event.is_set():
+                        interrupted = True
+                        console.print(
+                            f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]"
                         )
-                        await asyncio.sleep(0.1)
+                        break
 
-                timer_task = asyncio.create_task(update_timer())
-
-                try:
-                    stream = provider_instance.chat_stream(
-                        messages=chat_messages,
-                        model=cli.current_model,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                    )
-
-                    # Get first chunk to stop spinner
-                    for chunk in stream:
-                        if first_chunk:
-                            # Stop the timer and live display when we get the first chunk
-                            timer_task.cancel()
-                            try:
-                                await timer_task
-                            except asyncio.CancelledError:
-                                pass
-                            live.stop()
-                            # Just print the assistant label
-                            console.print(
-                                f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end=""
-                            )
-                            first_chunk = False
-
-                        # Check for interrupt
-                        if cli.interrupt_event.is_set():
-                            interrupted = True
-                            console.print(
-                                f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]"
-                            )
-                            break
-
-                        # Stream the response as plain text
-                        console.print(chunk.content, end="")
-                        full_response += chunk.content
-                finally:
-                    # Ensure timer is cancelled if we exit early
-                    if not timer_task.done():
-                        timer_task.cancel()
-                        try:
-                            await timer_task
-                        except asyncio.CancelledError:
-                            pass
-
+                    # Stream the response as plain text
+                    console.print(chunk.content, end="")
+                    full_response += chunk.content
             # Add newline after streaming
             if full_response:
-                console.print()  # Ensure we end on a new line
+                console.print()
     except (ConnectionError, TimeoutError) as e:
         console.print(f"\n\n[{theme.error}]Network error during streaming: {e}[/{theme.error}]")
         return True  # Continue loop
@@ -669,10 +616,15 @@ async def run_one_shot(
     provider: str, model: str, prompt: str, mode: str, debug: bool, no_save: bool
 ):
     """Run a single prompt and exit."""
+    import asyncio
+
     from coda.base.providers import Message, Role
     from coda.services.config import get_config_service
 
     config = get_config_service()
+
+    # Check if quiet mode is enabled via theme
+    is_quiet = config.theme_manager.is_quiet()
 
     # Setup provider and models using common function
     provider_instance, unique_models, model = await _setup_provider_and_models(
@@ -694,34 +646,113 @@ async def run_one_shot(
             messages.append(Message(role=Role.SYSTEM, content=system_prompt))
         messages.append(Message(role=Role.USER, content=prompt))
 
-        # Get response
+        # Show user prompt (will be suppressed if quiet mode is enabled)
         console.print(f"\n[{theme.user_message} bold]You:[/{theme.user_message} bold] {prompt}")
 
-        # Use appropriate handler based on tool support
+        # Get response with spinner/timer (unless quiet)
         if developer_mode != DeveloperMode.GENERAL:
             # Use agent for tool-enabled models in non-general modes
             from .agent_chat import AgentChatHandler
 
             agent_handler = AgentChatHandler(provider_instance, None, console)
-            response_content, _ = await agent_handler.chat_with_agent(
-                [Message(role=Role.USER, content=prompt)],
-                model,
-                temperature=config.get("temperature", 0.7),
-                max_tokens=config.get("max_tokens", 2000),
-                system_prompt=system_prompt,
-            )
+
+            if is_quiet:
+                # No UI elements in quiet mode
+                response_content, _ = await agent_handler.chat_with_agent(
+                    [Message(role=Role.USER, content=prompt)],
+                    model,
+                    temperature=config.get("temperature", 0.7),
+                    max_tokens=config.get("max_tokens", 2000),
+                    system_prompt=system_prompt,
+                )
+            else:
+                # Use simple thinking animation for agent chat
+                async def agent_task():
+                    return await agent_handler.chat_with_agent(
+                        [Message(role=Role.USER, content=prompt)],
+                        model,
+                        temperature=config.get("temperature", 0.7),
+                        max_tokens=config.get("max_tokens", 2000),
+                        system_prompt=system_prompt,
+                    )
+
+                task = asyncio.create_task(agent_task())
+
+                # Use simple thinking animation
+                from coda.apps.cli.utils import simple_thinking_animation
+
+                await simple_thinking_animation(
+                    task=task,
+                    console=console,
+                    message="Thinking",
+                    theme_info=theme.info,
+                    theme_bold=theme.bold,
+                    min_display_time=0.8,
+                )
+
+                response_content, _ = await task
         else:
             # Use simple chat without tools
-            response = provider_instance.chat(
-                messages=messages,
-                model=model,
-                temperature=config.get("temperature", 0.7),
-                max_tokens=config.get("max_tokens", 2000),
-            )
-            response_content = response.content
+            if is_quiet:
+                # No UI elements in quiet mode - use async method if available
+                if hasattr(provider_instance, "achat"):
+                    response = await provider_instance.achat(
+                        messages=messages,
+                        model=model,
+                        temperature=config.get("temperature", 0.7),
+                        max_tokens=config.get("max_tokens", 2000),
+                    )
+                else:
+                    response = provider_instance.chat(
+                        messages=messages,
+                        model=model,
+                        temperature=config.get("temperature", 0.7),
+                        max_tokens=config.get("max_tokens", 2000),
+                    )
+                response_content = response.content
+            else:
+                # Use simple thinking animation without Rich Live complexity
+                async def chat_task():
+                    if hasattr(provider_instance, "achat"):
+                        return await provider_instance.achat(
+                            messages=messages,
+                            model=model,
+                            temperature=config.get("temperature", 0.7),
+                            max_tokens=config.get("max_tokens", 2000),
+                        )
+                    else:
+                        # Fallback to sync method in thread
+                        return await asyncio.to_thread(
+                            provider_instance.chat,
+                            messages=messages,
+                            model=model,
+                            temperature=config.get("temperature", 0.7),
+                            max_tokens=config.get("max_tokens", 2000),
+                        )
+
+                task = asyncio.create_task(chat_task())
+
+                # Use simple thinking animation
+                from coda.apps.cli.utils import simple_thinking_animation
+
+                await simple_thinking_animation(
+                    task=task,
+                    console=console,
+                    message="Thinking",
+                    theme_info=theme.info,
+                    theme_bold=theme.bold,
+                    min_display_time=0.8,
+                )
+
+                response = await task
+                response_content = response.content
 
         # Display response
-        console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] {response_content}")
+        if is_quiet:
+            # In quiet mode, only output the raw response to stdout
+            print(response_content)
+        else:
+            console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] {response_content}")
 
         # Save to session if auto-save is enabled
         if not no_save:
@@ -753,7 +784,13 @@ async def run_one_shot(
             )
 
     except Exception as e:
-        _handle_provider_error(e, provider, debug)
+        if is_quiet:
+            import sys
+
+            sys.stderr.write(f"Error: {str(e)}\n")
+            sys.exit(1)
+        else:
+            _handle_provider_error(e, provider, debug)
 
 
 @click.command()
