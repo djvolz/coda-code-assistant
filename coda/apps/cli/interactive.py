@@ -47,29 +47,29 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
         from rich.panel import Panel
 
         if auto_save_enabled:
-            notification = """[info][bold]Welcome to Coda![/]
+            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.info}][/{theme.bold}]
 
-[warning]Auto-Save is ENABLED[/] 💾
+[{theme.warning}]Auto-Save is ENABLED[/{theme.warning}] 💾
 
 Your conversations will be automatically saved when you start chatting.
 This helps you resume conversations and search through history.
 
-[dim]To disable auto-save:[/]
-• Use [info]--no-save[/] flag when starting Coda
-• Set [info]autosave = false[/] in ~/.config/coda/config.toml
-• Delete sessions with [info]/session delete-all[/]
+[{theme.dim}]To disable auto-save:[/{theme.dim}]
+• Use [{theme.info}]--no-save[/{theme.info}] flag when starting Coda
+• Set [{theme.info}]autosave = false[/{theme.info}] in ~/.config/coda/config.toml
+• Delete sessions with [{theme.info}]/session delete-all[/{theme.info}]
 
-[dim]Your privacy matters - sessions are stored locally only.[/]"""
+[{theme.dim}]Your privacy matters - sessions are stored locally only.[/{theme.dim}]"""
         else:
-            notification = """[info][bold]Welcome to Coda![/]
+            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.info}][/{theme.bold}]
 
-[warning]Auto-Save is DISABLED[/] 🔒
+[{theme.warning}]Auto-Save is DISABLED[/{theme.warning}] 🔒
 
 Your conversations will NOT be saved automatically.
 
-[dim]To enable auto-save for future sessions:[/]
-• Remove [info]--no-save[/] flag when starting Coda
-• Set [info]autosave = true[/] in ~/.config/coda/config.toml"""
+[{theme.dim}]To enable auto-save for future sessions:[/{theme.dim}]
+• Remove [{theme.info}]--no-save[/{theme.info}] flag when starting Coda
+• Set [{theme.info}]autosave = true[/{theme.info}] in ~/.config/coda/config.toml"""
 
         console.print("\n")
         console.print(Panel(notification, title="First Run", border_style=theme.panel_border))
@@ -85,12 +85,12 @@ Your conversations will NOT be saved automatically.
 
 async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
     """Initialize and connect to the provider."""
-    console.print(f"\n[green]Provider:[/green] {provider}")
-    console.print(f"[yellow]Initializing {provider}...[/yellow]")
+    console.print(f"\n[{theme.success}]Provider:[/{theme.success}] {provider}")
+    console.print(f"[{theme.warning}]Initializing {provider}...[/{theme.warning}]")
 
     # Create provider instance
     provider_instance = factory.create(provider)
-    console.print(f"[green]✓ Connected to {provider}[/green]")
+    console.print(f"[{theme.success}]✓ Connected to {provider}[/{theme.success}]")
 
     return provider_instance
 
@@ -100,7 +100,7 @@ async def _get_chat_models(provider_instance, console: Console):
     # List models
     try:
         models = provider_instance.list_models()
-        console.print(f"[green]✓ Found {len(models)} available models[/green]")
+        console.print(f"[{theme.success}]✓ Found {len(models)} available models[/{theme.success}]")
     except Exception:
         # Re-raise the exception to be handled by the caller
         raise
@@ -139,15 +139,17 @@ async def _select_model(unique_models, model: str, console: Console):
         model = await selector.select_interactive()
 
         if not model:
-            console.print("\n[yellow]No model selected. Exiting.[/yellow]")
+            console.print(f"\n[{theme.warning}]No model selected. Exiting.[/{theme.warning}]")
             return None
 
     console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
 
-    console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
-    console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
-    console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
-    console.print("[dim]Press Ctrl+R to search command history[/dim]\n")
+    console.print(f"[{theme.dim}]Found {len(unique_models)} unique models available[/{theme.dim}]")
+    console.print(f"\n[{theme.dim}]Type /help for commands, /exit or Ctrl+D to quit[/{theme.dim}]")
+    console.print(
+        f"[{theme.dim}]Press Ctrl+C to clear input or interrupt AI response[/{theme.dim}]"
+    )
+    console.print(f"[{theme.dim}]Press Ctrl+R to search command history[/{theme.dim}]\n")
 
     return model
 
@@ -185,14 +187,14 @@ async def _setup_provider_and_models(
             if not model:
                 if unique_models:
                     model = unique_models[0].id
-                    console.print(f"[dim]No model specified, using: {model}[/dim]")
+                    console.print(f"[{theme.dim}]No model specified, using: {model}[/{theme.dim}]")
                 else:
-                    console.print("[red]No models available[/red]")
+                    console.print(f"[{theme.error}]No models available[/{theme.error}]")
                     return None, None, None
 
             # Validate model exists
             if not any(m.id == model for m in unique_models):
-                console.print(f"[red]Model not found: {model}[/red]")
+                console.print(f"[{theme.error}]Model not found: {model}[/{theme.error}]")
                 console.print(f"Available models: {', '.join(m.id for m in unique_models[:5])}")
                 return None, None, None
 
@@ -218,23 +220,25 @@ def _handle_provider_error(e: Exception, provider: str, debug: bool, factory=Non
     import traceback
 
     if "compartment_id is required" in str(e):
-        console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+        console.print(f"\n[{theme.error}]Error:[/{theme.error}] OCI compartment ID not configured")
         console.print("\nPlease set it via one of these methods:")
         console.print(
-            "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+            f"1. Environment variable: [{theme.info}]export OCI_COMPARTMENT_ID='your-compartment-id'[/{theme.info}]"
         )
-        console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+        console.print(
+            f"2. Coda config file: [{theme.info}]~/.config/coda/config.toml[/{theme.info}]"
+        )
     elif "Unknown provider" in str(e):
-        console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
+        console.print(f"\n[{theme.error}]Error:[/{theme.error}] Provider '{provider}' not found")
         if factory:
             console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
     else:
         error_msg = str(e)
         if "OCI GenAI authorization failed" in error_msg:
             # Show the formatted error message from the provider
-            console.print(f"\n[red]Error:[/red] {error_msg}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {error_msg}")
         else:
-            console.print(f"\n[red]Error:[/red] {e}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
 
     if debug:
         traceback.print_exc()
@@ -252,10 +256,10 @@ async def _handle_chat_interaction(
     try:
         user_input = await cli.get_input()
     except (KeyboardInterrupt, EOFError) as e:
-        console.print(f"[red]Input interrupted: {e}[/red]")
+        console.print(f"[{theme.error}]Input interrupted: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception as e:
-        console.print(f"[red]Unexpected error getting input: {e}[/red]")
+        console.print(f"[{theme.error}]Unexpected error getting input: {e}[/{theme.error}]")
         return True  # Continue loop
 
     # Skip empty input (from Ctrl+C)
@@ -273,20 +277,20 @@ async def _handle_chat_interaction(
                     messages.clear()
                     messages.extend(loaded_messages)
                     console.print(
-                        f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]"
+                        f"[{theme.dim}]Restored {len(loaded_messages)} messages to conversation history[/{theme.dim}]"
                     )
 
                 # Check if conversation was cleared
                 if cli.session_commands.was_conversation_cleared():
                     messages.clear()
-                    console.print("[dim]Cleared conversation history[/dim]")
+                    console.print(f"[{theme.dim}]Cleared conversation history[/{theme.dim}]")
 
                 return True
         except (ValueError, AttributeError) as e:
-            console.print(f"[red]Invalid command: {e}[/red]")
+            console.print(f"[{theme.error}]Invalid command: {e}[/{theme.error}]")
             return True
         except Exception as e:
-            console.print(f"[red]Error processing command: {e}[/red]")
+            console.print(f"[{theme.error}]Error processing command: {e}[/{theme.error}]")
             return True
 
     # Check for multiline indicator
@@ -505,7 +509,9 @@ async def _handle_chat_interaction(
                         # Check for interrupt
                         if cli.interrupt_event.is_set():
                             interrupted = True
-                            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                            console.print(
+                                f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]"
+                            )
                             break
 
                         # Stream the response as plain text
@@ -524,12 +530,12 @@ async def _handle_chat_interaction(
             if full_response:
                 console.print()  # Ensure we end on a new line
     except (ConnectionError, TimeoutError) as e:
-        console.print(f"\n\n[red]Network error during streaming: {e}[/red]")
+        console.print(f"\n\n[{theme.error}]Network error during streaming: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception:
         if cli.interrupt_event.is_set():
             interrupted = True
-            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+            console.print(f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]")
         else:
             raise
     finally:
@@ -583,13 +589,13 @@ async def run_interactive_session(
 
     # Load last session if requested
     if resume:
-        console.print("\n[cyan]Resuming last session...[/cyan]")
+        console.print(f"\n[{theme.info}]Resuming last session...[/{theme.info}]")
         result = cli.session_commands._load_last_session()
         if result:  # Error message
-            console.print(f"[yellow]{result}[/yellow]")
+            console.print(f"[{theme.warning}]{result}[/{theme.warning}]")
         else:
             # Successfully loaded, show a separator
-            console.print("\n[dim]─" * 50 + "[/dim]\n")
+            console.print(f"\n[{theme.dim}]─" * 50 + f"[/{theme.dim}]\n")
 
     # Setup provider and models using common function
     provider_instance, unique_models, model = await _setup_provider_and_models(
@@ -640,7 +646,7 @@ async def run_interactive_session(
         pass
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully - just exit cleanly
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)
     except Exception as e:
         _handle_provider_error(e, provider, debug)
@@ -781,5 +787,5 @@ if __name__ == "__main__":
         interactive_main()
     except KeyboardInterrupt:
         # Handle Ctrl+C at the top level
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)

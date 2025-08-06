@@ -61,10 +61,16 @@ class CommandHandler(ABC):
         """Switch to a different developer mode."""
         if not mode_str:
             # Show current mode and available modes
-            self.console.print(f"\n[yellow]Current mode:[/yellow] {self.current_mode.value}")
-            self.console.print(f"[dim]{get_mode_description(self.current_mode)}[/dim]\n")
+            self.console.print(
+                f"\n[{self.console_theme.warning}]Current mode:[/{self.console_theme.warning}] {self.current_mode.value}"
+            )
+            self.console.print(
+                f"[{self.console_theme.dim}]{get_mode_description(self.current_mode)}[/{self.console_theme.dim}]\n"
+            )
 
-            self.console.print("[bold]Available modes:[/bold]")
+            self.console.print(
+                f"[{self.console_theme.bold}]Available modes:[/{self.console_theme.bold}]"
+            )
             for mode in DeveloperMode:
                 if mode == self.current_mode:
                     self.console.print(
@@ -72,10 +78,12 @@ class CommandHandler(ABC):
                     )
                 else:
                     self.console.print(
-                        f"  [cyan]{mode.value}[/cyan] - {get_mode_description(mode)}"
+                        f"  [{self.console_theme.info}]{mode.value}[/{self.console_theme.info}] - {get_mode_description(mode)}"
                     )
 
-            self.console.print("\n[dim]Usage: /mode <mode_name>[/dim]")
+            self.console.print(
+                f"\n[{self.console_theme.dim}]Usage: /mode <mode_name>[/{self.console_theme.dim}]"
+            )
             return CommandResult.HANDLED
 
         try:
@@ -83,7 +91,9 @@ class CommandHandler(ABC):
             self.console.print(
                 f"[{self.console_theme.success}]Switched to {self.current_mode.value} mode[/{self.console_theme.success}]"
             )
-            self.console.print(f"[dim]{get_mode_description(self.current_mode)}[/dim]")
+            self.console.print(
+                f"[{self.console_theme.dim}]{get_mode_description(self.current_mode)}[/{self.console_theme.dim}]"
+            )
             return CommandResult.HANDLED
         except ValueError:
             self.console.print(
@@ -117,9 +127,13 @@ class CommandHandler(ABC):
                 )
 
             if len(self.available_models) > 10:
-                self.console.print(f"  [dim]... and {len(self.available_models) - 10} more[/dim]")
+                self.console.print(
+                    f"  [{self.console_theme.dim}]... and {len(self.available_models) - 10} more[/{self.console_theme.dim}]"
+                )
 
-            self.console.print("\n[dim]Usage: /model <model_name>[/dim]")
+            self.console.print(
+                f"\n[{self.console_theme.dim}]Usage: /model <model_name>[/{self.console_theme.dim}]"
+            )
             return CommandResult.HANDLED
 
         # Try to switch to the specified model
@@ -140,10 +154,16 @@ class CommandHandler(ABC):
     def show_provider_info(self, args: str) -> CommandResult:
         """Show provider information."""
         if not args:
-            self.console.print("\n[bold]Provider Management[/bold]")
-            self.console.print(f"[yellow]Current provider:[/yellow] {self.provider_name}\n")
+            self.console.print(
+                f"\n[{self.console_theme.bold}]Provider Management[/{self.console_theme.bold}]"
+            )
+            self.console.print(
+                f"[{self.console_theme.warning}]Current provider:[/{self.console_theme.warning}] {self.provider_name}\n"
+            )
 
-            self.console.print("[bold]Available providers:[/bold]")
+            self.console.print(
+                f"[{self.console_theme.bold}]Available providers:[/{self.console_theme.bold}]"
+            )
 
             # Show all known providers with status
             if self.factory:
@@ -154,7 +174,9 @@ class CommandHandler(ABC):
                             f"  [{self.console_theme.success}]▶ {provider}[/{self.console_theme.success}]"
                         )
                     else:
-                        self.console.print(f"  [cyan]{provider}[/cyan]")
+                        self.console.print(
+                            f"  [{self.console_theme.info}]{provider}[/{self.console_theme.info}]"
+                        )
             else:
                 # Default list when factory is not available
                 providers = [
@@ -168,9 +190,13 @@ class CommandHandler(ABC):
                             f"  [{self.console_theme.success}]▶ {provider_id}[/{self.console_theme.success}] - {desc}"
                         )
                     else:
-                        self.console.print(f"  [cyan]{provider_id}[/cyan] - {desc}")
+                        self.console.print(
+                            f"  [{self.console_theme.info}]{provider_id}[/{self.console_theme.info}] - {desc}"
+                        )
 
-            self.console.print("\n[dim]Note: Provider switching requires restart[/dim]")
+            self.console.print(
+                f"\n[{self.console_theme.dim}]Note: Provider switching requires restart[/{self.console_theme.dim}]"
+            )
         else:
             if self.provider_name and args.lower() == self.provider_name.lower():
                 self.console.print(
@@ -178,7 +204,7 @@ class CommandHandler(ABC):
                 )
             else:
                 self.console.print(
-                    "[yellow]Provider switching not supported in current mode. "
+                    f"[{self.console_theme.warning}]Provider switching not supported in current mode. "
                     "Please restart with --provider option.[/yellow]"
                 )
 
@@ -241,22 +267,44 @@ class CommandHandler(ABC):
 
         stats = get_tool_stats()
 
-        self.console.print("\n[bold]🔧 Coda Tools System[/bold]")
-        self.console.print(f"Total tools: [cyan]{stats['total_tools']}[/cyan]")
-        self.console.print(f"Categories: [cyan]{stats['categories']}[/cyan]")
+        self.console.print(
+            f"\n[{self.console_theme.bold}]🔧 Coda Tools System[/{self.console_theme.bold}]"
+        )
+        self.console.print(
+            f"Total tools: [{self.console_theme.info}]{stats['total_tools']}[/{self.console_theme.info}]"
+        )
+        self.console.print(
+            f"Categories: [{self.console_theme.info}]{stats['categories']}[/{self.console_theme.info}]"
+        )
         if stats["dangerous_tools"] > 0:
-            self.console.print(f"Dangerous tools: [yellow]{stats['dangerous_tools']}[/yellow]")
-
-        self.console.print("\n[bold]Available commands:[/bold]")
-        self.console.print("  [cyan]/tools list[/cyan]       - List all available tools")
-        self.console.print("  [cyan]/tools list <category>[/cyan] - List tools in a category")
-        self.console.print("  [cyan]/tools info <tool>[/cyan]    - Show detailed tool information")
-        self.console.print("  [cyan]/tools categories[/cyan]     - Show all tool categories")
-        self.console.print("  [cyan]/tools stats[/cyan]          - Show tool statistics")
-        self.console.print("  [cyan]/tools help[/cyan]           - Show detailed help")
+            self.console.print(
+                f"Dangerous tools: [{self.console_theme.warning}]{stats['dangerous_tools']}[/{self.console_theme.warning}]"
+            )
 
         self.console.print(
-            "\n[dim]Use AI to call tools in conversation (tools currently read-only)[/dim]"
+            f"\n[{self.console_theme.bold}]Available commands:[/{self.console_theme.bold}]"
+        )
+        self.console.print(
+            f"  [{self.console_theme.info}]/tools list[/{self.console_theme.info}]       - List all available tools"
+        )
+        self.console.print(
+            f"  [{self.console_theme.info}]/tools list <category>[/{self.console_theme.info}] - List tools in a category"
+        )
+        self.console.print(
+            f"  [{self.console_theme.info}]/tools info <tool>[/{self.console_theme.info}]    - Show detailed tool information"
+        )
+        self.console.print(
+            f"  [{self.console_theme.info}]/tools categories[/{self.console_theme.info}]     - Show all tool categories"
+        )
+        self.console.print(
+            f"  [{self.console_theme.info}]/tools stats[/{self.console_theme.info}]          - Show tool statistics"
+        )
+        self.console.print(
+            f"  [{self.console_theme.info}]/tools help[/{self.console_theme.info}]           - Show detailed help"
+        )
+
+        self.console.print(
+            f"\n[{self.console_theme.dim}]Use AI to call tools in conversation (tools currently read-only)[/{self.console_theme.dim}]"
         )
 
     def _show_tools_list(self, category: str = None):
@@ -274,10 +322,14 @@ class CommandHandler(ABC):
                 self.console.print(f"Available categories: {', '.join(available_categories)}")
                 return
 
-            self.console.print(f"\n[bold]Tools in '{category}' category:[/bold]")
+            self.console.print(
+                f"\n[{self.console_theme.bold}]Tools in '{category}' category:[/{self.console_theme.bold}]"
+            )
             for tool in tools:
                 danger_indicator = " ⚠️" if tool.dangerous else ""
-                self.console.print(f"  [cyan]{tool.name}[/cyan]{danger_indicator}")
+                self.console.print(
+                    f"  [{self.console_theme.info}]{tool.name}[/{self.console_theme.info}]{danger_indicator}"
+                )
                 self.console.print(f"    {tool.description}")
         else:
             # List all tools grouped by category
@@ -285,15 +337,19 @@ class CommandHandler(ABC):
 
             tools_by_cat = list_tools_by_category()
 
-            self.console.print("\n[bold]Available Tools by Category:[/bold]")
+            self.console.print(
+                f"\n[{self.console_theme.bold}]Available Tools by Category:[/{self.console_theme.bold}]"
+            )
             for cat, tool_names in tools_by_cat.items():
-                self.console.print(f"\n[yellow]{cat.title()}:[/yellow]")
+                self.console.print(
+                    f"\n[{self.console_theme.warning}]{cat.title()}:[/{self.console_theme.warning}]"
+                )
                 for tool_name in tool_names:
                     tool_info = get_tool_info(tool_name)
                     if tool_info:
                         danger_indicator = " ⚠️" if tool_info.get("dangerous", False) else ""
                         self.console.print(
-                            f"  [cyan]{tool_name}[/cyan]{danger_indicator} - {tool_info['description']}"
+                            f"  [{self.console_theme.info}]{tool_name}[/{self.console_theme.info}]{danger_indicator} - {tool_info['description']}"
                         )
 
     def _show_tool_info(self, tool_name: str):
@@ -314,17 +370,27 @@ class CommandHandler(ABC):
             )
             return
 
-        self.console.print(f"\n[bold]Tool: {tool_info['name']}[/bold]")
-        self.console.print(f"Category: [cyan]{tool_info['category']}[/cyan]")
-        self.console.print(f"Server: [cyan]{tool_info['server']}[/cyan]")
+        self.console.print(
+            f"\n[{self.console_theme.bold}]Tool: {tool_info['name']}[/{self.console_theme.bold}]"
+        )
+        self.console.print(
+            f"Category: [{self.console_theme.info}]{tool_info['category']}[/{self.console_theme.info}]"
+        )
+        self.console.print(
+            f"Server: [{self.console_theme.info}]{tool_info['server']}[/{self.console_theme.info}]"
+        )
         if tool_info["dangerous"]:
-            self.console.print("⚠️  [yellow]This tool requires special permissions[/yellow]")
+            self.console.print(
+                f"⚠️  [{self.console_theme.warning}]This tool requires special permissions[/{self.console_theme.warning}]"
+            )
 
-        self.console.print("\n[bold]Description:[/bold]")
+        self.console.print(f"\n[{self.console_theme.bold}]Description:[/{self.console_theme.bold}]")
         self.console.print(f"  {tool_info['description']}")
 
         if tool_info["parameters"]:
-            self.console.print("\n[bold]Parameters:[/bold]")
+            self.console.print(
+                f"\n[{self.console_theme.bold}]Parameters:[/{self.console_theme.bold}]"
+            )
             for param_name, param_info in tool_info["parameters"].items():
                 required_str = " (required)" if param_info["required"] else " (optional)"
                 default_str = (
@@ -334,11 +400,13 @@ class CommandHandler(ABC):
                 )
 
                 self.console.print(
-                    f"  [cyan]{param_name}[/cyan] ({param_info['type']}){required_str}{default_str}"
+                    f"  [{self.console_theme.info}]{param_name}[/{self.console_theme.info}] ({param_info['type']}){required_str}{default_str}"
                 )
                 self.console.print(f"    {param_info['description']}")
         else:
-            self.console.print("\n[dim]No parameters required[/dim]")
+            self.console.print(
+                f"\n[{self.console_theme.dim}]No parameters required[/{self.console_theme.dim}]"
+            )
 
     def _show_tool_categories(self):
         """Show all tool categories."""
@@ -347,10 +415,14 @@ class CommandHandler(ABC):
         categories = get_tool_categories()
         tools_by_cat = list_tools_by_category()
 
-        self.console.print("\n[bold]Tool Categories:[/bold]")
+        self.console.print(
+            f"\n[{self.console_theme.bold}]Tool Categories:[/{self.console_theme.bold}]"
+        )
         for category in sorted(categories):
             tool_count = len(tools_by_cat.get(category, []))
-            self.console.print(f"  [cyan]{category}[/cyan] ({tool_count} tools)")
+            self.console.print(
+                f"  [{self.console_theme.info}]{category}[/{self.console_theme.info}] ({tool_count} tools)"
+            )
 
     def _show_tool_stats(self):
         """Show tool statistics."""
@@ -358,19 +430,35 @@ class CommandHandler(ABC):
 
         stats = get_tool_stats()
 
-        self.console.print("\n[bold]Tool System Statistics:[/bold]")
-        self.console.print(f"Total tools: [cyan]{stats['total_tools']}[/cyan]")
-        self.console.print(f"Categories: [cyan]{stats['categories']}[/cyan]")
-        self.console.print(f"Dangerous tools: [yellow]{stats['dangerous_tools']}[/yellow]")
+        self.console.print(
+            f"\n[{self.console_theme.bold}]Tool System Statistics:[/{self.console_theme.bold}]"
+        )
+        self.console.print(
+            f"Total tools: [{self.console_theme.info}]{stats['total_tools']}[/{self.console_theme.info}]"
+        )
+        self.console.print(
+            f"Categories: [{self.console_theme.info}]{stats['categories']}[/{self.console_theme.info}]"
+        )
+        self.console.print(
+            f"Dangerous tools: [{self.console_theme.warning}]{stats['dangerous_tools']}[/{self.console_theme.warning}]"
+        )
 
-        self.console.print("\n[bold]Tools by category:[/bold]")
+        self.console.print(
+            f"\n[{self.console_theme.bold}]Tools by category:[/{self.console_theme.bold}]"
+        )
         for category, count in stats["tools_by_category"].items():
-            self.console.print(f"  [cyan]{category}[/cyan]: {count}")
+            self.console.print(
+                f"  [{self.console_theme.info}]{category}[/{self.console_theme.info}]: {count}"
+            )
 
         if stats["dangerous_tool_names"]:
-            self.console.print("\n[bold]Dangerous tools:[/bold]")
+            self.console.print(
+                f"\n[{self.console_theme.bold}]Dangerous tools:[/{self.console_theme.bold}]"
+            )
             for tool_name in stats["dangerous_tool_names"]:
-                self.console.print(f"  [yellow]{tool_name}[/yellow] ⚠️")
+                self.console.print(
+                    f"  [{self.console_theme.warning}]{tool_name}[/{self.console_theme.warning}] ⚠️"
+                )
 
     def handle_mcp_command(self, args: str) -> CommandResult:
         """Handle MCP server management commands."""
