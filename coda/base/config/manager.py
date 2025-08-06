@@ -7,9 +7,12 @@ It has zero external dependencies and uses only Python standard library.
 import json
 import os
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from .models import ConfigFormat, ConfigPath, ConfigSource, LayeredConfig
+
+if TYPE_CHECKING:
+    from .models import MCPConfig
 
 # Type variable for generic return types
 T = TypeVar("T")
@@ -474,6 +477,99 @@ class ConfigManager:
                 raise ImportError("PyYAML is required for saving YAML files") from None
         else:
             raise ValueError(f"Unsupported format for saving: {format}")
+
+    def get_mcp_config(self, project_dir: Path | None = None) -> "MCPConfig":
+        """
+        Load MCP configuration from mcp.json files.
+
+        Searches for mcp.json in the following order:
+        1. Current working directory
+        2. Project directory (if provided)
+        3. User config directory
+
+        Args:
+            project_dir: Optional project directory to search
+
+        Returns:
+            MCPConfig object with loaded server configurations
+        """
+        import logging
+
+        from .models import MCPConfig, MCPServerConfig
+
+        logger = logging.getLogger(__name__)
+
+        # Build config paths for MCP files
+        config_paths = []
+
+        # Current working directory
+        config_paths.append(Path.cwd() / "mcp.json")
+
+        # Project directory
+        if project_dir:
+            config_paths.append(project_dir / "mcp.json")
+
+        # User config directory
+        user_config_path = self.get_config_dir() / "mcp.json"
+        config_paths.append(user_config_path)
+
+        # Load first available config file
+        for config_path in config_paths:
+            if config_path.exists():
+                try:
+                    with open(config_path) as f:
+                        data = json.load(f)
+
+                    logger.info(f"Loaded MCP config from {config_path}")
+
+                    # Parse servers
+                    servers = {}
+                    for server_name, server_data in data.get("mcpServers", {}).items():
+                        # Validate that we have either command or url
+                        command = server_data.get("command")
+                        url = server_data.get("url")
+
+                        if not command and not url:
+                            raise ValueError(
+                                f"Server '{server_name}' must specify either 'command' or 'url'"
+                            )
+
+                        # Process args to expand template variables
+                        args = server_data.get("args", [])
+                        if not isinstance(args, list):
+                            raise ValueError(f"Server '{server_name}' args must be a list")
+
+                        expanded_args = []
+                        for arg in args:
+                            if isinstance(arg, str):
+                                # Expand {cwd} to current working directory
+                                arg = arg.replace("{cwd}", str(Path.cwd()))
+                            expanded_args.append(str(arg))
+
+                        # Validate env is a dict
+                        env = server_data.get("env", {})
+                        if not isinstance(env, dict):
+                            raise ValueError(f"Server '{server_name}' env must be a dictionary")
+
+                        servers[server_name] = MCPServerConfig(
+                            name=server_name,
+                            command=command,
+                            args=expanded_args,
+                            env=env,
+                            url=url,
+                            auth_token=server_data.get("auth_token"),
+                            enabled=bool(server_data.get("enabled", True)),
+                        )
+
+                    return MCPConfig(servers=servers)
+
+                except Exception as e:
+                    logger.error(f"Error loading MCP config from {config_path}: {e}")
+                    continue
+
+        # Return empty config if no files found
+        logger.info("No MCP configuration files found, using empty config")
+        return MCPConfig()
 
 
 # Convenience class with simpler API

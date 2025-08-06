@@ -182,3 +182,23 @@ class DatabaseConfig:
     password: str = ""
     pool_size: int = 10
     echo: bool = False
+
+
+@dataclass
+class MCPServerConfig:
+    """Configuration for an MCP server."""
+
+    name: str
+    command: str | None = None
+    args: list[str] = field(default_factory=list)
+    env: dict[str, str] = field(default_factory=dict)
+    url: str | None = None
+    auth_token: str | None = None
+    enabled: bool = True
+
+
+@dataclass
+class MCPConfig:
+    """Complete MCP configuration containing all servers."""
+
+    servers: dict[str, MCPServerConfig] = field(default_factory=dict)

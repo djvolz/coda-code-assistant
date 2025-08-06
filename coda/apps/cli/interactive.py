@@ -361,7 +361,10 @@ async def _handle_chat_interaction(
             start_time = time.time()
 
             with Live(
-                Spinner("dots", text=f"[bold cyan]{thinking_msg}... 0.0s[/bold cyan]"),
+                Spinner(
+                    "dots",
+                    text=f"[{theme.info} {theme.bold}]{thinking_msg}... 0.0s[/{theme.info} {theme.bold}]",
+                ),
                 console=console,
                 refresh_per_second=10,
                 transient=True,
@@ -383,7 +386,7 @@ async def _handle_chat_interaction(
                         self.live.update(
                             Spinner(
                                 "dots",
-                                text=f"[bold cyan]{thinking_msg}... {elapsed:.1f}s[/bold cyan]",
+                                text=f"[{theme.info} {theme.bold}]{thinking_msg}... {elapsed:.1f}s[/{theme.info} {theme.bold}]",
                             )
                         )
 
@@ -400,7 +403,7 @@ async def _handle_chat_interaction(
                         live.update(
                             Spinner(
                                 "dots",
-                                text=f"[bold cyan]{thinking_msg}... {elapsed:.1f}s[/bold cyan]",
+                                text=f"[{theme.info} {theme.bold}]{thinking_msg}... {elapsed:.1f}s[/{theme.info} {theme.bold}]",
                             )
                         )
                         await asyncio.sleep(0.1)
@@ -463,7 +466,10 @@ async def _handle_chat_interaction(
             start_time = time.time()
 
             with Live(
-                Spinner("dots", text=f"[bold cyan]{thinking_msg}... 0.0s[/bold cyan]"),
+                Spinner(
+                    "dots",
+                    text=f"[{theme.info} {theme.bold}]{thinking_msg}... 0.0s[/{theme.info} {theme.bold}]",
+                ),
                 console=console,
                 refresh_per_second=10,
                 transient=True,
@@ -475,7 +481,7 @@ async def _handle_chat_interaction(
                         live.update(
                             Spinner(
                                 "dots",
-                                text=f"[bold cyan]{thinking_msg}... {elapsed:.1f}s[/bold cyan]",
+                                text=f"[{theme.info} {theme.bold}]{thinking_msg}... {elapsed:.1f}s[/{theme.info} {theme.bold}]",
                             )
                         )
                         await asyncio.sleep(0.1)

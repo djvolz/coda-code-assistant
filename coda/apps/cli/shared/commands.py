@@ -494,7 +494,7 @@ class CommandHandler(ABC):
 
     def _show_mcp_overview(self):
         """Show MCP system overview."""
-        from coda.services.tools.mcp_config import load_mcp_config
+        from coda.base.config import ConfigManager
 
         self.console.print(
             f"🔧 [{self.console_theme.bold}]MCP Server Management[/{self.console_theme.bold}]"
@@ -502,7 +502,8 @@ class CommandHandler(ABC):
         self.console.print()
 
         try:
-            config = load_mcp_config()
+            config_manager = ConfigManager(app_name="coda")
+            config = config_manager.get_mcp_config()
             if not config.servers:
                 self.console.print(
                     f"[{self.console_theme.warning}]No MCP servers configured[/{self.console_theme.warning}]"
@@ -537,10 +538,11 @@ class CommandHandler(ABC):
 
     def _show_mcp_servers(self):
         """Show list of MCP servers."""
-        from coda.services.tools.mcp_config import load_mcp_config
+        from coda.base.config import ConfigManager
 
         try:
-            config = load_mcp_config()
+            config_manager = ConfigManager(app_name="coda")
+            config = config_manager.get_mcp_config()
             if not config.servers:
                 self.console.print(
                     f"[{self.console_theme.warning}]No MCP servers configured[/{self.console_theme.warning}]"
@@ -573,10 +575,11 @@ class CommandHandler(ABC):
 
     def _show_mcp_status(self, server_name: str):
         """Show status of specific MCP server."""
-        from coda.services.tools.mcp_config import load_mcp_config
+        from coda.base.config import ConfigManager
 
         try:
-            config = load_mcp_config()
+            config_manager = ConfigManager(app_name="coda")
+            config = config_manager.get_mcp_config()
 
             if server_name:
                 if server_name not in config.servers:
