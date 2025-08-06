@@ -94,68 +94,17 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Send chat completion request to Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
+            is_gpt_oss = model.startswith("gpt-oss")
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make request
-            response = self._client.post(
-                f"{self.host}/api/chat",
-                json=data,
-            )
-            response.raise_for_status()
-
-            # Parse response
-            result = response.json()
-
-            # Extract message content
-            message = result.get("message", {})
-            content = message.get("content", "")
-
-            # Calculate token usage if available
-            usage = None
-            if "prompt_eval_count" in result or "eval_count" in result:
-                usage = {
-                    "prompt_tokens": result.get("prompt_eval_count", 0),
-                    "completion_tokens": result.get("eval_count", 0),
-                    "total_tokens": result.get("prompt_eval_count", 0)
-                    + result.get("eval_count", 0),
-                }
-
-            return ChatCompletion(
-                content=content,
-                model=model,
-                finish_reason="stop",  # Ollama doesn't provide finish reasons
-                usage=usage,
-                metadata={
-                    "total_duration": result.get("total_duration"),
-                    "load_duration": result.get("load_duration"),
-                    "prompt_eval_duration": result.get("prompt_eval_duration"),
-                    "eval_duration": result.get("eval_duration"),
-                },
-            )
+            if is_gpt_oss:
+                return self._chat_openai_compatible(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                )
+            else:
+                return self._chat_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                )
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -165,6 +114,156 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama API error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama error: {str(e)}") from e
+
+    def _chat_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> ChatCompletion:
+        """Send chat completion request using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make request
+        response = self._client.post(
+            f"{self.host}/api/chat",
+            json=data,
+        )
+        response.raise_for_status()
+
+        # Parse response
+        result = response.json()
+
+        # Extract message content
+        message = result.get("message", {})
+        content = message.get("content", "")
+
+        # Calculate token usage if available
+        usage = None
+        if "prompt_eval_count" in result or "eval_count" in result:
+            usage = {
+                "prompt_tokens": result.get("prompt_eval_count", 0),
+                "completion_tokens": result.get("eval_count", 0),
+                "total_tokens": result.get("prompt_eval_count", 0) + result.get("eval_count", 0),
+            }
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason="stop",  # Ollama doesn't provide finish reasons
+            usage=usage,
+            metadata={
+                "total_duration": result.get("total_duration"),
+                "load_duration": result.get("load_duration"),
+                "prompt_eval_duration": result.get("prompt_eval_duration"),
+                "eval_duration": result.get("eval_duration"),
+            },
+        )
+
+    def _chat_openai_compatible(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> ChatCompletion:
+        """Send chat completion request using OpenAI-compatible endpoint for gpt-oss models."""
+        # Convert messages to OpenAI format
+        openai_messages = []
+        for msg in messages:
+            openai_messages.append({"role": msg.role, "content": msg.content})
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": openai_messages,
+            "temperature": temperature,
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["max_tokens"] = max_tokens
+        if top_p is not None:
+            data["top_p"] = top_p
+        if stop:
+            data["stop"] = stop
+
+        # Make request to OpenAI-compatible endpoint
+        response = self._client.post(
+            f"{self.host}/v1/chat/completions",
+            json=data,
+        )
+        response.raise_for_status()
+
+        # Parse OpenAI-compatible response
+        result = response.json()
+
+        # Check for error in response
+        if "error" in result:
+            error_msg = result["error"].get("message", "Unknown error")
+            raise RuntimeError(f"OpenAI-compatible API error: {error_msg}")
+
+        # Extract message content
+        choices = result.get("choices", [])
+        if not choices:
+            raise RuntimeError("No choices in response")
+
+        message = choices[0].get("message", {})
+        content = message.get("content", "")
+        finish_reason = choices[0].get("finish_reason", "stop")
+
+        # Extract usage information
+        usage_data = result.get("usage", {})
+        usage = None
+        if usage_data:
+            usage = {
+                "prompt_tokens": usage_data.get("prompt_tokens", 0),
+                "completion_tokens": usage_data.get("completion_tokens", 0),
+                "total_tokens": usage_data.get("total_tokens", 0),
+            }
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason=finish_reason,
+            usage=usage,
+            metadata={
+                "api_endpoint": "openai_compatible",
+            },
+        )
 
     def chat_stream(
         self,
@@ -179,78 +278,17 @@ class OllamaProvider(BaseProvider):
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response from Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
+            is_gpt_oss = model.startswith("gpt-oss")
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": True,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make streaming request
-            with self._client.stream(
-                "POST",
-                f"{self.host}/api/chat",
-                json=data,
-            ) as response:
-                response.raise_for_status()
-
-                # Process stream
-                for line in response.iter_lines():
-                    if line:
-                        try:
-                            chunk_data = json.loads(line)
-
-                            # Extract message content
-                            message = chunk_data.get("message", {})
-                            content = message.get("content", "")
-
-                            # Check if this is the final chunk
-                            done = chunk_data.get("done", False)
-                            finish_reason = "stop" if done else None
-
-                            # Extract usage from final chunk
-                            usage = None
-                            if done and (
-                                "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
-                            ):
-                                usage = {
-                                    "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
-                                    "completion_tokens": chunk_data.get("eval_count", 0),
-                                    "total_tokens": chunk_data.get("prompt_eval_count", 0)
-                                    + chunk_data.get("eval_count", 0),
-                                }
-
-                            yield ChatCompletionChunk(
-                                content=content,
-                                model=model,
-                                finish_reason=finish_reason,
-                                usage=usage,
-                                metadata={
-                                    "done": done,
-                                },
-                            )
-
-                        except json.JSONDecodeError:
-                            continue
+            if is_gpt_oss:
+                yield from self._chat_stream_openai_compatible(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                )
+            else:
+                yield from self._chat_stream_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                )
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -260,6 +298,179 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama streaming error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama streaming error: {str(e)}") from e
+
+    def _chat_stream_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> Iterator[ChatCompletionChunk]:
+        """Stream chat completion using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": True,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make streaming request
+        with self._client.stream(
+            "POST",
+            f"{self.host}/api/chat",
+            json=data,
+        ) as response:
+            response.raise_for_status()
+
+            # Process stream
+            for line in response.iter_lines():
+                if line:
+                    try:
+                        chunk_data = json.loads(line)
+
+                        # Extract message content
+                        message = chunk_data.get("message", {})
+                        content = message.get("content", "")
+
+                        # Check if this is the final chunk
+                        done = chunk_data.get("done", False)
+                        finish_reason = "stop" if done else None
+
+                        # Extract usage from final chunk
+                        usage = None
+                        if done and (
+                            "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
+                        ):
+                            usage = {
+                                "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
+                                "completion_tokens": chunk_data.get("eval_count", 0),
+                                "total_tokens": chunk_data.get("prompt_eval_count", 0)
+                                + chunk_data.get("eval_count", 0),
+                            }
+
+                        yield ChatCompletionChunk(
+                            content=content,
+                            model=model,
+                            finish_reason=finish_reason,
+                            usage=usage,
+                            metadata={
+                                "done": done,
+                            },
+                        )
+
+                    except json.JSONDecodeError:
+                        continue
+
+    def _chat_stream_openai_compatible(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> Iterator[ChatCompletionChunk]:
+        """Stream chat completion using OpenAI-compatible endpoint for gpt-oss models."""
+        # Convert messages to OpenAI format
+        openai_messages = []
+        for msg in messages:
+            openai_messages.append({"role": msg.role, "content": msg.content})
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": openai_messages,
+            "temperature": temperature,
+            "stream": True,
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["max_tokens"] = max_tokens
+        if top_p is not None:
+            data["top_p"] = top_p
+        if stop:
+            data["stop"] = stop
+
+        # Make streaming request to OpenAI-compatible endpoint
+        with self._client.stream(
+            "POST",
+            f"{self.host}/v1/chat/completions",
+            json=data,
+        ) as response:
+            response.raise_for_status()
+
+            # Process stream
+            for line in response.iter_lines():
+                if line:
+                    # Remove "data: " prefix if present
+                    line_data = line
+                    if line.startswith("data: "):
+                        line_data = line[6:]
+
+                    # Skip [DONE] marker
+                    if line_data.strip() == "[DONE]":
+                        break
+
+                    try:
+                        chunk_data = json.loads(line_data)
+
+                        choices = chunk_data.get("choices", [])
+                        if not choices:
+                            continue
+
+                        choice = choices[0]
+                        delta = choice.get("delta", {})
+                        content = delta.get("content", "")
+                        finish_reason = choice.get("finish_reason")
+
+                        # Extract usage if available (usually in final chunk)
+                        usage_data = chunk_data.get("usage", {})
+                        usage = None
+                        if usage_data:
+                            usage = {
+                                "prompt_tokens": usage_data.get("prompt_tokens", 0),
+                                "completion_tokens": usage_data.get("completion_tokens", 0),
+                                "total_tokens": usage_data.get("total_tokens", 0),
+                            }
+
+                        yield ChatCompletionChunk(
+                            content=content,
+                            model=model,
+                            finish_reason=finish_reason,
+                            usage=usage,
+                            metadata={
+                                "api_endpoint": "openai_compatible",
+                            },
+                        )
+
+                    except json.JSONDecodeError:
+                        continue
 
     async def achat(
         self,
@@ -274,68 +485,17 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Async chat completion via Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
+            is_gpt_oss = model.startswith("gpt-oss")
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make async request
-            response = await self._async_client.post(
-                f"{self.host}/api/chat",
-                json=data,
-            )
-            response.raise_for_status()
-
-            # Parse response
-            result = response.json()
-
-            # Extract message content
-            message = result.get("message", {})
-            content = message.get("content", "")
-
-            # Calculate token usage if available
-            usage = None
-            if "prompt_eval_count" in result or "eval_count" in result:
-                usage = {
-                    "prompt_tokens": result.get("prompt_eval_count", 0),
-                    "completion_tokens": result.get("eval_count", 0),
-                    "total_tokens": result.get("prompt_eval_count", 0)
-                    + result.get("eval_count", 0),
-                }
-
-            return ChatCompletion(
-                content=content,
-                model=model,
-                finish_reason="stop",
-                usage=usage,
-                metadata={
-                    "total_duration": result.get("total_duration"),
-                    "load_duration": result.get("load_duration"),
-                    "prompt_eval_duration": result.get("prompt_eval_duration"),
-                    "eval_duration": result.get("eval_duration"),
-                },
-            )
+            if is_gpt_oss:
+                return await self._achat_openai_compatible(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                )
+            else:
+                return await self._achat_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                )
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -345,6 +505,156 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama async error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async error: {str(e)}") from e
+
+    async def _achat_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> ChatCompletion:
+        """Async chat completion using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make async request
+        response = await self._async_client.post(
+            f"{self.host}/api/chat",
+            json=data,
+        )
+        response.raise_for_status()
+
+        # Parse response
+        result = response.json()
+
+        # Extract message content
+        message = result.get("message", {})
+        content = message.get("content", "")
+
+        # Calculate token usage if available
+        usage = None
+        if "prompt_eval_count" in result or "eval_count" in result:
+            usage = {
+                "prompt_tokens": result.get("prompt_eval_count", 0),
+                "completion_tokens": result.get("eval_count", 0),
+                "total_tokens": result.get("prompt_eval_count", 0) + result.get("eval_count", 0),
+            }
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason="stop",
+            usage=usage,
+            metadata={
+                "total_duration": result.get("total_duration"),
+                "load_duration": result.get("load_duration"),
+                "prompt_eval_duration": result.get("prompt_eval_duration"),
+                "eval_duration": result.get("eval_duration"),
+            },
+        )
+
+    async def _achat_openai_compatible(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> ChatCompletion:
+        """Async chat completion using OpenAI-compatible endpoint for gpt-oss models."""
+        # Convert messages to OpenAI format
+        openai_messages = []
+        for msg in messages:
+            openai_messages.append({"role": msg.role, "content": msg.content})
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": openai_messages,
+            "temperature": temperature,
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["max_tokens"] = max_tokens
+        if top_p is not None:
+            data["top_p"] = top_p
+        if stop:
+            data["stop"] = stop
+
+        # Make async request to OpenAI-compatible endpoint
+        response = await self._async_client.post(
+            f"{self.host}/v1/chat/completions",
+            json=data,
+        )
+        response.raise_for_status()
+
+        # Parse OpenAI-compatible response
+        result = response.json()
+
+        # Check for error in response
+        if "error" in result:
+            error_msg = result["error"].get("message", "Unknown error")
+            raise RuntimeError(f"OpenAI-compatible API error: {error_msg}")
+
+        # Extract message content
+        choices = result.get("choices", [])
+        if not choices:
+            raise RuntimeError("No choices in response")
+
+        message = choices[0].get("message", {})
+        content = message.get("content", "")
+        finish_reason = choices[0].get("finish_reason", "stop")
+
+        # Extract usage information
+        usage_data = result.get("usage", {})
+        usage = None
+        if usage_data:
+            usage = {
+                "prompt_tokens": usage_data.get("prompt_tokens", 0),
+                "completion_tokens": usage_data.get("completion_tokens", 0),
+                "total_tokens": usage_data.get("total_tokens", 0),
+            }
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason=finish_reason,
+            usage=usage,
+            metadata={
+                "api_endpoint": "openai_compatible",
+            },
+        )
 
     async def achat_stream(
         self,
@@ -359,78 +669,19 @@ class OllamaProvider(BaseProvider):
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Async stream chat completion via Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
+            is_gpt_oss = model.startswith("gpt-oss")
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": True,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make async streaming request
-            async with self._async_client.stream(
-                "POST",
-                f"{self.host}/api/chat",
-                json=data,
-            ) as response:
-                response.raise_for_status()
-
-                # Process stream
-                async for line in response.aiter_lines():
-                    if line:
-                        try:
-                            chunk_data = json.loads(line)
-
-                            # Extract message content
-                            message = chunk_data.get("message", {})
-                            content = message.get("content", "")
-
-                            # Check if this is the final chunk
-                            done = chunk_data.get("done", False)
-                            finish_reason = "stop" if done else None
-
-                            # Extract usage from final chunk
-                            usage = None
-                            if done and (
-                                "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
-                            ):
-                                usage = {
-                                    "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
-                                    "completion_tokens": chunk_data.get("eval_count", 0),
-                                    "total_tokens": chunk_data.get("prompt_eval_count", 0)
-                                    + chunk_data.get("eval_count", 0),
-                                }
-
-                            yield ChatCompletionChunk(
-                                content=content,
-                                model=model,
-                                finish_reason=finish_reason,
-                                usage=usage,
-                                metadata={
-                                    "done": done,
-                                },
-                            )
-
-                        except json.JSONDecodeError:
-                            continue
+            if is_gpt_oss:
+                async for chunk in self._achat_stream_openai_compatible(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                ):
+                    yield chunk
+            else:
+                async for chunk in self._achat_stream_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+                ):
+                    yield chunk
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -440,6 +691,179 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama async streaming error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async streaming error: {str(e)}") from e
+
+    async def _achat_stream_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> AsyncIterator[ChatCompletionChunk]:
+        """Async stream chat completion using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": True,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make async streaming request
+        async with self._async_client.stream(
+            "POST",
+            f"{self.host}/api/chat",
+            json=data,
+        ) as response:
+            response.raise_for_status()
+
+            # Process stream
+            async for line in response.aiter_lines():
+                if line:
+                    try:
+                        chunk_data = json.loads(line)
+
+                        # Extract message content
+                        message = chunk_data.get("message", {})
+                        content = message.get("content", "")
+
+                        # Check if this is the final chunk
+                        done = chunk_data.get("done", False)
+                        finish_reason = "stop" if done else None
+
+                        # Extract usage from final chunk
+                        usage = None
+                        if done and (
+                            "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
+                        ):
+                            usage = {
+                                "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
+                                "completion_tokens": chunk_data.get("eval_count", 0),
+                                "total_tokens": chunk_data.get("prompt_eval_count", 0)
+                                + chunk_data.get("eval_count", 0),
+                            }
+
+                        yield ChatCompletionChunk(
+                            content=content,
+                            model=model,
+                            finish_reason=finish_reason,
+                            usage=usage,
+                            metadata={
+                                "done": done,
+                            },
+                        )
+
+                    except json.JSONDecodeError:
+                        continue
+
+    async def _achat_stream_openai_compatible(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> AsyncIterator[ChatCompletionChunk]:
+        """Async stream chat completion using OpenAI-compatible endpoint for gpt-oss models."""
+        # Convert messages to OpenAI format
+        openai_messages = []
+        for msg in messages:
+            openai_messages.append({"role": msg.role, "content": msg.content})
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": openai_messages,
+            "temperature": temperature,
+            "stream": True,
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["max_tokens"] = max_tokens
+        if top_p is not None:
+            data["top_p"] = top_p
+        if stop:
+            data["stop"] = stop
+
+        # Make async streaming request to OpenAI-compatible endpoint
+        async with self._async_client.stream(
+            "POST",
+            f"{self.host}/v1/chat/completions",
+            json=data,
+        ) as response:
+            response.raise_for_status()
+
+            # Process stream
+            async for line in response.aiter_lines():
+                if line:
+                    # Remove "data: " prefix if present
+                    line_data = line
+                    if line.startswith("data: "):
+                        line_data = line[6:]
+
+                    # Skip [DONE] marker
+                    if line_data.strip() == "[DONE]":
+                        break
+
+                    try:
+                        chunk_data = json.loads(line_data)
+
+                        choices = chunk_data.get("choices", [])
+                        if not choices:
+                            continue
+
+                        choice = choices[0]
+                        delta = choice.get("delta", {})
+                        content = delta.get("content", "")
+                        finish_reason = choice.get("finish_reason")
+
+                        # Extract usage if available (usually in final chunk)
+                        usage_data = chunk_data.get("usage", {})
+                        usage = None
+                        if usage_data:
+                            usage = {
+                                "prompt_tokens": usage_data.get("prompt_tokens", 0),
+                                "completion_tokens": usage_data.get("completion_tokens", 0),
+                                "total_tokens": usage_data.get("total_tokens", 0),
+                            }
+
+                        yield ChatCompletionChunk(
+                            content=content,
+                            model=model,
+                            finish_reason=finish_reason,
+                            usage=usage,
+                            metadata={
+                                "api_endpoint": "openai_compatible",
+                            },
+                        )
+
+                    except json.JSONDecodeError:
+                        continue
 
     def list_models(self) -> list[Model]:
         """List available models from Ollama."""

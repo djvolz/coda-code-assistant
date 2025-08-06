@@ -1,8 +1,10 @@
 """
 Modern MCP client using the official MCP Python SDK.
 
-This replaces the custom StdioMCPClient with a proper implementation
-using the official MCP SDK for better reliability and maintainability.
+This provides a robust SDK-based implementation alongside the existing StdioMCPClient.
+Both approaches are supported - this SDK client is used internally by SubprocessMCPClient
+for improved reliability and error handling, while StdioMCPClient remains available for
+direct stdio-based MCP server communication.
 """
 
 import asyncio

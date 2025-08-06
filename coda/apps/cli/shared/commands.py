@@ -408,30 +408,44 @@ class CommandHandler(ABC):
         """Show MCP system overview."""
         from coda.services.tools.mcp_config import load_mcp_config
 
-        self.console.print("🔧 [bold]MCP Server Management[/bold]")
+        self.console.print(
+            f"🔧 [{self.console_theme.bold}]MCP Server Management[/{self.console_theme.bold}]"
+        )
         self.console.print()
 
         try:
             config = load_mcp_config()
             if not config.servers:
-                self.console.print("[yellow]No MCP servers configured[/yellow]")
-                self.console.print("\n[dim]Add servers to mcp.json to get started[/dim]")
+                self.console.print(
+                    f"[{self.console_theme.warning}]No MCP servers configured[/{self.console_theme.warning}]"
+                )
+                self.console.print(
+                    f"\n[{self.console_theme.dim}]Add servers to mcp.json to get started[/{self.console_theme.dim}]"
+                )
                 return
 
-            self.console.print(f"📊 Found [bold]{len(config.servers)}[/bold] configured server(s):")
+            self.console.print(
+                f"📊 Found [{self.console_theme.bold}]{len(config.servers)}[/{self.console_theme.bold}] configured server(s):"
+            )
             for name, server in config.servers.items():
                 status = "✅ enabled" if server.enabled else "❌ disabled"
                 if server.command:
                     self.console.print(
-                        f"  • [bold]{name}[/bold]: {server.command} {' '.join(server.args)} ({status})"
+                        f"  • [{self.console_theme.bold}]{name}[/{self.console_theme.bold}]: {server.command} {' '.join(server.args)} ({status})"
                     )
                 elif server.url:
-                    self.console.print(f"  • [bold]{name}[/bold]: {server.url} ({status})")
+                    self.console.print(
+                        f"  • [{self.console_theme.bold}]{name}[/{self.console_theme.bold}]: {server.url} ({status})"
+                    )
 
         except Exception as e:
-            self.console.print(f"[red]Error loading MCP configuration: {e}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Error loading MCP configuration: {e}[/{self.console_theme.error}]"
+            )
 
-        self.console.print("\n[dim]Use '/mcp list' to see detailed server status[/dim]")
+        self.console.print(
+            f"\n[{self.console_theme.dim}]Use '/mcp list' to see detailed server status[/{self.console_theme.dim}]"
+        )
 
     def _show_mcp_servers(self):
         """Show list of MCP servers."""
@@ -440,15 +454,21 @@ class CommandHandler(ABC):
         try:
             config = load_mcp_config()
             if not config.servers:
-                self.console.print("[yellow]No MCP servers configured[/yellow]")
+                self.console.print(
+                    f"[{self.console_theme.warning}]No MCP servers configured[/{self.console_theme.warning}]"
+                )
                 return
 
-            self.console.print("📋 [bold]MCP Servers[/bold]")
+            self.console.print(
+                f"📋 [{self.console_theme.bold}]MCP Servers[/{self.console_theme.bold}]"
+            )
             self.console.print()
 
             for name, server in config.servers.items():
                 status_icon = "✅" if server.enabled else "❌"
-                self.console.print(f"{status_icon} [bold]{name}[/bold]")
+                self.console.print(
+                    f"{status_icon} [{self.console_theme.bold}]{name}[/{self.console_theme.bold}]"
+                )
                 if server.command:
                     self.console.print(f"   Command: {server.command} {' '.join(server.args)}")
                 elif server.url:
@@ -459,7 +479,9 @@ class CommandHandler(ABC):
                 self.console.print()
 
         except Exception as e:
-            self.console.print(f"[red]Error: {e}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Error: {e}[/{self.console_theme.error}]"
+            )
 
     def _show_mcp_status(self, server_name: str):
         """Show status of specific MCP server."""
@@ -470,51 +492,65 @@ class CommandHandler(ABC):
 
             if server_name:
                 if server_name not in config.servers:
-                    self.console.print(f"[red]Server '{server_name}' not found[/red]")
+                    self.console.print(
+                        f"[{self.console_theme.error}]Server '{server_name}' not found[/{self.console_theme.error}]"
+                    )
                     return
                 servers = {server_name: config.servers[server_name]}
             else:
                 servers = config.servers
 
             if not servers:
-                self.console.print("[yellow]No servers to show status for[/yellow]")
+                self.console.print(
+                    f"[{self.console_theme.warning}]No servers to show status for[/{self.console_theme.warning}]"
+                )
                 return
 
             for name, server in servers.items():
                 status = "🟢 Running" if server.enabled else "🔴 Stopped"
-                self.console.print(f"[bold]{name}[/bold]: {status}")
+                self.console.print(
+                    f"[{self.console_theme.bold}]{name}[/{self.console_theme.bold}]: {status}"
+                )
 
         except Exception as e:
-            self.console.print(f"[red]Error: {e}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Error: {e}[/{self.console_theme.error}]"
+            )
 
     def _start_mcp_server(self, server_name: str):
         """Start an MCP server."""
         if not server_name:
-            self.console.print("[red]Please specify a server name[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Please specify a server name[/{self.console_theme.error}]"
+            )
             return
 
         self.console.print(
-            f"[yellow]Starting MCP server '{server_name}' is not yet implemented[/yellow]"
+            f"[{self.console_theme.warning}]Starting MCP server '{server_name}' is not yet implemented[/{self.console_theme.warning}]"
         )
 
     def _stop_mcp_server(self, server_name: str):
         """Stop an MCP server."""
         if not server_name:
-            self.console.print("[red]Please specify a server name[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Please specify a server name[/{self.console_theme.error}]"
+            )
             return
 
         self.console.print(
-            f"[yellow]Stopping MCP server '{server_name}' is not yet implemented[/yellow]"
+            f"[{self.console_theme.warning}]Stopping MCP server '{server_name}' is not yet implemented[/{self.console_theme.warning}]"
         )
 
     def _restart_mcp_server(self, server_name: str):
         """Restart an MCP server."""
         if not server_name:
-            self.console.print("[red]Please specify a server name[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Please specify a server name[/{self.console_theme.error}]"
+            )
             return
 
         self.console.print(
-            f"[yellow]Restarting MCP server '{server_name}' is not yet implemented[/yellow]"
+            f"[{self.console_theme.warning}]Restarting MCP server '{server_name}' is not yet implemented[/{self.console_theme.warning}]"
         )
 
     def _show_mcp_config(self, config_path: str):
@@ -532,15 +568,23 @@ class CommandHandler(ABC):
                     break
 
             if not config_file:
-                self.console.print("[yellow]No mcp.json file found[/yellow]")
+                self.console.print(
+                    f"[{self.console_theme.warning}]No mcp.json file found[/{self.console_theme.warning}]"
+                )
                 return
 
-            self.console.print(f"📄 [bold]MCP Configuration[/bold] ({config_file})")
+            self.console.print(
+                f"📄 [{self.console_theme.bold}]MCP Configuration[/{self.console_theme.bold}] ({config_file})"
+            )
             self.console.print()
 
             with open(config_file) as f:
                 content = f.read()
-                self.console.print(f"[dim]{content}[/dim]")
+                self.console.print(
+                    f"[{self.console_theme.dim}]{content}[/{self.console_theme.dim}]"
+                )
 
         except Exception as e:
-            self.console.print(f"[red]Error reading config: {e}[/red]")
+            self.console.print(
+                f"[{self.console_theme.error}]Error reading config: {e}[/{self.console_theme.error}]"
+            )

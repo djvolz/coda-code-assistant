@@ -4,6 +4,8 @@ This module provides consistent banner display functionality across
 different CLI entry points.
 """
 
+import os
+
 from rich.text import Text
 
 try:
@@ -31,7 +33,7 @@ def create_welcome_banner(theme) -> Text:
         " ╚═════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝"
         f"[/{theme.panel_title}]\n"
         f"[{theme.info}]✨ Your AI-powered coding companion[/{theme.info}]\n"
-        f"[{theme.dim}]v{__version__} • Ready to assist with your development workflow[/{theme.dim}]"
+        f"[{theme.dim}]v{__version__} • {os.getcwd()}[/{theme.dim}]"
     )
 
     return banner_text

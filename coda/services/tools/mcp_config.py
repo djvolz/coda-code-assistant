@@ -91,7 +91,7 @@ class MCPConfig:
 
 def load_mcp_config(project_dir: Path | None = None) -> MCPConfig:
     """
-    Load MCP configuration from mcp.json files.
+    Load MCP configuration from mcp.json files using base config management.
 
     Searches for mcp.json in the following order:
     1. Current working directory
@@ -104,37 +104,39 @@ def load_mcp_config(project_dir: Path | None = None) -> MCPConfig:
     Returns:
         MCPConfig object with loaded server configurations
     """
-    config_files = []
+    from coda.base.config.manager import ConfigManager
+    from coda.base.config.models import ConfigFormat, ConfigPath
+
+    # Build config paths for MCP files
+    config_paths = []
 
     # Current working directory
-    config_files.append(Path.cwd() / "mcp.json")
+    config_paths.append(ConfigPath(Path.cwd() / "mcp.json", ConfigFormat.JSON, required=False))
 
     # Project directory
     if project_dir:
-        config_files.append(project_dir / "mcp.json")
+        config_paths.append(ConfigPath(project_dir / "mcp.json", ConfigFormat.JSON, required=False))
 
-    # User config directory
+    # User config directory - let ConfigManager handle XDG paths
     try:
-        import os
-
-        # XDG config directory or fallback
-        config_dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-        config_files.append(config_dir / "coda" / "mcp.json")
-    except Exception:
-        pass
+        config_manager = ConfigManager(app_name="coda")
+        user_config_path = config_manager.get_config_dir() / "mcp.json"
+        config_paths.append(ConfigPath(user_config_path, ConfigFormat.JSON, required=False))
+    except Exception as e:
+        logger.warning(f"Could not determine user config directory: {e}")
 
     # Load first available config file
-    for config_file in config_files:
-        if config_file.exists():
+    for config_path in config_paths:
+        if config_path.exists():
             try:
-                with open(config_file) as f:
+                with open(config_path.path) as f:
                     data = json.load(f)
 
-                logger.info(f"Loaded MCP config from {config_file}")
+                logger.info(f"Loaded MCP config from {config_path.path}")
                 return MCPConfig.from_dict(data)
 
             except Exception as e:
-                logger.error(f"Error loading MCP config from {config_file}: {e}")
+                logger.error(f"Error loading MCP config from {config_path.path}: {e}")
                 continue
 
     # Return empty config if no files found
