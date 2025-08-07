@@ -44,29 +44,29 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
         from rich.panel import Panel
 
         if auto_save_enabled:
-            notification = """[info][bold]Welcome to Coda![/]
+            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.info}][/{theme.bold}]
 
-[warning]Auto-Save is ENABLED[/] 💾
+[{theme.warning}]Auto-Save is ENABLED[/{theme.warning}] 💾
 
 Your conversations will be automatically saved when you start chatting.
 This helps you resume conversations and search through history.
 
-[dim]To disable auto-save:[/]
-• Use [info]--no-save[/] flag when starting Coda
-• Set [info]autosave = false[/] in ~/.config/coda/config.toml
-• Delete sessions with [info]/session delete-all[/]
+[{theme.dim}]To disable auto-save:[/{theme.dim}]
+• Use [{theme.info}]--no-save[/{theme.info}] flag when starting Coda
+• Set [{theme.info}]autosave = false[/{theme.info}] in ~/.config/coda/config.toml
+• Delete sessions with [{theme.info}]/session delete-all[/{theme.info}]
 
-[dim]Your privacy matters - sessions are stored locally only.[/]"""
+[{theme.dim}]Your privacy matters - sessions are stored locally only.[/{theme.dim}]"""
         else:
-            notification = """[info][bold]Welcome to Coda![/]
+            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.info}][/{theme.bold}]
 
-[warning]Auto-Save is DISABLED[/] 🔒
+[{theme.warning}]Auto-Save is DISABLED[/{theme.warning}] 🔒
 
 Your conversations will NOT be saved automatically.
 
-[dim]To enable auto-save for future sessions:[/]
-• Remove [info]--no-save[/] flag when starting Coda
-• Set [info]autosave = true[/] in ~/.config/coda/config.toml"""
+[{theme.dim}]To enable auto-save for future sessions:[/{theme.dim}]
+• Remove [{theme.info}]--no-save[/{theme.info}] flag when starting Coda
+• Set [{theme.info}]autosave = true[/{theme.info}] in ~/.config/coda/config.toml"""
 
         console.print("\n")
         console.print(Panel(notification, title="First Run", border_style=theme.panel_border))
@@ -82,12 +82,13 @@ Your conversations will NOT be saved automatically.
 
 async def _initialize_provider(factory: "ProviderFactory", provider: str, console: Console):
     """Initialize and connect to the provider."""
-    console.print(f"\n[green]Provider:[/green] {provider}")
-    console.print(f"[yellow]Initializing {provider}...[/yellow]")
+    console.print(f"\n[{theme.success}]Provider:[/{theme.success}] {provider}")
+    console.print(f"[{theme.warning}]Initializing {provider}...[/{theme.warning}]")
 
     # Create provider instance
     provider_instance = factory.create(provider)
-    console.print(f"[green]✓ Connected to {provider}[/green]")
+
+    console.print(f"[{theme.success}]✓ Connected to {provider}[/{theme.success}]")
 
     return provider_instance
 
@@ -97,7 +98,7 @@ async def _get_chat_models(provider_instance, console: Console):
     # List models
     try:
         models = provider_instance.list_models()
-        console.print(f"[green]✓ Found {len(models)} available models[/green]")
+        console.print(f"[{theme.success}]✓ Found {len(models)} available models[/{theme.success}]")
     except Exception:
         # Re-raise the exception to be handled by the caller
         raise
@@ -136,15 +137,17 @@ async def _select_model(unique_models, model: str, console: Console):
         model = await selector.select_interactive()
 
         if not model:
-            console.print("\n[yellow]No model selected. Exiting.[/yellow]")
+            console.print(f"\n[{theme.warning}]No model selected. Exiting.[/{theme.warning}]")
             return None
 
     console.print(f"[{theme.success}]Model:[/{theme.success}] {model}")
 
-    console.print(f"[dim]Found {len(unique_models)} unique models available[/dim]")
-    console.print("\n[dim]Type /help for commands, /exit or Ctrl+D to quit[/dim]")
-    console.print("[dim]Press Ctrl+C to clear input or interrupt AI response[/dim]")
-    console.print("[dim]Press Ctrl+R to search command history[/dim]\n")
+    console.print(f"[{theme.dim}]Found {len(unique_models)} unique models available[/{theme.dim}]")
+    console.print(f"\n[{theme.dim}]Type /help for commands, /exit or Ctrl+D to quit[/{theme.dim}]")
+    console.print(
+        f"[{theme.dim}]Press Ctrl+C to clear input or interrupt AI response[/{theme.dim}]"
+    )
+    console.print(f"[{theme.dim}]Press Ctrl+R to search command history[/{theme.dim}]\n")
 
     return model
 
@@ -182,14 +185,14 @@ async def _setup_provider_and_models(
             if not model:
                 if unique_models:
                     model = unique_models[0].id
-                    console.print(f"[dim]No model specified, using: {model}[/dim]")
+                    console.print(f"[{theme.dim}]No model specified, using: {model}[/{theme.dim}]")
                 else:
-                    console.print("[red]No models available[/red]")
+                    console.print(f"[{theme.error}]No models available[/{theme.error}]")
                     return None, None, None
 
             # Validate model exists
             if not any(m.id == model for m in unique_models):
-                console.print(f"[red]Model not found: {model}[/red]")
+                console.print(f"[{theme.error}]Model not found: {model}[/{theme.error}]")
                 console.print(f"Available models: {', '.join(m.id for m in unique_models[:5])}")
                 return None, None, None
 
@@ -215,23 +218,25 @@ def _handle_provider_error(e: Exception, provider: str, debug: bool, factory=Non
     import traceback
 
     if "compartment_id is required" in str(e):
-        console.print("\n[red]Error:[/red] OCI compartment ID not configured")
+        console.print(f"\n[{theme.error}]Error:[/{theme.error}] OCI compartment ID not configured")
         console.print("\nPlease set it via one of these methods:")
         console.print(
-            "1. Environment variable: [cyan]export OCI_COMPARTMENT_ID='your-compartment-id'[/cyan]"
+            f"1. Environment variable: [{theme.info}]export OCI_COMPARTMENT_ID='your-compartment-id'[/{theme.info}]"
         )
-        console.print("2. Coda config file: [cyan]~/.config/coda/config.toml[/cyan]")
+        console.print(
+            f"2. Coda config file: [{theme.info}]~/.config/coda/config.toml[/{theme.info}]"
+        )
     elif "Unknown provider" in str(e):
-        console.print(f"\n[red]Error:[/red] Provider '{provider}' not found")
+        console.print(f"\n[{theme.error}]Error:[/{theme.error}] Provider '{provider}' not found")
         if factory:
             console.print(f"\nAvailable providers: {', '.join(factory.list_available())}")
     else:
         error_msg = str(e)
         if "OCI GenAI authorization failed" in error_msg:
             # Show the formatted error message from the provider
-            console.print(f"\n[red]Error:[/red] {error_msg}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {error_msg}")
         else:
-            console.print(f"\n[red]Error:[/red] {e}")
+            console.print(f"\n[{theme.error}]Error:[/{theme.error}] {e}")
 
     if debug:
         traceback.print_exc()
@@ -249,10 +254,10 @@ async def _handle_chat_interaction(
     try:
         user_input = await cli.get_input()
     except (KeyboardInterrupt, EOFError) as e:
-        console.print(f"[red]Input interrupted: {e}[/red]")
+        console.print(f"[{theme.error}]Input interrupted: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception as e:
-        console.print(f"[red]Unexpected error getting input: {e}[/red]")
+        console.print(f"[{theme.error}]Unexpected error getting input: {e}[/{theme.error}]")
         return True  # Continue loop
 
     # Skip empty input (from Ctrl+C)
@@ -270,20 +275,20 @@ async def _handle_chat_interaction(
                     messages.clear()
                     messages.extend(loaded_messages)
                     console.print(
-                        f"[dim]Restored {len(loaded_messages)} messages to conversation history[/dim]"
+                        f"[{theme.dim}]Restored {len(loaded_messages)} messages to conversation history[/{theme.dim}]"
                     )
 
                 # Check if conversation was cleared
                 if cli.session_commands.was_conversation_cleared():
                     messages.clear()
-                    console.print("[dim]Cleared conversation history[/dim]")
+                    console.print(f"[{theme.dim}]Cleared conversation history[/{theme.dim}]")
 
                 return True
         except (ValueError, AttributeError) as e:
-            console.print(f"[red]Invalid command: {e}[/red]")
+            console.print(f"[{theme.error}]Invalid command: {e}[/{theme.error}]")
             return True
         except Exception as e:
-            console.print(f"[red]Error processing command: {e}[/red]")
+            console.print(f"[{theme.error}]Error processing command: {e}[/{theme.error}]")
             return True
 
     # Check for multiline indicator
@@ -338,7 +343,6 @@ async def _handle_chat_interaction(
 
     full_response = ""
     interrupted = False
-    first_chunk = True
 
     try:
         # Get generation parameters from config or defaults
@@ -350,104 +354,141 @@ async def _handle_chat_interaction(
         max_tokens = config.get("max_tokens", 2000)
 
         if use_tools:
-            # Use agent-based chat
-            with console.status(
-                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
-            ) as status:
-                agent_handler = AgentChatHandler(provider_instance, cli, console)
+            # Use agent-based chat with simple animation
+            agent_handler = AgentChatHandler(provider_instance, cli, console)
 
-                # Get system prompt from mode
-                system_prompt_for_agent = _get_system_prompt_for_mode(cli.current_mode)
+            # Get system prompt from mode
+            system_prompt_for_agent = _get_system_prompt_for_mode(cli.current_mode)
 
-                # Don't stop status - pass it to agent handler to keep it running
-                # status.stop()  # Removed to keep spinner running
-
-                # Execute with agent (pass status to keep indicator running)
-                full_response, updated_messages = await agent_handler.chat_with_agent(
+            # Create agent execution task
+            async def execute_agent():
+                return await agent_handler.chat_with_agent(
                     messages.copy(),  # Pass a copy to avoid modifying original
                     cli.current_model,
                     temperature,
                     max_tokens,
                     system_prompt_for_agent,
-                    status=status,  # Pass status to agent handler
+                    status=None,  # No status wrapper needed with simple animation
                 )
 
-                # Update messages to match what happened
-                messages.clear()
-                messages.extend(updated_messages)
+            agent_task = asyncio.create_task(execute_agent())
 
-                # Save all messages from the agent interaction to session
-                from coda.base.session.tool_storage import format_tool_calls_for_storage
+            # Use simple thinking animation
+            from coda.apps.cli.utils import simple_thinking_animation
 
-                # Find and save new messages (after the user message which was already saved)
-                # Skip the first message (user) since it was already saved above
-                for msg in updated_messages[1:]:
-                    tool_calls_data = None
-                    if hasattr(msg, "tool_calls") and msg.tool_calls:
-                        tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
+            await simple_thinking_animation(
+                task=agent_task,
+                console=console,
+                message=thinking_msg,
+                theme_info=theme.info,
+                theme_bold=theme.bold,
+                min_display_time=0.8,
+            )
 
-                    metadata = {
-                        "mode": cli.current_mode.value,
-                        "provider": (
-                            provider_instance.name
-                            if hasattr(provider_instance, "name")
-                            else "unknown"
-                        ),
-                        "model": cli.current_model,
-                        "tool_call_id": getattr(msg, "tool_call_id", None),
-                    }
-                    # Add tool_calls to metadata if present
-                    if tool_calls_data:
-                        metadata["tool_calls"] = tool_calls_data
+            # Get the agent result
+            full_response, updated_messages = await agent_task
 
-                    cli.session_commands.add_message(
-                        role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
-                        content=msg.content,
-                        metadata=metadata,
-                    )
+            # Display the agent response
+            console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] {full_response}")
+
+            # Update messages to match what happened
+            messages.clear()
+            messages.extend(updated_messages)
+
+            # Save all messages from the agent interaction to session
+            from coda.base.session.tool_storage import format_tool_calls_for_storage
+
+            # Find and save new messages (after the user message which was already saved)
+            # Skip the first message (user) since it was already saved above
+            for msg in updated_messages[1:]:
+                tool_calls_data = None
+                if hasattr(msg, "tool_calls") and msg.tool_calls:
+                    tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
+
+                metadata = {
+                    "mode": cli.current_mode.value,
+                    "provider": (
+                        provider_instance.name if hasattr(provider_instance, "name") else "unknown"
+                    ),
+                    "model": cli.current_model,
+                    "tool_call_id": getattr(msg, "tool_call_id", None),
+                }
+                # Add tool_calls to metadata if present
+                if tool_calls_data:
+                    metadata["tool_calls"] = tool_calls_data
+
+                cli.session_commands.add_message(
+                    role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
+                    content=msg.content,
+                    metadata=metadata,
+                )
         else:
-            # Use regular streaming
-            with console.status(
-                f"[bold cyan]{thinking_msg}...[/bold cyan]", spinner="dots"
-            ) as status:
-                stream = provider_instance.chat_stream(
+            # Use regular streaming with simple animation
+            # Create streaming task
+            async def stream_with_first_chunk():
+                # Use async streaming to avoid blocking the event loop
+                stream = provider_instance.achat_stream(
                     messages=chat_messages,
                     model=cli.current_model,
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
 
-                # Get first chunk to stop spinner
-                for chunk in stream:
-                    if first_chunk:
-                        # Stop the spinner when we get the first chunk
-                        status.stop()
-                        # Just print the assistant label
-                        console.print(
-                            f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end=""
-                        )
-                        first_chunk = False
+                # Get first chunk
+                first_chunk = None
+                async for chunk in stream:
+                    first_chunk = chunk
+                    break  # Get only the first chunk
 
+                return first_chunk, stream  # Return first chunk and the rest of the stream
+
+            streaming_task = asyncio.create_task(stream_with_first_chunk())
+
+            # Use simple thinking animation
+            from coda.apps.cli.utils import simple_thinking_animation
+
+            await simple_thinking_animation(
+                task=streaming_task,
+                console=console,
+                message=thinking_msg,
+                theme_info=theme.info,
+                theme_bold=theme.bold,
+                min_display_time=0.8,
+            )
+
+            # Get the first chunk result
+            first_chunk_result, stream = await streaming_task
+            console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] ", end="")
+
+            # Continue processing the stream
+            if first_chunk_result:
+                # Process first chunk
+                console.print(first_chunk_result.content, end="")
+                full_response += first_chunk_result.content
+
+                # Process remaining chunks
+                for chunk in stream:
                     # Check for interrupt
                     if cli.interrupt_event.is_set():
                         interrupted = True
-                        console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+                        console.print(
+                            f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]"
+                        )
                         break
 
                     # Stream the response as plain text
                     console.print(chunk.content, end="")
                     full_response += chunk.content
-
             # Add newline after streaming
             if full_response:
-                console.print()  # Ensure we end on a new line
+                console.print()
     except (ConnectionError, TimeoutError) as e:
-        console.print(f"\n\n[red]Network error during streaming: {e}[/red]")
+        console.print(f"\n\n[{theme.error}]Network error during streaming: {e}[/{theme.error}]")
         return True  # Continue loop
     except Exception:
         if cli.interrupt_event.is_set():
             interrupted = True
-            console.print("\n\n[yellow]Response interrupted by user[/yellow]")
+            console.print(f"\n\n[{theme.warning}]Response interrupted by user[/{theme.warning}]")
         else:
             raise
     finally:
@@ -501,13 +542,13 @@ async def run_interactive_session(
 
     # Load last session if requested
     if resume:
-        console.print("\n[cyan]Resuming last session...[/cyan]")
+        console.print(f"\n[{theme.info}]Resuming last session...[/{theme.info}]")
         result = cli.session_commands._load_last_session()
         if result:  # Error message
-            console.print(f"[yellow]{result}[/yellow]")
+            console.print(f"[{theme.warning}]{result}[/{theme.warning}]")
         else:
             # Successfully loaded, show a separator
-            console.print("\n[dim]─" * 50 + "[/dim]\n")
+            console.print(f"\n[{theme.dim}]─" * 50 + f"[/{theme.dim}]\n")
 
     # Setup provider and models using common function
     provider_instance, unique_models, model = await _setup_provider_and_models(
@@ -558,7 +599,7 @@ async def run_interactive_session(
         pass
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully - just exit cleanly
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)
     except Exception as e:
         _handle_provider_error(e, provider, debug)
@@ -575,10 +616,15 @@ async def run_one_shot(
     provider: str, model: str, prompt: str, mode: str, debug: bool, no_save: bool
 ):
     """Run a single prompt and exit."""
+    import asyncio
+
     from coda.base.providers import Message, Role
     from coda.services.config import get_config_service
 
     config = get_config_service()
+
+    # Check if quiet mode is enabled via theme
+    is_quiet = config.theme_manager.is_quiet()
 
     # Setup provider and models using common function
     provider_instance, unique_models, model = await _setup_provider_and_models(
@@ -600,34 +646,113 @@ async def run_one_shot(
             messages.append(Message(role=Role.SYSTEM, content=system_prompt))
         messages.append(Message(role=Role.USER, content=prompt))
 
-        # Get response
+        # Show user prompt (will be suppressed if quiet mode is enabled)
         console.print(f"\n[{theme.user_message} bold]You:[/{theme.user_message} bold] {prompt}")
 
-        # Use appropriate handler based on tool support
+        # Get response with spinner/timer (unless quiet)
         if developer_mode != DeveloperMode.GENERAL:
             # Use agent for tool-enabled models in non-general modes
             from .agent_chat import AgentChatHandler
 
             agent_handler = AgentChatHandler(provider_instance, None, console)
-            response_content, _ = await agent_handler.chat_with_agent(
-                [Message(role=Role.USER, content=prompt)],
-                model,
-                temperature=config.get("temperature", 0.7),
-                max_tokens=config.get("max_tokens", 2000),
-                system_prompt=system_prompt,
-            )
+
+            if is_quiet:
+                # No UI elements in quiet mode
+                response_content, _ = await agent_handler.chat_with_agent(
+                    [Message(role=Role.USER, content=prompt)],
+                    model,
+                    temperature=config.get("temperature", 0.7),
+                    max_tokens=config.get("max_tokens", 2000),
+                    system_prompt=system_prompt,
+                )
+            else:
+                # Use simple thinking animation for agent chat
+                async def agent_task():
+                    return await agent_handler.chat_with_agent(
+                        [Message(role=Role.USER, content=prompt)],
+                        model,
+                        temperature=config.get("temperature", 0.7),
+                        max_tokens=config.get("max_tokens", 2000),
+                        system_prompt=system_prompt,
+                    )
+
+                task = asyncio.create_task(agent_task())
+
+                # Use simple thinking animation
+                from coda.apps.cli.utils import simple_thinking_animation
+
+                await simple_thinking_animation(
+                    task=task,
+                    console=console,
+                    message="Thinking",
+                    theme_info=theme.info,
+                    theme_bold=theme.bold,
+                    min_display_time=0.8,
+                )
+
+                response_content, _ = await task
         else:
             # Use simple chat without tools
-            response = provider_instance.chat(
-                messages=messages,
-                model=model,
-                temperature=config.get("temperature", 0.7),
-                max_tokens=config.get("max_tokens", 2000),
-            )
-            response_content = response.content
+            if is_quiet:
+                # No UI elements in quiet mode - use async method if available
+                if hasattr(provider_instance, "achat"):
+                    response = await provider_instance.achat(
+                        messages=messages,
+                        model=model,
+                        temperature=config.get("temperature", 0.7),
+                        max_tokens=config.get("max_tokens", 2000),
+                    )
+                else:
+                    response = provider_instance.chat(
+                        messages=messages,
+                        model=model,
+                        temperature=config.get("temperature", 0.7),
+                        max_tokens=config.get("max_tokens", 2000),
+                    )
+                response_content = response.content
+            else:
+                # Use simple thinking animation without Rich Live complexity
+                async def chat_task():
+                    if hasattr(provider_instance, "achat"):
+                        return await provider_instance.achat(
+                            messages=messages,
+                            model=model,
+                            temperature=config.get("temperature", 0.7),
+                            max_tokens=config.get("max_tokens", 2000),
+                        )
+                    else:
+                        # Fallback to sync method in thread
+                        return await asyncio.to_thread(
+                            provider_instance.chat,
+                            messages=messages,
+                            model=model,
+                            temperature=config.get("temperature", 0.7),
+                            max_tokens=config.get("max_tokens", 2000),
+                        )
+
+                task = asyncio.create_task(chat_task())
+
+                # Use simple thinking animation
+                from coda.apps.cli.utils import simple_thinking_animation
+
+                await simple_thinking_animation(
+                    task=task,
+                    console=console,
+                    message="Thinking",
+                    theme_info=theme.info,
+                    theme_bold=theme.bold,
+                    min_display_time=0.8,
+                )
+
+                response = await task
+                response_content = response.content
 
         # Display response
-        console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] {response_content}")
+        if is_quiet:
+            # In quiet mode, only output the raw response to stdout
+            print(response_content)
+        else:
+            console.print(f"\n[{theme.info} bold]Assistant:[/{theme.info} bold] {response_content}")
 
         # Save to session if auto-save is enabled
         if not no_save:
@@ -659,7 +784,13 @@ async def run_one_shot(
             )
 
     except Exception as e:
-        _handle_provider_error(e, provider, debug)
+        if is_quiet:
+            import sys
+
+            sys.stderr.write(f"Error: {str(e)}\n")
+            sys.exit(1)
+        else:
+            _handle_provider_error(e, provider, debug)
 
 
 @click.command()
@@ -699,5 +830,5 @@ if __name__ == "__main__":
         interactive_main()
     except KeyboardInterrupt:
         # Handle Ctrl+C at the top level
-        console.print("\n\n[dim]Interrupted. Goodbye![/dim]")
+        console.print(f"\n\n[{theme.dim}]Interrupted. Goodbye![/{theme.dim}]")
         sys.exit(0)

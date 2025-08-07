@@ -169,6 +169,10 @@ class MockProvider(BaseProvider):
 
             content = " ".join(response_parts)
 
+        # Add delay to simulate processing time for timer display
+        # Note: This is synchronous, but for streaming we need async delay
+        time.sleep(2.5)  # Allow timer to show incremental updates
+
         # Return ChatCompletion object
         return ChatCompletion(
             content=content,
@@ -287,8 +291,67 @@ class MockProvider(BaseProvider):
         tools: list[Tool] | None = None,
         **kwargs,
     ) -> ChatCompletion:
-        """Async version of chat (delegates to sync)."""
-        return self.chat(messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs)
+        """Async version of chat with proper async delay."""
+        import asyncio
+
+        # Use the same logic as sync version but with async delay
+        self.conversation_history = messages
+
+        # Check if we have tool results to summarize
+        tool_messages = [msg for msg in messages if msg.role == Role.TOOL]
+        if tool_messages:
+            content = self._generate_tool_response(messages, tool_messages)
+            await asyncio.sleep(2.5)  # Async delay for timer display
+            return ChatCompletion(
+                content=content,
+                model=model,
+                finish_reason="stop",
+                tool_calls=None,
+                metadata={"provider": "mock", "timestamp": datetime.now().isoformat()},
+            )
+
+        # Get the last user message
+        user_messages = [msg for msg in messages if msg.role == Role.USER]
+        if not user_messages:
+            await asyncio.sleep(2.5)  # Async delay for timer display
+            return ChatCompletion(
+                content="I don't see any user messages to respond to.",
+                model=model,
+                finish_reason="stop",
+                tool_calls=None,
+                metadata={"provider": "mock", "timestamp": datetime.now().isoformat()},
+            )
+
+        # Generate the same response as sync version
+        last_message = user_messages[-1].content.lower()
+
+        if "hello" in last_message or "hi" in last_message:
+            content = "Hello! How can I help you today?"
+        elif "help" in last_message:
+            content = "I'm a mock AI assistant. I can help you test session management features."
+        else:
+            # Echo back with conversation context
+            response_parts = [f"You said: '{user_messages[-1].content}'"]
+            if len(messages) > 1:
+                response_parts.append(
+                    f"This is message #{len([m for m in messages if m.role == Role.USER])} in our conversation."
+                )
+            if len(user_messages) > 1:
+                response_parts.append(
+                    f"Earlier you asked about: '{user_messages[-2].content[:50]}...'"
+                )
+            content = " ".join(response_parts)
+
+        # Add async delay to simulate processing time for timer display
+        await asyncio.sleep(2.5)  # Allow timer to show incremental updates
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason="stop",
+            tool_calls=None,
+            metadata={"provider": "mock", "timestamp": datetime.now().isoformat()},
+        )
 
     async def achat_stream(
         self,
@@ -301,11 +364,29 @@ class MockProvider(BaseProvider):
         tools: list[Tool] | None = None,
         **kwargs,
     ) -> Iterator[ChatCompletionChunk]:
-        """Async version of chat_stream (delegates to sync)."""
-        for chunk in self.chat_stream(
+        """Async version of chat_stream with proper async delay."""
+        import asyncio
+
+        # Get response using async chat
+        response = await self.achat(
             messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-        ):
-            yield chunk
+        )
+
+        # Simulate streaming by yielding words
+        words = response.content.split()
+        for i, word in enumerate(words):
+            # Add space except for first word
+            content = word if i == 0 else f" {word}"
+
+            yield ChatCompletionChunk(
+                content=content,
+                model=model,
+                finish_reason="stop" if i == len(words) - 1 else None,
+                metadata={"provider": "mock"},
+            )
+
+            # Small async delay to simulate real streaming
+            await asyncio.sleep(0.01)
 
     def is_available(self) -> bool:
         """Mock provider is always available."""

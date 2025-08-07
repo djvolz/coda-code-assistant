@@ -5,13 +5,36 @@ This package provides a collection of tools for file operations, shell commands,
 web interactions, Git operations, and diagram rendering, all built on the Model Context Protocol (MCP).
 """
 
-# Import all tool modules to register them
-from . import diagram_tools as _diagram_tools  # noqa: F401
-from . import file_tools as _file_tools  # noqa: F401
-from . import git_tools as _git_tools  # noqa: F401
-from . import intelligence_tools as _intelligence_tools  # noqa: F401
-from . import shell_tools as _shell_tools  # noqa: F401
-from . import web_tools as _web_tools  # noqa: F401
+# Import all tool modules to register them (handle missing dependencies gracefully)
+try:
+    from . import diagram_tools as _diagram_tools  # noqa: F401
+except ImportError:
+    pass  # diagram_renderer dependency not available
+
+try:
+    from . import file_tools as _file_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import git_tools as _git_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import intelligence_tools as _intelligence_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import shell_tools as _shell_tools  # noqa: F401
+except ImportError:
+    pass
+
+try:
+    from . import web_tools as _web_tools  # noqa: F401
+except ImportError:
+    pass
 from .base import (
     BaseTool,
     ToolParameter,
@@ -149,6 +172,93 @@ def get_tool_stats() -> dict:
         "category_list": categories,
         "dangerous_tool_names": [tool.name for tool in dangerous_tools],
     }
+
+
+# Register built-in tools that are always available
+try:
+    from .builtin_tools import get_builtin_tools
+
+    builtin_tools = get_builtin_tools()
+    for tool in builtin_tools:
+        tool_registry.register(tool)
+
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Registered {len(builtin_tools)} built-in tools")
+
+except ImportError as e:
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Built-in tools not available: {e}")
+except Exception as e:
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.error(f"Error registering built-in tools: {e}")
+
+# Initialize MCP manager with tool registry
+try:
+    from .mcp_manager import discover_mcp_servers, init_mcp_manager
+
+    # Initialize MCP manager with the tool registry
+    mcp_manager = init_mcp_manager(tool_registry)
+
+    # Try to discover and start MCP servers synchronously during import
+    # This avoids the threading/event loop issues
+    import asyncio
+
+    def _sync_discover_mcp_servers():
+        """Synchronously discover MCP servers during import."""
+        try:
+            # Check if we're already in an async context
+            try:
+                asyncio.get_running_loop()
+                # We're in an async context, skip discovery for now
+                # Tools will be discovered on-demand later
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.debug("Skipping MCP discovery during import - async context detected")
+                return
+            except RuntimeError:
+                # No running loop, safe to create one
+                pass
+
+            # Create a new event loop for this discovery
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            # Run the discovery
+            loop.run_until_complete(discover_mcp_servers())
+
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.info("MCP servers discovered and started during import")
+
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.debug(f"MCP server discovery failed during import: {e}")
+        finally:
+            # Don't close the loop - keep it for MCP connections
+            pass
+
+    # Run discovery synchronously during import
+    _sync_discover_mcp_servers()
+
+except ImportError:
+    # MCP system not available
+    pass
+except Exception as e:
+    # Log but don't fail if MCP initialization fails
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.debug(f"MCP initialization failed: {e}")
 
 
 # Version and compatibility info

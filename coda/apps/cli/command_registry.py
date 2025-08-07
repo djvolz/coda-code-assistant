@@ -284,6 +284,34 @@ class CommandRegistry:
         ),
     ]
 
+    # MCP subcommands - loaded from modular commands
+    @staticmethod
+    def _get_mcp_subcommands():
+        """Get MCP subcommands from modular definition."""
+        try:
+            from .commands.mcp_commands import get_mcp_commands
+
+            return get_mcp_commands()
+        except ImportError:
+            # Fallback to inline definitions if module not available
+            return [
+                CommandDefinition(
+                    name="list",
+                    description="List configured MCP servers",
+                    type=CommandType.SUBCOMMAND,
+                    examples=["/mcp list", "/mcp ls"],
+                    aliases=["ls"],
+                ),
+                CommandDefinition(
+                    name="status",
+                    description="Show status of MCP servers",
+                    type=CommandType.SUBCOMMAND,
+                    examples=["/mcp status", "/mcp status sequential-thinking"],
+                ),
+            ]
+
+    MCP_SUBCOMMANDS = _get_mcp_subcommands()
+
     # Observability subcommands
     OBSERVABILITY_SUBCOMMANDS = [
         CommandDefinition(
@@ -409,6 +437,12 @@ class CommandRegistry:
             description="Semantic search commands",
             subcommands=SEARCH_SUBCOMMANDS,
             examples=["/search semantic 'query'", "/search code 'function'", "/search status"],
+        ),
+        CommandDefinition(
+            name="mcp",
+            description="Manage MCP servers",
+            subcommands=MCP_SUBCOMMANDS,
+            examples=["/mcp list", "/mcp status", "/mcp start serena"],
         ),
         CommandDefinition(
             name="observability",

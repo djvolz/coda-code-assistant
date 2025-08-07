@@ -38,6 +38,12 @@ class OllamaProvider(BaseProvider):
         """Provider name."""
         return "ollama"
 
+    def supports_tool_calling(self, model_name: str) -> bool:
+        """Check if the model supports tool calling."""
+        # Ollama has limited tool calling support - only certain models support it
+        compatible_models = ["llama3.1", "llama3.2", "qwen2.5", "mistral", "hermes"]
+        return any(model in model_name.lower() for model in compatible_models)
+
     def _convert_messages(self, messages: list[Message]) -> list[dict]:
         """Convert our Message objects to Ollama format."""
         from .utils import convert_messages_basic
@@ -70,7 +76,7 @@ class OllamaProvider(BaseProvider):
             context_length=context_length,
             max_tokens=4096,  # Ollama models typically support 4k output
             supports_streaming=True,
-            supports_functions=False,  # Ollama doesn't natively support functions
+            supports_functions=self.supports_tool_calling(model_name),
             metadata={
                 "parameter_size": parameter_size,
                 "family": details.get("family", ""),
@@ -94,67 +100,15 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Send chat completion request to Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make request
-            response = self._client.post(
-                f"{self.host}/api/chat",
-                json=data,
-            )
-            response.raise_for_status()
-
-            # Parse response
-            result = response.json()
-
-            # Extract message content
-            message = result.get("message", {})
-            content = message.get("content", "")
-
-            # Calculate token usage if available
-            usage = None
-            if "prompt_eval_count" in result or "eval_count" in result:
-                usage = {
-                    "prompt_tokens": result.get("prompt_eval_count", 0),
-                    "completion_tokens": result.get("eval_count", 0),
-                    "total_tokens": result.get("prompt_eval_count", 0)
-                    + result.get("eval_count", 0),
-                }
-
-            return ChatCompletion(
-                content=content,
-                model=model,
-                finish_reason="stop",  # Ollama doesn't provide finish reasons
-                usage=usage,
-                metadata={
-                    "total_duration": result.get("total_duration"),
-                    "load_duration": result.get("load_duration"),
-                    "prompt_eval_duration": result.get("prompt_eval_duration"),
-                    "eval_duration": result.get("eval_duration"),
-                },
+            return self._chat_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             )
 
         except httpx.HTTPStatusError as e:
@@ -165,6 +119,80 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama API error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama error: {str(e)}") from e
+
+    def _chat_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> ChatCompletion:
+        """Send chat completion request using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make request
+        response = self._client.post(
+            f"{self.host}/api/chat",
+            json=data,
+        )
+        response.raise_for_status()
+
+        # Parse response
+        result = response.json()
+
+        # Extract message content
+        message = result.get("message", {})
+        content = message.get("content", "")
+
+        # Calculate token usage if available
+        usage = None
+        if "prompt_eval_count" in result or "eval_count" in result:
+            usage = {
+                "prompt_tokens": result.get("prompt_eval_count", 0),
+                "completion_tokens": result.get("eval_count", 0),
+                "total_tokens": result.get("prompt_eval_count", 0) + result.get("eval_count", 0),
+            }
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason="stop",  # Ollama doesn't provide finish reasons
+            usage=usage,
+            metadata={
+                "total_duration": result.get("total_duration"),
+                "load_duration": result.get("load_duration"),
+                "prompt_eval_duration": result.get("prompt_eval_duration"),
+                "eval_duration": result.get("eval_duration"),
+            },
+        )
 
     def chat_stream(
         self,
@@ -179,78 +207,16 @@ class OllamaProvider(BaseProvider):
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response from Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": True,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make streaming request
-            with self._client.stream(
-                "POST",
-                f"{self.host}/api/chat",
-                json=data,
-            ) as response:
-                response.raise_for_status()
-
-                # Process stream
-                for line in response.iter_lines():
-                    if line:
-                        try:
-                            chunk_data = json.loads(line)
-
-                            # Extract message content
-                            message = chunk_data.get("message", {})
-                            content = message.get("content", "")
-
-                            # Check if this is the final chunk
-                            done = chunk_data.get("done", False)
-                            finish_reason = "stop" if done else None
-
-                            # Extract usage from final chunk
-                            usage = None
-                            if done and (
-                                "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
-                            ):
-                                usage = {
-                                    "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
-                                    "completion_tokens": chunk_data.get("eval_count", 0),
-                                    "total_tokens": chunk_data.get("prompt_eval_count", 0)
-                                    + chunk_data.get("eval_count", 0),
-                                }
-
-                            yield ChatCompletionChunk(
-                                content=content,
-                                model=model,
-                                finish_reason=finish_reason,
-                                usage=usage,
-                                metadata={
-                                    "done": done,
-                                },
-                            )
-
-                        except json.JSONDecodeError:
-                            continue
+            yield from self._chat_stream_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            )
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -260,6 +226,91 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama streaming error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama streaming error: {str(e)}") from e
+
+    def _chat_stream_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> Iterator[ChatCompletionChunk]:
+        """Stream chat completion using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": True,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make streaming request
+        with self._client.stream(
+            "POST",
+            f"{self.host}/api/chat",
+            json=data,
+        ) as response:
+            response.raise_for_status()
+
+            # Process stream
+            for line in response.iter_lines():
+                if line:
+                    try:
+                        chunk_data = json.loads(line)
+
+                        # Extract message content
+                        message = chunk_data.get("message", {})
+                        content = message.get("content", "")
+
+                        # Check if this is the final chunk
+                        done = chunk_data.get("done", False)
+                        finish_reason = "stop" if done else None
+
+                        # Extract usage from final chunk
+                        usage = None
+                        if done and (
+                            "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
+                        ):
+                            usage = {
+                                "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
+                                "completion_tokens": chunk_data.get("eval_count", 0),
+                                "total_tokens": chunk_data.get("prompt_eval_count", 0)
+                                + chunk_data.get("eval_count", 0),
+                            }
+
+                        yield ChatCompletionChunk(
+                            content=content,
+                            model=model,
+                            finish_reason=finish_reason,
+                            usage=usage,
+                            metadata={
+                                "done": done,
+                            },
+                        )
+
+                    except json.JSONDecodeError:
+                        continue
 
     async def achat(
         self,
@@ -274,67 +325,15 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Async chat completion via Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make async request
-            response = await self._async_client.post(
-                f"{self.host}/api/chat",
-                json=data,
-            )
-            response.raise_for_status()
-
-            # Parse response
-            result = response.json()
-
-            # Extract message content
-            message = result.get("message", {})
-            content = message.get("content", "")
-
-            # Calculate token usage if available
-            usage = None
-            if "prompt_eval_count" in result or "eval_count" in result:
-                usage = {
-                    "prompt_tokens": result.get("prompt_eval_count", 0),
-                    "completion_tokens": result.get("eval_count", 0),
-                    "total_tokens": result.get("prompt_eval_count", 0)
-                    + result.get("eval_count", 0),
-                }
-
-            return ChatCompletion(
-                content=content,
-                model=model,
-                finish_reason="stop",
-                usage=usage,
-                metadata={
-                    "total_duration": result.get("total_duration"),
-                    "load_duration": result.get("load_duration"),
-                    "prompt_eval_duration": result.get("prompt_eval_duration"),
-                    "eval_duration": result.get("eval_duration"),
-                },
+            return await self._achat_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             )
 
         except httpx.HTTPStatusError as e:
@@ -345,6 +344,80 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama async error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async error: {str(e)}") from e
+
+    async def _achat_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> ChatCompletion:
+        """Async chat completion using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make async request
+        response = await self._async_client.post(
+            f"{self.host}/api/chat",
+            json=data,
+        )
+        response.raise_for_status()
+
+        # Parse response
+        result = response.json()
+
+        # Extract message content
+        message = result.get("message", {})
+        content = message.get("content", "")
+
+        # Calculate token usage if available
+        usage = None
+        if "prompt_eval_count" in result or "eval_count" in result:
+            usage = {
+                "prompt_tokens": result.get("prompt_eval_count", 0),
+                "completion_tokens": result.get("eval_count", 0),
+                "total_tokens": result.get("prompt_eval_count", 0) + result.get("eval_count", 0),
+            }
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason="stop",
+            usage=usage,
+            metadata={
+                "total_duration": result.get("total_duration"),
+                "load_duration": result.get("load_duration"),
+                "prompt_eval_duration": result.get("prompt_eval_duration"),
+                "eval_duration": result.get("eval_duration"),
+            },
+        )
 
     async def achat_stream(
         self,
@@ -359,78 +432,17 @@ class OllamaProvider(BaseProvider):
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Async stream chat completion via Ollama."""
         try:
-            # Convert messages
-            ollama_messages = self._convert_messages(messages)
+            # Check tool calling capability
+            if tools and not self.supports_tool_calling(model):
+                raise ValueError(
+                    f"Model '{model}' does not support tool calling. "
+                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
+                )
 
-            # Prepare request data
-            data = {
-                "model": model,
-                "messages": ollama_messages,
-                "stream": True,
-                "options": {
-                    "temperature": temperature,
-                },
-            }
-
-            # Add optional parameters
-            if max_tokens:
-                data["options"]["num_predict"] = max_tokens
-            if top_p is not None:
-                data["options"]["top_p"] = top_p
-            if stop:
-                data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
-
-            # Add any additional options from kwargs
-            for key, value in kwargs.items():
-                if key not in data:
-                    data["options"][key] = value
-
-            # Make async streaming request
-            async with self._async_client.stream(
-                "POST",
-                f"{self.host}/api/chat",
-                json=data,
-            ) as response:
-                response.raise_for_status()
-
-                # Process stream
-                async for line in response.aiter_lines():
-                    if line:
-                        try:
-                            chunk_data = json.loads(line)
-
-                            # Extract message content
-                            message = chunk_data.get("message", {})
-                            content = message.get("content", "")
-
-                            # Check if this is the final chunk
-                            done = chunk_data.get("done", False)
-                            finish_reason = "stop" if done else None
-
-                            # Extract usage from final chunk
-                            usage = None
-                            if done and (
-                                "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
-                            ):
-                                usage = {
-                                    "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
-                                    "completion_tokens": chunk_data.get("eval_count", 0),
-                                    "total_tokens": chunk_data.get("prompt_eval_count", 0)
-                                    + chunk_data.get("eval_count", 0),
-                                }
-
-                            yield ChatCompletionChunk(
-                                content=content,
-                                model=model,
-                                finish_reason=finish_reason,
-                                usage=usage,
-                                metadata={
-                                    "done": done,
-                                },
-                            )
-
-                        except json.JSONDecodeError:
-                            continue
+            async for chunk in self._achat_stream_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            ):
+                yield chunk
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -440,6 +452,91 @@ class OllamaProvider(BaseProvider):
             raise RuntimeError(f"Ollama async streaming error: {e.response.text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async streaming error: {str(e)}") from e
+
+    async def _achat_stream_native_ollama(
+        self,
+        messages: list[Message],
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        tools: list[Tool] | None = None,
+        **kwargs,
+    ) -> AsyncIterator[ChatCompletionChunk]:
+        """Async stream chat completion using native Ollama API."""
+        # Convert messages
+        ollama_messages = self._convert_messages(messages)
+
+        # Prepare request data
+        data = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": True,
+            "options": {
+                "temperature": temperature,
+            },
+        }
+
+        # Add optional parameters
+        if max_tokens:
+            data["options"]["num_predict"] = max_tokens
+        if top_p is not None:
+            data["options"]["top_p"] = top_p
+        if stop:
+            data["options"]["stop"] = stop if isinstance(stop, list) else [stop]
+
+        # Add any additional options from kwargs
+        for key, value in kwargs.items():
+            if key not in data:
+                data["options"][key] = value
+
+        # Make async streaming request
+        async with self._async_client.stream(
+            "POST",
+            f"{self.host}/api/chat",
+            json=data,
+        ) as response:
+            response.raise_for_status()
+
+            # Process stream
+            async for line in response.aiter_lines():
+                if line:
+                    try:
+                        chunk_data = json.loads(line)
+
+                        # Extract message content
+                        message = chunk_data.get("message", {})
+                        content = message.get("content", "")
+
+                        # Check if this is the final chunk
+                        done = chunk_data.get("done", False)
+                        finish_reason = "stop" if done else None
+
+                        # Extract usage from final chunk
+                        usage = None
+                        if done and (
+                            "prompt_eval_count" in chunk_data or "eval_count" in chunk_data
+                        ):
+                            usage = {
+                                "prompt_tokens": chunk_data.get("prompt_eval_count", 0),
+                                "completion_tokens": chunk_data.get("eval_count", 0),
+                                "total_tokens": chunk_data.get("prompt_eval_count", 0)
+                                + chunk_data.get("eval_count", 0),
+                            }
+
+                        yield ChatCompletionChunk(
+                            content=content,
+                            model=model,
+                            finish_reason=finish_reason,
+                            usage=usage,
+                            metadata={
+                                "done": done,
+                            },
+                        )
+
+                    except json.JSONDecodeError:
+                        continue
 
     def list_models(self) -> list[Model]:
         """List available models from Ollama."""

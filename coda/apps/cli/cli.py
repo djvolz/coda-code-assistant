@@ -25,6 +25,9 @@ def cli(ctx):
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--one-shot", help="Execute a single prompt and exit")
 @click.option(
+    "--quiet", "-q", is_flag=True, help="Output only the response (no UI elements, for scripting)"
+)
+@click.option(
     "--mode",
     type=click.Choice(["general", "code", "debug", "explain", "review", "refactor", "plan"]),
     default="general",
@@ -32,13 +35,11 @@ def cli(ctx):
 )
 @click.option("--no-save", is_flag=True, help="Disable auto-saving of conversations")
 @click.option("--resume", is_flag=True, help="Resume the most recent session")
-def chat(provider, model, debug, one_shot, mode, no_save, resume):
+def chat(provider, model, debug, one_shot, quiet, mode, no_save, resume):
     """Start an interactive chat session."""
     from .main import main
 
-    main(
-        provider, model, debug, one_shot, False, mode, no_save, resume
-    )  # False for removed basic flag
+    main(provider, model, debug, one_shot, mode, no_save, resume, quiet)
 
 
 cli.add_command(web_command, name="web")

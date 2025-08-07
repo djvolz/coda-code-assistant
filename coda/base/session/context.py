@@ -38,7 +38,6 @@ class ContextManager:
         self._init_tokenizer()
 
         # Fallback context limits for when provider info is not available
-        # These are kept for backwards compatibility and as defaults
         self.fallback_context_limits = {
             # OCI GenAI models
             "cohere.command-r-plus": 128000,

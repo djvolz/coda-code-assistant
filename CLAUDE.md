@@ -114,6 +114,47 @@ coda --version
 - Logs in: `~/.local/share/coda/logs/`
 - All paths follow XDG Base Directory specification
 
+## MCP Server Configuration
+
+Coda supports Model Context Protocol (MCP) servers for extending functionality with external tools. 
+
+### Configuration Files
+MCP servers are configured via `mcp.json` files. Coda searches for configuration in this order:
+1. Current working directory (`./mcp.json`)
+2. Project directory (if specified)  
+3. User config directory (`~/.config/coda/mcp.json`)
+
+### Example Configuration
+```json
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "mcp-serena", "mcp-serena"],
+      "env": {},
+      "enabled": true
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"],
+      "enabled": true
+    },
+    "remote-server": {
+      "url": "http://localhost:8080/mcp",
+      "auth_token": "your-token-here",
+      "enabled": true
+    }
+  }
+}
+```
+
+### Server Types
+- **Subprocess servers**: Use `command` and `args` to launch local MCP servers
+- **Remote servers**: Use `url` to connect to HTTP/WebSocket MCP servers  
+- **Authentication**: Optional `auth_token` for remote servers
+- **Environment**: Custom environment variables via `env` object
+
+
 ## Important Notes
 
 - Always use the `uv` package manager (not pip directly)
@@ -123,22 +164,138 @@ coda --version
 - The mock provider is essential for testing - use it for predictable test scenarios
 - Tree-sitter grammars are automatically downloaded as needed for code search
 - When adding new features or documentation, also create corresponding wiki-style documentation in `docs/wiki-staging/`
+- **No backwards compatibility required**: When refactoring, feel free to remove deprecated code, unused parameters, and clean up technical debt without maintaining backwards compatibility
+
+## Change Verification
+
+**CRITICAL**: All code changes must be verified before considering the work complete.
+
+### Minimum Verification
+```bash
+# Always verify changes work by running the CLI help
+uv run coda --help
+```
+
+### Recommended Verification
+```bash
+# Test full functionality with mock provider (best approach)
+echo "hi" | uv run coda chat --provider mock --model mock-model
+
+# Verify CLI starts properly (will show welcome screen)
+uv run coda
+# Press Ctrl+C to exit after seeing the welcome screen
+
+# Test help functionality
+uv run coda --help
+```
+
+### Additional Verification Steps
+- Run relevant tests: `make test` or specific test suites
+- Check code quality: `make quality` (format + lint + typecheck)
+- For new features, test the specific functionality implemented
+- For bug fixes, verify the issue is resolved
+
+**Never mark work as complete without running at least `uv run coda` to ensure the application starts correctly.**
 
 ## Theme Usage Guidelines
 
-- **NEVER use colors directly**: All colors must go through the theme module
-- **Import theme components**: Use `from coda.base.theme import ThemeManager, ConsoleTheme`
-- **Get colors from theme**: Access colors via theme objects, not hardcoded hex values
-- **Examples of what NOT to do**:
-  - ❌ `color="#1f77b4"` 
-  - ❌ `style="fg:red bg:white"`
-  - ❌ Direct RGB values like `rgb(255, 0, 0)`
-- **Examples of correct usage**:
-  - ✅ `theme.console.success` for success messages
-  - ✅ `theme.console.error` for error messages
-  - ✅ `theme.prompt.completion` for completion styling
-- **Custom themes**: Use `ThemeManager.create_custom_theme()` for brand-specific colors
-- **Theme persistence**: Themes are automatically loaded from user config
+**CRITICAL**: Never use hardcoded colors or styles directly in any code. All colors must go through the theme module.
+
+### What NOT to do (❌ FORBIDDEN):
+- **Rich markup with hardcoded colors**: `"[red]Error[/red]"`, `"[bold cyan]Loading...[/bold cyan]"`, `"[yellow]Warning[/yellow]"`
+- **Direct color names**: `"[green]Success[/green]"`, `"[dim]Note[/dim]"`, `"[blue]Info[/blue]"`
+- **Hex colors**: `color="#1f77b4"`, `style="fg:#ff0000"`
+- **RGB values**: `rgb(255, 0, 0)`
+- **Prompt-toolkit styles**: `style="fg:red bg:white"`
+
+### What TO do (✅ REQUIRED):
+
+#### 1. Import theme components
+```python
+from coda.base.theme import ThemeManager
+from coda.base.config import ConfigService
+
+# Get theme through config service
+config_service = ConfigService()
+theme = config_service.theme_manager.get_console_theme()
+```
+
+#### 2. Use theme properties for console output
+```python
+# ✅ Correct - use theme properties
+console.print(f"[{theme.success}]Operation completed[/{theme.success}]")
+console.print(f"[{theme.error}]Error occurred[/{theme.error}]")
+console.print(f"[{theme.warning}]Warning message[/{theme.warning}]")
+console.print(f"[{theme.info}]Information[/{theme.info}]")
+console.print(f"[{theme.dim}]Secondary info[/{theme.dim}]")
+console.print(f"[{theme.bold}]Important[/{theme.bold}]")
+```
+
+#### 3. Use theme properties for panels and borders
+```python
+# ✅ Correct - use theme for panels
+Panel(content, border_style=theme.panel_border, title_style=theme.panel_title)
+```
+
+#### 4. For interactive prompts, use prompt themes
+```python
+from coda.base.theme import PromptTheme
+prompt_theme = config_service.theme_manager.get_prompt_theme()
+
+# Use prompt theme properties
+style_dict = prompt_theme.to_dict()
+```
+
+#### 5. Available Console Theme Properties
+- `theme.success` - Success messages (green)
+- `theme.error` - Error messages (red) 
+- `theme.warning` - Warning messages (yellow)
+- `theme.info` - Information messages (cyan)
+- `theme.dim` - Secondary/dimmed text
+- `theme.bold` - Bold emphasis
+- `theme.panel_border` - Panel borders
+- `theme.panel_title` - Panel titles
+- `theme.user_message` - User message styling
+- `theme.assistant_message` - Assistant message styling
+- `theme.system_message` - System message styling
+- `theme.command` - Command styling
+- `theme.table_header` - Table header styling
+
+#### 6. Custom themes
+```python
+# ✅ Create custom themes properly
+custom_theme = ThemeManager.create_custom_theme(
+    "company",
+    "Company brand colors", 
+    base_theme="default",
+    success="#00aa00",
+    error="#ff0000"
+)
+```
+
+### Migration Examples
+
+Replace hardcoded patterns like these:
+
+```python
+# ❌ Wrong
+console.print("[red]Error occurred[/red]")
+console.print(f"[bold cyan]{message}[/bold cyan]") 
+console.print("[yellow]Warning[/yellow]")
+console.print("[dim]Loading...[/dim]")
+
+# ✅ Correct
+console.print(f"[{theme.error}]Error occurred[/{theme.error}]")
+console.print(f"[{theme.info} {theme.bold}]{message}[/{theme.info} {theme.bold}]")
+console.print(f"[{theme.warning}]Warning[/{theme.warning}]") 
+console.print(f"[{theme.dim}]Loading...[/{theme.dim}]")
+```
+
+### Theme Architecture
+- **ConsoleTheme**: Terminal output colors and styles
+- **PromptTheme**: Interactive input/completion styling  
+- **ThemeManager**: Centralized theme management and persistence
+- **Theme validation**: Automatic validation of theme configurations
 
 ## Release Process
 

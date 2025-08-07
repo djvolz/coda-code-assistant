@@ -3,16 +3,30 @@ MCP server manager that discovers and manages external MCP servers from configur
 
 This module integrates with mcp_config to discover servers from mcp.json files
 and manages their lifecycle (starting, stopping, connecting).
+
+CLIENT STRATEGY:
+The system supports multiple MCP client types using the Strategy pattern:
+- SubprocessMCPClient: For local MCP servers using stdio communication
+- RemoteMCPClient: For servers accessible via HTTP/WebSocket
+- Both clients implement BaseMCPClient interface for consistent behavior
+
+Client selection is automatic based on server configuration:
+- If 'url' is specified → RemoteMCPClient (network communication)
+- If 'command' is specified → SubprocessMCPClient (subprocess stdio)
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
+from coda.base.config.manager import ConfigManager
+from coda.base.config.models import MCPServerConfig
+
 from .base import BaseTool, ToolParameter, ToolRegistry, ToolResult, ToolSchema
-from .mcp_config import MCPServerConfig, load_mcp_config
-from .mcp_server import MCPClient
-from .mcp_stdio_client import StdioMCPClient
+from .clients.remote_client import RemoteMCPClient
+from .clients.subprocess_client import SubprocessMCPClient
+from .mcp_utils import extract_tool_content, format_mcp_error
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +74,14 @@ class ExternalMCPTool(BaseTool):
         return self._schema
 
     async def execute(self, arguments: dict[str, Any]) -> ToolResult:
-        """Execute the external tool via MCP."""
+        """Execute the external tool via MCP with configurable timeout."""
+        # Get timeout from environment or use default
+        timeout = float(os.environ.get("MCP_TOOL_TIMEOUT", "30.0"))
+
         try:
-            result = await self.server_process.call_tool(self.tool_info["name"], arguments)
+            result = await self.server_process.call_tool(
+                self.tool_info["name"], arguments, timeout=timeout
+            )
 
             # Handle MCP response format
             if "error" in result:
@@ -73,76 +92,77 @@ class ExternalMCPTool(BaseTool):
                     server=self.server_name,
                 )
 
-            # Extract content from MCP response
-            content = result.get("content", [])
-            if content and isinstance(content, list) and len(content) > 0:
-                text_content = content[0].get("text", "")
-                return ToolResult(
-                    success=True,
-                    result=text_content,
-                    metadata=result.get("metadata", {}),
-                    tool=self._schema.name,
-                    server=self.server_name,
-                )
-
+            # Extract content using utility function
+            text_content = extract_tool_content(result)
             return ToolResult(
-                success=True, result=str(result), tool=self._schema.name, server=self.server_name
+                success=True,
+                result=text_content,
+                metadata=result.get("metadata", {}),
+                tool=self._schema.name,
+                server=self.server_name,
             )
 
         except Exception as e:
-            logger.error(f"Error executing external tool {self._schema.name}: {e}")
+            error_msg = format_mcp_error(e, f"executing external tool {self._schema.name}")
+            logger.error(error_msg)
             return ToolResult(
                 success=False, error=str(e), tool=self._schema.name, server=self.server_name
             )
 
 
 class MCPServerProcess:
-    """Manages an MCP server (either subprocess or remote)."""
+    """Manages an MCP server using Strategy pattern for different client types."""
 
     def __init__(self, config: MCPServerConfig):
         self.config = config
-        self.client: MCPClient | StdioMCPClient | None = None
-        self.is_subprocess = not bool(config.url)
+        self.client = self._create_client()
+
+    def _create_client(self):
+        """Create appropriate MCP client based on server configuration.
+
+        Uses the Strategy pattern to select client implementation:
+        - RemoteMCPClient for servers with 'url' (HTTP/WebSocket communication)
+        - SubprocessMCPClient for servers with 'command' (stdio communication)
+
+        Both client types implement the same BaseMCPClient interface,
+        ensuring consistent behavior regardless of connection type.
+        """
+        if self.config.url:
+            # Remote server - use HTTP/WebSocket client
+            return RemoteMCPClient(self.config.url, self.config.auth_token)
+        else:
+            # Local subprocess server - use stdio client
+            return SubprocessMCPClient(
+                command=self.config.command, args=self.config.args, env=self.config.env
+            )
 
     async def start(self) -> bool:
-        """Start the MCP server (subprocess or connect to remote)."""
+        """Start the MCP server."""
         try:
-            if self.is_subprocess:
-                # Create and start stdio client for subprocess
-                self.client = StdioMCPClient(
-                    command=self.config.command, args=self.config.args, env=self.config.env
-                )
-                return await self.client.start()
-            else:
-                # Connect to remote server
-                self.client = MCPClient(self.config.url, self.config.auth_token)
-                await self.client.connect()
-                return True
-
+            return await self.client.start()
         except Exception as e:
-            logger.error(f"Failed to start MCP server '{self.config.name}': {e}")
+            error_msg = format_mcp_error(e, f"starting MCP server '{self.config.name}'")
+            logger.error(error_msg)
             return False
 
     async def list_tools(self) -> list[dict[str, Any]]:
         """List tools from the server."""
-        if self.client:
-            return await self.client.list_tools()
-        return []
+        return await self.client.list_tools()
 
-    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Call a tool on the server."""
-        if self.client:
-            return await self.client.call_tool(tool_name, arguments)
-        return {"error": "Server not connected"}
+    async def call_tool(
+        self, tool_name: str, arguments: dict[str, Any], timeout: float = 30.0
+    ) -> dict[str, Any]:
+        """Call a tool on the server with timeout."""
+        return await self.client.call_tool(tool_name, arguments, timeout=timeout)
 
     async def stop(self):
         """Stop the MCP server."""
-        if self.client:
-            if isinstance(self.client, StdioMCPClient):
-                await self.client.stop()
-            else:
-                await self.client.disconnect()
-            self.client = None
+        await self.client.stop()
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if the server is connected."""
+        return self.client.is_connected
 
 
 class MCPManager:
@@ -155,7 +175,8 @@ class MCPManager:
 
     async def discover_and_start_servers(self, project_dir: Path | None = None):
         """Discover MCP servers from configuration and start them."""
-        config = load_mcp_config(project_dir)
+        config_manager = ConfigManager(app_name="coda")
+        config = config_manager.get_mcp_config(project_dir)
 
         for server_name, server_config in config.servers.items():
             if server_name in self.servers:
@@ -179,7 +200,9 @@ class MCPManager:
             if tools:
                 await self._register_server_tools(config.name, server_process, tools)
             else:
-                logger.warning(f"MCP server '{config.name}' has no tools")
+                logger.info(
+                    f"MCP server '{config.name}' provided no additional tools (using built-in tools)"
+                )
 
             return True
 
