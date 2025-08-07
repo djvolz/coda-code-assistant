@@ -20,10 +20,12 @@ import os
 from pathlib import Path
 from typing import Any
 
+from coda.base.config.manager import ConfigManager
+from coda.base.config.models import MCPServerConfig
+
 from .base import BaseTool, ToolParameter, ToolRegistry, ToolResult, ToolSchema
 from .clients.remote_client import RemoteMCPClient
 from .clients.subprocess_client import SubprocessMCPClient
-from .mcp_config import MCPServerConfig, load_mcp_config
 from .mcp_utils import extract_tool_content, format_mcp_error
 
 logger = logging.getLogger(__name__)
@@ -173,7 +175,8 @@ class MCPManager:
 
     async def discover_and_start_servers(self, project_dir: Path | None = None):
         """Discover MCP servers from configuration and start them."""
-        config = load_mcp_config(project_dir)
+        config_manager = ConfigManager(app_name="coda")
+        config = config_manager.get_mcp_config(project_dir)
 
         for server_name, server_config in config.servers.items():
             if server_name in self.servers:
