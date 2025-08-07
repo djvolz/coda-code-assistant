@@ -66,35 +66,3 @@ async def simple_thinking_animation(
 
     except Exception:
         raise
-
-
-# Keep the old function for backward compatibility, but make it use the new simple version
-async def async_timer_display(
-    live,
-    task: asyncio.Task,
-    start_time: float,
-    message: str = "Thinking",
-    theme_info: str = "",
-    theme_bold: str = "",
-    theme_dim: str = "",
-    min_display_time: float = 0.8,
-    use_dim_style: bool = False,
-) -> None:
-    """
-    Legacy function - redirects to simple_thinking_animation.
-    """
-    # Just use the console from the live object if possible, or get default console
-    console = getattr(live, "console", None)
-    if not console:
-        from rich.console import Console
-
-        console = Console()
-
-    await simple_thinking_animation(
-        task=task,
-        console=console,
-        message=message,
-        theme_info=theme_info,
-        theme_bold=theme_bold,
-        min_display_time=min_display_time,
-    )

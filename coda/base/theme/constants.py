@@ -12,7 +12,3 @@ ALL_THEMES: list[str] = [
     DARK,
     LIGHT,
 ]
-
-# Individual theme constants (for backward compatibility and explicit imports)
-THEME_DARK: str = DARK
-THEME_LIGHT: str = LIGHT

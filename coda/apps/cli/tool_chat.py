@@ -5,10 +5,8 @@ import json
 import time
 
 from rich.console import Console
-from rich.live import Live
 from rich.panel import Panel
 from rich.syntax import Syntax
-from rich.text import Text
 
 from coda.base.providers.base import Message, Role, Tool
 from coda.services.tools.executor import ToolExecutor
@@ -130,33 +128,29 @@ class ToolChatHandler:
                 )
 
             # Execute the tool with timer display
-            with Live(
-                Text(""), console=self.console, refresh_per_second=10, transient=True
-            ) as live:
-                # Start async execution
-                async def execute_with_timer(tc=tool_call):
-                    nonlocal result
-                    result = await self.executor.execute_tool_call(tc)
+            # Start async execution
+            async def execute_with_timer(tc=tool_call):
+                nonlocal result
+                result = await self.executor.execute_tool_call(tc)
 
-                result = None
-                task = asyncio.create_task(execute_with_timer())
+            result = None
+            task = asyncio.create_task(execute_with_timer())
 
-                # Use centralized timer utility
-                from coda.apps.cli.utils import async_timer_display
+            # Use centralized timer utility
+            from coda.apps.cli.utils import simple_thinking_animation
 
-                await async_timer_display(
-                    live,
-                    task,
-                    start_time,
-                    "Executing",
-                    theme_dim=self.theme.dim,
-                    use_dim_style=True,
-                    min_display_time=0.0,  # No minimum display time for tool execution
-                )
+            await simple_thinking_animation(
+                task=task,
+                console=self.console,
+                message="Executing",
+                theme_info=self.theme.info,
+                theme_bold=self.theme.bold,
+                min_display_time=0.0,  # No minimum display time for tool execution
+            )
 
-                # Get the result
-                await task
-                elapsed = time.time() - start_time
+            # Get the result
+            await task
+            elapsed = time.time() - start_time
 
             # Show execution time
             self.console.print(f"[{self.theme.dim}]Completed in {elapsed:.1f}s[/{self.theme.dim}]")

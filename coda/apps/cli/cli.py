@@ -39,9 +39,7 @@ def chat(provider, model, debug, one_shot, quiet, mode, no_save, resume):
     """Start an interactive chat session."""
     from .main import main
 
-    main(
-        provider, model, debug, one_shot, False, mode, no_save, resume, quiet
-    )  # False for removed basic flag  # False for removed basic flag
+    main(provider, model, debug, one_shot, mode, no_save, resume, quiet)
 
 
 cli.add_command(web_command, name="web")

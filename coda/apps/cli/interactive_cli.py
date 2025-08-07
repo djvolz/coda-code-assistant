@@ -618,9 +618,9 @@ class InteractiveCLI(CommandHandler):
 
         elif args == "reset":
             # Reset to default theme
-            from coda.base.theme.constants import THEME_DARK
+            from coda.base.theme.constants import DARK
 
-            args = THEME_DARK
+            args = DARK
 
         # Set the theme
         try:

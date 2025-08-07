@@ -19,7 +19,6 @@ def main(
     model: str,
     debug: bool,
     one_shot: str,
-    basic: bool,
     mode: str,
     no_save: bool,
     resume: bool,

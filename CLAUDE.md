@@ -164,6 +164,7 @@ MCP servers are configured via `mcp.json` files. Coda searches for configuration
 - The mock provider is essential for testing - use it for predictable test scenarios
 - Tree-sitter grammars are automatically downloaded as needed for code search
 - When adding new features or documentation, also create corresponding wiki-style documentation in `docs/wiki-staging/`
+- **No backwards compatibility required**: When refactoring, feel free to remove deprecated code, unused parameters, and clean up technical debt without maintaining backwards compatibility
 
 ## Change Verification
 

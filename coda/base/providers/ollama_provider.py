@@ -107,17 +107,9 @@ class OllamaProvider(BaseProvider):
                     f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
                 )
 
-            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
-            is_gpt_oss = model.startswith("gpt-oss")
-
-            if is_gpt_oss:
-                return self._chat_openai_compatible(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                )
-            else:
-                return self._chat_native_ollama(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                )
+            return self._chat_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            )
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -202,82 +194,6 @@ class OllamaProvider(BaseProvider):
             },
         )
 
-    def _chat_openai_compatible(
-        self,
-        messages: list[Message],
-        model: str,
-        temperature: float = 0.7,
-        max_tokens: int | None = None,
-        top_p: float | None = None,
-        stop: str | list[str] | None = None,
-        tools: list[Tool] | None = None,
-        **kwargs,
-    ) -> ChatCompletion:
-        """Send chat completion request using OpenAI-compatible endpoint for gpt-oss models."""
-        # Convert messages to OpenAI format
-        openai_messages = []
-        for msg in messages:
-            openai_messages.append({"role": msg.role, "content": msg.content})
-
-        # Prepare request data
-        data = {
-            "model": model,
-            "messages": openai_messages,
-            "temperature": temperature,
-        }
-
-        # Add optional parameters
-        if max_tokens:
-            data["max_tokens"] = max_tokens
-        if top_p is not None:
-            data["top_p"] = top_p
-        if stop:
-            data["stop"] = stop
-
-        # Make request to OpenAI-compatible endpoint
-        response = self._client.post(
-            f"{self.host}/v1/chat/completions",
-            json=data,
-        )
-        response.raise_for_status()
-
-        # Parse OpenAI-compatible response
-        result = response.json()
-
-        # Check for error in response
-        if "error" in result:
-            error_msg = result["error"].get("message", "Unknown error")
-            raise RuntimeError(f"OpenAI-compatible API error: {error_msg}")
-
-        # Extract message content
-        choices = result.get("choices", [])
-        if not choices:
-            raise RuntimeError("No choices in response")
-
-        message = choices[0].get("message", {})
-        content = message.get("content", "")
-        finish_reason = choices[0].get("finish_reason", "stop")
-
-        # Extract usage information
-        usage_data = result.get("usage", {})
-        usage = None
-        if usage_data:
-            usage = {
-                "prompt_tokens": usage_data.get("prompt_tokens", 0),
-                "completion_tokens": usage_data.get("completion_tokens", 0),
-                "total_tokens": usage_data.get("total_tokens", 0),
-            }
-
-        return ChatCompletion(
-            content=content,
-            model=model,
-            finish_reason=finish_reason,
-            usage=usage,
-            metadata={
-                "api_endpoint": "openai_compatible",
-            },
-        )
-
     def chat_stream(
         self,
         messages: list[Message],
@@ -298,17 +214,9 @@ class OllamaProvider(BaseProvider):
                     f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
                 )
 
-            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
-            is_gpt_oss = model.startswith("gpt-oss")
-
-            if is_gpt_oss:
-                yield from self._chat_stream_openai_compatible(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                )
-            else:
-                yield from self._chat_stream_native_ollama(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                )
+            yield from self._chat_stream_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            )
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -404,94 +312,6 @@ class OllamaProvider(BaseProvider):
                     except json.JSONDecodeError:
                         continue
 
-    def _chat_stream_openai_compatible(
-        self,
-        messages: list[Message],
-        model: str,
-        temperature: float = 0.7,
-        max_tokens: int | None = None,
-        top_p: float | None = None,
-        stop: str | list[str] | None = None,
-        tools: list[Tool] | None = None,
-        **kwargs,
-    ) -> Iterator[ChatCompletionChunk]:
-        """Stream chat completion using OpenAI-compatible endpoint for gpt-oss models."""
-        # Convert messages to OpenAI format
-        openai_messages = []
-        for msg in messages:
-            openai_messages.append({"role": msg.role, "content": msg.content})
-
-        # Prepare request data
-        data = {
-            "model": model,
-            "messages": openai_messages,
-            "temperature": temperature,
-            "stream": True,
-        }
-
-        # Add optional parameters
-        if max_tokens:
-            data["max_tokens"] = max_tokens
-        if top_p is not None:
-            data["top_p"] = top_p
-        if stop:
-            data["stop"] = stop
-
-        # Make streaming request to OpenAI-compatible endpoint
-        with self._client.stream(
-            "POST",
-            f"{self.host}/v1/chat/completions",
-            json=data,
-        ) as response:
-            response.raise_for_status()
-
-            # Process stream
-            for line in response.iter_lines():
-                if line:
-                    # Remove "data: " prefix if present
-                    line_data = line
-                    if line.startswith("data: "):
-                        line_data = line[6:]
-
-                    # Skip [DONE] marker
-                    if line_data.strip() == "[DONE]":
-                        break
-
-                    try:
-                        chunk_data = json.loads(line_data)
-
-                        choices = chunk_data.get("choices", [])
-                        if not choices:
-                            continue
-
-                        choice = choices[0]
-                        delta = choice.get("delta", {})
-                        content = delta.get("content", "")
-                        finish_reason = choice.get("finish_reason")
-
-                        # Extract usage if available (usually in final chunk)
-                        usage_data = chunk_data.get("usage", {})
-                        usage = None
-                        if usage_data:
-                            usage = {
-                                "prompt_tokens": usage_data.get("prompt_tokens", 0),
-                                "completion_tokens": usage_data.get("completion_tokens", 0),
-                                "total_tokens": usage_data.get("total_tokens", 0),
-                            }
-
-                        yield ChatCompletionChunk(
-                            content=content,
-                            model=model,
-                            finish_reason=finish_reason,
-                            usage=usage,
-                            metadata={
-                                "api_endpoint": "openai_compatible",
-                            },
-                        )
-
-                    except json.JSONDecodeError:
-                        continue
-
     async def achat(
         self,
         messages: list[Message],
@@ -512,17 +332,9 @@ class OllamaProvider(BaseProvider):
                     f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
                 )
 
-            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
-            is_gpt_oss = model.startswith("gpt-oss")
-
-            if is_gpt_oss:
-                return await self._achat_openai_compatible(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                )
-            else:
-                return await self._achat_native_ollama(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                )
+            return await self._achat_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            )
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -607,82 +419,6 @@ class OllamaProvider(BaseProvider):
             },
         )
 
-    async def _achat_openai_compatible(
-        self,
-        messages: list[Message],
-        model: str,
-        temperature: float = 0.7,
-        max_tokens: int | None = None,
-        top_p: float | None = None,
-        stop: str | list[str] | None = None,
-        tools: list[Tool] | None = None,
-        **kwargs,
-    ) -> ChatCompletion:
-        """Async chat completion using OpenAI-compatible endpoint for gpt-oss models."""
-        # Convert messages to OpenAI format
-        openai_messages = []
-        for msg in messages:
-            openai_messages.append({"role": msg.role, "content": msg.content})
-
-        # Prepare request data
-        data = {
-            "model": model,
-            "messages": openai_messages,
-            "temperature": temperature,
-        }
-
-        # Add optional parameters
-        if max_tokens:
-            data["max_tokens"] = max_tokens
-        if top_p is not None:
-            data["top_p"] = top_p
-        if stop:
-            data["stop"] = stop
-
-        # Make async request to OpenAI-compatible endpoint
-        response = await self._async_client.post(
-            f"{self.host}/v1/chat/completions",
-            json=data,
-        )
-        response.raise_for_status()
-
-        # Parse OpenAI-compatible response
-        result = response.json()
-
-        # Check for error in response
-        if "error" in result:
-            error_msg = result["error"].get("message", "Unknown error")
-            raise RuntimeError(f"OpenAI-compatible API error: {error_msg}")
-
-        # Extract message content
-        choices = result.get("choices", [])
-        if not choices:
-            raise RuntimeError("No choices in response")
-
-        message = choices[0].get("message", {})
-        content = message.get("content", "")
-        finish_reason = choices[0].get("finish_reason", "stop")
-
-        # Extract usage information
-        usage_data = result.get("usage", {})
-        usage = None
-        if usage_data:
-            usage = {
-                "prompt_tokens": usage_data.get("prompt_tokens", 0),
-                "completion_tokens": usage_data.get("completion_tokens", 0),
-                "total_tokens": usage_data.get("total_tokens", 0),
-            }
-
-        return ChatCompletion(
-            content=content,
-            model=model,
-            finish_reason=finish_reason,
-            usage=usage,
-            metadata={
-                "api_endpoint": "openai_compatible",
-            },
-        )
-
     async def achat_stream(
         self,
         messages: list[Message],
@@ -703,19 +439,10 @@ class OllamaProvider(BaseProvider):
                     f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
                 )
 
-            # Check if this is a gpt-oss model that needs OpenAI-compatible endpoint
-            is_gpt_oss = model.startswith("gpt-oss")
-
-            if is_gpt_oss:
-                async for chunk in self._achat_stream_openai_compatible(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                ):
-                    yield chunk
-            else:
-                async for chunk in self._achat_stream_native_ollama(
-                    messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-                ):
-                    yield chunk
+            async for chunk in self._achat_stream_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            ):
+                yield chunk
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -805,94 +532,6 @@ class OllamaProvider(BaseProvider):
                             usage=usage,
                             metadata={
                                 "done": done,
-                            },
-                        )
-
-                    except json.JSONDecodeError:
-                        continue
-
-    async def _achat_stream_openai_compatible(
-        self,
-        messages: list[Message],
-        model: str,
-        temperature: float = 0.7,
-        max_tokens: int | None = None,
-        top_p: float | None = None,
-        stop: str | list[str] | None = None,
-        tools: list[Tool] | None = None,
-        **kwargs,
-    ) -> AsyncIterator[ChatCompletionChunk]:
-        """Async stream chat completion using OpenAI-compatible endpoint for gpt-oss models."""
-        # Convert messages to OpenAI format
-        openai_messages = []
-        for msg in messages:
-            openai_messages.append({"role": msg.role, "content": msg.content})
-
-        # Prepare request data
-        data = {
-            "model": model,
-            "messages": openai_messages,
-            "temperature": temperature,
-            "stream": True,
-        }
-
-        # Add optional parameters
-        if max_tokens:
-            data["max_tokens"] = max_tokens
-        if top_p is not None:
-            data["top_p"] = top_p
-        if stop:
-            data["stop"] = stop
-
-        # Make async streaming request to OpenAI-compatible endpoint
-        async with self._async_client.stream(
-            "POST",
-            f"{self.host}/v1/chat/completions",
-            json=data,
-        ) as response:
-            response.raise_for_status()
-
-            # Process stream
-            async for line in response.aiter_lines():
-                if line:
-                    # Remove "data: " prefix if present
-                    line_data = line
-                    if line.startswith("data: "):
-                        line_data = line[6:]
-
-                    # Skip [DONE] marker
-                    if line_data.strip() == "[DONE]":
-                        break
-
-                    try:
-                        chunk_data = json.loads(line_data)
-
-                        choices = chunk_data.get("choices", [])
-                        if not choices:
-                            continue
-
-                        choice = choices[0]
-                        delta = choice.get("delta", {})
-                        content = delta.get("content", "")
-                        finish_reason = choice.get("finish_reason")
-
-                        # Extract usage if available (usually in final chunk)
-                        usage_data = chunk_data.get("usage", {})
-                        usage = None
-                        if usage_data:
-                            usage = {
-                                "prompt_tokens": usage_data.get("prompt_tokens", 0),
-                                "completion_tokens": usage_data.get("completion_tokens", 0),
-                                "total_tokens": usage_data.get("total_tokens", 0),
-                            }
-
-                        yield ChatCompletionChunk(
-                            content=content,
-                            model=model,
-                            finish_reason=finish_reason,
-                            usage=usage,
-                            metadata={
-                                "api_endpoint": "openai_compatible",
                             },
                         )
 

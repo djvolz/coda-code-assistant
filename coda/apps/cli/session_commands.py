@@ -52,7 +52,7 @@ class SessionCommands:
         self.current_session_id: str | None = None
         self.current_messages: list[dict[str, Any]] = []
         self.auto_save_enabled: bool = True  # Auto-save by default
-        self._has_user_message: bool = False  # Track if we have a user message  # Suppress output messages  # Track if we have a user message
+        self._has_user_message: bool = False  # Track if we have a user message
 
     def handle_session_command(self, args: list[str]) -> str | None:
         """Handle /session command and subcommands.
@@ -96,22 +96,22 @@ class SessionCommands:
     def _show_session_help(self) -> str:
         """Show session command help."""
         # Base layer cannot depend on apps layer, so we define help directly
-        help_text = """
-[bold]Session Management Commands[/bold]
+        help_text = f"""
+[{self.theme.bold}]Session Management Commands[/{self.theme.bold}]
 
-[cyan]/session save [name][/cyan] - Save current conversation
-[cyan]/session load <id|name>[/cyan] - Load a saved session
-[cyan]/session last[/cyan] - Load the most recent session
-[cyan]/session list[/cyan] - List all saved sessions
-[cyan]/session branch [name][/cyan] - Create a branch from current session
-[cyan]/session delete <id|name>[/cyan] - Delete a session
-[cyan]/session delete-all [--auto-only][/cyan] - Delete all/auto sessions
-[cyan]/session info [id][/cyan] - Show session details
-[cyan]/session search <query>[/cyan] - Search sessions
-[cyan]/session rename [id] <new_name>[/cyan] - Rename a session
-[cyan]/session tools [id][/cyan] - Show tool usage for a session
+[{self.theme.info}]/session save [name][/{self.theme.info}] - Save current conversation
+[{self.theme.info}]/session load <id|name>[/{self.theme.info}] - Load a saved session
+[{self.theme.info}]/session last[/{self.theme.info}] - Load the most recent session
+[{self.theme.info}]/session list[/{self.theme.info}] - List all saved sessions
+[{self.theme.info}]/session branch [name][/{self.theme.info}] - Create a branch from current session
+[{self.theme.info}]/session delete <id|name>[/{self.theme.info}] - Delete a session
+[{self.theme.info}]/session delete-all [--auto-only][/{self.theme.info}] - Delete all/auto sessions
+[{self.theme.info}]/session info [id][/{self.theme.info}] - Show session details
+[{self.theme.info}]/session search <query>[/{self.theme.info}] - Search sessions
+[{self.theme.info}]/session rename [id] <new_name>[/{self.theme.info}] - Rename a session
+[{self.theme.info}]/session tools [id][/{self.theme.info}] - Show tool usage for a session
 
-[dim]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r, tools→t[/dim]
+[{self.theme.dim}]Aliases: /s, save→s, load→l, list→ls, branch→b, delete→d/rm, info→i, rename→r, tools→t[/{self.theme.dim}]
 """
         self.console.print(
             Panel(help_text, title="Session Help", border_style=self.theme.panel_border)
@@ -222,16 +222,20 @@ class SessionCommands:
         self.current_session_id = session.id
 
         # Display session info
-        self.console.print(f"\n[green]Loaded session:[/green] {session.name}")
+        self.console.print(
+            f"\n[{self.theme.success}]Loaded session:[/{self.theme.success}] {session.name}"
+        )
         self.console.print(
             f"[{self.theme.dim}]Provider:[/{self.theme.dim}] {session.provider} | [{self.theme.dim}]Model:[/{self.theme.dim}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]"
         )
         self.console.print(
-            f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
+            f"[{self.theme.dim}]Messages:[/{self.theme.dim}] {len(messages)} | [{self.theme.dim}]Created:[/{self.theme.dim}] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
         )
 
         if session.description:
-            self.console.print(f"[dim]Description:[/dim] {session.description}")
+            self.console.print(
+                f"[{self.theme.dim}]Description:[/{self.theme.dim}] {session.description}"
+            )
 
         # Set flag to indicate messages were loaded for CLI integration
         self._messages_loaded = True
@@ -343,32 +347,38 @@ class SessionCommands:
 
         # Create info panel
         info_lines = [
-            f"[bold]Name:[/bold] {session.name}",
-            f"[bold]ID:[/bold] {session.id}",
-            f"[bold]Provider:[/bold] {session.provider}",
+            f"[{self.theme.bold}]Name:[/{self.theme.bold}] {session.name}",
+            f"[{self.theme.bold}]ID:[/{self.theme.bold}] {session.id}",
+            f"[{self.theme.bold}]Provider:[/{self.theme.bold}] {session.provider}",
             f"[{self.theme.bold}]Model:[/{self.theme.bold}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]",
-            f"[bold]Mode:[/bold] {session.mode}",
-            f"[bold]Status:[/bold] {session.status}",
-            f"[bold]Created:[/bold] {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"[bold]Updated:[/bold] {session.updated_at.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"[bold]Messages:[/bold] {session.message_count}",
+            f"[{self.theme.bold}]Mode:[/{self.theme.bold}] {session.mode}",
+            f"[{self.theme.bold}]Status:[/{self.theme.bold}] {session.status}",
+            f"[{self.theme.bold}]Created:[/{self.theme.bold}] {session.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"[{self.theme.bold}]Updated:[/{self.theme.bold}] {session.updated_at.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"[{self.theme.bold}]Messages:[/{self.theme.bold}] {session.message_count}",
             (
-                f"[bold]Total Tokens:[/bold] {session.total_tokens:,}"
+                f"[{self.theme.bold}]Total Tokens:[/{self.theme.bold}] {session.total_tokens:,}"
                 if session.total_tokens
-                else "[bold]Total Tokens:[/bold] 0"
+                else f"[{self.theme.bold}]Total Tokens:[/{self.theme.bold}] 0"
             ),
         ]
 
         if session.total_cost:
-            info_lines.append(f"[bold]Total Cost:[/bold] ${session.total_cost:.4f}")
+            info_lines.append(
+                f"[{self.theme.bold}]Total Cost:[/{self.theme.bold}] ${session.total_cost:.4f}"
+            )
 
         if session.description:
-            info_lines.append(f"\n[bold]Description:[/bold]\n{session.description}")
+            info_lines.append(
+                f"\n[{self.theme.bold}]Description:[/{self.theme.bold}]\n{session.description}"
+            )
 
         if session.parent_id:
             parent = self.manager.get_session(session.parent_id)
             if parent:
-                info_lines.append(f"\n[bold]Branched from:[/bold] {parent.name}")
+                info_lines.append(
+                    f"\n[{self.theme.bold}]Branched from:[/{self.theme.bold}] {parent.name}"
+                )
 
         # Base modules should not use themed output - just return plain text
 
@@ -392,12 +402,14 @@ class SessionCommands:
         if not results:
             return f"No sessions found matching: {query}"
 
-        self.console.print(f"\n[bold]Search Results for:[/bold] {query}\n")
+        self.console.print(
+            f"\n[{self.theme.bold}]Search Results for:[/{self.theme.bold}] {query}\n"
+        )
 
         for session, messages in results:
             self.console.print(f"[bold cyan]{session.name}[/bold cyan] ({session.id[:8]}...)")
             self.console.print(
-                f"[dim]{session.provider}/{session.model} - {session.message_count} messages[/dim]"
+                f"[{self.theme.dim}]{session.provider}/{session.model} - {session.message_count} messages[/{self.theme.dim}]"
             )
 
             # Show matching messages
@@ -405,10 +417,14 @@ class SessionCommands:
                 excerpt = msg.content[:100].replace("\n", " ")
                 if len(msg.content) > 100:
                     excerpt += "..."
-                self.console.print(f"  [yellow]→[/yellow] [{msg.role}] {excerpt}")
+                self.console.print(
+                    f"  [{self.theme.warning}]→[/{self.theme.warning}] [{msg.role}] {excerpt}"
+                )
 
             if len(messages) > 3:
-                self.console.print(f"  [dim]... and {len(messages) - 3} more matches[/dim]")
+                self.console.print(
+                    f"  [{self.theme.dim}]... and {len(messages) - 3} more matches[/{self.theme.dim}]"
+                )
 
             self.console.print()
 
@@ -456,16 +472,20 @@ class SessionCommands:
         self.current_session_id = session.id
 
         # Display session info
-        self.console.print(f"\n[green]Loaded last session:[/green] {session.name}")
+        self.console.print(
+            f"\n[{self.theme.success}]Loaded last session:[/{self.theme.success}] {session.name}"
+        )
         self.console.print(
             f"[{self.theme.dim}]Provider:[/{self.theme.dim}] {session.provider} | [{self.theme.dim}]Model:[/{self.theme.dim}] [{self.prompt_theme.model_title}]{session.model}[/{self.prompt_theme.model_title}]"
         )
         self.console.print(
-            f"[dim]Messages:[/dim] {len(messages)} | [dim]Created:[/dim] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
+            f"[{self.theme.dim}]Messages:[/{self.theme.dim}] {len(messages)} | [{self.theme.dim}]Created:[/{self.theme.dim}] {session.created_at.strftime('%Y-%m-%d %H:%M')}"
         )
 
         if session.description:
-            self.console.print(f"[dim]Description:[/dim] {session.description}")
+            self.console.print(
+                f"[{self.theme.dim}]Description:[/{self.theme.dim}] {session.description}"
+            )
 
         # Set flag to indicate messages were loaded for CLI integration
         self._messages_loaded = True
@@ -537,7 +557,7 @@ class SessionCommands:
         session_type = "auto-saved" if auto_only else "all"
 
         self.console.print(
-            f"\n[yellow]Warning:[/yellow] This will delete {session_count} {session_type} session(s):"
+            f"\n[{self.theme.warning}]Warning:[/{self.theme.warning}] This will delete {session_count} {session_type} session(s):"
         )
 
         # Show first 10 sessions
@@ -549,7 +569,8 @@ class SessionCommands:
 
         # Confirm deletion
         if not Confirm.ask(
-            f"\n[red]Delete {session_count} {session_type} session(s)?[/red]", default=False
+            f"\n[{self.theme.error}]Delete {session_count} {session_type} session(s)?[/{self.theme.error}]",
+            default=False,
         ):
             return "Deletion cancelled."
 
@@ -567,14 +588,17 @@ class SessionCommands:
         # Base modules should not use themed output - just return plain text
 
         with self.console.status(
-            f"[cyan]Deleting {session_count} sessions...[/cyan]", spinner="dots"
+            f"[{self.theme.info}]Deleting {session_count} sessions...[/{self.theme.info}]",
+            spinner="dots",
         ):
             for session in sessions:
                 try:
                     self.manager.delete_session(session.id)
                     deleted_count += 1
                 except Exception as e:
-                    self.console.print(f"[red]Failed to delete {session.name}: {str(e)}[/red]")
+                    self.console.print(
+                        f"[{self.theme.error}]Failed to delete {session.name}: {str(e)}[/{self.theme.error}]"
+                    )
                     failed_count += 1
 
         if failed_count > 0:
@@ -609,13 +633,13 @@ class SessionCommands:
         from rich.table import Table
 
         # Summary panel
-        summary_text = f"""[bold]Tool Usage Summary[/bold]
+        summary_text = f"""[{self.theme.bold}]Tool Usage Summary[/{self.theme.bold}]
 
-Total tool calls: [cyan]{summary["total_tool_calls"]}[/cyan]
-Unique tools used: [cyan]{summary["unique_tools"]}[/cyan]
-Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
+Total tool calls: [{self.theme.info}]{summary["total_tool_calls"]}[/{self.theme.info}]
+Unique tools used: [{self.theme.info}]{summary["unique_tools"]}[/{self.theme.info}]
+Most used tool: [{self.theme.info}]{summary["most_used"] or "N/A"}[/{self.theme.info}]
 
-[bold]Tool Counts:[/bold]"""
+[{self.theme.bold}]Tool Counts:[/{self.theme.bold}]"""
 
         for tool, count in sorted(summary["tool_counts"].items(), key=lambda x: x[1], reverse=True):
             summary_text += f"\n  • {tool}: {count} call{'s' if count > 1 else ''}"
@@ -666,7 +690,7 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
             self.console.print(table)
         else:
             self.console.print(
-                f"\n[dim]Full history contains {len(tool_history)} entries. Showing summary only.[/dim]"
+                f"\n[{self.theme.dim}]Full history contains {len(tool_history)} entries. Showing summary only.[/{self.theme.dim}]"
             )
 
         return None
@@ -749,7 +773,9 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
 
-            self.console.print(f"[green]✓[/green] Exported to: {filepath}")
+            self.console.print(
+                f"[{self.theme.success}]✓[/{self.theme.success}] Exported to: {filepath}"
+            )
             return None
 
         except Exception as e:
@@ -757,17 +783,17 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
 
     def _show_export_help(self) -> str:
         """Show export command help."""
-        help_text = """
-[bold]Export Commands[/bold]
+        help_text = f"""
+[{self.theme.bold}]Export Commands[/{self.theme.bold}]
 
-[cyan]/export json [session][/cyan] - Export as JSON
-[cyan]/export markdown [session][/cyan] - Export as Markdown
-[cyan]/export txt [session][/cyan] - Export as plain text
-[cyan]/export html [session][/cyan] - Export as HTML
+[{self.theme.info}]/export json [session][/{self.theme.info}] - Export as JSON
+[{self.theme.info}]/export markdown [session][/{self.theme.info}] - Export as Markdown
+[{self.theme.info}]/export txt [session][/{self.theme.info}] - Export as plain text
+[{self.theme.info}]/export html [session][/{self.theme.info}] - Export as HTML
 
-[dim]Aliases: /e, markdown→md, txt→text[/dim]
-[dim]If no session specified, exports current session[/dim]
-[dim]Files saved to: ~/Documents/coda_exports/[/dim]
+[{self.theme.dim}]Aliases: /e, markdown→md, txt→text[/{self.theme.dim}]
+[{self.theme.dim}]If no session specified, exports current session[/{self.theme.dim}]
+[{self.theme.dim}]Files saved to: ~/Documents/coda_exports/[/{self.theme.dim}]
 """
         # Base modules should not use themed output - just return plain text
 
@@ -834,12 +860,16 @@ Most used tool: [cyan]{summary["most_used"] or "N/A"}[/cyan]
 
                 # Notify user about auto-save (subtly)
                 if not self.theme.quiet:
-                    self.console.print(f"[dim]💾 Auto-saved session: {auto_name}[/dim]")
+                    self.console.print(
+                        f"[{self.theme.dim}]💾 Auto-saved session: {auto_name}[/{self.theme.dim}]"
+                    )
 
             except Exception as e:
                 # Don't fail the conversation if auto-save fails
                 if not self.theme.quiet:
-                    self.console.print(f"[dim yellow]⚠️  Auto-save failed: {str(e)}[/dim yellow]")
+                    self.console.print(
+                        f"[{self.theme.warning} {self.theme.dim}]⚠️  Auto-save failed: {str(e)}[/{self.theme.warning} {self.theme.dim}]"
+                    )
 
         # If we have an active session, save to database
         elif self.current_session_id:
