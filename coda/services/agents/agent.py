@@ -391,7 +391,12 @@ class Agent:
 
                 # Make request to provider
                 if supports_tools:
-                    response = await asyncio.to_thread(
+                    # Use interruptible approach instead of asyncio.to_thread
+                    import concurrent.futures
+
+                    # Create a future for the provider call
+                    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                    future = executor.submit(
                         self.provider.chat,
                         messages=messages,
                         model=self.model,
@@ -400,6 +405,27 @@ class Agent:
                         tools=provider_tools,
                         **self.kwargs,
                     )
+
+                    # Poll for completion or interruption
+                    while not future.done():
+                        if interrupt_check and interrupt_check():
+                            future.cancel()  # This won't stop the actual provider call but prevents waiting
+                            executor.shutdown(wait=False)
+                            if status:
+                                status.stop()
+                            self._emit_warning("Response interrupted by user")
+                            return "Response interrupted.", messages
+
+                        # Wait a short time before checking again
+                        await asyncio.sleep(0.1)
+
+                    # Get the result
+                    try:
+                        response = future.result()
+                        executor.shutdown()
+                    except Exception as e:
+                        executor.shutdown()
+                        raise e
                 else:
                     # Use streaming for final response when no tools
                     stream = self.provider.chat_stream(
