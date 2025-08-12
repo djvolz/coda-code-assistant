@@ -385,6 +385,10 @@ class Agent:
                 return "Response interrupted.", messages
 
             try:
+                # Consistent status message for both paths
+                if status:
+                    status.update("Thinking...")
+
                 # Make request to provider
                 if supports_tools:
                     response = await asyncio.to_thread(
@@ -398,9 +402,6 @@ class Agent:
                     )
                 else:
                     # Use streaming for final response when no tools
-                    if status:
-                        status.update("Generating response...")
-
                     stream = self.provider.chat_stream(
                         messages=messages,
                         model=self.model,
