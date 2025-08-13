@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 
 # Version format: year.month.day.build
 # Example: 2025.1.3.1430 for January 3, 2025 at 14:30 UTC
-__version__ = "2025.8.13.0939"  # Auto-updated
+__version__ = "2025.8.13.2318"  # Auto-updated
 
 
 def get_current_version():
