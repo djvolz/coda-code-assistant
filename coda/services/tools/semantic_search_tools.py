@@ -9,10 +9,6 @@ query code with language-aware formatting.
 from pathlib import Path
 from typing import Any
 
-from coda.base.search.vector_search.embeddings.mock import MockEmbeddingProvider
-from coda.base.search.vector_search.manager import SemanticSearchManager
-from coda.semantic_search_coda import create_semantic_search_manager
-
 from .base import (
     BaseTool,
     ToolParameter,
@@ -21,26 +17,16 @@ from .base import (
     ToolSchema,
     tool_registry,
 )
+from .search_manager_mixin import SearchManagerMixin
 
 
-class SemanticSearchTool(BaseTool):
+class SemanticSearchTool(BaseTool, SearchManagerMixin):
     """Search indexed content using semantic similarity."""
 
     def __init__(self):
-        super().__init__()
-        self._search_manager = None
+        BaseTool.__init__(self)
+        SearchManagerMixin.__init__(self)
         # Don't initialize at construction time to avoid import errors
-
-    def _initialize_manager(self):
-        """Initialize the search manager once."""
-        if self._search_manager is None:
-            try:
-                # Try to use configured provider first
-                self._search_manager = create_semantic_search_manager()
-            except Exception:
-                # Fall back to mock provider for demo
-                provider = MockEmbeddingProvider(dimension=768)
-                self._search_manager = SemanticSearchManager(embedding_provider=provider)
 
     def get_schema(self) -> ToolSchema:
         return ToolSchema(
@@ -116,24 +102,13 @@ class SemanticSearchTool(BaseTool):
             )
 
 
-class IndexContentTool(BaseTool):
+class IndexContentTool(BaseTool, SearchManagerMixin):
     """Index files or directories for semantic search."""
 
     def __init__(self):
-        super().__init__()
-        self._search_manager = None
+        BaseTool.__init__(self)
+        SearchManagerMixin.__init__(self)
         # Don't initialize at construction time to avoid import errors
-
-    def _initialize_manager(self):
-        """Initialize the search manager once."""
-        if self._search_manager is None:
-            try:
-                # Try to use configured provider first
-                self._search_manager = create_semantic_search_manager()
-            except Exception:
-                # Fall back to mock provider for demo
-                provider = MockEmbeddingProvider(dimension=768)
-                self._search_manager = SemanticSearchManager(embedding_provider=provider)
 
     def get_schema(self) -> ToolSchema:
         return ToolSchema(
@@ -253,24 +228,13 @@ class IndexContentTool(BaseTool):
             )
 
 
-class CodeSearchTool(BaseTool):
+class CodeSearchTool(BaseTool, SearchManagerMixin):
     """Search code files with language-aware formatting."""
 
     def __init__(self):
-        super().__init__()
-        self._search_manager = None
+        BaseTool.__init__(self)
+        SearchManagerMixin.__init__(self)
         # Don't initialize at construction time to avoid import errors
-
-    def _initialize_manager(self):
-        """Initialize the search manager once."""
-        if self._search_manager is None:
-            try:
-                # Try to use configured provider first
-                self._search_manager = create_semantic_search_manager()
-            except Exception:
-                # Fall back to mock provider for demo
-                provider = MockEmbeddingProvider(dimension=768)
-                self._search_manager = SemanticSearchManager(embedding_provider=provider)
 
     def get_schema(self) -> ToolSchema:
         return ToolSchema(

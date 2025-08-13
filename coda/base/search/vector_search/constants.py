@@ -78,3 +78,17 @@ MAX_BATCH_SIZE: int = 1000
 # Error handling
 MAX_RETRIES: int = 3
 RETRY_DELAY: float = 1.0  # seconds
+
+# Default embedding models by provider
+DEFAULT_MODELS = {
+    "oci": "multilingual-e5",
+    "sentence_transformers": "all-MiniLM-L6-v2",
+    "ollama": "mxbai-embed-large",
+    "mock": "mock-768d",
+}
+
+# Provider availability timeouts
+OLLAMA_HEALTH_TIMEOUT = 1.0  # seconds
+
+# File cache settings
+FILE_CACHE_TOLERANCE = 5  # seconds tolerance for file modification time

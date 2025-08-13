@@ -47,19 +47,18 @@ class InteractiveCLI(CommandHandler):
     """Interactive CLI with advanced prompt features using prompt-toolkit."""
 
     def __init__(self, console: Console = None) -> None:
+        # Get config service once
+        from coda.services.config import get_config_service
+
+        config_service = get_config_service()
+
         if console:
             super().__init__(console)
         else:
             # Get themed console from config service
-            from coda.services.config import get_config_service
-
-            config_service = get_config_service()
             super().__init__(config_service.theme_manager.get_console())
 
         # Get theme for styling
-        from coda.services.config import get_config_service
-
-        config_service = get_config_service()
         self.theme = config_service.theme_manager.get_console_theme()
 
         self.session = None
@@ -95,8 +94,8 @@ class InteractiveCLI(CommandHandler):
                 dirty_count = len(cache_status["dirty_files"]) + len(cache_status["missing_files"])
                 if dirty_count > 0:
                     self.console.print(
-                        f"[yellow]⚠️  Search index may be outdated ({dirty_count} files changed). "
-                        f"Run '/search index .' to update.[/yellow]"
+                        f"[{self.theme.warning}]⚠️  Search index may be outdated ({dirty_count} files changed). "
+                        f"Run '/search index .' to update.[/{self.theme.warning}]"
                     )
         except Exception:
             # Silently ignore cache check errors to not disrupt search

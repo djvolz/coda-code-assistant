@@ -9,6 +9,10 @@ bridge between the standalone search module and Coda-specific features.
 import logging
 from typing import Any
 
+from .base.search.vector_search.constants import (
+    DEFAULT_MODELS,
+    OLLAMA_HEALTH_TIMEOUT,
+)
 from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
 from .base.search.vector_search.embeddings.factory import create_embedding_provider
 from .base.search.vector_search.manager import SemanticSearchManager
@@ -38,6 +42,88 @@ def get_config() -> CodaConfig:
 
 
 logger = logging.getLogger(__name__)
+
+
+def _try_oci_provider(
+    config_dict: dict[str, Any], model_id: str | None
+) -> tuple[Any | None, str | None]:
+    """Try to create OCI embedding provider.
+
+    Returns:
+        Tuple of (provider, error_message). Provider is None if failed.
+    """
+    if not config_dict.get("oci_genai", {}).get("compartment_id"):
+        return None, "OCI not configured"
+
+    try:
+        provider = create_oci_provider_from_coda_config(
+            config_dict, model_id or DEFAULT_MODELS["oci"]
+        )
+        logger.info("Using OCI embedding provider")
+        return provider, None
+    except Exception as e:
+        return None, f"OCI: {str(e)}"
+
+
+def _try_sentence_transformers_provider(model_id: str | None) -> tuple[Any | None, str | None]:
+    """Try to create sentence-transformers provider.
+
+    Returns:
+        Tuple of (provider, error_message). Provider is None if failed.
+    """
+    try:
+        provider = create_embedding_provider(
+            provider_type="sentence-transformers",
+            model_id=model_id or DEFAULT_MODELS["sentence_transformers"],
+        )
+        logger.info("Using sentence-transformers embedding provider")
+        return provider, None
+    except Exception as e:
+        return None, f"Sentence-transformers: {str(e)}"
+
+
+def _try_ollama_provider(model_id: str | None) -> tuple[Any | None, str | None]:
+    """Try to create Ollama provider if service is available.
+
+    Returns:
+        Tuple of (provider, error_message). Provider is None if failed.
+    """
+    try:
+        # Quick check if Ollama is available
+        import httpx
+
+        try:
+            with httpx.Client(timeout=OLLAMA_HEALTH_TIMEOUT) as client:
+                response = client.get("http://localhost:11434/api/version")
+                response.raise_for_status()
+
+            # Ollama is running, try to create provider
+            provider = create_embedding_provider(
+                provider_type="ollama", model_id=model_id or DEFAULT_MODELS["ollama"]
+            )
+            logger.info("Using Ollama embedding provider")
+            return provider, None
+        except (httpx.ConnectError, httpx.TimeoutException):
+            # Ollama not running, skip silently
+            return None, "Ollama service not available"
+    except Exception as e:
+        return None, f"Ollama: {str(e)}"
+
+
+def _try_mock_provider(model_id: str | None) -> tuple[Any | None, str | None]:
+    """Try to create mock provider (should always succeed).
+
+    Returns:
+        Tuple of (provider, error_message). Provider is None if failed.
+    """
+    try:
+        provider = create_embedding_provider(
+            provider_type="mock", model_id=model_id or DEFAULT_MODELS["mock"]
+        )
+        logger.warning("Using mock embedding provider (for testing only)")
+        return provider, None
+    except Exception as e:
+        return None, f"Mock: {str(e)}"
 
 
 def create_semantic_search_manager(
@@ -75,73 +161,50 @@ def create_semantic_search_manager(
 
     # If provider type is specified, use it directly
     if provider_type:
-        try:
-            if provider_type == "oci":
-                # Use Coda-specific OCI config
-                embedding_provider = create_oci_provider_from_coda_config(
-                    config_dict, model_id or "multilingual-e5"
-                )
-            else:
-                # Use factory for other providers
+        if provider_type == "oci":
+            embedding_provider, error = _try_oci_provider(config_dict, model_id)
+        elif provider_type == "sentence-transformers":
+            embedding_provider, error = _try_sentence_transformers_provider(model_id)
+        elif provider_type == "ollama":
+            embedding_provider, error = _try_ollama_provider(model_id)
+        elif provider_type == "mock":
+            embedding_provider, error = _try_mock_provider(model_id)
+        else:
+            # Use factory for other providers
+            try:
                 embedding_provider = create_embedding_provider(
                     provider_type=provider_type, model_id=model_id, **provider_kwargs
                 )
-        except Exception as e:
-            error_messages.append(f"{provider_type}: {str(e)}")
+            except Exception as e:
+                error = f"{provider_type}: {str(e)}"
+
+        if error:
+            error_messages.append(error)
     else:
         # Try providers in order of preference based on config
 
         # 1. Try OCI if configured
-        if config_dict.get("oci_genai", {}).get("compartment_id"):
-            try:
-                embedding_provider = create_oci_provider_from_coda_config(
-                    config_dict, model_id or "multilingual-e5"
-                )
-                logger.info("Using OCI embedding provider")
-            except Exception as e:
-                error_messages.append(f"OCI: {str(e)}")
+        embedding_provider, error = _try_oci_provider(config_dict, model_id)
+        if error:
+            error_messages.append(error)
 
         # 2. Try sentence-transformers (no external dependencies after install)
         if embedding_provider is None:
-            try:
-                embedding_provider = create_embedding_provider(
-                    provider_type="sentence-transformers", model_id=model_id or "all-MiniLM-L6-v2"
-                )
-                logger.info("Using sentence-transformers embedding provider")
-            except Exception as e:
-                error_messages.append(f"Sentence-transformers: {str(e)}")
+            embedding_provider, error = _try_sentence_transformers_provider(model_id)
+            if error:
+                error_messages.append(error)
 
         # 3. Try Ollama if running
         if embedding_provider is None:
-            try:
-                # Quick check if Ollama is available
-                import httpx
-
-                try:
-                    with httpx.Client(timeout=1.0) as client:
-                        response = client.get("http://localhost:11434/api/version")
-                        response.raise_for_status()
-
-                    # Ollama is running, try to create provider
-                    embedding_provider = create_embedding_provider(
-                        provider_type="ollama", model_id=model_id or "mxbai-embed-large"
-                    )
-                    logger.info("Using Ollama embedding provider")
-                except (httpx.ConnectError, httpx.TimeoutException):
-                    # Ollama not running, skip silently
-                    pass
-            except Exception as e:
-                error_messages.append(f"Ollama: {str(e)}")
+            embedding_provider, error = _try_ollama_provider(model_id)
+            if error:
+                error_messages.append(error)
 
         # 4. Use mock as last resort
         if embedding_provider is None:
-            try:
-                embedding_provider = create_embedding_provider(
-                    provider_type="mock", model_id=model_id or "mock-768d"
-                )
-                logger.warning("Using mock embedding provider (for testing only)")
-            except Exception as e:
-                error_messages.append(f"Mock: {str(e)}")
+            embedding_provider, error = _try_mock_provider(model_id)
+            if error:
+                error_messages.append(error)
 
     if embedding_provider is None:
         raise ValueError(f"No embedding provider available. Errors: {'; '.join(error_messages)}")

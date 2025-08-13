@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .constants import FILE_CACHE_TOLERANCE
 from .embeddings.base import BaseEmbeddingProvider
 from .vector_stores.base import BaseVectorStore, SearchResult
 from .vector_stores.faiss_store import FAISSVectorStore
@@ -154,7 +155,7 @@ class SemanticSearchManager:
                     if (
                         cached_mtime is None
                         or abs(current_stat.st_mtime - cached_mtime)
-                        > 5  # Allow 5 second tolerance for filesystem precision
+                        > FILE_CACHE_TOLERANCE  # Allow tolerance for filesystem precision
                         or current_stat.st_size != cached_size
                     ):
                         dirty_files.append(file_path)
