@@ -24,7 +24,7 @@ def main(
     resume: bool,
     quiet: bool = False,
 ):
-    """Coda - A multi-provider code assistant main entry point."""
+    """Coda - A code assistant main entry point."""
 
     # Validate quiet flag
     if quiet and not one_shot:

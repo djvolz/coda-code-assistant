@@ -47,7 +47,7 @@ def main(
     no_save: bool,
     resume: bool,
 ):
-    """Coda - A multi-provider code assistant"""
+    """Coda - A code assistant"""
 
     # Load configuration
     config = get_config()
@@ -145,7 +145,7 @@ def show_welcome_banner(one_shot: str):
 
     welcome_text = Text.from_markup(
         f"[{theme.info}][{theme.bold}]Coda[/{theme.bold}][/{theme.info}] - Code Assistant\n"
-        f"[{theme.dim}]Multi-provider AI coding companion v{__version__}[/{theme.dim}]\n"
+        f"[{theme.dim}]AI coding companion v{__version__}[/{theme.dim}]\n"
         f"[{theme.dim}]{mode_text}[/{theme.dim}]"
     )
 

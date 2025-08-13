@@ -2,7 +2,7 @@
 
 ## Project Vision
 
-Build a multi-provider, CLI-focused code assistant that provides a unified interface for AI-powered development across Oracle OCI GenAI, Ollama, and other LiteLLM-supported providers.
+Build a CLI-focused code assistant that provides a unified interface for AI-powered development across Oracle OCI GenAI, Ollama, and other LiteLLM-supported providers.
 
 ## Current State & Priorities
 
@@ -1136,7 +1136,7 @@ None currently - all bugs have been resolved!
 - ✅ Successfully merged concurrent Phase 2 & 3 development
 - ✅ Resolved conflicts in 4 files during integration
 - ✅ All Phase 3 CLI features work with Phase 2 provider system
-- ✅ Multi-provider support in interactive mode (OCI GenAI, LiteLLM, Ollama)
+- ✅ Provider support in interactive mode (OCI GenAI, LiteLLM, Ollama)
 - ✅ Code refactoring: 220-line function split into focused helpers
 - ✅ Comprehensive test coverage for slash commands
 

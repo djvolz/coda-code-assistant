@@ -25,7 +25,7 @@ This branch implements a comprehensive testing strategy for the Coda Assistant S
 
 #### Functional Tests (tests/web/functional/)
 - End-to-end chat workflow
-- Multi-provider testing
+- Provider testing
 - File upload and processing
 
 ### 3. Test Fixtures and Utilities

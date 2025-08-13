@@ -4,7 +4,7 @@ The Providers module provides a unified interface for interacting with various A
 
 ## Features
 
-- 🌐 **Multi-Provider Support**: OpenAI, Anthropic, Ollama, OCI GenAI, and 100+ via LiteLLM
+- 🌐 **Provider Support**: OpenAI, Anthropic, Ollama, OCI GenAI, and 100+ via LiteLLM
 - 🔌 **Pluggable Architecture**: Easy to add new providers
 - 🎯 **Consistent API**: Same interface regardless of provider
 - 🔄 **Streaming Support**: Real-time response streaming
@@ -153,5 +153,5 @@ For detailed API documentation, see [Providers API Reference](../../../docs/api/
 ## Examples
 
 - [Simple Chatbot](../../../tests/examples/simple_chatbot/) - Basic usage
-- [Multi-Provider Comparison](../../../tests/examples/multi_provider/) - Compare providers
+- [Provider Comparison](../../../tests/examples/multi_provider/) - Compare providers
 - [Provider Tests](../../../tests/base/providers/) - Test implementations

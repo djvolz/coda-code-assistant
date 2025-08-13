@@ -34,7 +34,7 @@
     <text x="500" y="220" fill="#00ff9d" font-family="Arial, sans-serif" font-size="80" font-weight="bold">CODA</text>
     
     <!-- Tagline -->
-    <text x="500" y="280" fill="#8b949e" font-family="Arial, sans-serif" font-size="36">Multi-provider CLI code assistant</text>
+    <text x="500" y="280" fill="#8b949e" font-family="Arial, sans-serif" font-size="36">CLI code assistant</text>
     
     <!-- Description -->
     <text x="500" y="340" fill="#8b949e" font-family="Arial, sans-serif" font-size="24">

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Coda is a multi-provider AI code assistant for terminal-based development workflows. It features a modular 3-layer architecture (Apps → Services → Base) with support for multiple AI providers including OCI GenAI, OpenAI, Anthropic, Ollama, and 100+ providers via LiteLLM.
+Coda is an AI code assistant for terminal-based development workflows. It features a modular 3-layer architecture (Apps → Services → Base) with support for multiple AI providers including OCI GenAI, OpenAI, Anthropic, Ollama, and 100+ providers via LiteLLM.
 
 ## Essential Commands
 

@@ -37,7 +37,7 @@ Coda is built with a clean, three-layer architecture:
 
 - **🔧 Config**: Unified configuration management
 - **🎨 Theme**: Terminal UI and formatting
-- **🤖 Providers**: Multi-provider AI integration
+- **🤖 Providers**: AI integration
 - **💬 Session**: Conversation persistence
 - **🔍 Search**: Semantic code search
 - **📊 Observability**: Logging and metrics
@@ -118,7 +118,7 @@ For comprehensive documentation, visit our **[Wiki](https://github.com/djvolz/co
 
 ## 🎯 Key Features
 
-- 🌐 **Multi-Provider Support**: Works with Oracle OCI GenAI, Ollama, OpenAI, Anthropic, Google, and 100+ providers
+- 🌐 **Provider Support**: Works with Oracle OCI GenAI, Ollama, OpenAI, Anthropic, Google, and 100+ providers
 - 🧩 **Modular Design**: Use only the components you need
 - 💻 **Terminal-First**: Designed for developers who live in the command line
 - 🧠 **Smart AI Modes**: Specialized modes for coding, debugging, explaining, and reviewing

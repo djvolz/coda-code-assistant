@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "coda-code-assistant"
 dynamic = ["version"]
-description = "A multi-provider, CLI-focused code assistant for AI-assisted development"
+description = "A CLI-focused code assistant for AI-assisted development"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
