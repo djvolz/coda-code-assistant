@@ -104,6 +104,8 @@ class MarkdownStreamBuffer:
         self.buffer = ""
         self.live = None
         self.show_streaming = True  # Control whether to show streaming
+        self.max_preview_lines = 4  # Show first 4 lines as preview
+        self.max_preview_chars = 200  # Limit total preview characters
 
     def add_chunk(self, chunk: str):
         """Add a new chunk to the buffer and optionally show streaming."""
@@ -114,12 +116,10 @@ class MarkdownStreamBuffer:
 
         # Create live display on first chunk
         if self.live is None:
-            # For long content, use a simpler approach
-            # Just show a status message instead of the full content
-            status_text = f"Receiving response... ({len(self.buffer.split())} words)"
+            preview_content = self._get_preview_content()
             panel = Panel(
-                status_text,
-                title=f"[{self.theme.info}]Streaming[/{self.theme.info}]",
+                preview_content,
+                title=f"[{self.theme.info}]Response Preview[/{self.theme.info}]",
                 border_style=self.theme.dim,
                 expand=False,
             )
@@ -127,12 +127,11 @@ class MarkdownStreamBuffer:
             self.live = Live(panel, console=self.console, refresh_per_second=4, transient=True)
             self.live.start()
         else:
-            # Update just the word count, not the full content
-            word_count = len(self.buffer.split())
-            status_text = f"Receiving response... ({word_count} words)"
+            # Update preview content
+            preview_content = self._get_preview_content()
             panel = Panel(
-                status_text,
-                title=f"[{self.theme.info}]Streaming[/{self.theme.info}]",
+                preview_content,
+                title=f"[{self.theme.info}]Response Preview[/{self.theme.info}]",
                 border_style=self.theme.dim,
                 expand=False,
             )
@@ -154,3 +153,53 @@ class MarkdownStreamBuffer:
             except Exception:
                 # Fall back to plain text if markdown parsing fails
                 self.console.print(self.buffer.strip())  # Add final newline if needed
+
+    def _get_preview_content(self) -> str:
+        """Generate preview content showing first few lines and word count.
+
+        Returns:
+            Formatted preview string with first lines and metadata
+        """
+        if not self.buffer.strip():
+            return "Receiving response..."
+
+        try:
+            # Get word count
+            word_count = len(self.buffer.split())
+
+            # Split buffer into lines and get first few lines
+            lines = self.buffer.strip().split("\n")
+            preview_lines = []
+            total_chars = 0
+
+            for line in lines[: self.max_preview_lines]:
+                # Clean line of any control characters that might cause issues
+                line = "".join(char for char in line if char.isprintable() or char.isspace())
+
+                # Truncate very long lines to prevent UI issues
+                if len(line) > 80:
+                    line = line[:77] + "..."
+
+                # Check if adding this line would exceed character limit
+                if total_chars + len(line) > self.max_preview_chars:
+                    break
+
+                preview_lines.append(line)
+                total_chars += len(line)
+
+            # Join preview lines
+            preview_text = "\n".join(preview_lines)
+
+            # Add ellipsis if there's more content
+            has_more = len(lines) > len(preview_lines) or total_chars >= self.max_preview_chars
+            ellipsis = "\n..." if has_more and preview_text else ""
+
+            # Add word count at the end
+            status_line = f"\n({word_count} words)"
+
+            return f"{preview_text}{ellipsis}{status_line}"
+
+        except Exception:
+            # Fallback to simple word count if preview generation fails
+            word_count = len(self.buffer.split()) if self.buffer else 0
+            return f"Receiving response... ({word_count} words)"
