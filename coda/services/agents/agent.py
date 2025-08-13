@@ -385,22 +385,47 @@ class Agent:
                 return "Response interrupted.", messages
 
             try:
+                # Consistent status message for both paths
+                if status:
+                    status.update("Thinking...")
+
                 # Make request to provider
                 if supports_tools:
-                    response = await asyncio.to_thread(
-                        self.provider.chat,
-                        messages=messages,
-                        model=self.model,
-                        temperature=self.temperature,
-                        max_tokens=self.max_tokens,
-                        tools=provider_tools,
-                        **self.kwargs,
-                    )
+                    # Use interruptible approach instead of asyncio.to_thread
+                    import concurrent.futures
+
+                    # Create a future for the provider call
+                    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                    try:
+                        future = executor.submit(
+                            self.provider.chat,
+                            messages=messages,
+                            model=self.model,
+                            temperature=self.temperature,
+                            max_tokens=self.max_tokens,
+                            tools=provider_tools,
+                            **self.kwargs,
+                        )
+
+                        # Poll for completion or interruption
+                        while not future.done():
+                            if interrupt_check and interrupt_check():
+                                future.cancel()  # This won't stop the actual provider call but prevents waiting
+                                if status:
+                                    status.stop()
+                                self._emit_warning("Response interrupted by user")
+                                return "Response interrupted.", messages
+
+                            # Wait a short time before checking again
+                            await asyncio.sleep(0.1)
+
+                        # Get the result
+                        response = future.result()
+                    finally:
+                        # Always clean up the executor
+                        executor.shutdown(wait=False)
                 else:
                     # Use streaming for final response when no tools
-                    if status:
-                        status.update("Generating response...")
-
                     stream = self.provider.chat_stream(
                         messages=messages,
                         model=self.model,
@@ -409,29 +434,14 @@ class Agent:
                         **self.kwargs,
                     )
 
-                    # Stream the response
-                    response_content = ""
-                    for chunk in stream:
-                        # Check for interrupt
-                        if interrupt_check and interrupt_check():
-                            if status:
-                                status.stop()
-                            self._emit_warning("Response interrupted by user")
-                            return "Response interrupted.", messages
+                    response_content = await self._stream_response_with_interrupt(
+                        stream, status, interrupt_check, first_chunk
+                    )
 
-                        if first_chunk:
-                            # Stop status before printing response
-                            if status:
-                                status.stop()
-                            # Agent name prefix handled by event system
-                            first_chunk = False
-
-                        self._emit_response_chunk(chunk.content)
-                        response_content += chunk.content
+                    if not response_content and interrupt_check and interrupt_check():
+                        return "Response interrupted.", messages
 
                     if response_content:
-                        # Streaming complete - add newline and handle by event system
-                        self._emit_newline()
                         messages.append(Message(role=Role.ASSISTANT, content=response_content))
 
                     return response_content, messages
@@ -468,29 +478,14 @@ class Agent:
                                 **self.kwargs,
                             )
 
-                            # Stream the final response
-                            response_content = ""
-                            for chunk in stream:
-                                # Check for interrupt
-                                if interrupt_check and interrupt_check():
-                                    if status:
-                                        status.stop()
-                                    self._emit_warning("Response interrupted by user")
-                                    return "Response interrupted.", messages
+                            response_content = await self._stream_response_with_interrupt(
+                                stream, status, interrupt_check, first_chunk
+                            )
 
-                                if first_chunk:
-                                    # Stop status before printing response
-                                    if status:
-                                        status.stop()
-                                    # Agent name prefix handled by event system
-                                    first_chunk = False
-
-                                self._emit_response_chunk(chunk.content)
-                                response_content += chunk.content
+                            if not response_content and interrupt_check and interrupt_check():
+                                return "Response interrupted.", messages
 
                             if response_content:
-                                # Streaming complete - add newline and handle by event system
-                                self._emit_newline()
                                 messages.append(
                                     Message(role=Role.ASSISTANT, content=response_content)
                                 )
@@ -656,6 +651,48 @@ class Agent:
         except RuntimeError:
             # No event loop running, create one
             return asyncio.run(self.run_async(input, **kwargs))
+
+    async def _stream_response_with_interrupt(
+        self, stream, status, interrupt_check: Callable[[], bool] | None, first_chunk: bool
+    ) -> str:
+        """
+        Stream response content with interrupt checking.
+
+        Args:
+            stream: The stream iterator from the provider
+            status: Optional status indicator
+            interrupt_check: Function to check for interrupts
+            first_chunk: Whether this is the first chunk
+
+        Returns:
+            The complete response content
+        """
+        response_content = ""
+        is_first = first_chunk
+
+        for chunk in stream:
+            # Check for interrupt
+            if interrupt_check and interrupt_check():
+                if status:
+                    status.stop()
+                self._emit_warning("Response interrupted by user")
+                return ""  # Return empty string on interrupt
+
+            if is_first:
+                # Stop status before printing response
+                if status:
+                    status.stop()
+                # Agent name prefix handled by event system
+                is_first = False
+
+            self._emit_response_chunk(chunk.content)
+            response_content += chunk.content
+
+        if response_content:
+            # Streaming complete - add newline and handle by event system
+            self._emit_newline()
+
+        return response_content
 
     async def _handle_tool_calls(
         self,

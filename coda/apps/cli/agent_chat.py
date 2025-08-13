@@ -109,7 +109,11 @@ Each user request should be evaluated independently. Previous tool usage does no
 
             # Create interrupt check function
             def check_interrupt():
-                return hasattr(self.cli, "interrupt_event") and self.cli.interrupt_event.is_set()
+                return (
+                    self.cli is not None
+                    and hasattr(self.cli, "interrupt_event")
+                    and self.cli.interrupt_event.is_set()
+                )
 
             response_content, updated_messages = await self.agent.run_async_streaming(
                 input=user_input,
