@@ -87,6 +87,21 @@ class InteractiveCLI(CommandHandler):
         # Initialize session with all features
         self._init_session()
 
+    async def _check_and_warn_stale_cache(self, manager) -> None:
+        """Check if cache is stale and show user-friendly warnings."""
+        try:
+            cache_status = await manager.check_cache_dirty()
+            if cache_status["is_dirty"]:
+                dirty_count = len(cache_status["dirty_files"]) + len(cache_status["missing_files"])
+                if dirty_count > 0:
+                    self.console.print(
+                        f"[yellow]⚠️  Search index may be outdated ({dirty_count} files changed). "
+                        f"Run '/search index .' to update.[/yellow]"
+                    )
+        except Exception:
+            # Silently ignore cache check errors to not disrupt search
+            pass
+
     def _get_current_provider(self):
         """Get current provider for model completion."""
         return self.provider
@@ -770,6 +785,10 @@ class InteractiveCLI(CommandHandler):
 
         manager = self._search_manager
 
+        # Check and warn about stale cache for search operations
+        if subcommand in ["semantic", "code"]:
+            await self._check_and_warn_stale_cache(manager)
+
         if subcommand == "semantic":
             if not query:
                 self.console.print("[red]Please provide a search query[/red]")
@@ -914,15 +933,58 @@ class InteractiveCLI(CommandHandler):
                             f"[cyan]Found {len(files)} files to index in {path}[/cyan]"
                         )
 
-                    # Index files with progress
-                    with indexing_progress.start_indexing(len(files)) as progress:
-                        indexed_ids = await manager.index_code_files(files)
-                        for _i, file in enumerate(files):
-                            progress.update(1, f"Indexed: {file.name}")
+                    # Ensure index is loaded before checking what files are already indexed
+                    await manager._ensure_default_index_loaded()
 
-                    self.console.print(
-                        f"\n[green]✓ Successfully indexed {len(indexed_ids)} files[/green]"
-                    )
+                    # Separate already-indexed files from new files
+                    indexed_files_info = getattr(manager.vector_store, "indexed_files", {})
+                    already_indexed = [str(f) for f in files if str(f) in indexed_files_info]
+                    new_files_to_index = [f for f in files if str(f) not in indexed_files_info]
+
+                    # Check cache status for only the already-indexed files
+                    update_needed = False
+                    if already_indexed:
+                        cache_status = await manager.check_cache_dirty(already_indexed)
+                        stale_count = len(cache_status["dirty_files"]) + len(
+                            cache_status["missing_files"]
+                        )
+                        if stale_count > 0:
+                            update_needed = True
+                            self.console.print(
+                                f"[yellow]Found {stale_count} indexed files that need updating[/yellow]"
+                            )
+
+                    # Report on new files
+                    if new_files_to_index:
+                        self.console.print(
+                            f"[cyan]Found {len(new_files_to_index)} new files to index[/cyan]"
+                        )
+                        update_needed = True
+
+                    if update_needed:
+                        # Use smart update for everything
+                        with self.console.status("[cyan]Updating index...[/cyan]"):
+                            update_result = await manager.update_dirty_files(
+                                [str(f) for f in files]
+                            )
+
+                        if update_result["updated"]:
+                            self.console.print("[green]✓ Index updated:[/green]")
+                            if update_result["removed_chunks"] > 0:
+                                self.console.print(
+                                    f"  - Removed: {update_result['removed_chunks']} stale chunks"
+                                )
+                            if update_result["indexed_files"] > 0:
+                                self.console.print(
+                                    f"  - Indexed: {update_result['indexed_files']} files ({update_result['indexed_chunks']} chunks)"
+                                )
+                        else:
+                            self.console.print(f"[green]{update_result['reason']}[/green]")
+                    else:
+                        # No changes needed
+                        self.console.print(
+                            f"[green]✓ All {len(files)} files are already up to date[/green]"
+                        )
 
                     # Show some stats
                     stats = await manager.get_stats()

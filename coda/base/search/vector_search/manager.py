@@ -83,6 +83,168 @@ class SemanticSearchManager:
             except Exception as e:
                 logger.debug(f"Failed to load default index: {e}")
 
+    async def _check_and_warn_stale_cache(self) -> None:
+        """Check if cache is stale and log appropriate warnings."""
+        try:
+            cache_status = await self.check_cache_dirty()
+            if cache_status["is_dirty"]:
+                # Log warning about stale cache
+                total_issues = len(cache_status["dirty_files"]) + len(cache_status["missing_files"])
+                if total_issues > 0:
+                    logger.warning(
+                        f"Search index may be stale: {total_issues} files have changed. "
+                        f"Consider running '/search index .' to update."
+                    )
+        except Exception as e:
+            logger.debug(f"Failed to check cache status: {e}")
+
+    async def check_cache_dirty(self, file_paths: list[str | Path] | None = None) -> dict[str, Any]:
+        """Check if the cache needs to be updated based on file modifications.
+
+        Args:
+            file_paths: Optional list of specific files to check. If None, checks all indexed files.
+
+        Returns:
+            Dictionary with cache status information:
+            - is_dirty: bool - whether cache needs updating
+            - dirty_files: list - files that have been modified
+            - missing_files: list - files that no longer exist
+            - new_files: list - files not in cache (if file_paths provided)
+        """
+        if not hasattr(self.vector_store, "indexed_files"):
+            return {
+                "is_dirty": False,
+                "dirty_files": [],
+                "missing_files": [],
+                "new_files": [],
+                "reason": "No cache metadata available",
+            }
+
+        indexed_files = self.vector_store.indexed_files
+        dirty_files = []
+        missing_files = []
+        new_files = []
+
+        # Check specific files if provided, otherwise check all indexed files
+        files_to_check = []
+        if file_paths:
+            files_to_check = [str(Path(p)) for p in file_paths]
+            # Only find new files not in cache if we're doing an explicit check
+            # For automatic cache validation, don't consider unindexed files as "new"
+            for file_path in files_to_check:
+                if file_path not in indexed_files:
+                    new_files.append(file_path)
+        else:
+            # When no specific files provided, only check files that are already indexed
+            files_to_check = list(indexed_files.keys())
+
+        # Check each file for modifications
+        for file_path in files_to_check:
+            if file_path in indexed_files:
+                path = Path(file_path)
+                if not path.exists():
+                    missing_files.append(file_path)
+                    continue
+
+                try:
+                    current_stat = path.stat()
+                    cached_mtime = indexed_files[file_path].get("mtime")
+                    cached_size = indexed_files[file_path].get("size")
+
+                    if (
+                        cached_mtime is None
+                        or abs(current_stat.st_mtime - cached_mtime)
+                        > 5  # Allow 5 second tolerance for filesystem precision
+                        or current_stat.st_size != cached_size
+                    ):
+                        dirty_files.append(file_path)
+
+                except OSError:
+                    missing_files.append(file_path)
+
+        is_dirty = bool(dirty_files or missing_files or new_files)
+
+        return {
+            "is_dirty": is_dirty,
+            "dirty_files": dirty_files,
+            "missing_files": missing_files,
+            "new_files": new_files,
+            "total_indexed_files": len(indexed_files),
+            "reason": f"Found {len(dirty_files)} modified, {len(missing_files)} missing, {len(new_files)} new files",
+        }
+
+    async def remove_files_from_index(self, file_paths: list[str]) -> int:
+        """Remove indexed content for specific files.
+
+        Args:
+            file_paths: List of file paths to remove from index
+
+        Returns:
+            Number of chunks removed
+        """
+        removed_count = 0
+        ids_to_remove = []
+
+        # Find all chunk IDs for the specified files
+        for chunk_id, metadata in self.vector_store.metadata.items():
+            if isinstance(metadata, dict) and metadata.get("file_path") in file_paths:
+                ids_to_remove.append(chunk_id)
+
+        # Remove the chunks
+        for chunk_id in ids_to_remove:
+            try:
+                await self.vector_store.remove_vector(chunk_id)
+                removed_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to remove chunk {chunk_id}: {e}")
+
+        logger.info(f"Removed {removed_count} chunks for {len(file_paths)} files")
+        return removed_count
+
+    async def update_dirty_files(
+        self, file_paths: list[str | Path] | None = None
+    ) -> dict[str, Any]:
+        """Update the index for files that have been modified.
+
+        Args:
+            file_paths: Optional list of specific files to update. If None, updates all dirty files.
+
+        Returns:
+            Dictionary with update results
+        """
+        # Check cache status
+        cache_status = await self.check_cache_dirty(file_paths)
+
+        if not cache_status["is_dirty"]:
+            return {"updated": False, "reason": "Cache is up to date", "files_processed": 0}
+
+        # Remove dirty and missing files from index
+        files_to_remove = cache_status["dirty_files"] + cache_status["missing_files"]
+        removed_count = 0
+        if files_to_remove:
+            removed_count = await self.remove_files_from_index(files_to_remove)
+
+        # Re-index dirty files and new files (skip missing files)
+        files_to_reindex = []
+        for file_path in cache_status["dirty_files"] + cache_status["new_files"]:
+            if Path(file_path).exists():
+                files_to_reindex.append(file_path)
+
+        indexed_count = 0
+        if files_to_reindex:
+            indexed_ids = await self.index_code_files(files_to_reindex)
+            indexed_count = len(indexed_ids)
+
+        return {
+            "updated": True,
+            "removed_chunks": removed_count,
+            "indexed_files": len(files_to_reindex),
+            "indexed_chunks": indexed_count,
+            "dirty_files": cache_status["dirty_files"],
+            "missing_files": cache_status["missing_files"],
+            "new_files": cache_status["new_files"],
+        }
+
     async def index_content(
         self,
         contents: list[str],
@@ -202,7 +364,21 @@ class SemanticSearchManager:
                 # Get chunks
                 chunks = chunker.chunk_text(content, metadata={"file_path": str(path)})
 
-                # Process each chunk
+                # Always track the file, even if it produces 0 chunks
+                file_stat = path.stat()
+
+                # Ensure we have indexed_files dict
+                if not hasattr(self.vector_store, "indexed_files"):
+                    self.vector_store.indexed_files = {}
+
+                # Track this file with current metadata
+                self.vector_store.indexed_files[str(path)] = {
+                    "mtime": file_stat.st_mtime,
+                    "size": file_stat.st_size,
+                    "indexed_at": datetime.now().isoformat(),
+                }
+
+                # Process each chunk (if any)
                 for i, chunk in enumerate(chunks):
                     chunk_id = f"{path}#chunk_{i}"
                     contents.append(chunk.text)
@@ -218,6 +394,8 @@ class SemanticSearchManager:
                         "start_line": chunk.start_line,
                         "end_line": chunk.end_line,
                         "indexed_at": datetime.now().isoformat(),
+                        "file_mtime": file_stat.st_mtime,
+                        "file_size": file_stat.st_size,
                     }
 
                     # Add any additional metadata from the chunk
@@ -232,10 +410,21 @@ class SemanticSearchManager:
                 logger.error(f"Error reading file {path}: {str(e)}")
                 continue
 
-        # Index all chunks
-        return await self.index_content(
-            contents=contents, ids=ids, metadata=metadata_list, batch_size=batch_size
-        )
+        # Index all chunks (if any were created)
+        indexed_ids = []
+        if contents:
+            indexed_ids = await self.index_content(
+                contents=contents, ids=ids, metadata=metadata_list, batch_size=batch_size
+            )
+        else:
+            # If no chunks to index but we processed files, still save the index to persist file tracking
+            try:
+                await self.save_index("default")
+                logger.debug("Saved index with file tracking metadata (no new chunks)")
+            except Exception as e:
+                logger.warning(f"Failed to save index after file tracking: {e}")
+
+        return indexed_ids
 
     async def index_session_messages(
         self, messages: list[dict[str, Any]], session_id: str, batch_size: int = 32
