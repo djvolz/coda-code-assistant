@@ -170,6 +170,20 @@ class IndexContentTool(BaseTool, SearchManagerMixin):
                     tool="index_content",
                 )
 
+            # Common directories to exclude when indexing
+            exclude_dirs = {
+                ".venv",
+                "__pycache__",
+                ".git",
+                "node_modules",
+                ".pytest_cache",
+                ".mypy_cache",
+            }
+
+            def should_exclude_path(path: Path) -> bool:
+                """Check if path should be excluded from indexing."""
+                return any(exclude_dir in path.parts for exclude_dir in exclude_dirs)
+
             # Determine files to index
             files_to_index = []
             if target_path.is_file():
@@ -179,7 +193,10 @@ class IndexContentTool(BaseTool, SearchManagerMixin):
                 if recursive:
                     if file_patterns:
                         for pattern in file_patterns:
-                            files_to_index.extend(target_path.rglob(pattern))
+                            matching_files = target_path.rglob(pattern)
+                            files_to_index.extend(
+                                [f for f in matching_files if not should_exclude_path(f)]
+                            )
                     else:
                         # Default patterns for code files
                         patterns = [
@@ -194,13 +211,42 @@ class IndexContentTool(BaseTool, SearchManagerMixin):
                             "*.md",
                         ]
                         for pattern in patterns:
-                            files_to_index.extend(target_path.rglob(pattern))
+                            matching_files = target_path.rglob(pattern)
+                            files_to_index.extend(
+                                [f for f in matching_files if not should_exclude_path(f)]
+                            )
                 else:
                     if file_patterns:
                         for pattern in file_patterns:
-                            files_to_index.extend(target_path.glob(pattern))
+                            matching_files = target_path.glob(pattern)
+                            files_to_index.extend(
+                                [f for f in matching_files if not should_exclude_path(f)]
+                            )
                     else:
-                        files_to_index = [f for f in target_path.iterdir() if f.is_file()]
+                        # Only include text files, exclude common binary/cache directories
+                        all_files = [f for f in target_path.iterdir() if f.is_file()]
+                        # Filter by extension to avoid binary files
+                        text_extensions = {
+                            ".py",
+                            ".js",
+                            ".ts",
+                            ".jsx",
+                            ".tsx",
+                            ".java",
+                            ".go",
+                            ".rs",
+                            ".md",
+                            ".txt",
+                            ".json",
+                            ".yaml",
+                            ".yml",
+                            ".toml",
+                        }
+                        files_to_index = [
+                            f
+                            for f in all_files
+                            if f.suffix.lower() in text_extensions and not should_exclude_path(f)
+                        ]
 
             # Remove duplicates and sort
             files_to_index = sorted(set(files_to_index))

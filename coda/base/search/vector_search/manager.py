@@ -354,8 +354,17 @@ class SemanticSearchManager:
                 continue
 
             try:
-                # Read file content
-                content = path.read_text(encoding="utf-8")
+                # Read file content with encoding fallback
+                try:
+                    content = path.read_text(encoding="utf-8")
+                except UnicodeDecodeError:
+                    # Try with latin-1 as fallback, then skip if still fails
+                    try:
+                        content = path.read_text(encoding="latin-1")
+                        logger.debug(f"Used latin-1 encoding for {path}")
+                    except UnicodeDecodeError:
+                        logger.warning(f"Skipping file with unsupported encoding: {path}")
+                        continue
 
                 # Create appropriate chunker for the file type
                 chunker = create_chunker(
