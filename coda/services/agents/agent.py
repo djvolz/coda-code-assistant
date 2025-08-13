@@ -555,8 +555,9 @@ class Agent:
                             self._emit_response_chunk(char)
                             time.sleep(0.001)  # Small delay for streaming effect
 
-                        # Streaming complete - add newline and handle by event system
+                        # Streaming complete - add newline and emit completion
                         self._emit_newline()
+                        self._emit_response_complete(response.content)
                         messages.append(Message(role=Role.ASSISTANT, content=response.content))
                         return response.content, messages
                     else:
@@ -689,8 +690,9 @@ class Agent:
             response_content += chunk.content
 
         if response_content:
-            # Streaming complete - add newline and handle by event system
+            # Streaming complete - add newline and emit completion
             self._emit_newline()
+            self._emit_response_complete(response_content)
 
         return response_content
 
