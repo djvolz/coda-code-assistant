@@ -65,6 +65,24 @@ class SemanticSearchManager:
 
         self.index_dir.mkdir(parents=True, exist_ok=True)
 
+        # Flag to track if we've tried loading the default index
+        self._default_index_loaded = False
+
+    async def _ensure_default_index_loaded(self) -> None:
+        """Try to load the default index if it exists and hasn't been loaded yet."""
+        if self._default_index_loaded:
+            return
+
+        self._default_index_loaded = True
+        default_index_path = self.index_dir / "default"
+
+        if (default_index_path.with_suffix(".faiss")).exists():
+            try:
+                await self.load_index("default")
+                logger.info("Loaded existing default index")
+            except Exception as e:
+                logger.debug(f"Failed to load default index: {e}")
+
     async def index_content(
         self,
         contents: list[str],
@@ -83,6 +101,9 @@ class SemanticSearchManager:
         Returns:
             List of IDs for the indexed content
         """
+        # Ensure default index is loaded before adding new content
+        await self._ensure_default_index_loaded()
+
         all_ids = []
 
         # Process in batches
@@ -103,6 +124,14 @@ class SemanticSearchManager:
             all_ids.extend(batch_result_ids)
 
         logger.info(f"Indexed {len(all_ids)} documents")
+
+        # Auto-save the default index after adding content
+        try:
+            await self.save_index("default")
+            logger.debug("Auto-saved default index")
+        except Exception as e:
+            logger.warning(f"Failed to auto-save default index: {e}")
+
         return all_ids
 
     async def search(
@@ -118,6 +147,9 @@ class SemanticSearchManager:
         Returns:
             List of search results
         """
+        # Ensure default index is loaded before searching
+        await self._ensure_default_index_loaded()
+
         # Generate query embedding
         query_result = await self.embedding_provider.embed_text(query)
 

@@ -9,7 +9,6 @@ bridge between the standalone search module and Coda-specific features.
 import logging
 from typing import Any
 
-from .base.constants import get_cache_dir
 from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
 from .base.search.vector_search.embeddings.factory import create_embedding_provider
 from .base.search.vector_search.manager import SemanticSearchManager
@@ -148,6 +147,7 @@ def create_semantic_search_manager(
         raise ValueError(f"No embedding provider available. Errors: {'; '.join(error_messages)}")
 
     # Use Coda's cache directory for indexes
-    index_dir = get_cache_dir() / "semantic_search"
+    config_service = get_config_service()
+    index_dir = config_service.get_cache_dir() / "semantic_search"
 
     return SemanticSearchManager(embedding_provider=embedding_provider, index_dir=index_dir)

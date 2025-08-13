@@ -35,6 +35,12 @@ try:
     from . import web_tools as _web_tools  # noqa: F401
 except ImportError:
     pass
+
+try:
+    from . import semantic_search_tools as _semantic_search_tools  # noqa: F401
+except ImportError:
+    pass
+
 from .base import (
     BaseTool,
     ToolParameter,

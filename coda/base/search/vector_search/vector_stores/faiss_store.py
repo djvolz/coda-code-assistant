@@ -146,9 +146,14 @@ class FAISSVectorStore(BaseVectorStore):
         # Normalize query
         query_array = self._normalize_embeddings([query_embedding])
 
-        # Search
+        # Search (ensure k is at least 1 and not more than total items)
+        # If index is empty, search_k will be 0 which FAISS doesn't allow, so we need min 1
+        if self.index.ntotal == 0:
+            # Can't search empty index, return empty results
+            return []
+        search_k = max(1, min(k * 2, self.index.ntotal))
         distances, indices = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.index.search(query_array, min(k * 2, self.index.ntotal))
+            None, lambda: self.index.search(query_array, search_k)
         )
 
         # Convert to results
