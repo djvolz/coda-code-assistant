@@ -6,6 +6,7 @@ import asyncio
 import logging
 import pickle
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +57,10 @@ class FAISSVectorStore(BaseVectorStore):
         self.metadata: dict[str, dict[str, Any]] = {}
         self.id_to_idx: dict[str, int] = {}
         self.idx_to_id: dict[int, str] = {}
+
+        # Cache invalidation metadata
+        self.index_created_at: str | None = None
+        self.indexed_files: dict[str, dict[str, Any]] = {}
 
     def _create_index(self) -> Any:
         """Create FAISS index based on configuration."""
@@ -139,6 +144,49 @@ class FAISSVectorStore(BaseVectorStore):
 
         return ids
 
+    async def remove_vector(self, id_: str) -> bool:
+        """Remove a vector from the index by ID.
+
+        Args:
+            id_: The ID of the vector to remove
+
+        Returns:
+            True if removed successfully, False if ID not found
+        """
+        if id_ not in self.id_to_idx:
+            return False
+
+        # Get the index and file path before removing
+        idx = self.id_to_idx[id_]
+        removed_chunk_metadata = self.metadata.get(id_, {})
+        removed_file_path = None
+        if isinstance(removed_chunk_metadata, dict):
+            removed_file_path = removed_chunk_metadata.get("file_path")
+
+        # Note: FAISS doesn't support direct removal of vectors from IndexIDMap
+        # The vector will remain in the index but we remove it from our mappings
+        # This is a limitation of FAISS flat indexes
+
+        # Remove from our mappings
+        del self.texts[id_]
+        del self.metadata[id_]
+        del self.id_to_idx[id_]
+        del self.idx_to_id[idx]
+
+        # Update indexed_files if this was the last chunk for a file
+        if hasattr(self, "indexed_files") and removed_file_path:
+            # Check if there are any remaining chunks for this file
+            remaining_chunks = any(
+                isinstance(meta, dict) and meta.get("file_path") == removed_file_path
+                for chunk_id, meta in self.metadata.items()
+            )
+
+            # If no remaining chunks, remove from indexed_files
+            if not remaining_chunks and removed_file_path in self.indexed_files:
+                del self.indexed_files[removed_file_path]
+
+        return True
+
     async def search(
         self, query_embedding: np.ndarray, k: int = 10, filter: dict[str, Any] | None = None
     ) -> list[SearchResult]:
@@ -146,9 +194,14 @@ class FAISSVectorStore(BaseVectorStore):
         # Normalize query
         query_array = self._normalize_embeddings([query_embedding])
 
-        # Search
+        # Search (ensure k is at least 1 and not more than total items)
+        # If index is empty, search_k will be 0 which FAISS doesn't allow, so we need min 1
+        if self.index.ntotal == 0:
+            # Can't search empty index, return empty results
+            return []
+        search_k = max(1, min(k * 2, self.index.ntotal))
         distances, indices = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self.index.search(query_array, min(k * 2, self.index.ntotal))
+            None, lambda: self.index.search(query_array, search_k)
         )
 
         # Convert to results
@@ -284,6 +337,28 @@ class FAISSVectorStore(BaseVectorStore):
 
         # Save metadata
         metadata_path = str(path_obj.with_suffix(".meta"))
+
+        # Collect file metadata for cache invalidation
+        file_info = {}
+        for _chunk_id, chunk_metadata in self.metadata.items():
+            if isinstance(chunk_metadata, dict) and "file_path" in chunk_metadata:
+                file_path = chunk_metadata["file_path"]
+                if file_path not in file_info:
+                    file_info[file_path] = {
+                        "mtime": chunk_metadata.get("file_mtime"),
+                        "size": chunk_metadata.get("file_size"),
+                        "indexed_at": chunk_metadata.get("indexed_at"),
+                    }
+
+        # Preserve any existing tracked files (like 0-chunk files) that aren't in chunk metadata
+        if hasattr(self, "indexed_files") and self.indexed_files:
+            for file_path, file_metadata in self.indexed_files.items():
+                if file_path not in file_info:
+                    file_info[file_path] = file_metadata
+
+        # Update in-memory indexed_files so cache checks work immediately
+        self.indexed_files = file_info
+
         metadata_dict = {
             "texts": self.texts,
             "metadata": self.metadata,
@@ -293,6 +368,9 @@ class FAISSVectorStore(BaseVectorStore):
             "index_type": self.index_type,
             "metric": self.metric,
             "index_params": self.index_params,
+            # Cache invalidation metadata
+            "index_created_at": datetime.now().isoformat(),
+            "indexed_files": file_info,
         }
 
         with open(metadata_path, "wb") as f:
@@ -321,3 +399,7 @@ class FAISSVectorStore(BaseVectorStore):
         self.index_type = metadata_dict["index_type"]
         self.metric = metadata_dict["metric"]
         self.index_params = metadata_dict["index_params"]
+
+        # Load cache invalidation metadata (with backwards compatibility)
+        self.index_created_at = metadata_dict.get("index_created_at")
+        self.indexed_files = metadata_dict.get("indexed_files", {})

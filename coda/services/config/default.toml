@@ -150,8 +150,8 @@ chunk_overlap = 200
 # Minimum chunk size
 min_chunk_size = 100
 
-# Default number of search results
-search_k = 5
+# Default number of search results  
+search_k = 10
 
 # Similarity threshold for search results (0.0-1.0)
 similarity_threshold = 0.7

@@ -16,7 +16,7 @@ from pathlib import Path
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from coda.semantic_search_coda import create_semantic_search_manager
+from coda.services.search import create_semantic_search_manager
 
 
 async def main():
