@@ -1,6 +1,6 @@
 # Coda Development Guide
 
-**Coda** is a multi-provider CLI code assistant providing a unified interface for LLMs (OCI GenAI, OpenAI, Anthropic, Ollama). Built for developers who prefer terminal workflows.
+**Coda** is a CLI code assistant providing a unified interface for LLMs (OCI GenAI, OpenAI, Anthropic, Ollama). Built for developers who prefer terminal workflows.
 
 **Core Principles**: Simplicity, Flexibility, Performance, Developer Experience, Extensibility
 

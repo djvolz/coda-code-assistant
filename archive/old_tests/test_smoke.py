@@ -40,7 +40,7 @@ class TestSmoke:
             [sys.executable, "-m", "coda.cli.main", "--help"], capture_output=True, text=True
         )
         assert result.returncode == 0
-        assert "Coda - A multi-provider code assistant" in result.stdout
+        assert "Coda - A code assistant" in result.stdout
 
     def test_cli_version(self):
         """Test that CLI version works."""

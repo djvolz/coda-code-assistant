@@ -239,7 +239,7 @@ class PersistentChatbot:
         return assistant_message
 ```
 
-### Pattern 3: Multi-Provider Comparison
+### Pattern 3: Provider Comparison
 
 Compare responses from different AI providers:
 
@@ -1105,9 +1105,9 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-### Example 4: Multi-Provider Benchmark
+### Example 4: Provider Benchmark
 
-Location: `examples/multi-provider/`
+Location: `examples/provider-comparison/`
 
 ```python
 #!/usr/bin/env python3
@@ -1244,7 +1244,7 @@ async def main():
     benchmark = ProviderBenchmark()
     
     while True:
-        print("\n=== Multi-Provider Benchmark ===")
+        print("\n=== Provider Benchmark ===")
         print("1. Benchmark custom prompt")
         print("2. Run capability tests")
         print("3. Compare specific models")

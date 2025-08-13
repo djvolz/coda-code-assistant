@@ -53,7 +53,7 @@ We use a **tiered testing approach** to balance speed, cost, and coverage:
 # What runs:
 - OCI GenAI provider tests
 - OpenAI/other cloud provider tests  
-- Full multi-provider compatibility
+- Full provider compatibility
 - Performance benchmarks
 ```
 

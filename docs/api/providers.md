@@ -297,7 +297,7 @@ if response.tool_calls:
         print(f"Args: {tool_call.arguments}")
 ```
 
-### Multi-Provider Comparison
+### Provider Comparison
 
 ```python
 providers = ["openai", "anthropic", "ollama"]
@@ -540,6 +540,6 @@ def test_chat_function():
 ## See Also
 
 - [Integration Guide](../integration-guide.md) - Using providers with other modules
-- [Example: Multi-Provider](../../tests/examples/multi_provider/) - Provider comparison example
+- [Example: Provider Comparison](../../tests/examples/multi_provider/) - Provider comparison example
 - [LiteLLM Documentation](https://docs.litellm.ai/) - Supported providers
 - [Provider Configuration](../reference/providers.md) - Detailed provider setup

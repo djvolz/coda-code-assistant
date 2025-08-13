@@ -179,7 +179,7 @@ docs/wiki-staging/
 │   └── creating-modules.md
 ├── tutorials/
 │   ├── basic-chatbot.md
-│   ├── multi-provider.md
+│   ├── provider-comparison.md
 │   └── custom-themes.md
 └── reference/
     ├── cli-commands.md

@@ -16,7 +16,7 @@ def configure_page():
         menu_items={
             "Get Help": "https://github.com/yourusername/coda-assistant",
             "Report a bug": "https://github.com/yourusername/coda-assistant/issues",
-            "About": "# Coda Assistant\n\nA multi-provider AI assistant for code development.",
+            "About": "# Coda Assistant\n\nAn AI assistant for code development.",
         },
     )
 

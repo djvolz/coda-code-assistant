@@ -55,7 +55,7 @@ All documentation should be written verbosely in the wiki staging area. The wiki
   - Simple chatbot using providers + config
   - Session manager with persistence
   - Code analysis tool using search module
-  - Multi-provider comparison tool
+  - Provider comparison tool
   - Custom theme creation
 
 ### 2. User Documentation Updates (Priority: High)
@@ -164,7 +164,7 @@ docs/
 │   ├── simple-chatbot/
 │   ├── session-manager/
 │   ├── code-analyzer/
-│   └── multi-provider/
+│   └── provider-comparison/
 └── architecture/              # Architecture documentation
     ├── overview.md
     ├── decisions/
