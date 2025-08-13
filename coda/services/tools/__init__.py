@@ -5,41 +5,7 @@ This package provides a collection of tools for file operations, shell commands,
 web interactions, Git operations, and diagram rendering, all built on the Model Context Protocol (MCP).
 """
 
-# Import all tool modules to register them (handle missing dependencies gracefully)
-try:
-    from . import diagram_tools as _diagram_tools  # noqa: F401
-except ImportError:
-    pass  # diagram_renderer dependency not available
-
-try:
-    from . import file_tools as _file_tools  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    from . import git_tools as _git_tools  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    from . import intelligence_tools as _intelligence_tools  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    from . import shell_tools as _shell_tools  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    from . import web_tools as _web_tools  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    from . import semantic_search_tools as _semantic_search_tools  # noqa: F401
-except ImportError:
-    pass
+import logging
 
 from .base import (
     BaseTool,
@@ -50,6 +16,32 @@ from .base import (
     ToolSchema,
     tool_registry,
 )
+
+# ====================================================================
+# Tool Module Registration
+# ====================================================================
+# Import all tool modules to register them (handle missing dependencies gracefully)
+
+_TOOL_MODULES = [
+    "diagram_tools",
+    "file_tools",
+    "git_tools",
+    "intelligence_tools",
+    "shell_tools",
+    "web_tools",
+    "semantic_search_tools",
+]
+
+for module_name in _TOOL_MODULES:
+    try:
+        __import__(f"coda.services.tools.{module_name}")
+    except ImportError:
+        # Optional dependencies may not be available
+        pass
+
+# ====================================================================
+# Public API
+# ====================================================================
 
 __all__ = [
     "BaseTool",
@@ -68,7 +60,12 @@ __all__ = [
 ]
 
 
-def get_available_tools(category: str = None) -> list:
+# ====================================================================
+# Tool Management Functions
+# ====================================================================
+
+
+def get_available_tools(category: str | None = None) -> list[ToolSchema]:
     """
     Get list of available tools, optionally filtered by category.
 
@@ -95,7 +92,7 @@ async def execute_tool(name: str, arguments: dict) -> ToolResult:
     return await tool_registry.execute_tool(name, arguments)
 
 
-def get_tool_categories() -> list:
+def get_tool_categories() -> list[str]:
     """
     Get list of all tool categories.
 
@@ -105,7 +102,7 @@ def get_tool_categories() -> list:
     return tool_registry.list_categories()
 
 
-def get_tool_info(name: str) -> dict:
+def get_tool_info(name: str) -> dict | None:
     """
     Get detailed information about a specific tool.
 
@@ -155,7 +152,11 @@ def list_tools_by_category() -> dict:
     return categories
 
 
-# Tool statistics and management
+# ====================================================================
+# Tool Statistics and Analysis
+# ====================================================================
+
+
 def get_tool_stats() -> dict:
     """
     Get statistics about available tools.
@@ -180,70 +181,71 @@ def get_tool_stats() -> dict:
     }
 
 
-# Initialize MCP manager with tool registry
-try:
-    from .mcp_manager import discover_mcp_servers, init_mcp_manager
+# ====================================================================
+# MCP (Model Context Protocol) Integration
+# ====================================================================
 
-    # Initialize MCP manager with the tool registry
-    mcp_manager = init_mcp_manager(tool_registry)
 
-    # Try to discover and start MCP servers synchronously during import
-    # This avoids the threading/event loop issues
+def _initialize_mcp_system() -> None:
+    """Initialize the MCP system with proper error handling."""
+    logger = logging.getLogger(__name__)
+
+    try:
+        from .mcp_manager import init_mcp_manager
+
+        # Initialize MCP manager with the tool registry
+        init_mcp_manager(tool_registry)
+
+        # Discover and start MCP servers synchronously during import
+        _discover_mcp_servers_sync()
+
+    except ImportError:
+        logger.debug("MCP system not available - optional dependency")
+    except Exception as e:
+        logger.debug(f"MCP initialization failed: {e}")
+
+
+def _discover_mcp_servers_sync() -> None:
+    """Synchronously discover MCP servers during import."""
     import asyncio
 
-    def _sync_discover_mcp_servers():
-        """Synchronously discover MCP servers during import."""
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Check if we're already in an async context
         try:
-            # Check if we're already in an async context
-            try:
-                asyncio.get_running_loop()
-                # We're in an async context, skip discovery for now
-                # Tools will be discovered on-demand later
-                import logging
-
-                logger = logging.getLogger(__name__)
-                logger.debug("Skipping MCP discovery during import - async context detected")
-                return
-            except RuntimeError:
-                # No running loop, safe to create one
-                pass
-
-            # Create a new event loop for this discovery
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-            # Run the discovery
-            loop.run_until_complete(discover_mcp_servers())
-
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.info("MCP servers discovered and started during import")
-
-        except Exception as e:
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.debug(f"MCP server discovery failed during import: {e}")
-        finally:
-            # Don't close the loop - keep it for MCP connections
+            asyncio.get_running_loop()
+            logger.debug("Skipping MCP discovery during import - async context detected")
+            return
+        except RuntimeError:
+            # No running loop, safe to create one
             pass
 
-    # Run discovery synchronously during import
-    _sync_discover_mcp_servers()
+        # Create a new event loop for this discovery
+        from .mcp_manager import discover_mcp_servers
 
-except ImportError:
-    # MCP system not available
-    pass
-except Exception as e:
-    # Log but don't fail if MCP initialization fails
-    import logging
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-    logger = logging.getLogger(__name__)
-    logger.debug(f"MCP initialization failed: {e}")
+        # Run the discovery
+        loop.run_until_complete(discover_mcp_servers())
+        logger.info("MCP servers discovered and started during import")
+
+    except Exception as e:
+        logger.debug(f"MCP server discovery failed during import: {e}")
+    finally:
+        # Don't close the loop - keep it for MCP connections
+        pass
 
 
-# Version and compatibility info
+# Initialize MCP system
+_initialize_mcp_system()
+
+
+# ====================================================================
+# Version and Compatibility Information
+# ====================================================================
+
 __version__ = "1.0.0"
 __mcp_version__ = "2025-06-18"  # Supported MCP specification version
 
