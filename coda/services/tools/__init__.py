@@ -180,30 +180,6 @@ def get_tool_stats() -> dict:
     }
 
 
-# Register built-in tools that are always available
-try:
-    from .builtin_tools import get_builtin_tools
-
-    builtin_tools = get_builtin_tools()
-    for tool in builtin_tools:
-        tool_registry.register(tool)
-
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.info(f"Registered {len(builtin_tools)} built-in tools")
-
-except ImportError as e:
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.warning(f"Built-in tools not available: {e}")
-except Exception as e:
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.error(f"Error registering built-in tools: {e}")
-
 # Initialize MCP manager with tool registry
 try:
     from .mcp_manager import discover_mcp_servers, init_mcp_manager
