@@ -16,7 +16,6 @@ DEFAULT_INDEX_TYPE: str = "Flat"  # FAISS index type
 DEFAULT_SIMILARITY_METRIC: str = "cosine"
 
 # Search defaults
-DEFAULT_SEARCH_K: int = 10  # Number of results to return (increased from 5 for better coverage)
 DEFAULT_SIMILARITY_THRESHOLD: float = 0.7
 
 # File processing

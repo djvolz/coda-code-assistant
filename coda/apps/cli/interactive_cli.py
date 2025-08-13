@@ -365,7 +365,7 @@ class InteractiveCLI(CommandHandler):
 
         if multiline:
             self.console.print(
-                "[dim]Enter multiple lines. Press [Meta+Enter] or [Esc] followed by [Enter] to submit.[/dim]"
+                f"[{self.theme.dim}]Enter multiple lines. Press [Meta+Enter] or [Esc] followed by [Enter] to submit.[/{self.theme.dim}]"
             )
             # Temporarily enable multiline mode
             self.session.default_buffer.multiline = True
@@ -418,7 +418,7 @@ class InteractiveCLI(CommandHandler):
                 await self._execute_command_handler(cmd.handler, args)
                 return True
 
-        self.console.print(f"[red]Unknown command: /{cmd_name}[/red]")
+        self.console.print(f"[{self.theme.error}]Unknown command: /{cmd_name}[/{self.theme.error}]")
         self.console.print("Type /help for available commands")
         return True
 
@@ -437,7 +437,9 @@ class InteractiveCLI(CommandHandler):
         print_developer_modes(self.console)
         print_interactive_keyboard_shortcuts(self.console)
 
-        self.console.print("[dim]Type any command without arguments to see its options[/dim]")
+        self.console.print(
+            f"[{self.theme.dim}]Type any command without arguments to see its options[/{self.theme.dim}]"
+        )
         return CommandResult.HANDLED
 
     def _cmd_help(self, args: str):
@@ -448,7 +450,7 @@ class InteractiveCLI(CommandHandler):
         """Switch AI model - enhanced for interactive mode."""
         if not self.available_models:
             self.console.print(
-                "[yellow]No models available. Please connect to a provider first.[/yellow]"
+                "[{self.theme.warning}]No models available. Please connect to a provider first.[/{self.theme.warning}]"
             )
             return
 
@@ -491,10 +493,14 @@ class InteractiveCLI(CommandHandler):
                     self.switch_mode(mode_choice)
                 else:
                     # Show current mode if cancelled
-                    self.console.print(f"[yellow]Current mode: {self.current_mode.value}[/yellow]")
+                    self.console.print(
+                        f"[{self.theme.warning}]Current mode: {self.current_mode.value}[/{self.theme.warning}]"
+                    )
             else:
                 # Fallback
-                self.console.print(f"[yellow]Current mode: {self.current_mode.value}[/yellow]")
+                self.console.print(
+                    f"[{self.theme.warning}]Current mode: {self.current_mode.value}[/{self.theme.warning}]"
+                )
         else:
             self.switch_mode(args)
 
@@ -502,13 +508,15 @@ class InteractiveCLI(CommandHandler):
         self, command_name: str, title: str, options: list[tuple[str, str]], usage: str
     ):
         """Helper to show coming soon commands with consistent formatting."""
-        self.console.print(f"\n[bold]{title}[/bold] [yellow](Coming soon)[/yellow]")
         self.console.print(
-            f"\n[bold]Planned {('subcommands' if 'subcommand' in usage else 'options')}:[/bold]"
+            f"\n[{self.theme.bold}]{title}[/{self.theme.bold}] [{self.theme.warning}](Coming soon)[/{self.theme.warning}]"
+        )
+        self.console.print(
+            f"\n[{self.theme.bold}]Planned {('subcommands' if 'subcommand' in usage else 'options')}:[/{self.theme.bold}]"
         )
         for option, description in options:
-            self.console.print(f"  [cyan]{option}[/cyan] - {description}")
-        self.console.print(f"\n[dim]Usage: {usage}[/dim]")
+            self.console.print(f"  [{self.theme.info}]{option}[/{self.theme.info}] - {description}")
+        self.console.print(f"\n[{self.theme.dim}]Usage: {usage}[/{self.theme.dim}]")
 
     async def _apply_theme_change(self, theme_name: str) -> None:
         """Apply theme change and update all necessary components."""
@@ -534,9 +542,13 @@ class InteractiveCLI(CommandHandler):
 
             # The new session will have the updated style
 
-        self.console.print(f"[green]✓[/] Theme changed to '[cyan]{theme_name}[/]'")
+        self.console.print(
+            f"[{self.theme.success}]✓[/{self.theme.success}] Theme changed to '[{self.theme.info}]{theme_name}[/{self.theme.info}]'"
+        )
         if self.config:
-            self.console.print("[dim]Theme preference saved to configuration[/]")
+            self.console.print(
+                f"[{self.theme.dim}]Theme preference saved to configuration[/{self.theme.dim}]"
+            )
 
     def _list_available_themes(self) -> None:
         """List all available themes with current selection indicator."""
@@ -545,12 +557,16 @@ class InteractiveCLI(CommandHandler):
 
         config_service = get_config_service()
         theme_manager = config_service.theme_manager
-        self.console.print("\n[bold]Available themes:[/]")
+        self.console.print(f"\n[{self.theme.bold}]Available themes:[/{self.theme.bold}]")
         for theme_name, theme in THEMES.items():
             status = (
-                "[green]●[/]" if theme_name == theme_manager.current_theme_name else "[dim]○[/]"
+                f"[{self.theme.success}]●[/{self.theme.success}]"
+                if theme_name == theme_manager.current_theme_name
+                else f"[{self.theme.dim}]○[/{self.theme.dim}]"
             )
-            self.console.print(f"  {status} [cyan]{theme_name}[/] - {theme.description}")
+            self.console.print(
+                f"  {status} [{self.theme.info}]{theme_name}[/{self.theme.info}] - {theme.description}"
+            )
 
     def _show_current_theme(self) -> None:
         """Display the current theme and its description."""
@@ -558,8 +574,12 @@ class InteractiveCLI(CommandHandler):
 
         config_service = get_config_service()
         theme_manager = config_service.theme_manager
-        self.console.print(f"\n[bold]Current theme:[/] {theme_manager.current_theme_name}")
-        self.console.print(f"[bold]Description:[/] {theme_manager.current_theme.description}")
+        self.console.print(
+            f"\n[{self.theme.bold}]Current theme:[/{self.theme.bold}] {theme_manager.current_theme_name}"
+        )
+        self.console.print(
+            f"[{self.theme.bold}]Description:[/{self.theme.bold}] {theme_manager.current_theme.description}"
+        )
 
     async def _execute_command_handler(self, handler: Callable, args: str) -> None:
         """Execute command handler with proper async handling."""
@@ -585,10 +605,14 @@ class InteractiveCLI(CommandHandler):
                         self.console.print(result)
                 else:
                     # Show available commands if cancelled
-                    self.console.print("[yellow]Session command cancelled[/yellow]")
+                    self.console.print(
+                        "[{self.theme.warning}]Session command cancelled[/{self.theme.warning}]"
+                    )
             else:
                 # Fallback
-                self.console.print("[red]Could not create session selector[/red]")
+                self.console.print(
+                    "[{self.theme.error}]Could not create session selector[/{self.theme.error}]"
+                )
         else:
             # Pass the arguments to session commands handler
             result = self.session_commands.handle_session_command(args.split() if args else [])
@@ -613,11 +637,11 @@ class InteractiveCLI(CommandHandler):
                 try:
                     await self._apply_theme_change(new_theme)
                 except ValueError as e:
-                    self.console.print(f"[red]Error:[/] {e}")
+                    self.console.print(f"[{self.theme.error}]Error:[/{self.theme.error}] {e}")
             else:
                 # Show current theme if no selection was made
                 self.console.print(
-                    f"\n[yellow]Current theme:[/] {theme_manager.current_theme_name}"
+                    f"\n[{self.theme.warning}]Current theme:[/{self.theme.warning}] {theme_manager.current_theme_name}"
                 )
             return
 
@@ -640,7 +664,7 @@ class InteractiveCLI(CommandHandler):
         try:
             await self._apply_theme_change(args)
         except ValueError as e:
-            self.console.print(f"[red]Error:[/] {e}")
+            self.console.print(f"[{self.theme.error}]Error:[/{self.theme.error}] {e}")
 
     async def _cmd_export(self, args: str):
         """Export conversation."""
@@ -658,10 +682,14 @@ class InteractiveCLI(CommandHandler):
                     if result:
                         self.console.print(result)
                 else:
-                    self.console.print("[yellow]Export cancelled[/yellow]")
+                    self.console.print(
+                        "[{self.theme.warning}]Export cancelled[/{self.theme.warning}]"
+                    )
             else:
                 # Fallback if selector creation fails
-                self.console.print("[red]Could not create export selector[/red]")
+                self.console.print(
+                    "[{self.theme.error}]Could not create export selector[/{self.theme.error}]"
+                )
         else:
             # Pass the arguments to session commands handler for export
             result = self.session_commands.handle_export_command(args.split() if args else [])
@@ -703,7 +731,9 @@ class InteractiveCLI(CommandHandler):
             if result:
                 self.console.print(result)
         except Exception as e:
-            self.console.print(f"[red]Error executing intelligence command: {e}[/red]")
+            self.console.print(
+                f"[{self.theme.error}]Error executing intelligence command: {e}[/{self.theme.error}]"
+            )
 
     async def _cmd_search(self, args: str):
         """Semantic search commands."""
@@ -739,7 +769,9 @@ class InteractiveCLI(CommandHandler):
 
             self.console.print()
             self.console.print(table)
-            self.console.print("\n[dim]Tip: Try '/search index demo' to get started[/dim]")
+            self.console.print(
+                f"\n[{self.theme.dim}]Tip: Try '/search index demo' to get started[/{self.theme.dim}]"
+            )
             return
 
         # Import semantic search components
@@ -754,8 +786,12 @@ class InteractiveCLI(CommandHandler):
                 create_search_stats_display,
             )
         except ImportError as e:
-            self.console.print(f"[red]Error loading semantic search: {e}[/red]")
-            self.console.print("[yellow]Make sure to install: uv sync --extra embeddings[/yellow]")
+            self.console.print(
+                f"[{self.theme.error}]Error loading semantic search: {e}[/{self.theme.error}]"
+            )
+            self.console.print(
+                "[{self.theme.warning}]Make sure to install: uv sync --extra embeddings[/{self.theme.warning}]"
+            )
             return
 
         # Initialize display helpers
@@ -771,14 +807,16 @@ class InteractiveCLI(CommandHandler):
                 # Get provider info
                 provider_info = self._search_manager.embedding_provider.get_model_info()
                 self.console.print(
-                    f"[green]Using {provider_info.get('provider', 'configured')} embeddings[/green]"
+                    f"[{self.theme.success}]Using {provider_info.get('provider', 'configured')} embeddings[/{self.theme.success}]"
                 )
             except Exception as e:
                 # Fall back to mock provider
                 self.console.print(
-                    f"[yellow]Failed to initialize configured provider: {str(e)}[/yellow]"
+                    f"[{self.theme.warning}]Failed to initialize configured provider: {str(e)}[/{self.theme.warning}]"
                 )
-                self.console.print("[yellow]Using mock embeddings for demo purposes[/yellow]")
+                self.console.print(
+                    "[{self.theme.warning}]Using mock embeddings for demo purposes[/{self.theme.warning}]"
+                )
                 provider = MockEmbeddingProvider(dimension=768)
                 self._search_manager = SemanticSearchManager(embedding_provider=provider)
 
@@ -790,12 +828,16 @@ class InteractiveCLI(CommandHandler):
 
         if subcommand == "semantic":
             if not query:
-                self.console.print("[red]Please provide a search query[/red]")
+                self.console.print(
+                    "[{self.theme.error}]Please provide a search query[/{self.theme.error}]"
+                )
                 return
 
             try:
                 # Show searching indicator
-                with self.console.status(f"[cyan]Searching for: '{query}'...[/cyan]"):
+                with self.console.status(
+                    f"[{self.theme.info}]Searching for: '{query}'...[/{self.theme.info}]"
+                ):
                     results = await manager.search(query, k=5)
 
                 # Display results with enhanced formatting
@@ -804,17 +846,21 @@ class InteractiveCLI(CommandHandler):
             except Exception as e:
                 import traceback
 
-                self.console.print(f"[red]Search error: {e}[/red]")
-                self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+                self.console.print(f"[{self.theme.error}]Search error: {e}[/{self.theme.error}]")
+                self.console.print(f"[{self.theme.dim}]{traceback.format_exc()}[/{self.theme.dim}]")
 
         elif subcommand == "code":
             if not query:
-                self.console.print("[red]Please provide a search query[/red]")
+                self.console.print(
+                    "[{self.theme.error}]Please provide a search query[/{self.theme.error}]"
+                )
                 return
 
             try:
                 # Show searching indicator
-                with self.console.status(f"[cyan]Searching code for: '{query}'...[/cyan]"):
+                with self.console.status(
+                    f"[{self.theme.info}]Searching code for: '{query}'...[/{self.theme.info}]"
+                ):
                     # Add code-specific metadata to results
                     results = await manager.search(query, k=5)
 
@@ -835,8 +881,10 @@ class InteractiveCLI(CommandHandler):
             except Exception as e:
                 import traceback
 
-                self.console.print(f"[red]Code search error: {e}[/red]")
-                self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+                self.console.print(
+                    f"[{self.theme.error}]Code search error: {e}[/{self.theme.error}]"
+                )
+                self.console.print(f"[{self.theme.dim}]{traceback.format_exc()}[/{self.theme.dim}]")
 
         elif subcommand == "index":
             if query == "demo":
@@ -864,10 +912,12 @@ class InteractiveCLI(CommandHandler):
                             progress.update(1, f"Indexing: {doc[:50]}...")
 
                     self.console.print(
-                        f"\n[green]✓ Successfully indexed {len(indexed_ids)} demo documents[/green]"
+                        f"\n[{self.theme.success}]✓ Successfully indexed {len(indexed_ids)} demo documents[/{self.theme.success}]"
                     )
                 except Exception as e:
-                    self.console.print(f"[red]Indexing error: {e}[/red]")
+                    self.console.print(
+                        f"[{self.theme.error}]Indexing error: {e}[/{self.theme.error}]"
+                    )
             else:
                 # Index files in the specified path
                 path = Path(query or ".")
@@ -877,7 +927,9 @@ class InteractiveCLI(CommandHandler):
                     if path.is_file():
                         # Single file
                         files = [path]
-                        self.console.print(f"[cyan]Indexing file: {path}[/cyan]")
+                        self.console.print(
+                            f"[{self.theme.info}]Indexing file: {path}[/{self.theme.info}]"
+                        )
                     else:
                         # Directory - find all code files
                         import glob
@@ -925,11 +977,13 @@ class InteractiveCLI(CommandHandler):
                         files = sorted(set(files))
 
                         if not files:
-                            self.console.print(f"[yellow]No code files found in {path}[/yellow]")
+                            self.console.print(
+                                f"[{self.theme.warning}]No code files found in {path}[/{self.theme.warning}]"
+                            )
                             return
 
                         self.console.print(
-                            f"[cyan]Found {len(files)} files to index in {path}[/cyan]"
+                            f"[{self.theme.info}]Found {len(files)} files to index in {path}[/{self.theme.info}]"
                         )
 
                     # Ensure index is loaded before checking what files are already indexed
@@ -950,25 +1004,29 @@ class InteractiveCLI(CommandHandler):
                         if stale_count > 0:
                             update_needed = True
                             self.console.print(
-                                f"[yellow]Found {stale_count} indexed files that need updating[/yellow]"
+                                f"[{self.theme.warning}]Found {stale_count} indexed files that need updating[/{self.theme.warning}]"
                             )
 
                     # Report on new files
                     if new_files_to_index:
                         self.console.print(
-                            f"[cyan]Found {len(new_files_to_index)} new files to index[/cyan]"
+                            f"[{self.theme.info}]Found {len(new_files_to_index)} new files to index[/{self.theme.info}]"
                         )
                         update_needed = True
 
                     if update_needed:
                         # Use smart update for everything
-                        with self.console.status("[cyan]Updating index...[/cyan]"):
+                        with self.console.status(
+                            "[{self.theme.info}]Updating index...[/{self.theme.info}]"
+                        ):
                             update_result = await manager.update_dirty_files(
                                 [str(f) for f in files]
                             )
 
                         if update_result["updated"]:
-                            self.console.print("[green]✓ Index updated:[/green]")
+                            self.console.print(
+                                "[{self.theme.success}]✓ Index updated:[/{self.theme.success}]"
+                            )
                             if update_result["removed_chunks"] > 0:
                                 self.console.print(
                                     f"  - Removed: {update_result['removed_chunks']} stale chunks"
@@ -978,31 +1036,39 @@ class InteractiveCLI(CommandHandler):
                                     f"  - Indexed: {update_result['indexed_files']} files ({update_result['indexed_chunks']} chunks)"
                                 )
                         else:
-                            self.console.print(f"[green]{update_result['reason']}[/green]")
+                            self.console.print(
+                                f"[{self.theme.success}]{update_result['reason']}[/{self.theme.success}]"
+                            )
                     else:
                         # No changes needed
                         self.console.print(
-                            f"[green]✓ All {len(files)} files are already up to date[/green]"
+                            f"[{self.theme.success}]✓ All {len(files)} files are already up to date[/{self.theme.success}]"
                         )
 
                     # Show some stats
                     stats = await manager.get_stats()
                     self.console.print(
-                        f"[dim]Total vectors in index: {stats['vector_count']}[/dim]"
+                        f"[{self.theme.dim}]Total vectors in index: {stats['vector_count']}[/{self.theme.dim}]"
                     )
 
                 except Exception as e:
                     import traceback
 
-                    self.console.print(f"[red]Indexing error: {e}[/red]")
-                    self.console.print(f"[dim]{traceback.format_exc()}[/dim]")
+                    self.console.print(
+                        f"[{self.theme.error}]Indexing error: {e}[/{self.theme.error}]"
+                    )
+                    self.console.print(
+                        f"[{self.theme.dim}]{traceback.format_exc()}[/{self.theme.dim}]"
+                    )
 
         elif subcommand == "status":
             try:
                 stats = await manager.get_stats()
                 create_search_stats_display(stats, self.console)
             except Exception as e:
-                self.console.print(f"[red]Error getting status: {e}[/red]")
+                self.console.print(
+                    f"[{self.theme.error}]Error getting status: {e}[/{self.theme.error}]"
+                )
 
         elif subcommand == "reset":
             # Reset the search manager and clear index files
@@ -1020,25 +1086,29 @@ class InteractiveCLI(CommandHandler):
                         index_dir.mkdir(parents=True, exist_ok=True)
 
                     self.console.print(
-                        f"[green]✓ Search index cleared ({cleared_count} vectors removed)[/green]"
+                        f"[{self.theme.success}]✓ Search index cleared ({cleared_count} vectors removed)[/{self.theme.success}]"
                     )
                 except Exception as e:
-                    self.console.print(f"[red]Error clearing index: {e}[/red]")
+                    self.console.print(
+                        f"[{self.theme.error}]Error clearing index: {e}[/{self.theme.error}]"
+                    )
 
             # Reset the search manager instance
             self._search_manager = None
             self.console.print(
-                "[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]"
+                "[{self.theme.warning}]Search manager reset. A new provider will be selected on next use.[/{self.theme.warning}]"
             )
 
         else:
-            self.console.print(f"[red]Unknown search subcommand: {subcommand}[/red]")
+            self.console.print(
+                f"[{self.theme.error}]Unknown search subcommand: {subcommand}[/{self.theme.error}]"
+            )
 
     def _cmd_clear(self, args: str):
         """Clear conversation."""
         # Clear session manager's conversation
         self.session_commands.clear_conversation()
-        self.console.print("[green]Conversation cleared[/green]")
+        self.console.print("[{self.theme.success}]Conversation cleared[/{self.theme.success}]")
         # Note: Actual clearing is handled by the caller
 
     def _cmd_observability(self, args: str):
@@ -1092,7 +1162,9 @@ class InteractiveCLI(CommandHandler):
                         if len(limit_parts) > 1:
                             limit = int(limit_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
-                        self.console.print("[red]Invalid limit value[/red]")
+                        self.console.print(
+                            "[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
+                        )
                         return
                 obs_commands.show_traces(limit=limit)
 
@@ -1130,7 +1202,9 @@ class InteractiveCLI(CommandHandler):
                         if len(limit_parts) > 1:
                             limit = int(limit_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
-                        self.console.print("[red]Invalid limit value[/red]")
+                        self.console.print(
+                            "[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
+                        )
                         return
 
                 if "--days" in sub_args:
@@ -1139,7 +1213,9 @@ class InteractiveCLI(CommandHandler):
                         if len(days_parts) > 1:
                             days = int(days_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
-                        self.console.print("[red]Invalid days value[/red]")
+                        self.console.print(
+                            "[{self.theme.error}]Invalid days value[/{self.theme.error}]"
+                        )
                         return
 
                 obs_commands.show_errors(limit=limit, days=days)
@@ -1154,24 +1230,32 @@ class InteractiveCLI(CommandHandler):
                         if len(limit_parts) > 1:
                             limit = int(limit_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
-                        self.console.print("[red]Invalid limit value[/red]")
+                        self.console.print(
+                            "[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
+                        )
                         return
 
                 obs_commands.show_performance(limit=limit)
 
             else:
-                self.console.print(f"[red]Unknown observability subcommand: {subcommand}[/red]")
+                self.console.print(
+                    f"[{self.theme.error}]Unknown observability subcommand: {subcommand}[/{self.theme.error}]"
+                )
                 self.console.print(
                     "Available subcommands: status, metrics, health, traces, export, errors, performance"
                 )
-                self.console.print("Use [cyan]/help observability[/cyan] for more details")
+                self.console.print(
+                    "Use [{self.theme.info}]/help observability[/{self.theme.info}] for more details"
+                )
 
         except Exception as e:
-            self.console.print(f"[red]Error executing observability command: {e}[/red]")
+            self.console.print(
+                f"[{self.theme.error}]Error executing observability command: {e}[/{self.theme.error}]"
+            )
 
     def _cmd_exit(self, args: str):
         """Exit the application."""
-        self.console.print("[dim]Goodbye![/dim]")
+        self.console.print(f"[{self.theme.dim}]Goodbye![/{self.theme.dim}]")
         raise SystemExit(0)
 
     def reset_interrupt(self):

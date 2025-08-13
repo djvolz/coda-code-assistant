@@ -9,7 +9,6 @@ query code with language-aware formatting.
 from pathlib import Path
 from typing import Any
 
-from coda.base.search.vector_search.constants import DEFAULT_SEARCH_K
 from coda.services.config import get_config_service
 
 from .base import (
@@ -34,7 +33,7 @@ class SemanticSearchTool(BaseTool, SearchManagerMixin):
     def get_schema(self) -> ToolSchema:
         # Get default from config
         config_service = get_config_service()
-        default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+        default_k = config_service.get("search.search_k")
 
         return ToolSchema(
             name="semantic_search",
@@ -69,7 +68,7 @@ class SemanticSearchTool(BaseTool, SearchManagerMixin):
         query = arguments["query"]
         # Get default from config, fallback to constant
         config_service = get_config_service()
-        config_default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+        config_default_k = config_service.get("search.search_k")
         top_k = int(arguments.get("top_k", config_default_k))
         threshold = float(arguments.get("threshold", 0.5))
 
@@ -301,7 +300,7 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
     def get_schema(self) -> ToolSchema:
         # Get default from config
         config_service = get_config_service()
-        default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+        default_k = config_service.get("search.search_k")
 
         return ToolSchema(
             name="code_search",
@@ -337,7 +336,7 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
         language = arguments.get("language")
         # Get default from config, fallback to constant
         config_service = get_config_service()
-        config_default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+        config_default_k = config_service.get("search.search_k")
         top_k = int(arguments.get("top_k", config_default_k))
 
         try:
