@@ -9,6 +9,9 @@ query code with language-aware formatting.
 from pathlib import Path
 from typing import Any
 
+from coda.base.search.vector_search.constants import DEFAULT_SEARCH_K
+from coda.services.config import get_config_service
+
 from .base import (
     BaseTool,
     ToolParameter,
@@ -29,6 +32,10 @@ class SemanticSearchTool(BaseTool, SearchManagerMixin):
         # Don't initialize at construction time to avoid import errors
 
     def get_schema(self) -> ToolSchema:
+        # Get default from config
+        config_service = get_config_service()
+        default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+
         return ToolSchema(
             name="semantic_search",
             description="Search indexed content using semantic similarity to find relevant code and documentation",
@@ -42,7 +49,7 @@ class SemanticSearchTool(BaseTool, SearchManagerMixin):
                     type=ToolParameterType.INTEGER,
                     description="Number of top results to return",
                     required=False,
-                    default=5,
+                    default=default_k,
                 ),
                 "threshold": ToolParameter(
                     type=ToolParameterType.NUMBER,
@@ -60,7 +67,10 @@ class SemanticSearchTool(BaseTool, SearchManagerMixin):
             self._initialize_manager()
 
         query = arguments["query"]
-        top_k = int(arguments.get("top_k", 5))
+        # Get default from config, fallback to constant
+        config_service = get_config_service()
+        config_default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+        top_k = int(arguments.get("top_k", config_default_k))
         threshold = float(arguments.get("threshold", 0.5))
 
         try:
@@ -71,12 +81,18 @@ class SemanticSearchTool(BaseTool, SearchManagerMixin):
             filtered_results = []
             for result in results:
                 if result.score >= threshold:
+                    file_path = (
+                        result.metadata.get("file_path", "unknown")
+                        if result.metadata
+                        else "unknown"
+                    )
+                    chunk_index = result.metadata.get("chunk_index", 0) if result.metadata else 0
                     filtered_results.append(
                         {
-                            "file": result.file_path,
+                            "file": file_path,
                             "score": round(result.score, 3),
-                            "chunk_index": result.chunk_index,
-                            "content": result.content[:500],  # Truncate for readability
+                            "chunk_index": chunk_index,
+                            "content": result.text[:500],  # Truncate for readability
                             "metadata": result.metadata,
                         }
                     )
@@ -237,6 +253,10 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
         # Don't initialize at construction time to avoid import errors
 
     def get_schema(self) -> ToolSchema:
+        # Get default from config
+        config_service = get_config_service()
+        default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+
         return ToolSchema(
             name="code_search",
             description="Search code files with language-aware syntax highlighting and formatting",
@@ -256,7 +276,7 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
                     type=ToolParameterType.INTEGER,
                     description="Number of top results to return",
                     required=False,
-                    default=5,
+                    default=default_k,
                 ),
             },
         )
@@ -269,7 +289,10 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
 
         query = arguments["query"]
         language = arguments.get("language")
-        top_k = int(arguments.get("top_k", 5))
+        # Get default from config, fallback to constant
+        config_service = get_config_service()
+        config_default_k = config_service.get("search.search_k", DEFAULT_SEARCH_K)
+        top_k = int(arguments.get("top_k", config_default_k))
 
         try:
             # Perform search (async call with correct parameter name)
@@ -278,9 +301,14 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
             # Filter by language if specified and format results
             filtered_results = []
             for result in results:
+                file_path = (
+                    result.metadata.get("file_path", "unknown") if result.metadata else "unknown"
+                )
+                chunk_index = result.metadata.get("chunk_index", 0) if result.metadata else 0
+
                 # Check language filter
                 if language:
-                    file_ext = Path(result.file_path).suffix.lower()
+                    file_ext = Path(file_path).suffix.lower()
                     lang_map = {
                         "python": [".py"],
                         "javascript": [".js", ".jsx"],
@@ -295,11 +323,13 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
 
                 filtered_results.append(
                     {
-                        "file": result.file_path,
+                        "file": file_path,
                         "score": round(result.score, 3),
-                        "language": Path(result.file_path).suffix[1:],  # Remove dot
-                        "chunk_index": result.chunk_index,
-                        "code": result.content,
+                        "language": Path(file_path).suffix[1:]
+                        if file_path != "unknown"
+                        else "unknown",
+                        "chunk_index": chunk_index,
+                        "code": result.text,
                         "metadata": result.metadata,
                     }
                 )
