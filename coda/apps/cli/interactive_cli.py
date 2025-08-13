@@ -1006,7 +1006,27 @@ class InteractiveCLI(CommandHandler):
                 self.console.print(f"[red]Error getting status: {e}[/red]")
 
         elif subcommand == "reset":
-            # Reset the search manager
+            # Reset the search manager and clear index files
+            if self._search_manager:
+                try:
+                    # Clear the in-memory index
+                    cleared_count = await self._search_manager.clear_index()
+
+                    # Also delete the index files from disk
+                    import shutil
+
+                    index_dir = self._search_manager.index_dir
+                    if index_dir.exists():
+                        shutil.rmtree(index_dir)
+                        index_dir.mkdir(parents=True, exist_ok=True)
+
+                    self.console.print(
+                        f"[green]✓ Search index cleared ({cleared_count} vectors removed)[/green]"
+                    )
+                except Exception as e:
+                    self.console.print(f"[red]Error clearing index: {e}[/red]")
+
+            # Reset the search manager instance
             self._search_manager = None
             self.console.print(
                 "[yellow]Search manager reset. A new provider will be selected on next use.[/yellow]"
