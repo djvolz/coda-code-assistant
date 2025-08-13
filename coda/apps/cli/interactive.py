@@ -244,6 +244,40 @@ def _handle_provider_error(e: Exception, provider: str, debug: bool, factory=Non
     sys.exit(1)
 
 
+def _save_agent_messages(cli, messages: list, provider_instance, interrupted: bool) -> None:
+    """Save agent messages to session with proper metadata."""
+    from coda.base.session.tool_storage import format_tool_calls_for_storage
+
+    for msg in messages:
+        tool_calls_data = None
+        if hasattr(msg, "tool_calls") and msg.tool_calls:
+            tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
+
+        metadata = {
+            "mode": cli.current_mode.value,
+            "provider": (
+                provider_instance.name if hasattr(provider_instance, "name") else "unknown"
+            ),
+            "model": cli.current_model,
+            "tool_call_id": getattr(msg, "tool_call_id", None),
+        }
+
+        # Add interrupted flag for assistant messages
+        role_str = msg.role.value if hasattr(msg.role, "value") else str(msg.role)
+        if role_str == "assistant":
+            metadata["interrupted"] = interrupted
+
+        # Add tool_calls to metadata if present
+        if tool_calls_data:
+            metadata["tool_calls"] = tool_calls_data
+
+        cli.session_commands.add_message(
+            role=role_str,
+            content=msg.content,
+            metadata=metadata,
+        )
+
+
 async def _handle_chat_interaction(provider_instance, cli, messages, console: Console, config=None):
     """Handle a single chat interaction including streaming response."""
     from coda.base.providers import Message, Role
@@ -388,35 +422,7 @@ async def _handle_chat_interaction(provider_instance, cli, messages, console: Co
         messages.extend(updated_messages)
 
         # Save all messages from the agent interaction to session
-        from coda.base.session.tool_storage import format_tool_calls_for_storage
-
-        # Find and save new messages (after the user message which was already saved)
-        # Skip the first message (user) since it was already saved above
-        for msg in updated_messages[1:]:
-            tool_calls_data = None
-            if hasattr(msg, "tool_calls") and msg.tool_calls:
-                tool_calls_data = format_tool_calls_for_storage(msg.tool_calls)
-
-            metadata = {
-                "mode": cli.current_mode.value,
-                "provider": (
-                    provider_instance.name if hasattr(provider_instance, "name") else "unknown"
-                ),
-                "model": cli.current_model,
-                "tool_call_id": getattr(msg, "tool_call_id", None),
-            }
-            # Add interrupted flag for assistant messages
-            if msg.role.value == "assistant" or str(msg.role) == "assistant":
-                metadata["interrupted"] = interrupted
-            # Add tool_calls to metadata if present
-            if tool_calls_data:
-                metadata["tool_calls"] = tool_calls_data
-
-            cli.session_commands.add_message(
-                role=msg.role.value if hasattr(msg.role, "value") else str(msg.role),
-                content=msg.content,
-                metadata=metadata,
-            )
+        _save_agent_messages(cli, updated_messages[1:], provider_instance, interrupted)
     except (ConnectionError, TimeoutError) as e:
         console.print(f"\n\n[{theme.error}]Network error during streaming: {e}[/{theme.error}]")
         return True  # Continue loop
