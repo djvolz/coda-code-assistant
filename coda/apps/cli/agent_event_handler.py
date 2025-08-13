@@ -2,6 +2,7 @@
 
 import json
 
+from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -106,9 +107,6 @@ class MarkdownStreamBuffer:
 
     def add_chunk(self, chunk: str):
         """Add a new chunk to the buffer and optionally show streaming."""
-        from rich.live import Live
-        from rich.panel import Panel
-
         self.buffer += chunk
 
         if not self.show_streaming:
