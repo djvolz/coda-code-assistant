@@ -26,6 +26,13 @@ class Agent:
     and handles the conversation flow.
     """
 
+    # Configuration constants
+    LOOP_DETECTION_WINDOW = 3
+    MAX_SAME_TOOL_CALLS = 2
+    STREAMING_CHAR_DELAY = 0.001
+    LIVE_REFRESH_RATE = 4
+    INTERRUPT_CHECK_INTERVAL = 0.1
+
     def __init__(
         self,
         provider: BaseProvider,
@@ -123,35 +130,16 @@ class Agent:
         Returns:
             RunResponse with final result
         """
-        # Initialize messages if not provided
-        if messages is None:
-            messages = []
-
-        # Always ensure system instructions are at the beginning
-        if self.instructions:
-            # Check if system message already exists
-            has_system_msg = any(msg.role == Role.SYSTEM for msg in messages)
-            if not has_system_msg:
-                messages.insert(0, Message(role=Role.SYSTEM, content=self.instructions))
-
-        # Add user message
-        messages.append(Message(role=Role.USER, content=input))
-
-        # Get provider tools
+        # Initialize messages and get provider tools
+        messages = self._initialize_messages(messages, input)
         provider_tools = self._get_provider_tools()
-
-        # Check if model supports tools
-        model_info = next((m for m in self.provider.list_models() if m.id == self.model), None)
-        supports_tools = model_info and model_info.supports_functions and provider_tools
 
         # Main execution loop
         step_count = 0
         final_response = None
 
-        # Loop detection state
-        recent_tool_calls = []  # Track recent tool calls for loop detection
-        loop_detection_window = 3  # Number of recent calls to check
-        max_same_tool_calls = 2  # Max times same tool can be called consecutively
+        # Initialize execution context
+        recent_tool_calls, supports_tools = self._setup_execution_context(messages, provider_tools)
 
         while step_count < max_steps:
             try:
@@ -183,8 +171,8 @@ class Agent:
                     loop_detected = self._detect_tool_call_loops(
                         response.tool_calls,
                         recent_tool_calls,
-                        loop_detection_window,
-                        max_same_tool_calls,
+                        self.LOOP_DETECTION_WINDOW,
+                        self.MAX_SAME_TOOL_CALLS,
                     )
 
                     if loop_detected:
@@ -255,7 +243,7 @@ class Agent:
                     # Track tool calls for loop detection
                     for tool_call in response.tool_calls:
                         recent_tool_calls.append(tool_call.name)
-                        if len(recent_tool_calls) > loop_detection_window:
+                        if len(recent_tool_calls) > self.LOOP_DETECTION_WINDOW:
                             recent_tool_calls.pop(0)
 
                     # Handle tool calls
@@ -345,35 +333,16 @@ class Agent:
         Returns:
             Tuple of (final_response_content, updated_messages)
         """
-        # Initialize messages if not provided
-        if messages is None:
-            messages = []
-
-        # Always ensure system instructions are at the beginning
-        if self.instructions:
-            # Check if system message already exists
-            has_system_msg = any(msg.role == Role.SYSTEM for msg in messages)
-            if not has_system_msg:
-                messages.insert(0, Message(role=Role.SYSTEM, content=self.instructions))
-
-        # Add user message
-        messages.append(Message(role=Role.USER, content=input))
-
-        # Get provider tools
+        # Initialize messages and get provider tools
+        messages = self._initialize_messages(messages, input)
         provider_tools = self._get_provider_tools()
-
-        # Check if model supports tools
-        model_info = next((m for m in self.provider.list_models() if m.id == self.model), None)
-        supports_tools = model_info and model_info.supports_functions and provider_tools
 
         # Main execution loop
         step_count = 0
         final_response_content = ""
 
-        # Loop detection state
-        recent_tool_calls = []  # Track recent tool calls for loop detection
-        loop_detection_window = 3  # Number of recent calls to check
-        max_same_tool_calls = 2  # Max times same tool can be called consecutively
+        # Initialize execution context
+        recent_tool_calls, supports_tools = self._setup_execution_context(messages, provider_tools)
         first_chunk = True
 
         while step_count < max_steps:
@@ -417,7 +386,7 @@ class Agent:
                                 return "Response interrupted.", messages
 
                             # Wait a short time before checking again
-                            await asyncio.sleep(0.1)
+                            await asyncio.sleep(self.INTERRUPT_CHECK_INTERVAL)
 
                         # Get the result
                         response = future.result()
@@ -452,8 +421,8 @@ class Agent:
                     loop_detected = self._detect_tool_call_loops(
                         response.tool_calls,
                         recent_tool_calls,
-                        loop_detection_window,
-                        max_same_tool_calls,
+                        self.LOOP_DETECTION_WINDOW,
+                        self.MAX_SAME_TOOL_CALLS,
                     )
 
                     if loop_detected:
@@ -516,7 +485,7 @@ class Agent:
                     # Track tool calls for loop detection
                     for tool_call in response.tool_calls:
                         recent_tool_calls.append(tool_call.name)
-                        if len(recent_tool_calls) > loop_detection_window:
+                        if len(recent_tool_calls) > self.LOOP_DETECTION_WINDOW:
                             recent_tool_calls.pop(0)
 
                     # Handle tool calls
@@ -553,10 +522,13 @@ class Agent:
 
                         for char in response.content:
                             self._emit_response_chunk(char)
-                            time.sleep(0.001)  # Small delay for streaming effect
+                            time.sleep(
+                                self.STREAMING_CHAR_DELAY
+                            )  # Small delay for streaming effect
 
-                        # Streaming complete - add newline and handle by event system
+                        # Streaming complete - add newline and emit completion
                         self._emit_newline()
+                        self._emit_response_complete(response.content)
                         messages.append(Message(role=Role.ASSISTANT, content=response.content))
                         return response.content, messages
                     else:
@@ -689,8 +661,9 @@ class Agent:
             response_content += chunk.content
 
         if response_content:
-            # Streaming complete - add newline and handle by event system
+            # Streaming complete - add newline and emit completion
             self._emit_newline()
+            self._emit_response_complete(response_content)
 
         return response_content
 
@@ -873,3 +846,50 @@ class Agent:
             return response.content
 
         return FunctionTool.from_callable(agent_wrapper)
+
+    def _initialize_messages(self, messages: list[Message] | None, input: str) -> list[Message]:
+        """Initialize message list with system instructions and user input.
+
+        Args:
+            messages: Optional existing message history
+            input: User input to add
+
+        Returns:
+            Initialized message list
+        """
+        # Initialize messages if not provided
+        if messages is None:
+            messages = []
+
+        # Always ensure system instructions are at the beginning
+        if self.instructions:
+            # Check if system message already exists
+            has_system_msg = any(msg.role == Role.SYSTEM for msg in messages)
+            if not has_system_msg:
+                messages.insert(0, Message(role=Role.SYSTEM, content=self.instructions))
+
+        # Add user message
+        messages.append(Message(role=Role.USER, content=input))
+
+        return messages
+
+    def _setup_execution_context(
+        self, messages: list[Message], provider_tools: list[Tool]
+    ) -> tuple[list[str], bool]:
+        """Set up execution context including tool support and loop detection.
+
+        Args:
+            messages: Message history
+            provider_tools: Available tools
+
+        Returns:
+            Tuple of (recent_tool_calls, supports_tools)
+        """
+        # Check if model supports tools
+        model_info = next((m for m in self.provider.list_models() if m.id == self.model), None)
+        supports_tools = model_info and model_info.supports_functions and provider_tools
+
+        # Initialize loop detection state
+        recent_tool_calls = []
+
+        return recent_tool_calls, supports_tools
