@@ -778,7 +778,7 @@ class InteractiveCLI(CommandHandler):
         try:
             from coda.base.search.vector_search.embeddings.mock import MockEmbeddingProvider
             from coda.base.search.vector_search.manager import SemanticSearchManager
-            from coda.semantic_search_coda import create_semantic_search_manager
+            from coda.services.search import create_semantic_search_manager
 
             from .search_display import (
                 IndexingProgress,

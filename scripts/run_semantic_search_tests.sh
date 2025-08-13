@@ -56,7 +56,7 @@ uv run python -m pytest \
     --cov=coda.embeddings \
     --cov=coda.vector_stores \
     --cov=coda.semantic_search \
-    --cov=coda.semantic_search_coda \
+    --cov=coda.services.search \
     --cov=coda.cli.search_display \
     --cov-report=term-missing \
     --cov-report=html:htmlcov/semantic_search

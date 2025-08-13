@@ -9,14 +9,14 @@ bridge between the standalone search module and Coda-specific features.
 import logging
 from typing import Any
 
-from .base.search.vector_search.constants import (
+from coda.base.search.vector_search.constants import (
     DEFAULT_MODELS,
     OLLAMA_HEALTH_TIMEOUT,
 )
-from .base.search.vector_search.embeddings import create_oci_provider_from_coda_config
-from .base.search.vector_search.embeddings.factory import create_embedding_provider
-from .base.search.vector_search.manager import SemanticSearchManager
-from .services.config import get_config_service
+from coda.base.search.vector_search.embeddings import create_oci_provider_from_coda_config
+from coda.base.search.vector_search.embeddings.factory import create_embedding_provider
+from coda.base.search.vector_search.manager import SemanticSearchManager
+from coda.services.config import get_config_service
 
 
 # Minimal compatibility type for transition

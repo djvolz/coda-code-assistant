@@ -3,7 +3,7 @@
 from coda.base.search.vector_search.constants import DEFAULT_EMBEDDING_DIMENSION
 from coda.base.search.vector_search.embeddings.mock import MockEmbeddingProvider
 from coda.base.search.vector_search.manager import SemanticSearchManager
-from coda.semantic_search_coda import create_semantic_search_manager
+from coda.services.search import create_semantic_search_manager
 
 
 class SearchManagerMixin:
