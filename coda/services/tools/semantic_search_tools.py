@@ -60,8 +60,8 @@ class SemanticSearchTool(BaseTool, SearchManagerMixin):
             self._initialize_manager()
 
         query = arguments["query"]
-        top_k = arguments.get("top_k", 5)
-        threshold = arguments.get("threshold", 0.5)
+        top_k = int(arguments.get("top_k", 5))
+        threshold = float(arguments.get("threshold", 0.5))
 
         try:
             # Perform search (async call with correct parameter name)
@@ -269,7 +269,7 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
 
         query = arguments["query"]
         language = arguments.get("language")
-        top_k = arguments.get("top_k", 5)
+        top_k = int(arguments.get("top_k", 5))
 
         try:
             # Perform search (async call with correct parameter name)
