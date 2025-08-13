@@ -450,7 +450,7 @@ class InteractiveCLI(CommandHandler):
         """Switch AI model - enhanced for interactive mode."""
         if not self.available_models:
             self.console.print(
-                "[{self.theme.warning}]No models available. Please connect to a provider first.[/{self.theme.warning}]"
+                f"[{self.theme.warning}]No models available. Please connect to a provider first.[/{self.theme.warning}]"
             )
             return
 
@@ -606,12 +606,12 @@ class InteractiveCLI(CommandHandler):
                 else:
                     # Show available commands if cancelled
                     self.console.print(
-                        "[{self.theme.warning}]Session command cancelled[/{self.theme.warning}]"
+                        f"[{self.theme.warning}]Session command cancelled[/{self.theme.warning}]"
                     )
             else:
                 # Fallback
                 self.console.print(
-                    "[{self.theme.error}]Could not create session selector[/{self.theme.error}]"
+                    f"[{self.theme.error}]Could not create session selector[/{self.theme.error}]"
                 )
         else:
             # Pass the arguments to session commands handler
@@ -683,12 +683,12 @@ class InteractiveCLI(CommandHandler):
                         self.console.print(result)
                 else:
                     self.console.print(
-                        "[{self.theme.warning}]Export cancelled[/{self.theme.warning}]"
+                        f"[{self.theme.warning}]Export cancelled[/{self.theme.warning}]"
                     )
             else:
                 # Fallback if selector creation fails
                 self.console.print(
-                    "[{self.theme.error}]Could not create export selector[/{self.theme.error}]"
+                    f"[{self.theme.error}]Could not create export selector[/{self.theme.error}]"
                 )
         else:
             # Pass the arguments to session commands handler for export
@@ -790,7 +790,7 @@ class InteractiveCLI(CommandHandler):
                 f"[{self.theme.error}]Error loading semantic search: {e}[/{self.theme.error}]"
             )
             self.console.print(
-                "[{self.theme.warning}]Make sure to install: uv sync --extra embeddings[/{self.theme.warning}]"
+                f"[{self.theme.warning}]Make sure to install: uv sync --extra embeddings[/{self.theme.warning}]"
             )
             return
 
@@ -815,7 +815,7 @@ class InteractiveCLI(CommandHandler):
                     f"[{self.theme.warning}]Failed to initialize configured provider: {str(e)}[/{self.theme.warning}]"
                 )
                 self.console.print(
-                    "[{self.theme.warning}]Using mock embeddings for demo purposes[/{self.theme.warning}]"
+                    f"[{self.theme.warning}]Using mock embeddings for demo purposes[/{self.theme.warning}]"
                 )
                 provider = MockEmbeddingProvider(dimension=768)
                 self._search_manager = SemanticSearchManager(embedding_provider=provider)
@@ -829,7 +829,7 @@ class InteractiveCLI(CommandHandler):
         if subcommand == "semantic":
             if not query:
                 self.console.print(
-                    "[{self.theme.error}]Please provide a search query[/{self.theme.error}]"
+                    f"[{self.theme.error}]Please provide a search query[/{self.theme.error}]"
                 )
                 return
 
@@ -852,7 +852,7 @@ class InteractiveCLI(CommandHandler):
         elif subcommand == "code":
             if not query:
                 self.console.print(
-                    "[{self.theme.error}]Please provide a search query[/{self.theme.error}]"
+                    f"[{self.theme.error}]Please provide a search query[/{self.theme.error}]"
                 )
                 return
 
@@ -1017,7 +1017,7 @@ class InteractiveCLI(CommandHandler):
                     if update_needed:
                         # Use smart update for everything
                         with self.console.status(
-                            "[{self.theme.info}]Updating index...[/{self.theme.info}]"
+                            f"[{self.theme.info}]Updating index...[/{self.theme.info}]"
                         ):
                             update_result = await manager.update_dirty_files(
                                 [str(f) for f in files]
@@ -1025,7 +1025,7 @@ class InteractiveCLI(CommandHandler):
 
                         if update_result["updated"]:
                             self.console.print(
-                                "[{self.theme.success}]✓ Index updated:[/{self.theme.success}]"
+                                f"[{self.theme.success}]✓ Index updated:[/{self.theme.success}]"
                             )
                             if update_result["removed_chunks"] > 0:
                                 self.console.print(
@@ -1096,7 +1096,7 @@ class InteractiveCLI(CommandHandler):
             # Reset the search manager instance
             self._search_manager = None
             self.console.print(
-                "[{self.theme.warning}]Search manager reset. A new provider will be selected on next use.[/{self.theme.warning}]"
+                f"[{self.theme.warning}]Search manager reset. A new provider will be selected on next use.[/{self.theme.warning}]"
             )
 
         else:
@@ -1108,7 +1108,7 @@ class InteractiveCLI(CommandHandler):
         """Clear conversation."""
         # Clear session manager's conversation
         self.session_commands.clear_conversation()
-        self.console.print("[{self.theme.success}]Conversation cleared[/{self.theme.success}]")
+        self.console.print(f"[{self.theme.success}]Conversation cleared[/{self.theme.success}]")
         # Note: Actual clearing is handled by the caller
 
     def _cmd_observability(self, args: str):
@@ -1163,7 +1163,7 @@ class InteractiveCLI(CommandHandler):
                             limit = int(limit_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
                         self.console.print(
-                            "[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
+                            f"[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
                         )
                         return
                 obs_commands.show_traces(limit=limit)
@@ -1203,7 +1203,7 @@ class InteractiveCLI(CommandHandler):
                             limit = int(limit_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
                         self.console.print(
-                            "[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
+                            f"[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
                         )
                         return
 
@@ -1214,7 +1214,7 @@ class InteractiveCLI(CommandHandler):
                             days = int(days_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
                         self.console.print(
-                            "[{self.theme.error}]Invalid days value[/{self.theme.error}]"
+                            f"[{self.theme.error}]Invalid days value[/{self.theme.error}]"
                         )
                         return
 
@@ -1231,7 +1231,7 @@ class InteractiveCLI(CommandHandler):
                             limit = int(limit_parts[1].strip().split()[0])
                     except (ValueError, IndexError):
                         self.console.print(
-                            "[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
+                            f"[{self.theme.error}]Invalid limit value[/{self.theme.error}]"
                         )
                         return
 
@@ -1245,7 +1245,7 @@ class InteractiveCLI(CommandHandler):
                     "Available subcommands: status, metrics, health, traces, export, errors, performance"
                 )
                 self.console.print(
-                    "Use [{self.theme.info}]/help observability[/{self.theme.info}] for more details"
+                    f"Use [{self.theme.info}]/help observability[/{self.theme.info}] for more details"
                 )
 
         except Exception as e:
