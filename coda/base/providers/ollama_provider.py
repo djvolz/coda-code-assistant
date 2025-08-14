@@ -40,11 +40,11 @@ class OllamaProvider(BaseProvider):
         return "ollama"
 
     def supports_tool_calling(self, model_name: str) -> bool:
-        """Check if the model supports tool calling."""
-        # Ollama has limited tool calling support - only certain models support it
-        # Based on Ollama documentation and testing
-        compatible_models = ["llama3.1", "llama3.2", "qwen2.5", "mistral", "hermes"]
-        return any(model in model_name.lower() for model in compatible_models)
+        """Check if the model supports tool calling by attempting a test call."""
+        # For now, assume all models might support tools and let the API decide
+        # This avoids maintaining a hardcoded list that gets outdated
+        # The actual compatibility check happens when tools are used
+        return True
 
     def _convert_tools_to_ollama(self, tools: list[Tool] | None) -> list[dict] | None:
         """Convert Tool objects to Ollama format."""
@@ -150,23 +150,32 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Send chat completion request to Ollama."""
         try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
+            # First try with tools if provided
             return self._chat_native_ollama(
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             )
 
         except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                should_warn = self._should_warn_about_tools(messages)
+                if should_warn:
+                    self._show_tool_warning(model)
+                # Retry without tools
+                return self._chat_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
+                )
+
+            # Handle other errors
             if e.response.status_code == 404:
                 raise ValueError(
                     f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
                 ) from None
-            raise RuntimeError(f"Ollama API error: {e.response.text}") from e
+
+            raise RuntimeError(f"Ollama API error: {error_text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama error: {str(e)}") from e
 
@@ -195,8 +204,8 @@ class OllamaProvider(BaseProvider):
             },
         }
 
-        # Add tools if provided and supported
-        if tools and self.supports_tool_calling(model):
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
             ollama_tools = self._convert_tools_to_ollama(tools)
             if ollama_tools:
                 data["tools"] = ollama_tools
@@ -267,23 +276,32 @@ class OllamaProvider(BaseProvider):
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response from Ollama."""
         try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
             yield from self._chat_stream_native_ollama(
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             )
 
         except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                should_warn = self._should_warn_about_tools(messages)
+                if should_warn:
+                    self._show_tool_warning(model)
+                # Retry without tools
+                yield from self._chat_stream_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
+                )
+                return
+
+            # Handle other errors
             if e.response.status_code == 404:
                 raise ValueError(
                     f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
                 ) from None
-            raise RuntimeError(f"Ollama streaming error: {e.response.text}") from e
+
+            raise RuntimeError(f"Ollama streaming error: {error_text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama streaming error: {str(e)}") from e
 
@@ -312,8 +330,8 @@ class OllamaProvider(BaseProvider):
             },
         }
 
-        # Add tools if provided and supported
-        if tools and self.supports_tool_calling(model):
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
             ollama_tools = self._convert_tools_to_ollama(tools)
             if ollama_tools:
                 data["tools"] = ollama_tools
@@ -397,23 +415,31 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Async chat completion via Ollama."""
         try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
             return await self._achat_native_ollama(
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             )
 
         except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                should_warn = self._should_warn_about_tools(messages)
+                if should_warn:
+                    self._show_tool_warning(model)
+                # Retry without tools
+                return await self._achat_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
+                )
+
+            # Handle other errors
             if e.response.status_code == 404:
                 raise ValueError(
                     f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
                 ) from None
-            raise RuntimeError(f"Ollama async error: {e.response.text}") from e
+
+            raise RuntimeError(f"Ollama async error: {error_text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async error: {str(e)}") from e
 
@@ -442,8 +468,8 @@ class OllamaProvider(BaseProvider):
             },
         }
 
-        # Add tools if provided and supported
-        if tools and self.supports_tool_calling(model):
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
             ollama_tools = self._convert_tools_to_ollama(tools)
             if ollama_tools:
                 data["tools"] = ollama_tools
@@ -514,24 +540,34 @@ class OllamaProvider(BaseProvider):
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Async stream chat completion via Ollama."""
         try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
             async for chunk in self._achat_stream_native_ollama(
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             ):
                 yield chunk
 
         except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                should_warn = self._should_warn_about_tools(messages)
+                if should_warn:
+                    self._show_tool_warning(model)
+                # Retry without tools
+                async for chunk in self._achat_stream_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
+                ):
+                    yield chunk
+                return
+
+            # Handle other errors
             if e.response.status_code == 404:
                 raise ValueError(
                     f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
                 ) from None
-            raise RuntimeError(f"Ollama async streaming error: {e.response.text}") from e
+
+            raise RuntimeError(f"Ollama async streaming error: {error_text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async streaming error: {str(e)}") from e
 
@@ -560,8 +596,8 @@ class OllamaProvider(BaseProvider):
             },
         }
 
-        # Add tools if provided and supported
-        if tools and self.supports_tool_calling(model):
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
             ollama_tools = self._convert_tools_to_ollama(tools)
             if ollama_tools:
                 data["tools"] = ollama_tools
@@ -684,6 +720,40 @@ class OllamaProvider(BaseProvider):
 
         except Exception as e:
             raise RuntimeError(f"Failed to delete model '{model}': {str(e)}") from e
+
+    def _show_tool_warning(self, model: str) -> None:
+        """Show a clean warning about tool support limitations with Ollama-specific guidance."""
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+
+            # Create a temporary console for the warning
+            console = Console()
+
+            warning_text = f"""⚠️  Tool Support Limitation
+
+Model '{model}' does not support tool calling.
+Proceeding without tools for this request.
+
+For tool support, use a compatible model from:
+https://ollama.com/search?c=tools"""
+
+            console.print()
+            console.print(
+                Panel(
+                    warning_text,
+                    title="Notice",
+                    border_style="yellow",
+                    title_style="bold yellow",
+                )
+            )
+
+        except Exception:
+            # Fallback to simple print if Rich is not available
+            print(f"\n⚠️  Model '{model}' does not support tool calling. Proceeding without tools.")
+            print(
+                "For tool support, use a compatible model from: https://ollama.com/search?c=tools\n"
+            )
 
     def __del__(self):
         """Cleanup clients on deletion."""

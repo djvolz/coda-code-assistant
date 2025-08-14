@@ -229,3 +229,140 @@ class BaseProvider(ABC):
             if m.id == model:
                 return m
         return None
+
+    def _should_warn_about_tools(self, messages: list[Message]) -> bool:
+        """
+        Determine if we should warn about tool support based on the conversation content.
+
+        Returns False for simple greetings and basic questions that likely don't need tools.
+        """
+        if not messages:
+            return False
+
+        # Get the last user message
+        last_message = None
+        for message in reversed(messages):
+            if message.role == Role.USER:
+                last_message = message
+                break
+
+        if not last_message:
+            return False
+
+        content = last_message.content.lower().strip()
+
+        # Simple greetings and basic interactions - don't warn
+        simple_patterns = [
+            # Greetings
+            "hi",
+            "hello",
+            "hey",
+            "good morning",
+            "good afternoon",
+            "good evening",
+            # Basic questions
+            "how are you",
+            "what's up",
+            "how's it going",
+            # Simple requests
+            "tell me",
+            "explain",
+            "what is",
+            "what are",
+            "who is",
+            "who are",
+            "write",
+            "create",
+            "make",
+            "help me understand",
+            # Math and general knowledge
+            "calculate",
+            "what's",
+            "how much",
+            "convert",
+        ]
+
+        # Check if the message starts with any simple pattern
+        for pattern in simple_patterns:
+            if content.startswith(pattern):
+                return False
+
+        # Tool-like requests - do warn
+        tool_patterns = [
+            "read",
+            "file",
+            "directory",
+            "folder",
+            "search",
+            "find",
+            "execute",
+            "run",
+            "install",
+            "download",
+            "upload",
+            "save",
+            "delete",
+            "remove",
+            "move",
+            "git",
+            "commit",
+            "push",
+            "pull",
+            "branch",
+            "checkout",
+            "status",
+            "test",
+            "build",
+            "compile",
+            "deploy",
+            "server",
+            "database",
+            "api",
+        ]
+
+        # Check if the message contains tool-like keywords
+        for pattern in tool_patterns:
+            if pattern in content:
+                return True
+
+        # Default to not warning for short, simple messages
+        if len(content) < 50 and not any(
+            word in content for word in ["file", "folder", "execute", "run"]
+        ):
+            return False
+
+        # For longer messages or unclear cases, show the warning
+        return True
+
+    def _show_tool_warning(self, model: str) -> None:
+        """Show a clean warning about tool support limitations."""
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+
+            # Create a temporary console for the warning
+            console = Console()
+
+            warning_text = f"""⚠️  Tool Support Limitation
+
+Model '{model}' does not support tool calling.
+Proceeding without tools for this request.
+
+For tool support, use a compatible model from your provider's tool-capable models."""
+
+            console.print()
+            console.print(
+                Panel(
+                    warning_text,
+                    title="Notice",
+                    border_style="yellow",
+                    title_style="bold yellow",
+                )
+            )
+
+        except Exception:
+            # Fallback to simple print if Rich is not available
+            print(f"\n⚠️  Model '{model}' does not support tool calling. Proceeding without tools.")
+            print(
+                "For tool support, use a compatible model from your provider's tool-capable models.\n"
+            )
