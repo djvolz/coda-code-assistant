@@ -551,9 +551,15 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             if top_p is not None:
                 params["top_p"] = top_p
 
-            # Add tools for Meta models if provided
-            if tools and provider == "meta":
-                params["tools"] = self._convert_tools_to_meta(tools)
+            # Add tools based on provider type
+            if tools:
+                if provider == "meta":
+                    params["tools"] = self._convert_tools_to_meta(tools)
+                elif provider in ["openai", "gpt"]:
+                    params["tools"] = self._convert_tools_to_openai(tools)
+                else:
+                    # Generic format with OpenAI tool fallback for unknown providers
+                    params["tools"] = self._convert_tools_to_openai(tools)
 
             return GenericChatRequest(**params)
 
@@ -618,6 +624,23 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             meta_tools.append(meta_tool)
 
         return meta_tools
+
+    def _convert_tools_to_openai(self, tools: list[Tool]) -> list[dict]:
+        """Convert standard tools to OpenAI format."""
+        openai_tools = []
+
+        for tool in tools:
+            openai_tool = {
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.parameters,  # Already in JSON Schema format
+                },
+            }
+            openai_tools.append(openai_tool)
+
+        return openai_tools
 
     def chat(
         self,
@@ -713,22 +736,44 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                 # Content is a string
                 content = message.content if message.content else ""
 
-            # Check for tool calls in the response (Meta models support this)
+            # Check for tool calls in the response (Meta, OpenAI, and other models support this)
             tool_calls = None
             finish_reason = choice.finish_reason  # Initialize finish_reason early
 
             if hasattr(message, "tool_calls") and message.tool_calls:
                 tool_calls = []
                 for tc in message.tool_calls:
-                    tool_call = ToolCall(
-                        id=tc.id,
-                        name=tc.name,
-                        arguments=(
-                            json.loads(tc.arguments)
-                            if isinstance(tc.arguments, str)
-                            else tc.arguments
-                        ),
-                    )
+                    # Handle different tool call formats
+                    if provider in ["openai", "gpt"]:
+                        # OpenAI format: function is nested in tc.function
+                        if hasattr(tc, "function"):
+                            tool_call = ToolCall(
+                                id=getattr(tc, "id", ""),
+                                name=tc.function.get("name", ""),
+                                arguments=(
+                                    json.loads(tc.function.get("arguments", "{}"))
+                                    if isinstance(tc.function.get("arguments"), str)
+                                    else tc.function.get("arguments", {})
+                                ),
+                            )
+                        else:
+                            # Fallback to direct format
+                            tool_call = ToolCall(
+                                id=getattr(tc, "id", ""),
+                                name=getattr(tc, "name", ""),
+                                arguments=getattr(tc, "arguments", {}),
+                            )
+                    else:
+                        # Meta and generic format: direct properties
+                        tool_call = ToolCall(
+                            id=tc.id,
+                            name=tc.name,
+                            arguments=(
+                                json.loads(tc.arguments)
+                                if isinstance(tc.arguments, str)
+                                else tc.arguments
+                            ),
+                        )
                     tool_calls.append(tool_call)
                 if tool_calls:
                     finish_reason = "tool_calls"
@@ -847,10 +892,56 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
                             if message_content and isinstance(message_content, list):
                                 content = message_content[0].get("text", "")
 
+                            # Check for tool calls in final streaming chunk
+                            tool_calls = None
+                            if (
+                                finish_reason
+                                and hasattr(message, "tool_calls")
+                                and message.tool_calls
+                            ):
+                                provider = model.split(".")[0]
+                                tool_calls = []
+                                for tc in message.tool_calls:
+                                    # Handle different tool call formats (same logic as chat method)
+                                    if provider in ["openai", "gpt"]:
+                                        # OpenAI format: function is nested in tc.function
+                                        if hasattr(tc, "function"):
+                                            tool_call = ToolCall(
+                                                id=getattr(tc, "id", ""),
+                                                name=tc.function.get("name", ""),
+                                                arguments=(
+                                                    json.loads(tc.function.get("arguments", "{}"))
+                                                    if isinstance(tc.function.get("arguments"), str)
+                                                    else tc.function.get("arguments", {})
+                                                ),
+                                            )
+                                        else:
+                                            # Fallback to direct format
+                                            tool_call = ToolCall(
+                                                id=getattr(tc, "id", ""),
+                                                name=getattr(tc, "name", ""),
+                                                arguments=getattr(tc, "arguments", {}),
+                                            )
+                                    else:
+                                        # Meta and generic format: direct properties
+                                        tool_call = ToolCall(
+                                            id=tc.id,
+                                            name=tc.name,
+                                            arguments=(
+                                                json.loads(tc.arguments)
+                                                if isinstance(tc.arguments, str)
+                                                else tc.arguments
+                                            ),
+                                        )
+                                    tool_calls.append(tool_call)
+                                if tool_calls:
+                                    finish_reason = "tool_calls"
+
                             yield ChatCompletionChunk(
                                 content=content,
                                 model=model,
                                 finish_reason=finish_reason,
+                                tool_calls=tool_calls,
                                 usage=None,
                                 metadata={},
                             )
