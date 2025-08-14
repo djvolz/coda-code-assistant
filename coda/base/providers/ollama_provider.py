@@ -12,6 +12,7 @@ from .base import (
     Message,
     Model,
     Tool,
+    ToolCall,
 )
 
 
@@ -41,8 +42,57 @@ class OllamaProvider(BaseProvider):
     def supports_tool_calling(self, model_name: str) -> bool:
         """Check if the model supports tool calling."""
         # Ollama has limited tool calling support - only certain models support it
+        # Based on Ollama documentation and testing
         compatible_models = ["llama3.1", "llama3.2", "qwen2.5", "mistral", "hermes"]
         return any(model in model_name.lower() for model in compatible_models)
+
+    def _convert_tools_to_ollama(self, tools: list[Tool] | None) -> list[dict] | None:
+        """Convert Tool objects to Ollama format."""
+        if not tools:
+            return None
+
+        ollama_tools = []
+        for tool in tools:
+            ollama_tool = {
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.parameters,
+                },
+            }
+            ollama_tools.append(ollama_tool)
+
+        return ollama_tools
+
+    def _parse_tool_calls(self, message: dict) -> list[ToolCall] | None:
+        """Parse tool calls from Ollama response message."""
+        tool_calls = message.get("tool_calls", [])
+        if not tool_calls:
+            return None
+
+        parsed_calls = []
+        for call in tool_calls:
+            # Handle different tool call formats
+            if isinstance(call, dict):
+                function_info = call.get("function", {})
+                tool_call = ToolCall(
+                    id=call.get("id", f"call_{len(parsed_calls)}"),
+                    name=function_info.get("name", ""),
+                    arguments=function_info.get("arguments", {}),
+                )
+                # Handle arguments as string (need to parse JSON)
+                if isinstance(tool_call.arguments, str):
+                    try:
+                        import json
+
+                        tool_call.arguments = json.loads(tool_call.arguments)
+                    except json.JSONDecodeError:
+                        tool_call.arguments = {}
+
+                parsed_calls.append(tool_call)
+
+        return parsed_calls if parsed_calls else None
 
     def _convert_messages(self, messages: list[Message]) -> list[dict]:
         """Convert our Message objects to Ollama format."""
@@ -145,6 +195,12 @@ class OllamaProvider(BaseProvider):
             },
         }
 
+        # Add tools if provided and supported
+        if tools and self.supports_tool_calling(model):
+            ollama_tools = self._convert_tools_to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
+
         # Add optional parameters
         if max_tokens:
             data["options"]["num_predict"] = max_tokens
@@ -172,6 +228,9 @@ class OllamaProvider(BaseProvider):
         message = result.get("message", {})
         content = message.get("content", "")
 
+        # Parse tool calls if present
+        tool_calls = self._parse_tool_calls(message)
+
         # Calculate token usage if available
         usage = None
         if "prompt_eval_count" in result or "eval_count" in result:
@@ -185,6 +244,7 @@ class OllamaProvider(BaseProvider):
             content=content,
             model=model,
             finish_reason="stop",  # Ollama doesn't provide finish reasons
+            tool_calls=tool_calls,
             usage=usage,
             metadata={
                 "total_duration": result.get("total_duration"),
@@ -252,6 +312,12 @@ class OllamaProvider(BaseProvider):
             },
         }
 
+        # Add tools if provided and supported
+        if tools and self.supports_tool_calling(model):
+            ollama_tools = self._convert_tools_to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
+
         # Add optional parameters
         if max_tokens:
             data["options"]["num_predict"] = max_tokens
@@ -287,6 +353,11 @@ class OllamaProvider(BaseProvider):
                         done = chunk_data.get("done", False)
                         finish_reason = "stop" if done else None
 
+                        # Handle tool calls - they might come in the final chunk
+                        tool_calls = None
+                        if done:
+                            tool_calls = self._parse_tool_calls(message)
+
                         # Extract usage from final chunk
                         usage = None
                         if done and (
@@ -303,6 +374,7 @@ class OllamaProvider(BaseProvider):
                             content=content,
                             model=model,
                             finish_reason=finish_reason,
+                            tool_calls=tool_calls,
                             usage=usage,
                             metadata={
                                 "done": done,
@@ -370,6 +442,12 @@ class OllamaProvider(BaseProvider):
             },
         }
 
+        # Add tools if provided and supported
+        if tools and self.supports_tool_calling(model):
+            ollama_tools = self._convert_tools_to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
+
         # Add optional parameters
         if max_tokens:
             data["options"]["num_predict"] = max_tokens
@@ -397,6 +475,9 @@ class OllamaProvider(BaseProvider):
         message = result.get("message", {})
         content = message.get("content", "")
 
+        # Parse tool calls if present
+        tool_calls = self._parse_tool_calls(message)
+
         # Calculate token usage if available
         usage = None
         if "prompt_eval_count" in result or "eval_count" in result:
@@ -410,6 +491,7 @@ class OllamaProvider(BaseProvider):
             content=content,
             model=model,
             finish_reason="stop",
+            tool_calls=tool_calls,
             usage=usage,
             metadata={
                 "total_duration": result.get("total_duration"),
@@ -478,6 +560,12 @@ class OllamaProvider(BaseProvider):
             },
         }
 
+        # Add tools if provided and supported
+        if tools and self.supports_tool_calling(model):
+            ollama_tools = self._convert_tools_to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
+
         # Add optional parameters
         if max_tokens:
             data["options"]["num_predict"] = max_tokens
@@ -513,6 +601,11 @@ class OllamaProvider(BaseProvider):
                         done = chunk_data.get("done", False)
                         finish_reason = "stop" if done else None
 
+                        # Handle tool calls - they might come in the final chunk
+                        tool_calls = None
+                        if done:
+                            tool_calls = self._parse_tool_calls(message)
+
                         # Extract usage from final chunk
                         usage = None
                         if done and (
@@ -529,6 +622,7 @@ class OllamaProvider(BaseProvider):
                             content=content,
                             model=model,
                             finish_reason=finish_reason,
+                            tool_calls=tool_calls,
                             usage=usage,
                             metadata={
                                 "done": done,

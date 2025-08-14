@@ -73,6 +73,7 @@ class ChatCompletionChunk:
     content: str
     model: str
     finish_reason: str | None = None
+    tool_calls: list[ToolCall] | None = None
     usage: dict | None = None
     metadata: dict = field(default_factory=dict)
 
