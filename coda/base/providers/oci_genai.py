@@ -16,12 +16,9 @@ from oci.generative_ai_inference.models import (
     ChatDetails,
     CohereChatBotMessage,
     CohereChatRequest,
-    CohereParameterDefinition,
     CohereSystemMessage,
-    CohereTool,
     CohereUserMessage,
     FunctionCall,
-    FunctionDefinition,
     GenericChatRequest,
     OnDemandServingMode,
     SystemMessage,
@@ -48,6 +45,7 @@ from .base import (
     Tool,
     ToolCall,
 )
+from .tool_converter import ToolConverter
 
 
 class OCIGenAIProvider(BaseProvider):
@@ -476,7 +474,7 @@ class OCIGenAIProvider(BaseProvider):
 
             # Add tools if provided
             if tools:
-                cohere_tools = self._convert_tools_to_cohere(tools)
+                cohere_tools, self._tool_name_mapping = ToolConverter.to_cohere(tools)
                 params["tools"] = cohere_tools
                 # Lower temperature for better tool accuracy
                 params["temperature"] = min(temperature, 0.3)
@@ -554,93 +552,14 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             # Add tools based on provider type
             if tools:
                 if provider == "meta":
-                    params["tools"] = self._convert_tools_to_meta(tools)
+                    params["tools"] = ToolConverter.to_meta(tools)
                 elif provider in ["openai", "gpt"]:
-                    params["tools"] = self._convert_tools_to_openai(tools)
+                    params["tools"] = ToolConverter.to_openai(tools)
                 else:
                     # Generic format with OpenAI tool fallback for unknown providers
-                    params["tools"] = self._convert_tools_to_openai(tools)
+                    params["tools"] = ToolConverter.to_openai(tools)
 
             return GenericChatRequest(**params)
-
-    def _convert_tools_to_cohere(self, tools: list[Tool]) -> list[CohereTool]:
-        """Convert standard tools to Cohere format."""
-        cohere_tools = []
-        # Store mapping of sanitized names to original names for tool calls
-        self._tool_name_mapping = {}
-
-        for tool in tools:
-            # Convert parameters from JSON Schema to Cohere format
-            param_definitions = {}
-
-            if "properties" in tool.parameters:
-                for param_name, param_schema in tool.parameters["properties"].items():
-                    # Convert type to uppercase as required by Cohere
-                    param_type = param_schema.get("type", "string").upper()
-                    if param_type == "INTEGER":
-                        param_type = "FLOAT"  # Cohere uses FLOAT for numbers
-                    elif param_type == "ARRAY":
-                        param_type = "LIST"
-                    elif param_type == "OBJECT":
-                        param_type = "DICT"
-
-                    param_def = CohereParameterDefinition(
-                        description=param_schema.get("description", ""),
-                        type=param_type,
-                        is_required=param_name in tool.parameters.get("required", []),
-                    )
-                    param_definitions[param_name] = param_def
-
-            # Sanitize tool name for OCI/Cohere compatibility (dots and hyphens not allowed)
-            sanitized_name = tool.name.replace(".", "_").replace("-", "_")
-            # Store mapping for tool call resolution
-            self._tool_name_mapping[sanitized_name] = tool.name
-
-            cohere_tool = CohereTool(
-                name=sanitized_name,
-                description=tool.description,
-                parameter_definitions=param_definitions,
-            )
-            cohere_tools.append(cohere_tool)
-
-        return cohere_tools
-
-    def _convert_tools_to_meta(self, tools: list[Tool]) -> list[FunctionDefinition]:
-        """Convert standard tools to Meta format."""
-        meta_tools = []
-
-        for tool in tools:
-            # Convert to Meta's FunctionDefinition format
-            params = {"type": "object", "properties": {}, "required": []}
-
-            if "properties" in tool.parameters:
-                params["properties"] = tool.parameters["properties"]
-            if "required" in tool.parameters:
-                params["required"] = tool.parameters["required"]
-
-            meta_tool = FunctionDefinition(
-                name=tool.name, description=tool.description, parameters=params
-            )
-            meta_tools.append(meta_tool)
-
-        return meta_tools
-
-    def _convert_tools_to_openai(self, tools: list[Tool]) -> list[dict]:
-        """Convert standard tools to OpenAI format."""
-        openai_tools = []
-
-        for tool in tools:
-            openai_tool = {
-                "type": "function",
-                "function": {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": tool.parameters,  # Already in JSON Schema format
-                },
-            }
-            openai_tools.append(openai_tool)
-
-        return openai_tools
 
     def chat(
         self,
@@ -687,16 +606,9 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             # Check for tool calls
             if hasattr(chat_response, "tool_calls") and chat_response.tool_calls:
                 # Convert Cohere tool calls to our format
-                tool_calls = []
-                for tc in chat_response.tool_calls:
-                    # Map sanitized name back to original name
-                    original_name = getattr(self, "_tool_name_mapping", {}).get(tc.name, tc.name)
-                    tool_call = ToolCall(
-                        id=tc.name,  # Cohere doesn't provide IDs, use name
-                        name=original_name,
-                        arguments=tc.parameters if hasattr(tc, "parameters") else {},
-                    )
-                    tool_calls.append(tool_call)
+                tool_calls = ToolConverter.parse_tool_calls_cohere(
+                    chat_response.tool_calls, getattr(self, "_tool_name_mapping", {})
+                )
                 finish_reason = "tool_calls"
 
             # Get text content if available
