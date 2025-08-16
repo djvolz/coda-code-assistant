@@ -1,7 +1,8 @@
 """Ollama provider implementation for local model execution."""
 
 import json
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
+from typing import TypeVar
 
 import httpx
 
@@ -12,7 +13,11 @@ from .base import (
     Message,
     Model,
     Tool,
+    ToolCall,
 )
+from .tool_converter import ToolConverter
+
+T = TypeVar("T")
 
 
 class OllamaProvider(BaseProvider):
@@ -33,16 +38,105 @@ class OllamaProvider(BaseProvider):
         self._client = httpx.Client(timeout=timeout)
         self._async_client = httpx.AsyncClient(timeout=timeout)
 
+    def _handle_tool_fallback(
+        self,
+        func: Callable,
+        messages: list[Message],
+        model: str,
+        tools: list[Tool] | None,
+        *args,
+        **kwargs,
+    ) -> T:
+        """
+        Handle tool fallback for methods that may fail with tool support errors.
+
+        Args:
+            func: The function to call
+            messages: Chat messages
+            model: Model name
+            tools: Optional tools list
+            *args: Additional positional arguments
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            The result from the function call
+        """
+        try:
+            return func(messages, model, *args, tools=tools, **kwargs)
+        except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                if self._should_warn_about_tools(messages):
+                    self._show_tool_warning(model)
+                # Retry without tools
+                return func(messages, model, *args, tools=None, **kwargs)
+
+            # Handle other errors
+            if e.response.status_code == 404:
+                raise ValueError(
+                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
+                ) from None
+
+            raise RuntimeError(f"Ollama API error: {error_text}") from e
+        except Exception as e:
+            raise RuntimeError(f"Ollama error: {str(e)}") from e
+
+    def _handle_stream_fallback(
+        self,
+        func: Callable,
+        messages: list[Message],
+        model: str,
+        tools: list[Tool] | None,
+        *args,
+        **kwargs,
+    ) -> Iterator[ChatCompletionChunk]:
+        """
+        Handle tool fallback for streaming methods.
+
+        Yields chunks from the function, handling tool fallback if needed.
+        """
+        try:
+            yield from func(messages, model, *args, tools=tools, **kwargs)
+        except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                if self._should_warn_about_tools(messages):
+                    self._show_tool_warning(model)
+                # Retry without tools
+                yield from func(messages, model, *args, tools=None, **kwargs)
+                return
+
+            # Handle other errors
+            if e.response.status_code == 404:
+                raise ValueError(
+                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
+                ) from None
+
+            raise RuntimeError(f"Ollama streaming error: {error_text}") from e
+        except Exception as e:
+            raise RuntimeError(f"Ollama streaming error: {str(e)}") from e
+
     @property
     def name(self) -> str:
         """Provider name."""
         return "ollama"
 
     def supports_tool_calling(self, model_name: str) -> bool:
-        """Check if the model supports tool calling."""
-        # Ollama has limited tool calling support - only certain models support it
-        compatible_models = ["llama3.1", "llama3.2", "qwen2.5", "mistral", "hermes"]
-        return any(model in model_name.lower() for model in compatible_models)
+        """Check if the model supports tool calling by attempting a test call."""
+        # For now, assume all models might support tools and let the API decide
+        # This avoids maintaining a hardcoded list that gets outdated
+        # The actual compatibility check happens when tools are used
+        return True
+
+    def _parse_tool_calls(self, message: dict) -> list[ToolCall] | None:
+        """Parse tool calls from Ollama response message."""
+        return ToolConverter.parse_tool_calls_ollama(message)
 
     def _convert_messages(self, messages: list[Message]) -> list[dict]:
         """Convert our Message objects to Ollama format."""
@@ -99,26 +193,17 @@ class OllamaProvider(BaseProvider):
         **kwargs,
     ) -> ChatCompletion:
         """Send chat completion request to Ollama."""
-        try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
-            return self._chat_native_ollama(
-                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-            )
-
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                raise ValueError(
-                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
-                ) from None
-            raise RuntimeError(f"Ollama API error: {e.response.text}") from e
-        except Exception as e:
-            raise RuntimeError(f"Ollama error: {str(e)}") from e
+        return self._handle_tool_fallback(
+            self._chat_native_ollama,
+            messages,
+            model,
+            tools,
+            temperature,
+            max_tokens,
+            top_p,
+            stop,
+            **kwargs,
+        )
 
     def _chat_native_ollama(
         self,
@@ -144,6 +229,12 @@ class OllamaProvider(BaseProvider):
                 "temperature": temperature,
             },
         }
+
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
+            ollama_tools = ToolConverter.to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
 
         # Add optional parameters
         if max_tokens:
@@ -172,6 +263,9 @@ class OllamaProvider(BaseProvider):
         message = result.get("message", {})
         content = message.get("content", "")
 
+        # Parse tool calls if present
+        tool_calls = self._parse_tool_calls(message)
+
         # Calculate token usage if available
         usage = None
         if "prompt_eval_count" in result or "eval_count" in result:
@@ -185,6 +279,7 @@ class OllamaProvider(BaseProvider):
             content=content,
             model=model,
             finish_reason="stop",  # Ollama doesn't provide finish reasons
+            tool_calls=tool_calls,
             usage=usage,
             metadata={
                 "total_duration": result.get("total_duration"),
@@ -206,26 +301,17 @@ class OllamaProvider(BaseProvider):
         **kwargs,
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response from Ollama."""
-        try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
-            yield from self._chat_stream_native_ollama(
-                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
-            )
-
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                raise ValueError(
-                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
-                ) from None
-            raise RuntimeError(f"Ollama streaming error: {e.response.text}") from e
-        except Exception as e:
-            raise RuntimeError(f"Ollama streaming error: {str(e)}") from e
+        yield from self._handle_stream_fallback(
+            self._chat_stream_native_ollama,
+            messages,
+            model,
+            tools,
+            temperature,
+            max_tokens,
+            top_p,
+            stop,
+            **kwargs,
+        )
 
     def _chat_stream_native_ollama(
         self,
@@ -251,6 +337,12 @@ class OllamaProvider(BaseProvider):
                 "temperature": temperature,
             },
         }
+
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
+            ollama_tools = ToolConverter.to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
 
         # Add optional parameters
         if max_tokens:
@@ -287,6 +379,11 @@ class OllamaProvider(BaseProvider):
                         done = chunk_data.get("done", False)
                         finish_reason = "stop" if done else None
 
+                        # Handle tool calls - they might come in the final chunk
+                        tool_calls = None
+                        if done:
+                            tool_calls = self._parse_tool_calls(message)
+
                         # Extract usage from final chunk
                         usage = None
                         if done and (
@@ -303,6 +400,7 @@ class OllamaProvider(BaseProvider):
                             content=content,
                             model=model,
                             finish_reason=finish_reason,
+                            tool_calls=tool_calls,
                             usage=usage,
                             metadata={
                                 "done": done,
@@ -325,23 +423,29 @@ class OllamaProvider(BaseProvider):
     ) -> ChatCompletion:
         """Async chat completion via Ollama."""
         try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
             return await self._achat_native_ollama(
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             )
-
         except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                if self._should_warn_about_tools(messages):
+                    self._show_tool_warning(model)
+                # Retry without tools
+                return await self._achat_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
+                )
+
+            # Handle other errors
             if e.response.status_code == 404:
                 raise ValueError(
                     f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
                 ) from None
-            raise RuntimeError(f"Ollama async error: {e.response.text}") from e
+
+            raise RuntimeError(f"Ollama async error: {error_text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async error: {str(e)}") from e
 
@@ -370,6 +474,12 @@ class OllamaProvider(BaseProvider):
             },
         }
 
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
+            ollama_tools = ToolConverter.to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
+
         # Add optional parameters
         if max_tokens:
             data["options"]["num_predict"] = max_tokens
@@ -397,6 +507,9 @@ class OllamaProvider(BaseProvider):
         message = result.get("message", {})
         content = message.get("content", "")
 
+        # Parse tool calls if present
+        tool_calls = self._parse_tool_calls(message)
+
         # Calculate token usage if available
         usage = None
         if "prompt_eval_count" in result or "eval_count" in result:
@@ -410,6 +523,7 @@ class OllamaProvider(BaseProvider):
             content=content,
             model=model,
             finish_reason="stop",
+            tool_calls=tool_calls,
             usage=usage,
             metadata={
                 "total_duration": result.get("total_duration"),
@@ -432,24 +546,32 @@ class OllamaProvider(BaseProvider):
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Async stream chat completion via Ollama."""
         try:
-            # Check tool calling capability
-            if tools and not self.supports_tool_calling(model):
-                raise ValueError(
-                    f"Model '{model}' does not support tool calling. "
-                    f"Please use a compatible model like llama3.1, llama3.2, or qwen2.5."
-                )
-
             async for chunk in self._achat_stream_native_ollama(
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             ):
                 yield chunk
-
         except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools and we have tools, retry without them
+            if "does not support tools" in error_text and tools:
+                # Only show warning if this seems like a query that might actually need tools
+                if self._should_warn_about_tools(messages):
+                    self._show_tool_warning(model)
+                # Retry without tools
+                async for chunk in self._achat_stream_native_ollama(
+                    messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
+                ):
+                    yield chunk
+                return
+
+            # Handle other errors
             if e.response.status_code == 404:
                 raise ValueError(
                     f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
                 ) from None
-            raise RuntimeError(f"Ollama async streaming error: {e.response.text}") from e
+
+            raise RuntimeError(f"Ollama async streaming error: {error_text}") from e
         except Exception as e:
             raise RuntimeError(f"Ollama async streaming error: {str(e)}") from e
 
@@ -477,6 +599,12 @@ class OllamaProvider(BaseProvider):
                 "temperature": temperature,
             },
         }
+
+        # Add tools if provided - let Ollama decide if it supports them
+        if tools:
+            ollama_tools = ToolConverter.to_ollama(tools)
+            if ollama_tools:
+                data["tools"] = ollama_tools
 
         # Add optional parameters
         if max_tokens:
@@ -513,6 +641,11 @@ class OllamaProvider(BaseProvider):
                         done = chunk_data.get("done", False)
                         finish_reason = "stop" if done else None
 
+                        # Handle tool calls - they might come in the final chunk
+                        tool_calls = None
+                        if done:
+                            tool_calls = self._parse_tool_calls(message)
+
                         # Extract usage from final chunk
                         usage = None
                         if done and (
@@ -529,6 +662,7 @@ class OllamaProvider(BaseProvider):
                             content=content,
                             model=model,
                             finish_reason=finish_reason,
+                            tool_calls=tool_calls,
                             usage=usage,
                             metadata={
                                 "done": done,
