@@ -269,6 +269,11 @@ class ToolChatHandler:
 
     def _print_response(self, content: str):
         """Print AI response with formatting."""
-        self.console.print(
-            f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] {content}"
-        )
+        from rich.text import Text
+
+        # Create safe text objects to avoid Rich markup parsing issues
+        label = Text("Assistant:", style=f"{self.theme.info} bold")
+        content_text = Text(content)
+
+        self.console.print()
+        self.console.print(label, content_text)
