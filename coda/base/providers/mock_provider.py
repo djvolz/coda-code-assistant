@@ -5,7 +5,16 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 
-from .base import BaseProvider, ChatCompletion, ChatCompletionChunk, Message, Model, Role, Tool
+from .base import (
+    BaseProvider,
+    ChatCompletion,
+    ChatCompletionChunk,
+    Message,
+    Model,
+    Role,
+    Tool,
+    ToolResult,
+)
 
 
 class MockProvider(BaseProvider):
@@ -27,22 +36,22 @@ class MockProvider(BaseProvider):
                 id="mock-echo",
                 name="Mock Echo Model",
                 provider="mock",
+                supports_functions=False,  # Echo model doesn't use tools
                 metadata={
                     "capabilities": ["CHAT"],
                     "context_window": 4096,
-                    "supports_functions": True,
-                    "description": "Echoes back with conversation awareness and tool support",
+                    "description": "Simple echo model for testing",
                 },
             ),
             Model(
                 id="mock-smart",
                 name="Mock Smart Model",
                 provider="mock",
+                supports_functions=True,  # Smart model uses tools
                 metadata={
                     "capabilities": ["CHAT"],
                     "context_window": 8192,
-                    "supports_functions": True,
-                    "description": "Provides contextual responses with tool support",
+                    "description": "Intelligent model with NLP-based tool execution",
                 },
             ),
         ]
@@ -62,6 +71,39 @@ class MockProvider(BaseProvider):
         # Store conversation for context
         self.conversation_history = messages
 
+        # Route to different behaviors based on model
+        if model == "mock-echo":
+            return self._handle_echo_model(messages, model, **kwargs)
+        elif model == "mock-smart":
+            return self._handle_smart_model(messages, model, tools, **kwargs)
+        else:
+            # Default behavior for other mock models
+            return self._handle_echo_model(messages, model, **kwargs)
+
+    def _handle_echo_model(self, messages: list[Message], model: str, **kwargs) -> ChatCompletion:
+        """Handle mock-echo model - just echoes user input."""
+        user_messages = [msg for msg in messages if msg.role == Role.USER]
+        if not user_messages:
+            content = "I don't see any user messages to echo."
+        else:
+            # Simple echo of the last user message
+            content = f"Echo: {user_messages[-1].content}"
+
+        # Add delay to simulate processing time
+        time.sleep(0.5)  # Shorter delay for echo
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason="stop",
+            tool_calls=None,
+            metadata={"provider": "mock", "model_type": "echo"},
+        )
+
+    def _handle_smart_model(
+        self, messages: list[Message], model: str, tools: list[Tool] | None = None, **kwargs
+    ) -> ChatCompletion:
+        """Handle mock-smart model - uses NLP to execute tools."""
         # Check if we have tool results to summarize
         tool_messages = [msg for msg in messages if msg.role == Role.TOOL]
         if tool_messages:
@@ -72,7 +114,7 @@ class MockProvider(BaseProvider):
                 model=model,
                 finish_reason="stop",
                 tool_calls=None,
-                metadata={"provider": "mock", "timestamp": datetime.now().isoformat()},
+                metadata={"provider": "mock", "model_type": "smart"},
             )
 
         # Get the last user message
@@ -83,103 +125,139 @@ class MockProvider(BaseProvider):
                 model=model,
                 finish_reason="stop",
                 tool_calls=None,
-                metadata={"provider": "mock", "timestamp": datetime.now().isoformat()},
+                metadata={"provider": "mock", "model_type": "smart"},
             )
 
+        # For mock-smart, if we have tools, try to use NLP to execute them
+        if tools and not kwargs.get("_manual_execution", False):
+            last_user_content = user_messages[-1].content
+
+            # Use NLP to detect if tools should be executed
+            tool_calls = self._infer_tool_calls_from_response(last_user_content, tools)
+            if tool_calls:
+                # Execute tools manually using the sync method
+                return self._execute_tools_manually_sync(messages, model, tools, **kwargs)
+
+        # Default smart response without tools
         last_message = user_messages[-1].content.lower()
 
-        # Generate contextual responses based on conversation
-        # IMPORTANT: Check for memory questions FIRST before topic-specific responses
-        if "what were we discussing" in last_message or "talking about" in last_message:
-            # Only look for topics in PREVIOUS messages (not the current one asking about discussion)
-            topics = []
-            previous_messages = messages[
-                :-1
-            ]  # Exclude the current "what were we discussing" message
-
-            if not previous_messages:
-                content = "I don't see any previous conversation to reference."
-            else:
-                for msg in previous_messages:
-                    # Handle different message types safely
-                    if hasattr(msg, "content") and isinstance(msg.content, str):
-                        msg_content = msg.content.lower()
-                        if "python" in msg_content:
-                            topics.append("Python programming")
-                        if "decorator" in msg_content:
-                            topics.append("Python decorators")
-                        if "javascript" in msg_content:
-                            topics.append("JavaScript")
-
-                if topics:
-                    content = f"We were discussing: {', '.join(set(topics))}. What would you like to know more about?"
-                else:
-                    content = "I don't see any specific topics we were discussing previously."
-
-        elif "python" in last_message:
-            if any(
-                "decorator" in msg.content.lower()
-                for msg in messages
-                if hasattr(msg, "content") and isinstance(msg.content, str)
-            ):
-                content = "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
-            else:
-                content = "Python is a high-level programming language known for its simplicity and readability."
-
-        elif "javascript" in last_message:
+        if "hello" in last_message or "hi" in last_message:
             content = (
-                "JavaScript is a dynamic programming language primarily used for web development."
+                "Hello! I'm the smart mock model. I can help you test tool execution features."
             )
-
-        elif "decorator" in last_message and len(messages) == 1:
-            # If this is the only message, provide general info
-            content = "Decorators in Python are a way to modify functions using the @ syntax. For example: @property or @staticmethod."
-
-        elif "decorator" in last_message and len(messages) > 1:
-            # If part of a conversation, check for context
-            if any(
-                "decorator" in msg.content.lower()
-                for msg in messages[:-1]
-                if hasattr(msg, "content") and isinstance(msg.content, str)
-            ):
-                content = "Yes, we were discussing Python decorators. They are functions that modify other functions, using the @decorator syntax."
-            else:
-                content = "Decorators in Python are a way to modify functions using the @ syntax. For example: @property or @staticmethod."
-
-        elif "hello" in last_message or "hi" in last_message:
-            content = "Hello! How can I help you today?"
-
         elif "help" in last_message:
-            content = "I'm a mock AI assistant. I can help you test session management features."
-
+            content = "I'm a smart mock AI assistant. I can execute tools automatically based on your requests."
         else:
-            # Echo back with conversation context
-            response_parts = [f"You said: '{user_messages[-1].content}'"]
+            # Generate a contextual response
+            content = f"I understand you said: '{user_messages[-1].content}'. How can I help you with that?"
 
-            if len(messages) > 1:
-                response_parts.append(
-                    f"This is message #{len([m for m in messages if m.role == Role.USER])} in our conversation."
-                )
+        # Add delay to simulate processing time
+        time.sleep(1.0)  # Medium delay for smart responses
 
-            # Add context about previous messages
-            if len(user_messages) > 1:
-                response_parts.append(
-                    f"Earlier you asked about: '{user_messages[-2].content[:50]}...'"
-                )
-
-            content = " ".join(response_parts)
-
-        # Add delay to simulate processing time for timer display
-        # Note: This is synchronous, but for streaming we need async delay
-        time.sleep(2.5)  # Allow timer to show incremental updates
-
-        # Return ChatCompletion object
         return ChatCompletion(
             content=content,
             model=model,
             finish_reason="stop",
             tool_calls=None,
-            metadata={"provider": "mock", "timestamp": datetime.now().isoformat()},
+            metadata={"provider": "mock", "model_type": "smart"},
+        )
+
+    def _execute_tools_manually_sync(
+        self,
+        messages: list[Message],
+        model: str,
+        tools: list[Tool],
+        **kwargs,
+    ) -> ChatCompletion:
+        """
+        Execute tools manually for mock-smart model.
+
+        Simplified version that works reliably in mock context.
+        """
+        # 1. Use NLP to detect which tools to call
+        user_messages = [msg for msg in messages if msg.role == Role.USER]
+        if not user_messages:
+            return ChatCompletion(
+                content="No user message to process for tool execution.",
+                model=model,
+                finish_reason="stop",
+                tool_calls=None,
+                metadata={"provider": "mock", "manual_execution": True},
+            )
+
+        last_user_content = user_messages[-1].content
+        tool_calls = self._infer_tool_calls_from_response(last_user_content, tools)
+
+        if not tool_calls:
+            return ChatCompletion(
+                content=f"I understand you said: '{last_user_content}', but I couldn't detect any tools to execute.",
+                model=model,
+                finish_reason="stop",
+                tool_calls=None,
+                metadata={"provider": "mock", "manual_execution": True},
+            )
+
+        # 2. Execute tools synchronously
+        tool_results = []
+
+        for tool_call in tool_calls:
+            try:
+                # Execute tool directly
+                import asyncio
+
+                from coda.services.tools import execute_tool
+
+                result = asyncio.run(execute_tool(tool_call.name, tool_call.arguments))
+
+                tool_result = ToolResult(
+                    tool_call_id=tool_call.id,
+                    content=result.result if hasattr(result, "result") else str(result),
+                    is_error=not getattr(result, "success", True),
+                )
+                tool_results.append(tool_result)
+            except Exception as e:
+                tool_results.append(
+                    ToolResult(
+                        tool_call_id=tool_call.id,
+                        content=f"Error executing {tool_call.name}: {str(e)}",
+                        is_error=True,
+                    )
+                )
+
+        # 3. Generate response based on tool results
+        if tool_results and not tool_results[0].is_error:
+            # Successful tool execution
+            tool_content = tool_results[0].content
+            # Escape Rich markup in tool content to prevent parsing errors
+            escaped_content = tool_content.replace("[", "\\[").replace("]", "\\]")
+            if tool_calls[0].name == "read_file":
+                content = (
+                    f"I've successfully read the file. Here's the content:\n\n{escaped_content}"
+                )
+            elif tool_calls[0].name == "list_files":
+                content = f"Here are the files in the directory:\n\n{escaped_content}"
+            elif tool_calls[0].name == "run_shell":
+                content = f"Command executed successfully. Output:\n\n{escaped_content}"
+            else:
+                content = f"Tool '{tool_calls[0].name}' executed successfully. Result:\n\n{escaped_content}"
+        else:
+            # Tool execution failed
+            error_msg = tool_results[0].content if tool_results else "Unknown error"
+            content = f"I tried to execute the tool but encountered an error: {error_msg}"
+
+        # Add delay to simulate processing time
+        time.sleep(1.5)
+
+        return ChatCompletion(
+            content=content,
+            model=model,
+            finish_reason="stop",
+            tool_calls=tool_calls,
+            metadata={
+                "provider": "mock",
+                "manual_execution": True,
+                "tools_executed": len(tool_calls),
+            },
         )
 
     def _generate_tool_response(self, messages: list[Message], tool_messages: list[Message]) -> str:
@@ -206,7 +284,9 @@ class MockProvider(BaseProvider):
             elif any(word in last_user_message for word in ["read", "file", "content"]):
                 if "error" in content.lower() or "not found" in content.lower():
                     return f"I encountered an issue accessing the file: {content}"
-                return f"I've read the file. Here's the content: {content}"
+                # Escape Rich markup in file content to prevent parsing errors
+                escaped_content = content.replace("[", "\\[").replace("]", "\\]")
+                return f"I've read the file. Here's the content: {escaped_content}"
 
             # Handle directory listings
             elif any(

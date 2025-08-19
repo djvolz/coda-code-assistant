@@ -24,14 +24,12 @@ def create_welcome_banner(theme) -> Text:
         Text: Rich Text object with formatted banner
     """
     banner_text = Text.from_markup(
-        f"[{theme.panel_title}]"
-        " ██████╗ ██████╗ ██████╗  █████╗ \n"
+        f"[{theme.panel_title}] ██████╗ ██████╗ ██████╗  █████╗ \n"
         "██╔════╝██╔═══██╗██╔══██╗██╔══██╗\n"
         "██║     ██║   ██║██║  ██║███████║\n"
         "██║     ██║   ██║██║  ██║██╔══██║\n"
         "╚██████╗╚██████╔╝██████╔╝██║  ██║\n"
-        " ╚═════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝"
-        f"[/{theme.panel_title}]\n"
+        f" ╚═════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝[/{theme.panel_title}]\n"
         f"[{theme.info}]✨ Your AI-powered coding companion[/{theme.info}]\n"
         f"[{theme.dim}]v{__version__} • {os.getcwd()}[/{theme.dim}]"
     )

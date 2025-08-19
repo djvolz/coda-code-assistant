@@ -12,8 +12,10 @@ from .base import (
     ChatCompletionChunk,
     Message,
     Model,
+    Role,
     Tool,
     ToolCall,
+    ToolResult,
 )
 from .tool_converter import ToolConverter
 
@@ -66,12 +68,8 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             error_text = e.response.text
 
-            # If model doesn't support tools and we have tools, retry without them
+            # If model doesn't support tools and we have tools, just proceed without tools
             if "does not support tools" in error_text and tools:
-                # Only show warning if this seems like a query that might actually need tools
-                if self._should_warn_about_tools(messages):
-                    self._show_tool_warning(model)
-                # Retry without tools
                 return func(messages, model, *args, tools=None, **kwargs)
 
             # Handle other errors
@@ -103,12 +101,8 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             error_text = e.response.text
 
-            # If model doesn't support tools and we have tools, retry without them
+            # If model doesn't support tools and we have tools, just proceed without tools
             if "does not support tools" in error_text and tools:
-                # Only show warning if this seems like a query that might actually need tools
-                if self._should_warn_about_tools(messages):
-                    self._show_tool_warning(model)
-                # Retry without tools
                 yield from func(messages, model, *args, tools=None, **kwargs)
                 return
 
@@ -193,16 +187,158 @@ class OllamaProvider(BaseProvider):
         **kwargs,
     ) -> ChatCompletion:
         """Send chat completion request to Ollama."""
-        return self._handle_tool_fallback(
-            self._chat_native_ollama,
-            messages,
+        # Skip manual execution if we're already in manual execution mode
+        if kwargs.get("_manual_execution", False):
+            return self._chat_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
+            )
+
+        # If no tools, use normal flow
+        if not tools:
+            return self._chat_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            )
+
+        try:
+            # Try with tools first
+            result = self._chat_native_ollama(
+                messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
+            )
+
+            # If no tool calls were returned, check if manual execution is needed
+            if not result.tool_calls:
+                tool_calls = self._infer_tool_calls_from_response(result.content, tools)
+                if tool_calls:
+                    # Execute tools manually
+                    return self._execute_tools_manually_sync(
+                        messages, model, tools, temperature, max_tokens, top_p, stop, **kwargs
+                    )
+
+            return result
+
+        except httpx.HTTPStatusError as e:
+            error_text = e.response.text
+
+            # If model doesn't support tools, execute manually
+            if "does not support tools" in error_text and tools:
+                return self._execute_tools_manually_sync(
+                    messages, model, tools, temperature, max_tokens, top_p, stop, **kwargs
+                )
+
+            # Handle other errors
+            if e.response.status_code == 404:
+                raise ValueError(
+                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
+                ) from None
+
+            raise RuntimeError(f"Ollama API error: {error_text}") from e
+        except Exception as e:
+            raise RuntimeError(f"Ollama error: {str(e)}") from e
+
+    def _execute_tools_manually_sync(
+        self,
+        messages: list[Message],
+        model: str,
+        tools: list[Tool],
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+        top_p: float | None = None,
+        stop: str | list[str] | None = None,
+        **kwargs,
+    ) -> ChatCompletion:
+        """
+        Sync version of manual tool execution for Ollama.
+
+        Simplified version that calls native Ollama methods directly.
+        """
+        # 1. Get initial response without tools using native method
+        initial_response = self._chat_native_ollama(
+            messages, model, temperature, max_tokens, top_p, stop, tools=None, **kwargs
+        )
+
+        # 2. Infer which tools to call based on the response
+        tool_calls = self._infer_tool_calls_from_response(initial_response.content, tools)
+
+        if not tool_calls:
+            return initial_response
+
+        # 3. Execute tools synchronously
+        tool_results = []
+
+        for tool_call in tool_calls:
+            try:
+                # Execute tool directly - tools service handles sync execution
+                import asyncio
+
+                from coda.services.tools import execute_tool
+
+                # Execute the async tool in a new event loop
+                result = asyncio.run(execute_tool(tool_call.name, tool_call.arguments))
+
+                tool_result = ToolResult(
+                    tool_call_id=tool_call.id,
+                    content=result.result if hasattr(result, "result") else str(result),
+                    is_error=not getattr(result, "success", True),
+                )
+                tool_results.append(tool_result)
+            except Exception as e:
+                tool_results.append(
+                    ToolResult(
+                        tool_call_id=tool_call.id,
+                        content=f"Error executing {tool_call.name}: {str(e)}",
+                        is_error=True,
+                    )
+                )
+
+        # 4. Build new conversation with tool results embedded in assistant message
+        # Instead of separate TOOL messages, embed tool results in assistant message
+        assistant_content_with_tools = initial_response.content + "\n\n"
+
+        for i, result in enumerate(tool_results):
+            tool_name = tool_calls[i].name if i < len(tool_calls) else "unknown"
+            assistant_content_with_tools += f"[TOOL RESULT - {tool_name}]:\n{result.content}\n\n"
+
+        new_messages = messages + [
+            Message(
+                role=Role.ASSISTANT, content=assistant_content_with_tools, tool_calls=tool_calls
+            )
+        ]
+
+        # 5. Get final response using native method
+        final_messages = new_messages + [
+            Message(
+                role=Role.USER,
+                content="Please provide a complete answer based on the tool results above.",
+            )
+        ]
+
+        # Add manual execution flag to prevent infinite loops
+        final_kwargs = kwargs.copy()
+        final_kwargs["_manual_execution"] = True
+
+        final_response = self._chat_native_ollama(
+            final_messages,
             model,
-            tools,
             temperature,
             max_tokens,
             top_p,
             stop,
-            **kwargs,
+            tools=None,
+            **final_kwargs,
+        )
+
+        # 6. Return combined response
+        return ChatCompletion(
+            content=final_response.content,
+            model=model,
+            finish_reason="stop",
+            tool_calls=tool_calls,
+            usage=final_response.usage,
+            metadata={
+                "manual_tool_execution": True,
+                "initial_response": initial_response.content,
+                "tool_results_count": len(tool_results),
+            },
         )
 
     def _chat_native_ollama(
@@ -429,12 +565,8 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             error_text = e.response.text
 
-            # If model doesn't support tools and we have tools, retry without them
+            # If model doesn't support tools and we have tools, just proceed without tools
             if "does not support tools" in error_text and tools:
-                # Only show warning if this seems like a query that might actually need tools
-                if self._should_warn_about_tools(messages):
-                    self._show_tool_warning(model)
-                # Retry without tools
                 return await self._achat_native_ollama(
                     messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
                 )
@@ -553,12 +685,8 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             error_text = e.response.text
 
-            # If model doesn't support tools and we have tools, retry without them
+            # If model doesn't support tools and we have tools, just proceed without tools
             if "does not support tools" in error_text and tools:
-                # Only show warning if this seems like a query that might actually need tools
-                if self._should_warn_about_tools(messages):
-                    self._show_tool_warning(model)
-                # Retry without tools
                 async for chunk in self._achat_stream_native_ollama(
                     messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
                 ):

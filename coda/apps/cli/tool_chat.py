@@ -29,8 +29,8 @@ class ToolChatHandler:
 
     def should_use_tools(self, model: str) -> bool:
         """Check if the current model supports tools."""
-        # Only Cohere models support tools in OCI
-        return model.startswith("cohere.") and self.tools_enabled
+        # Support tools for Cohere models and mock-smart
+        return (model.startswith("cohere.") or model == "mock-smart") and self.tools_enabled
 
     async def chat_with_tools(
         self,
@@ -157,11 +157,16 @@ class ToolChatHandler:
 
             # Show result
             if result.is_error:
+                # Escape Rich markup in error content
+                error_content = result.content.replace("[", "\\[").replace("]", "\\]")
                 self.console.print(
-                    f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {result.content}"
+                    f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {error_content}"
                 )
             else:
-                self.console.print(f"[{self.theme.success}]✓ Result:[/{self.theme.success}]")
+                # Use safe Rich Text to avoid markup parsing issues
+                from rich.text import Text
+
+                self.console.print(Text("✓ Result:", style=self.theme.success))
                 # Try to format as JSON if possible
                 try:
                     result_json = json.loads(result.content)
@@ -178,9 +183,11 @@ class ToolChatHandler:
                     )
                 except (json.JSONDecodeError, TypeError):
                     # Not JSON, print as text
-                    self.console.print(
-                        Panel(result.content, border_style=self.theme.info, expand=False)
-                    )
+                    # Use Text object to avoid Rich markup parsing
+                    from rich.text import Text
+
+                    safe_text = Text(result.content)
+                    self.console.print(Panel(safe_text, border_style=self.theme.info, expand=False))
 
             # Add tool result to messages
             messages.append(

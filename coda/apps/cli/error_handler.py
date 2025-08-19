@@ -43,7 +43,21 @@ class CLIErrorHandler:
 
     def handle_general_error(self, error: Exception):
         """Handle general errors."""
-        self.console.print(f"\n[{self.theme.error}]Error:[/{self.theme.error}] {error}")
+        try:
+            # Use Rich Text object to completely avoid markup parsing
+            from rich.text import Text
+
+            error_text = Text(str(error))
+
+            self.console.print()
+            self.console.print(Text("Error: ", style=self.theme.error), end="")
+            self.console.print(error_text)
+
+        except Exception as display_error:
+            # Fallback to plain print if Rich fails
+            print(f"\nError: {str(error)}")
+            print(f"Display error: {str(display_error)}")
+
         self._show_debug_info(error)
         sys.exit(1)
 
