@@ -163,31 +163,10 @@ class ToolChatHandler:
                     f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {error_content}"
                 )
             else:
-                # Use safe Rich Text to avoid markup parsing issues
+                # Just show success status without printing content to avoid Rich markup issues
                 from rich.text import Text
 
-                self.console.print(Text("✓ Result:", style=self.theme.success))
-                # Try to format as JSON if possible
-                try:
-                    result_json = json.loads(result.content)
-                    self.console.print(
-                        Panel(
-                            Syntax(
-                                json.dumps(result_json, indent=2),
-                                "json",
-                                theme=self.theme.code_theme,
-                            ),
-                            border_style=self.theme.success,
-                            expand=False,
-                        )
-                    )
-                except (json.JSONDecodeError, TypeError):
-                    # Not JSON, print as text
-                    # Use Text object to avoid Rich markup parsing
-                    from rich.text import Text
-
-                    safe_text = Text(result.content)
-                    self.console.print(Panel(safe_text, border_style=self.theme.info, expand=False))
+                self.console.print(Text("✓ Success", style=self.theme.success))
 
             # Add tool result to messages
             messages.append(
@@ -252,8 +231,11 @@ class ToolChatHandler:
                     )
                     break
 
-                # Stream the response
-                self.console.print(chunk.content, end="")
+                # Stream the response safely to avoid Rich markup parsing
+                from rich.text import Text
+
+                safe_chunk = Text(chunk.content)
+                self.console.print(safe_chunk, end="")
                 full_response += chunk.content
 
             # Add newline after streaming

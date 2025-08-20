@@ -227,19 +227,14 @@ class MockProvider(BaseProvider):
         # 3. Generate response based on tool results
         if tool_results and not tool_results[0].is_error:
             # Successful tool execution
-            tool_content = tool_results[0].content
-            # Escape Rich markup in tool content to prevent parsing errors
-            escaped_content = tool_content.replace("[", "\\[").replace("]", "\\]")
             if tool_calls[0].name == "read_file":
-                content = (
-                    f"I've successfully read the file. Here's the content:\n\n{escaped_content}"
-                )
+                content = "I've successfully read the file. The content has been processed."
             elif tool_calls[0].name == "list_files":
-                content = f"Here are the files in the directory:\n\n{escaped_content}"
+                content = "I've listed the directory contents successfully."
             elif tool_calls[0].name == "run_shell":
-                content = f"Command executed successfully. Output:\n\n{escaped_content}"
+                content = "Command executed successfully."
             else:
-                content = f"Tool '{tool_calls[0].name}' executed successfully. Result:\n\n{escaped_content}"
+                content = f"Tool '{tool_calls[0].name}' executed successfully."
         else:
             # Tool execution failed
             error_msg = tool_results[0].content if tool_results else "Unknown error"
@@ -284,9 +279,8 @@ class MockProvider(BaseProvider):
             elif any(word in last_user_message for word in ["read", "file", "content"]):
                 if "error" in content.lower() or "not found" in content.lower():
                     return f"I encountered an issue accessing the file: {content}"
-                # Escape Rich markup in file content to prevent parsing errors
-                escaped_content = content.replace("[", "\\[").replace("]", "\\]")
-                return f"I've read the file. Here's the content: {escaped_content}"
+                # Don't include file content in response to avoid Rich markup parsing issues
+                return "I've successfully read the file. The content has been processed."
 
             # Handle directory listings
             elif any(

@@ -45,24 +45,7 @@ class CLIAgentEventHandler(AgentEventHandler):
             # Use safe Rich Text to avoid markup parsing issues
             from rich.text import Text
 
-            self.console.print(Text("✓ Result:", style=self.theme.success))
-            if event.data and "output" in event.data:
-                output = event.data["output"]
-                # Try to format as JSON
-                try:
-                    result_json = json.loads(output)
-                    self.console.print(
-                        Panel(
-                            Syntax(json.dumps(result_json, indent=2), "json", theme="monokai"),
-                            expand=False,
-                        )
-                    )
-                except Exception:
-                    # Use safe Rich Text to avoid markup parsing
-                    from rich.text import Text
-
-                    safe_output = Text(output)
-                    self.console.print(Panel(safe_output, expand=False))
+            self.console.print(Text("✓ Success", style=self.theme.success))
         elif event.type == AgentEventType.ERROR:
             # Finalize any existing markdown buffer before error output
             if self.markdown_buffer:
