@@ -166,11 +166,8 @@ Each user request should be evaluated independently. Previous tool usage does no
                     )
                     break
 
-                # Stream the response safely to avoid Rich markup parsing
-                from rich.text import Text
-
-                safe_chunk = Text(chunk.content)
-                self.console.print(safe_chunk, end="")
+                # Stream the response
+                self.console.print(chunk.content, end="")
                 full_response += chunk.content
 
             # Add newline after streaming

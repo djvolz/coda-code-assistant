@@ -163,10 +163,7 @@ class ToolChatHandler:
                     f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {error_content}"
                 )
             else:
-                # Use safe Rich Text to avoid markup parsing issues
-                from rich.text import Text
-
-                self.console.print(Text("✓ Result:", style=self.theme.success))
+                self.console.print(f"[{self.theme.success}]✓ Result:[/{self.theme.success}]")
                 # Try to format as JSON if possible
                 try:
                     result_json = json.loads(result.content)
@@ -182,11 +179,10 @@ class ToolChatHandler:
                         )
                     )
                 except (json.JSONDecodeError, TypeError):
-                    # Not JSON, print as text with safe Text object
-                    from rich.text import Text
-
-                    safe_text = Text(result.content)
-                    self.console.print(Panel(safe_text, border_style=self.theme.info, expand=False))
+                    # Not JSON, print as text - Rich handles this safely
+                    self.console.print(
+                        Panel(result.content, border_style=self.theme.info, expand=False)
+                    )
 
             # Add tool result to messages
             messages.append(
@@ -251,11 +247,8 @@ class ToolChatHandler:
                     )
                     break
 
-                # Stream the response safely to avoid Rich markup parsing
-                from rich.text import Text
-
-                safe_chunk = Text(chunk.content)
-                self.console.print(safe_chunk, end="")
+                # Stream the response
+                self.console.print(chunk.content, end="")
                 full_response += chunk.content
 
             # Add newline after streaming
@@ -271,11 +264,5 @@ class ToolChatHandler:
 
     def _print_response(self, content: str):
         """Print AI response with formatting."""
-        from rich.text import Text
-
-        # Create safe text objects to avoid Rich markup parsing issues
-        label = Text("Assistant:", style=f"{self.theme.info} bold")
-        content_text = Text(content)
-
         self.console.print()
-        self.console.print(label, content_text)
+        self.console.print(f"[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] {content}")
