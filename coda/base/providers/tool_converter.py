@@ -5,6 +5,16 @@ from typing import Any
 
 from .base import Tool, ToolCall
 
+# Mapping of JSON schema types to OCI/Cohere parameter types
+JSON_TO_OCI_TYPES = {
+    "string": "STRING",
+    "number": "FLOAT",
+    "boolean": "BOOLEAN",
+    "integer": "FLOAT",  # OCI Cohere uses FLOAT for all numbers
+    "array": "LIST",
+    "object": "DICT",
+}
+
 
 class ToolConverter:
     """Utility class for converting tools between different provider formats."""
@@ -48,8 +58,70 @@ class ToolConverter:
         Returns:
             List of tools in Ollama format, or None if no tools
         """
-        # Ollama uses the same format as OpenAI
-        return ToolConverter.to_openai(tools)
+        # Ollama uses the same generic format as OpenAI
+        return ToolConverter.to_generic(tools)
+
+    @staticmethod
+    def to_oci_generic(tools: list[Tool] | None) -> list[Any] | None:
+        """
+        Convert standard tools to OCI generic format (FunctionDefinition objects).
+
+        Used for Meta, XAI, and other non-Cohere models in OCI GenAI.
+
+        Args:
+            tools: List of Tool objects
+
+        Returns:
+            List of OCI FunctionDefinition objects, or None if no tools
+
+        Raises:
+            ValueError: If tool conversion fails
+        """
+        if not tools:
+            return None
+
+        # Import OCI types only when needed
+        from oci.generative_ai_inference.models import FunctionDefinition
+
+        oci_tools = []
+        seen_names = set()  # Track names to prevent duplicates
+
+        for tool in tools:
+            # Skip duplicates
+            if tool.name in seen_names:
+                continue
+            seen_names.add(tool.name)
+
+            try:
+                # Convert to OCI FunctionDefinition format using proper JSON schema
+                parameters = {
+                    "type": "object",
+                    "properties": tool.parameters.get("properties", {}),
+                    "required": tool.parameters.get("required", []),
+                }
+
+                oci_tool = FunctionDefinition(
+                    name=tool.name,
+                    description=tool.description
+                    or f"Tool: {tool.name}",  # Ensure description exists
+                    parameters=parameters,
+                )
+                oci_tools.append(oci_tool)
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to convert tool '{tool.name}' to OCI generic format: {e}"
+                ) from e
+
+        return oci_tools
+
+    @staticmethod
+    def to_meta(tools: list[Tool] | None) -> list[Any] | None:
+        """
+        Convert standard tools to Meta format.
+
+        Alias for to_oci_generic for backward compatibility.
+        """
+        return ToolConverter.to_oci_generic(tools)
 
     @staticmethod
     def to_cohere(tools: list[Tool] | None) -> tuple[list[Any], dict[str, str]]:
@@ -62,6 +134,9 @@ class ToolConverter:
         Returns:
             Tuple of (cohere_tools, name_mapping) where name_mapping maps
             sanitized names back to original names
+
+        Raises:
+            ValueError: If tool conversion fails
         """
         if not tools:
             return [], {}
@@ -80,70 +155,64 @@ class ToolConverter:
             param_definitions = {}
 
             if "properties" in tool.parameters:
-                for param_name, param_schema in tool.parameters["properties"].items():
-                    # Convert type to uppercase as required by Cohere
-                    param_type = param_schema.get("type", "string").upper()
-                    if param_type == "INTEGER":
-                        param_type = "FLOAT"  # Cohere uses FLOAT for numbers
-                    elif param_type == "ARRAY":
-                        param_type = "LIST"
-                    elif param_type == "OBJECT":
-                        param_type = "DICT"
+                properties = tool.parameters["properties"]
+                required_params = tool.parameters.get("required", [])
+
+                for param_name, param_schema in properties.items():
+                    # Use the mapping for consistent type conversion
+                    json_type = param_schema.get("type", "string")
+                    param_type = JSON_TO_OCI_TYPES.get(json_type, "STRING")
+
+                    # Handle special cases for better OCI compatibility
+                    if json_type == "integer":
+                        # OCI Cohere treats all numbers as FLOAT
+                        param_type = "FLOAT"
 
                     param_def = CohereParameterDefinition(
                         description=param_schema.get("description", ""),
                         type=param_type,
-                        is_required=param_name in tool.parameters.get("required", []),
+                        is_required=param_name in required_params,
                     )
                     param_definitions[param_name] = param_def
 
             # Sanitize tool name for OCI/Cohere compatibility (dots and hyphens not allowed)
+            # Also ensure name is valid identifier
             sanitized_name = tool.name.replace(".", "_").replace("-", "_")
+            # Remove any other invalid characters for OCI
+            sanitized_name = "".join(c if c.isalnum() or c == "_" else "_" for c in sanitized_name)
             name_mapping[sanitized_name] = tool.name
 
-            cohere_tool = CohereTool(
-                name=sanitized_name,
-                description=tool.description,
-                parameter_definitions=param_definitions,
-            )
-            cohere_tools.append(cohere_tool)
+            try:
+                cohere_tool = CohereTool(
+                    name=sanitized_name,
+                    description=tool.description
+                    or f"Tool: {tool.name}",  # Ensure description exists
+                    parameter_definitions=param_definitions,
+                )
+                cohere_tools.append(cohere_tool)
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to convert tool '{tool.name}' to Cohere format: {e}"
+                ) from e
 
         return cohere_tools, name_mapping
 
     @staticmethod
-    def to_meta(tools: list[Tool] | None) -> list[Any] | None:
+    def to_generic(tools: list[Tool] | None) -> list[dict] | None:
         """
-        Convert standard tools to Meta format.
+        Convert standard tools to generic OpenAI-compatible format.
+
+        This works for most providers including Meta, OpenAI, Anthropic, etc.
+        Only Cohere needs special handling.
 
         Args:
             tools: List of Tool objects
 
         Returns:
-            List of tools in Meta format, or None if no tools
+            List of tools in generic format, or None if no tools
         """
-        if not tools:
-            return None
-
-        # Import Meta types only when needed
-        from oci.generative_ai_inference.models import FunctionDefinition
-
-        meta_tools = []
-
-        for tool in tools:
-            # Convert to Meta's FunctionDefinition format
-            params = {"type": "object", "properties": {}, "required": []}
-
-            if "properties" in tool.parameters:
-                params["properties"] = tool.parameters["properties"]
-            if "required" in tool.parameters:
-                params["required"] = tool.parameters["required"]
-
-            meta_tool = FunctionDefinition(
-                name=tool.name, description=tool.description, parameters=params
-            )
-            meta_tools.append(meta_tool)
-
-        return meta_tools
+        # Generic format is same as OpenAI format
+        return ToolConverter.to_openai(tools)
 
     @staticmethod
     def parse_tool_calls_ollama(message: dict) -> list[ToolCall] | None:

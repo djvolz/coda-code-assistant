@@ -549,15 +549,9 @@ IMPORTANT: After receiving tool results, you MUST provide a final answer to the 
             if top_p is not None:
                 params["top_p"] = top_p
 
-            # Add tools based on provider type
+            # Add tools for all non-Cohere models using generic OCI format (Meta, XAI, etc.)
             if tools:
-                if provider == "meta":
-                    params["tools"] = ToolConverter.to_meta(tools)
-                elif provider in ["openai", "gpt"]:
-                    params["tools"] = ToolConverter.to_openai(tools)
-                else:
-                    # Generic format with OpenAI tool fallback for unknown providers
-                    params["tools"] = ToolConverter.to_openai(tools)
+                params["tools"] = ToolConverter.to_oci_generic(tools)
 
             return GenericChatRequest(**params)
 

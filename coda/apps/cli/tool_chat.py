@@ -28,9 +28,17 @@ class ToolChatHandler:
         self.theme = config_service.theme_manager.get_console_theme()
 
     def should_use_tools(self, model: str) -> bool:
-        """Check if the current model supports tools."""
-        # Support tools for Cohere models and mock-smart
-        return (model.startswith("cohere.") or model == "mock-smart") and self.tools_enabled
+        """Check if tools should be used for this model."""
+        # Most modern models support tools, only exclude very old ones
+        if not self.tools_enabled:
+            return False
+
+        # Exclude known non-tool models
+        non_tool_models = {
+            "mock-echo",  # Simple echo model
+        }
+
+        return model not in non_tool_models
 
     async def chat_with_tools(
         self,
@@ -157,10 +165,8 @@ class ToolChatHandler:
 
             # Show result
             if result.is_error:
-                # Escape Rich markup in error content
-                error_content = result.content.replace("[", "\\[").replace("]", "\\]")
                 self.console.print(
-                    f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {error_content}"
+                    f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {result.content}"
                 )
             else:
                 self.console.print(f"[{self.theme.success}]✓ Result:[/{self.theme.success}]")
@@ -179,6 +185,7 @@ class ToolChatHandler:
                         )
                     )
                 except (json.JSONDecodeError, TypeError):
+                    # Not JSON, print as text
                     self.console.print(
                         Panel(result.content, border_style=self.theme.info, expand=False)
                     )
