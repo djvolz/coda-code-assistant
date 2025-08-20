@@ -179,7 +179,6 @@ class ToolChatHandler:
                         )
                     )
                 except (json.JSONDecodeError, TypeError):
-                    # Not JSON, print as text - Rich handles this safely
                     self.console.print(
                         Panel(result.content, border_style=self.theme.info, expand=False)
                     )
@@ -247,7 +246,6 @@ class ToolChatHandler:
                     )
                     break
 
-                # Stream the response
                 self.console.print(chunk.content, end="")
                 full_response += chunk.content
 

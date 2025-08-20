@@ -55,7 +55,6 @@ class CLIAgentEventHandler(AgentEventHandler):
                         )
                     )
                 except Exception:
-                    # Just use console.print - Rich handles this safely
                     self.console.print(Panel(output, expand=False))
         elif event.type == AgentEventType.ERROR:
             # Finalize any existing markdown buffer before error output

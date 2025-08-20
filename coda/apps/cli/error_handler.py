@@ -44,7 +44,6 @@ class CLIErrorHandler:
     def handle_general_error(self, error: Exception):
         """Handle general errors."""
         try:
-            # Rich console handles this safely
             self.console.print(f"\n[{self.theme.error}]Error:[/{self.theme.error}] {str(error)}")
 
         except Exception as display_error:

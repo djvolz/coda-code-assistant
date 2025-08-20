@@ -166,7 +166,6 @@ Each user request should be evaluated independently. Previous tool usage does no
                     )
                     break
 
-                # Stream the response
                 self.console.print(chunk.content, end="")
                 full_response += chunk.content
 
