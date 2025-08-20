@@ -223,12 +223,12 @@ theme = config_service.theme_manager.get_console_theme()
 #### 2. Use theme properties for console output
 ```python
 # ✅ Correct - use theme properties
-console.print(f"[{theme.success}]Operation completed[/{theme.success}]")
-console.print(f"[{theme.error}]Error occurred[/{theme.error}]")
-console.print(f"[{theme.warning}]Warning message[/{theme.warning}]")
-console.print(f"[{theme.info}]Information[/{theme.info}]")
-console.print(f"[{theme.dim}]Secondary info[/{theme.dim}]")
-console.print(f"[{theme.bold}]Important[/{theme.bold}]")
+console.print(f"\\[{theme.success}]Operation completed\\[/{theme.success}]")
+console.print(f"\\[{theme.error}]Error occurred\\[/{theme.error}]")
+console.print(f"\\[{theme.warning}]Warning message\\[/{theme.warning}]")
+console.print(f"\\[{theme.info}]Information\\[/{theme.info}]")
+console.print(f"\\[{theme.dim}]Secondary info\\[/{theme.dim}]")
+console.print(f"\\[{theme.bold}]Important\\[/{theme.bold}]")
 ```
 
 #### 3. Use theme properties for panels and borders
@@ -279,16 +279,16 @@ Replace hardcoded patterns like these:
 
 ```python
 # ❌ Wrong
-console.print("[red]Error occurred[/red]")
-console.print(f"[bold cyan]{message}[/bold cyan]") 
-console.print("[yellow]Warning[/yellow]")
-console.print("[dim]Loading...[/dim]")
+console.print("\\[red]Error occurred\\[/red]")
+console.print(f"\\[bold cyan]{message}\\[/bold cyan]") 
+console.print("\\[yellow]Warning\\[/yellow]")
+console.print("\\[dim]Loading...\\[/dim]")
 
 # ✅ Correct
-console.print(f"[{theme.error}]Error occurred[/{theme.error}]")
-console.print(f"[{theme.info} {theme.bold}]{message}[/{theme.info} {theme.bold}]")
-console.print(f"[{theme.warning}]Warning[/{theme.warning}]") 
-console.print(f"[{theme.dim}]Loading...[/{theme.dim}]")
+console.print(f"\\[{theme.error}]Error occurred\\[/{theme.error}]")
+console.print(f"\\[{theme.info} {theme.bold}]{message}\\[/{theme.info} {theme.bold}]")
+console.print(f"\\[{theme.warning}]Warning\\[/{theme.warning}]") 
+console.print(f"\\[{theme.dim}]Loading...\\[/{theme.dim}]")
 ```
 
 ### Theme Architecture
