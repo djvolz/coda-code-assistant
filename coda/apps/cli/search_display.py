@@ -50,9 +50,9 @@ class SearchResultDisplay:
         if not results:
             self.console.print(
                 Panel(
-                    "[yellow]No results found[/yellow]\n\n"
-                    "[dim]Try different search terms or index more content[/dim]",
-                    title="[bold red]Search Results[/bold red]",
+                    f"[{self.theme.warning}]No results found[/{self.theme.warning}]\n\n"
+                    f"[{self.theme.dim}]Try different search terms or index more content[/{self.theme.dim}]",
+                    title=f"[{self.theme.bold} {self.theme.error}]Search Results[/{self.theme.bold} {self.theme.error}]",
                     border_style=self.theme.error,
                 )
             )
@@ -66,7 +66,7 @@ class SearchResultDisplay:
         self.console.print()
         self.console.print(
             Panel(
-                f"[bold cyan]Found {len(results)} results for:[/bold cyan] [white]{query}[/white]",
+                f"[{self.theme.bold} {self.theme.info}]Found {len(results)} results for:[/{self.theme.bold} {self.theme.info}] [{self.theme.bold}]{query}[/{self.theme.bold}]",
                 expand=False,
                 border_style=self.theme.panel_border,
             )
@@ -92,7 +92,7 @@ class SearchResultDisplay:
         """Display a single search result with formatting."""
         # Create result header with score
         score_color = self._get_score_color(result.score)
-        header = f"[bold]#{index}[/bold]  [dim]Score:[/dim] [{score_color}]{result.score:.3f}[/{score_color}]"
+        header = f"[{self.theme.bold}]#{index}[/{self.theme.bold}]  [{self.theme.dim}]Score:[/{self.theme.dim}] [{score_color}]{result.score:.3f}[/{score_color}]"
 
         # Add source file if available in metadata
         if result.metadata:
@@ -117,7 +117,7 @@ class SearchResultDisplay:
                         f"{source}:{result.metadata['start_line']}-{result.metadata['end_line']}"
                     )
 
-                header += f"  [dim]Source:[/dim] [blue]{source}[/blue]"
+                header += f"  [{self.theme.dim}]Source:[/{self.theme.dim}] [{self.theme.info}]{source}[/{self.theme.info}]"
 
         # Prepare content preview
         content = self._prepare_content_preview(result.text, max_preview_length)
@@ -335,6 +335,10 @@ class IndexingProgressContext:
         self.total_items = total_items
         self.progress = None
         self.task_id = None
+        # Get theme for consistent styling
+        from coda.services.config import get_config_service
+
+        self.theme = get_config_service().theme_manager.get_console_theme()
 
     def __enter__(self):
         """Start progress display."""
@@ -359,10 +363,10 @@ class IndexingProgressContext:
 
         if self.total_items:
             self.task_id = self.progress.add_task(
-                "[cyan]Indexing content...", total=self.total_items
+                f"[{self.theme.info}]Indexing content...", total=self.total_items
             )
         else:
-            self.task_id = self.progress.add_task("[cyan]Indexing content...")
+            self.task_id = self.progress.add_task(f"[{self.theme.info}]Indexing content...")
 
         return self
 

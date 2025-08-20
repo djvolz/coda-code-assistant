@@ -1,7 +1,7 @@
 """Ollama provider implementation for local model execution."""
 
 import json
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import TypeVar
 
 import httpx
@@ -17,12 +17,18 @@ from .base import (
     ToolCall,
     ToolResult,
 )
+from .provider_utils import (
+    HTTPClientMixin,
+    ProviderError,
+    ProviderErrorHandler,
+    ToolNotSupportedError,
+)
 from .tool_converter import ToolConverter
 
 T = TypeVar("T")
 
 
-class OllamaProvider(BaseProvider):
+class OllamaProvider(HTTPClientMixin, BaseProvider):
     """Ollama provider for local LLM execution."""
 
     def __init__(self, host: str = "http://localhost:11434", timeout: float = 120.0, **kwargs):
@@ -34,87 +40,23 @@ class OllamaProvider(BaseProvider):
             timeout: Request timeout in seconds
             **kwargs: Additional provider settings
         """
-        super().__init__(**kwargs)
+        super().__init__(timeout=timeout, **kwargs)
         self.host = host.rstrip("/")
-        self.timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
-        self._async_client = httpx.AsyncClient(timeout=timeout)
 
-    def _handle_tool_fallback(
-        self,
-        func: Callable,
-        messages: list[Message],
-        model: str,
-        tools: list[Tool] | None,
-        *args,
-        **kwargs,
-    ) -> T:
-        """
-        Handle tool fallback for methods that may fail with tool support errors.
+    def _handle_provider_error(self, e: Exception, model: str) -> Exception:
+        """Convert exceptions to standardized provider errors."""
+        if isinstance(e, httpx.HTTPStatusError):
+            return ProviderErrorHandler.handle_http_error(e, model, "Ollama")
+        return ProviderError(f"Ollama error: {str(e)}")
 
-        Args:
-            func: The function to call
-            messages: Chat messages
-            model: Model name
-            tools: Optional tools list
-            *args: Additional positional arguments
-            **kwargs: Additional keyword arguments
-
-        Returns:
-            The result from the function call
-        """
+    def _execute_with_fallback(self, func, messages, model, tools, *args, **kwargs):
+        """Execute function with automatic tool fallback."""
         try:
-            return func(messages, model, *args, tools=tools, **kwargs)
-        except httpx.HTTPStatusError as e:
-            error_text = e.response.text
-
-            # If model doesn't support tools and we have tools, just proceed without tools
-            if "does not support tools" in error_text and tools:
-                return func(messages, model, *args, tools=None, **kwargs)
-
-            # Handle other errors
-            if e.response.status_code == 404:
-                raise ValueError(
-                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
-                ) from None
-
-            raise RuntimeError(f"Ollama API error: {error_text}") from e
+            return ProviderErrorHandler.with_tool_fallback(
+                func, messages, model, *args, tools=tools, **kwargs
+            )
         except Exception as e:
-            raise RuntimeError(f"Ollama error: {str(e)}") from e
-
-    def _handle_stream_fallback(
-        self,
-        func: Callable,
-        messages: list[Message],
-        model: str,
-        tools: list[Tool] | None,
-        *args,
-        **kwargs,
-    ) -> Iterator[ChatCompletionChunk]:
-        """
-        Handle tool fallback for streaming methods.
-
-        Yields chunks from the function, handling tool fallback if needed.
-        """
-        try:
-            yield from func(messages, model, *args, tools=tools, **kwargs)
-        except httpx.HTTPStatusError as e:
-            error_text = e.response.text
-
-            # If model doesn't support tools and we have tools, just proceed without tools
-            if "does not support tools" in error_text and tools:
-                yield from func(messages, model, *args, tools=None, **kwargs)
-                return
-
-            # Handle other errors
-            if e.response.status_code == 404:
-                raise ValueError(
-                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
-                ) from None
-
-            raise RuntimeError(f"Ollama streaming error: {error_text}") from e
-        except Exception as e:
-            raise RuntimeError(f"Ollama streaming error: {str(e)}") from e
+            raise self._handle_provider_error(e, model) from e
 
     @property
     def name(self) -> str:
@@ -216,24 +158,14 @@ class OllamaProvider(BaseProvider):
 
             return result
 
-        except httpx.HTTPStatusError as e:
-            error_text = e.response.text
-
-            # If model doesn't support tools, execute manually
-            if "does not support tools" in error_text and tools:
+        except ToolNotSupportedError:
+            if tools:
                 return self._execute_tools_manually_sync(
                     messages, model, tools, temperature, max_tokens, top_p, stop, **kwargs
                 )
-
-            # Handle other errors
-            if e.response.status_code == 404:
-                raise ValueError(
-                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
-                ) from None
-
-            raise RuntimeError(f"Ollama API error: {error_text}") from e
+            raise
         except Exception as e:
-            raise RuntimeError(f"Ollama error: {str(e)}") from e
+            raise self._handle_provider_error(e, model) from e
 
     def _execute_tools_manually_sync(
         self,
@@ -386,7 +318,7 @@ class OllamaProvider(BaseProvider):
                 data["options"][key] = value
 
         # Make request
-        response = self._client.post(
+        response = self.client.post(
             f"{self.host}/api/chat",
             json=data,
         )
@@ -437,17 +369,20 @@ class OllamaProvider(BaseProvider):
         **kwargs,
     ) -> Iterator[ChatCompletionChunk]:
         """Stream chat completion response from Ollama."""
-        yield from self._handle_stream_fallback(
-            self._chat_stream_native_ollama,
-            messages,
-            model,
-            tools,
-            temperature,
-            max_tokens,
-            top_p,
-            stop,
-            **kwargs,
-        )
+        try:
+            yield from ProviderErrorHandler.with_tool_fallback(
+                self._chat_stream_native_ollama,
+                messages,
+                model,
+                temperature,
+                max_tokens,
+                top_p,
+                stop,
+                tools=tools,
+                **kwargs,
+            )
+        except Exception as e:
+            raise self._handle_provider_error(e, model) from e
 
     def _chat_stream_native_ollama(
         self,
@@ -494,7 +429,7 @@ class OllamaProvider(BaseProvider):
                 data["options"][key] = value
 
         # Make streaming request
-        with self._client.stream(
+        with self.client.stream(
             "POST",
             f"{self.host}/api/chat",
             json=data,
@@ -562,24 +497,12 @@ class OllamaProvider(BaseProvider):
             return await self._achat_native_ollama(
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             )
-        except httpx.HTTPStatusError as e:
-            error_text = e.response.text
-
-            # If model doesn't support tools and we have tools, just proceed without tools
-            if "does not support tools" in error_text and tools:
+        except Exception as e:
+            if isinstance(e, ToolNotSupportedError) and tools:
                 return await self._achat_native_ollama(
                     messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
                 )
-
-            # Handle other errors
-            if e.response.status_code == 404:
-                raise ValueError(
-                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
-                ) from None
-
-            raise RuntimeError(f"Ollama async error: {error_text}") from e
-        except Exception as e:
-            raise RuntimeError(f"Ollama async error: {str(e)}") from e
+            raise self._handle_provider_error(e, model) from e
 
     async def _achat_native_ollama(
         self,
@@ -626,7 +549,7 @@ class OllamaProvider(BaseProvider):
                 data["options"][key] = value
 
         # Make async request
-        response = await self._async_client.post(
+        response = await self.async_client.post(
             f"{self.host}/api/chat",
             json=data,
         )
@@ -682,26 +605,14 @@ class OllamaProvider(BaseProvider):
                 messages, model, temperature, max_tokens, top_p, stop, tools, **kwargs
             ):
                 yield chunk
-        except httpx.HTTPStatusError as e:
-            error_text = e.response.text
-
-            # If model doesn't support tools and we have tools, just proceed without tools
-            if "does not support tools" in error_text and tools:
+        except Exception as e:
+            if isinstance(e, ToolNotSupportedError) and tools:
                 async for chunk in self._achat_stream_native_ollama(
                     messages, model, temperature, max_tokens, top_p, stop, None, **kwargs
                 ):
                     yield chunk
                 return
-
-            # Handle other errors
-            if e.response.status_code == 404:
-                raise ValueError(
-                    f"Model '{model}' not found. Please pull it first with: ollama pull {model}"
-                ) from None
-
-            raise RuntimeError(f"Ollama async streaming error: {error_text}") from e
-        except Exception as e:
-            raise RuntimeError(f"Ollama async streaming error: {str(e)}") from e
+            raise self._handle_provider_error(e, model) from e
 
     async def _achat_stream_native_ollama(
         self,
@@ -748,7 +659,7 @@ class OllamaProvider(BaseProvider):
                 data["options"][key] = value
 
         # Make async streaming request
-        async with self._async_client.stream(
+        async with self.async_client.stream(
             "POST",
             f"{self.host}/api/chat",
             json=data,
@@ -803,7 +714,7 @@ class OllamaProvider(BaseProvider):
     def list_models(self) -> list[Model]:
         """List available models from Ollama."""
         try:
-            response = self._client.get(f"{self.host}/api/tags")
+            response = self.client.get(f"{self.host}/api/tags")
             response.raise_for_status()
 
             data = response.json()
@@ -823,7 +734,7 @@ class OllamaProvider(BaseProvider):
         """Pull a model from Ollama registry."""
         try:
             # Make pull request
-            response = self._client.post(
+            response = self.client.post(
                 f"{self.host}/api/pull",
                 json={"name": model},
                 timeout=None,  # Pulling can take a long time
@@ -844,7 +755,7 @@ class OllamaProvider(BaseProvider):
     def delete_model(self, model: str) -> None:
         """Delete a model from Ollama."""
         try:
-            response = self._client.delete(
+            response = self.client.delete(
                 f"{self.host}/api/delete",
                 json={"name": model},
             )
@@ -855,16 +766,7 @@ class OllamaProvider(BaseProvider):
 
     def __del__(self):
         """Cleanup clients on deletion."""
-        if hasattr(self, "_client"):
-            self._client.close()
-        if hasattr(self, "_async_client"):
-            try:
-                import asyncio
-
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    loop.create_task(self._async_client.aclose())
-                else:
-                    loop.run_until_complete(self._async_client.aclose())
-            except Exception:
-                pass
+        try:
+            self.close()
+        except Exception:
+            pass
