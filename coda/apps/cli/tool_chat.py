@@ -163,10 +163,30 @@ class ToolChatHandler:
                     f"[{self.theme.error}]✗ Error:[/{self.theme.error}] {error_content}"
                 )
             else:
-                # Just show success status without printing content to avoid Rich markup issues
+                # Use safe Rich Text to avoid markup parsing issues
                 from rich.text import Text
 
-                self.console.print(Text("✓ Success", style=self.theme.success))
+                self.console.print(Text("✓ Result:", style=self.theme.success))
+                # Try to format as JSON if possible
+                try:
+                    result_json = json.loads(result.content)
+                    self.console.print(
+                        Panel(
+                            Syntax(
+                                json.dumps(result_json, indent=2),
+                                "json",
+                                theme=self.theme.code_theme,
+                            ),
+                            border_style=self.theme.success,
+                            expand=False,
+                        )
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    # Not JSON, print as text with safe Text object
+                    from rich.text import Text
+
+                    safe_text = Text(result.content)
+                    self.console.print(Panel(safe_text, border_style=self.theme.info, expand=False))
 
             # Add tool result to messages
             messages.append(
