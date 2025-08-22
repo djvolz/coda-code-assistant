@@ -480,26 +480,31 @@ class CommandRegistry:
     @classmethod
     def get_command_help(cls, command_name: str | None = None, mode: str = "") -> str:
         """Get formatted help text for a command or all commands."""
+        # Get theme for proper color styling
+        from coda.services.config import get_config_service
+
+        theme = get_config_service().theme_manager.get_console_theme()
+
         if command_name:
             cmd = cls.get_command(command_name)
             if not cmd:
                 return f"Unknown command: {command_name}"
 
-            help_text = f"[bold]{cmd.name}[/bold]"
+            help_text = f"[{theme.bold}]{cmd.name}[/{theme.bold}]"
             if cmd.aliases:
                 help_text += f" (aliases: {', '.join(cmd.aliases)})"
             help_text += f"\n{cmd.description}\n"
 
             if cmd.subcommands:
-                help_text += "\n[bold]Subcommands:[/bold]\n"
+                help_text += f"\n[{theme.bold}]Subcommands:[/{theme.bold}]\n"
                 for sub in cmd.subcommands:
-                    help_text += f"  [cyan]{sub.name}[/cyan]"
+                    help_text += f"  [{theme.info}]{sub.name}[/{theme.info}]"
                     if sub.aliases:
                         help_text += f" ({', '.join(sub.aliases)})"
                     help_text += f" - {sub.description}\n"
 
             if cmd.examples:
-                help_text += "\n[bold]Examples:[/bold]\n"
+                help_text += f"\n[{theme.bold}]Examples:[/{theme.bold}]\n"
                 for example in cmd.examples:
                     help_text += f"  {example}\n"
 
@@ -507,9 +512,9 @@ class CommandRegistry:
         else:
             # Return help for all commands
             mode_suffix = f" ({mode})" if mode else ""
-            help_text = f"[bold]Available Commands{mode_suffix}:[/bold]\n\n"
+            help_text = f"[{theme.bold}]Available Commands{mode_suffix}:[/{theme.bold}]\n\n"
             for cmd in cls.COMMANDS:
-                help_text += f"[cyan]/{cmd.name}[/cyan]"
+                help_text += f"[{theme.info}]/{cmd.name}[/{theme.info}]"
                 if cmd.aliases:
                     help_text += f" (/{', /'.join(cmd.aliases)})"
                 help_text += f" - {cmd.description}\n"

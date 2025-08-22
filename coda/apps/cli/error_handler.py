@@ -43,7 +43,14 @@ class CLIErrorHandler:
 
     def handle_general_error(self, error: Exception):
         """Handle general errors."""
-        self.console.print(f"\n[{self.theme.error}]Error:[/{self.theme.error}] {error}")
+        try:
+            self.console.print(f"\n[{self.theme.error}]Error:[/{self.theme.error}] {str(error)}")
+
+        except Exception as display_error:
+            # Fallback to plain print if Rich fails
+            print(f"\nError: {str(error)}")
+            print(f"Display error: {str(display_error)}")
+
         self._show_debug_info(error)
         sys.exit(1)
 

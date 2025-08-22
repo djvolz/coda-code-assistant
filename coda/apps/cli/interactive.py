@@ -44,7 +44,7 @@ async def _check_first_run(console: Console, auto_save_enabled: bool):
         from rich.panel import Panel
 
         if auto_save_enabled:
-            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.info}][/{theme.bold}]
+            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.bold}][/{theme.info}]
 
 [{theme.warning}]Auto-Save is ENABLED[/{theme.warning}] 💾
 
@@ -58,7 +58,7 @@ This helps you resume conversations and search through history.
 
 [{theme.dim}]Your privacy matters - sessions are stored locally only.[/{theme.dim}]"""
         else:
-            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.info}][/{theme.bold}]
+            notification = f"""[{theme.info}][{theme.bold}]Welcome to Coda![/{theme.bold}][/{theme.info}]
 
 [{theme.warning}]Auto-Save is DISABLED[/{theme.warning}] 🔒
 

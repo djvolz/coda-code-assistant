@@ -370,9 +370,9 @@ class CodeSearchTool(BaseTool, SearchManagerMixin):
                     {
                         "file": file_path,
                         "score": round(result.score, 3),
-                        "language": Path(file_path).suffix[1:]
-                        if file_path != "unknown"
-                        else "unknown",
+                        "language": (
+                            Path(file_path).suffix[1:] if file_path != "unknown" else "unknown"
+                        ),
                         "chunk_index": chunk_index,
                         "code": result.text,
                         "metadata": result.metadata,

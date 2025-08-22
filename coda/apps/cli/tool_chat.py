@@ -28,9 +28,17 @@ class ToolChatHandler:
         self.theme = config_service.theme_manager.get_console_theme()
 
     def should_use_tools(self, model: str) -> bool:
-        """Check if the current model supports tools."""
-        # Only Cohere models support tools in OCI
-        return model.startswith("cohere.") and self.tools_enabled
+        """Check if tools should be used for this model."""
+        # Most modern models support tools, only exclude very old ones
+        if not self.tools_enabled:
+            return False
+
+        # Exclude known non-tool models
+        non_tool_models = {
+            "mock-echo",  # Simple echo model
+        }
+
+        return model not in non_tool_models
 
     async def chat_with_tools(
         self,
@@ -245,7 +253,6 @@ class ToolChatHandler:
                     )
                     break
 
-                # Stream the response
                 self.console.print(chunk.content, end="")
                 full_response += chunk.content
 
@@ -262,6 +269,5 @@ class ToolChatHandler:
 
     def _print_response(self, content: str):
         """Print AI response with formatting."""
-        self.console.print(
-            f"\n[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] {content}"
-        )
+        self.console.print()
+        self.console.print(f"[{self.theme.info} bold]Assistant:[/{self.theme.info} bold] {content}")
